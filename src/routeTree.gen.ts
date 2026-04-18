@@ -9,38 +9,161 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as StudentRouteImport } from './routes/_student'
+import { Route as InstructorRouteImport } from './routes/_instructor'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StudentSubmitRouteImport } from './routes/_student.submit'
+import { Route as InstructorHistoryRouteImport } from './routes/_instructor.history'
+import { Route as InstructorDashboardRouteImport } from './routes/_instructor.dashboard'
+import { Route as InstructorAnalysisSessionIdRouteImport } from './routes/_instructor.analysis.$sessionId'
 
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentRoute = StudentRouteImport.update({
+  id: '/_student',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstructorRoute = InstructorRouteImport.update({
+  id: '/_instructor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudentSubmitRoute = StudentSubmitRouteImport.update({
+  id: '/submit',
+  path: '/submit',
+  getParentRoute: () => StudentRoute,
+} as any)
+const InstructorHistoryRoute = InstructorHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => InstructorRoute,
+} as any)
+const InstructorDashboardRoute = InstructorDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => InstructorRoute,
+} as any)
+const InstructorAnalysisSessionIdRoute =
+  InstructorAnalysisSessionIdRouteImport.update({
+    id: '/analysis/$sessionId',
+    path: '/analysis/$sessionId',
+    getParentRoute: () => InstructorRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/dashboard': typeof InstructorDashboardRoute
+  '/history': typeof InstructorHistoryRoute
+  '/submit': typeof StudentSubmitRoute
+  '/analysis/$sessionId': typeof InstructorAnalysisSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/dashboard': typeof InstructorDashboardRoute
+  '/history': typeof InstructorHistoryRoute
+  '/submit': typeof StudentSubmitRoute
+  '/analysis/$sessionId': typeof InstructorAnalysisSessionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_instructor': typeof InstructorRouteWithChildren
+  '/_student': typeof StudentRouteWithChildren
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/_instructor/dashboard': typeof InstructorDashboardRoute
+  '/_instructor/history': typeof InstructorHistoryRoute
+  '/_student/submit': typeof StudentSubmitRoute
+  '/_instructor/analysis/$sessionId': typeof InstructorAnalysisSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/privacy'
+    | '/dashboard'
+    | '/history'
+    | '/submit'
+    | '/analysis/$sessionId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/privacy'
+    | '/dashboard'
+    | '/history'
+    | '/submit'
+    | '/analysis/$sessionId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_instructor'
+    | '/_student'
+    | '/login'
+    | '/privacy'
+    | '/_instructor/dashboard'
+    | '/_instructor/history'
+    | '/_student/submit'
+    | '/_instructor/analysis/$sessionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InstructorRoute: typeof InstructorRouteWithChildren
+  StudentRoute: typeof StudentRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_student': {
+      id: '/_student'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_instructor': {
+      id: '/_instructor'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof InstructorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +171,80 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_student/submit': {
+      id: '/_student/submit'
+      path: '/submit'
+      fullPath: '/submit'
+      preLoaderRoute: typeof StudentSubmitRouteImport
+      parentRoute: typeof StudentRoute
+    }
+    '/_instructor/history': {
+      id: '/_instructor/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof InstructorHistoryRouteImport
+      parentRoute: typeof InstructorRoute
+    }
+    '/_instructor/dashboard': {
+      id: '/_instructor/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof InstructorDashboardRouteImport
+      parentRoute: typeof InstructorRoute
+    }
+    '/_instructor/analysis/$sessionId': {
+      id: '/_instructor/analysis/$sessionId'
+      path: '/analysis/$sessionId'
+      fullPath: '/analysis/$sessionId'
+      preLoaderRoute: typeof InstructorAnalysisSessionIdRouteImport
+      parentRoute: typeof InstructorRoute
+    }
   }
 }
 
+interface InstructorRouteChildren {
+  InstructorDashboardRoute: typeof InstructorDashboardRoute
+  InstructorHistoryRoute: typeof InstructorHistoryRoute
+  InstructorAnalysisSessionIdRoute: typeof InstructorAnalysisSessionIdRoute
+}
+
+const InstructorRouteChildren: InstructorRouteChildren = {
+  InstructorDashboardRoute: InstructorDashboardRoute,
+  InstructorHistoryRoute: InstructorHistoryRoute,
+  InstructorAnalysisSessionIdRoute: InstructorAnalysisSessionIdRoute,
+}
+
+const InstructorRouteWithChildren = InstructorRoute._addFileChildren(
+  InstructorRouteChildren,
+)
+
+interface StudentRouteChildren {
+  StudentSubmitRoute: typeof StudentSubmitRoute
+}
+
+const StudentRouteChildren: StudentRouteChildren = {
+  StudentSubmitRoute: StudentSubmitRoute,
+}
+
+const StudentRouteWithChildren =
+  StudentRoute._addFileChildren(StudentRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InstructorRoute: InstructorRouteWithChildren,
+  StudentRoute: StudentRouteWithChildren,
+  LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
