@@ -29,15 +29,29 @@ export interface ILO {
   bloomLevel: BloomLevel;
 }
 
-export type SessionStatus = "active" | "archived";
+export interface Class {
+  id: string;
+  name: string;
+  course: string;
+  section: string;
+  code: string;
+  createdAt: string;
+  archived: boolean;
+  studentCount: number;
+}
+
+export type SessionStatus = "active" | "archived" | "closed";
 
 export interface Session {
   id: string;
+  classId: string;
   courseId: string;
   topic: string;
   iloIds: string[];
   status: SessionStatus;
   createdAt: string;
+  startsAt: string;
+  endsAt: string;
 }
 
 export type Polarity = "pos" | "neu" | "neg";
