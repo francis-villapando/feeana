@@ -9,6 +9,7 @@ import { Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { ClassStoreProvider } from "@/lib/classStore";
 import { FeedbackStoreProvider } from "@/lib/feedbackStore";
 import bgImage from "../assets/bg-abstract.jpg";
 
@@ -92,10 +93,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   return (
     <AuthProvider>
-      <FeedbackStoreProvider>
-        <Outlet />
-        <Toaster richColors position="top-right" />
-      </FeedbackStoreProvider>
+      <ClassStoreProvider>
+        <FeedbackStoreProvider>
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </FeedbackStoreProvider>
+      </ClassStoreProvider>
     </AuthProvider>
   );
 }
