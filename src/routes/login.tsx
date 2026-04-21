@@ -42,7 +42,7 @@ function LoginPage() {
       const user = await login(email, password, role);
       toast.success(`Welcome, ${user.name}`);
       navigate({
-        to: user.role === "instructor" ? "/dashboard" : "/submit",
+        to: user.role === "instructor" ? "/home" : "/student/home",
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed.";
