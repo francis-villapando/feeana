@@ -51,7 +51,9 @@ import { runAnalysis } from "@/lib/analysis";
 import { MOCK_ILOS, MOCK_SESSIONS } from "@/lib/mockData";
 import type { AnalysisMode, AnalysisResult, Severity, Theory } from "@/lib/types";
 
-export const Route = createFileRoute("/_instructor/analysis/$sessionId")({
+export const Route = createFileRoute(
+  "/_instructor/classes/$classId/analysis/$sessionId",
+)({
   loader: ({ params }) => {
     const session = MOCK_SESSIONS.find((s) => s.id === params.sessionId);
     if (!session) throw notFound();
@@ -70,8 +72,8 @@ export const Route = createFileRoute("/_instructor/analysis/$sessionId")({
     <div className="py-16 text-center">
       <h1 className="text-2xl font-semibold">Session not found</h1>
       <Button asChild variant="ghost" className="mt-4">
-        <Link to="/dashboard">
-          <ArrowLeft className="h-4 w-4" /> Back to dashboard
+        <Link to="/home">
+          <ArrowLeft className="h-4 w-4" /> Back to home
         </Link>
       </Button>
     </div>
@@ -99,7 +101,7 @@ const SEVERITY_STYLE: Record<Severity, string> = {
 
 function AnalysisPage() {
   const { session } = Route.useLoaderData();
-  const linkedIlos = MOCK_ILOS.filter((ilo) => session.iloIds.includes(ilo.id));
+  const { classId } = Route.useParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -125,8 +127,8 @@ function AnalysisPage() {
     <div className="space-y-8">
       <div>
         <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link to="/dashboard">
-            <ArrowLeft className="h-4 w-4" /> Back to dashboard
+          <Link to="/classes/$classId" params={{ classId }}>
+            <ArrowLeft className="h-4 w-4" /> Back to class
           </Link>
         </Button>
         <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
@@ -137,23 +139,8 @@ function AnalysisPage() {
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">
               {session.topic}
             </h1>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {linkedIlos.map((ilo) => (
-                <Badge
-                  key={ilo.id}
-                  variant="outline"
-                  className="border-primary/30 text-primary"
-                >
-                  {ilo.code} · {ilo.bloomLevel}
-                </Badge>
-              ))}
-            </div>
           </div>
-          <Button
-            size="lg"
-            onClick={() => setDialogOpen(true)}
-            disabled={loading}
-          >
+          <Button size="lg" onClick={() => setDialogOpen(true)} disabled={loading}>
             <PlayCircle className="h-4 w-4" />
             {result ? "Re-run analysis" : "Trigger analysis"}
           </Button>
@@ -203,9 +190,9 @@ function EmptyState({ onTrigger }: { onTrigger: () => void }) {
         <div>
           <h2 className="text-lg font-semibold">Analysis not yet triggered</h2>
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            Feeana waits until you're ready. Trigger the pipeline to see aspect,
-            issue, and polarity distributions, an ILO gap analysis, and
-            theory-grounded teaching cues.
+            Trigger the pipeline to see aspect, issue, and polarity
+            distributions, an ILO gap analysis, and theory-grounded teaching
+            cues.
           </p>
         </div>
         <Button onClick={onTrigger} size="lg">
@@ -270,11 +257,7 @@ function Results({ result }: { result: AnalysisResult }) {
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={result.aspectDist}>
               <CartesianGrid stroke="oklch(1 0 0 / 8%)" vertical={false} />
-              <XAxis
-                dataKey="label"
-                stroke="var(--color-muted-foreground)"
-                fontSize={11}
-              />
+              <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={11} />
               <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
               <Tooltip
                 cursor={{ fill: "oklch(1 0 0 / 5%)" }}
@@ -285,11 +268,7 @@ function Results({ result }: { result: AnalysisResult }) {
                   fontSize: 12,
                 }}
               />
-              <Bar
-                dataKey="value"
-                fill="var(--color-primary)"
-                radius={[6, 6, 0, 0]}
-              />
+              <Bar dataKey="value" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
