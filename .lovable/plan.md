@@ -1,112 +1,114 @@
+# Update Plan — Instructor & Student Portal Refinements
 
-# Reorganization Plan — Class-Centric Workspace
+Frontend-only refinements layered on top of the class-centric workspace. All data continues to live in mock stores + `localStorage`.
 
-A Google-Classroom-style restructuring: instructors live inside a persistent right-side drawer, work happens inside **Classes**, and students join classes by code.
+## 1. Home page — small fix
 
-## 1. Information architecture
+- `_instructor.home.tsx`: in the welcome banner, move the **Create class** + **View dashboard** buttons from the right-center column to bottom-right of the banner using `flex flex-col` + `items-end justify-end` (or absolute `bottom-6 right-6`). Banner copy stays on the left.
 
-**Top-level entities (mock):**
-- `Class { id, name, course, section, code (6-char), createdAt, archived }` — replaces today's single course concept
-- `Session { id, classId, topic, startsAt, endsAt, status }` — ILOs no longer surfaced in UI (kept internally on `Session.iloIds` so analysis still works)
-- `JoinedClass { studentId, classId }` — for student membership
-- Seed: 2 active classes + 1 archived, each with 2 sessions, plus existing feedback wired by `sessionId`
+## 2. Dashboard — major rebuild
 
-**Instructor routes (all wrapped by `_instructor` layout with persistent drawer):**
+Drop the old layout. New structure:
+
+**Top KPI row (2 cards only):**
+
+- Avg feedback submission rate (mock: derived from `responses / studentCount` per session, averaged)
+- Avg ILO achievement rate (mock: precomputed % per session, averaged)
+- Removes "ILOs Tracked" and "Total Responses" tiles. Keeps "Active classes" + "Active sessions" alongside the two new ones (4-tile grid total).
+
+**Course Management Hub (new card with 3 tabs: Courses · Topics · ILOs):**
+
+- Each tab = sortable list with **Add**, **Edit**, **Archive/Restore** actions (no hard delete). Edits/creates open shadcn `Dialog`s; archive flips a boolean and dims the row.
+- Show an "Archived" toggle to reveal soft-deleted entries with **Restore** button.
+- Every CRUD action pushes an entry into a new `activityLog` store (`{ id, entity, entityId, action, label, timestamp }`).
+
+**Activity Feed card (right column on desktop):**
+
+- Reverse-chronological list filtered to the **last 30 days** and entity types `course | topic | ILO`.
+- Shows ~6 most recent rows with icons; **View all** button opens a `Dialog` with the full 30-day list (scrollable).
+
+**Cross-Class Feedback Creator card (full width, below):**
+
+- Fields: Topic (text), and a multi-select Class picker built with shadcn `Popover` + `Command` (checkbox list of active classes).
+- Per selected class: an inline row appears with its own **Starts** and **Ends** datetime pickers (both required). Delete button per row.
+- Submit creates one `Session` per selected class via `createSession` and toasts a summary.
+
+**New files / changes:**
+
+- `src/lib/courseStore.tsx` — courses, topics, ILOs (CRUD + archived flag) + `activityLog`. Seeds from `MOCK_COURSE` and `MOCK_ILOS`. Persists to `localStorage`.
+- `src/components/dashboard/CourseManagementHub.tsx`, `ActivityFeed.tsx`, `ActivityFeedDialog.tsx`, `CrossClassFeedbackCreator.tsx`, `EntityFormDialog.tsx`.
+- Extend `classStore.createSession` → already supports per-class `startsAt`/`endsAt`; the cross-class form just loops over selections.
+
+## 3. Class page — layout flip + trend on top
+
+`_instructor.classes.$classId.tsx`:
+
+- **Top:** kpi card for **Submission rate %** and **ILO achievement %.** 
+- **below kpi card:** new full-width **Trend card** with a single recharts `LineChart` plotting three lines over the class's sessions (x-axis = session topic chronological): most prevalent aspect, issue, polarity. Mock data derived per session.
+- **Below trend, two-column row:**
+  - **Left (wider, ~2fr):** Sessions list — no tabs, no header, just the grid of `SessionCard`s rendered directly (the old "Feedback collection sessions" tab content). Add a **Students** sub-tab toggle (see §5) using shadcn `Tabs` with two values: `Sessions` (default) and `Students`. Tabs sit at the top of this left column with no surrounding heading.
+  - **Right (~1fr, stacked):** **Class details** card on top, **Start feedback collection** card directly below it. Both keep current content.
+- Delete `_instructor.classes.$classId.trend.tsx` route (its line/bar charts move into a redesigned single trend card on the class page; the old `/trend` URL is removed).
+- `SessionCard`: anonymous open-ended feedback preview — add a small expandable list (shadcn `Accordion`) showing the latest 3 anonymous submissions inline, "View all" links to analysis page.
+
+## 4. Calendar / datetime pickers — themed
+
+Replace raw `<input type="datetime-local">` in `CreateSessionForm` and the cross-class creator with a composed shadcn date+time picker:
+
+- shadcn `Popover` + `Calendar` for date (with `pointer-events-auto`).
+- Two shadcn `Select`s for hour + minute below the calendar.
+- Result formatted to ISO and stored as before.
+Wrap this in a reusable `src/components/ui/DateTimePicker.tsx`.
+
+## 5. Students tab (per class)
+
+- New component `ClassStudentsTab.tsx` rendered inside the left-column `Tabs`.
+- Mock data: `src/lib/mockData.ts` gains `MOCK_STUDENTS_BY_CLASS: Record<classId, { id, name, email, joinedAt }[]>`. Store accessor + `removeStudent(classId, studentId)` in `classStore`.
+- UI: shadcn `Table` with name, email, joined date, **Remove** button → confirm via shadcn `AlertDialog`.
+- Footer line: shows "**Participation: 64%**" (mock = responses across class / (students × sessions)) — never names tied to feedback.
+- Removing a student decrements `studentCount`; toast confirms.
+
+## 6. Notifications — dismiss + auto-close
+
+Update `src/components/ui/sonner.tsx`:
+
+- Pass `closeButton` and `duration={5000}` to the `<Toaster />` so every toast auto-closes after 5s and shows an X for manual dismiss. No per-call changes needed.
+
+## 7. Student portal — mobile feedback layout
+
+`_student.student.submit.$sessionId.tsx`:
+
+- Keep all element sizes (no shrinking, no hiding). The card uses `flex flex-col` so on mobile (`md:` breakpoint), the **Submit feedback** button is moved to the bottom of the card via `mt-auto` and the card itself uses `min-h-[calc(100dvh-…)]` so the button anchors near the bottom while content sits up top.
+- No vertical scroll inside the card — overflow handled by the page, not the card.
+- Remove the inactive status indicator: only render the "active" badge (drop `session.status === 'closed'` rendering). Submission for non-active sessions hides the form with a single "This collection has ended" notice in its place.
+- Student home (`_student.student.home.tsx`): also filter the dropdown / list to **active** sessions only, with class name · section · topic · time window each shown so students can distinguish.
+
+## 8. Data model additions
+
+```ts
+// types.ts
+type EntityKind = "course" | "topic" | "ILO";
+type Topic = { id: string; courseId: string; title: string; archived: boolean; createdAt: string };
+type ActivityEntry = {
+  id: string; entity: EntityKind; entityId: string;
+  action: "created" | "updated" | "archived" | "restored";
+  label: string; timestamp: string;
+};
+// Course and ILO get `archived: boolean`.
+// Class gets optional `students: { id; name; email; joinedAt }[]` (or kept in mockData map).
 ```
-/home                           → banner intro + grid of class cards
-/dashboard                      → existing KPI dashboard (no "Start collection" form anymore)
-/classes/$classId               → class banner + tabs
-/classes/$classId  (tab)        → "Sessions" (default)
-/classes/$classId  (tab)        → "Trend" (renamed History, scoped per class)
-/classes/$classId/analysis/$sessionId  → existing analysis page, re-parented
-/archived                       → grid of archived class cards
-```
 
-**Student routes:**
-```
-/student/home    → banner + flat list of active sessions, grouped by class
-/student/join    → enter class code (dialog from home is fine too)
-/student/submit/$sessionId → existing submit form, pre-filled with session
-```
+## 9. Files affected (summary)
 
-## 2. Persistent right-side drawer (instructor)
+**Created:** `src/lib/courseStore.tsx`, `src/components/ui/DateTimePicker.tsx`, `src/components/dashboard/CourseManagementHub.tsx`, `ActivityFeed.tsx`, `ActivityFeedDialog.tsx`, `CrossClassFeedbackCreator.tsx`, `EntityFormDialog.tsx`, `src/components/ClassStudentsTab.tsx`.
 
-Built on shadcn `Sidebar` with `side="right"` and `collapsible="icon"`.
+**Modified:** `src/routes/_instructor.home.tsx` (banner button alignment), `_instructor.dashboard.tsx` (full rebuild), `_instructor.classes.$classId.tsx` (layout flip + trend on top + tabs), `_instructor.classes.$classId.index.tsx` (no header, anonymous feedback preview), `src/components/CreateSessionForm.tsx` (themed picker), `src/components/SessionCard.tsx` (anonymous preview), `src/components/ui/sonner.tsx` (close button + 5s), `src/lib/types.ts`, `src/lib/mockData.ts`, `src/lib/classStore.tsx` (students + remove), `_student.student.submit.$sessionId.tsx` (mobile layout, active-only), `_student.student.home.tsx` (active-only).
 
-- **Two states:** icon-only (~56px) ↔ icon+label (~240px). Toggle via `SidebarTrigger` pinned in the top header (always visible).
-- **Mobile (≤768px):** off-canvas overlay using shadcn `Sheet` (handled automatically by `Sidebar` mobile mode); hidden by default, opens via header button.
-- **Items (top→bottom):**
-  1. **Home** (`Home` icon) → `/home`
-  2. **Dashboard** (`LayoutDashboard`) → `/dashboard`
-  3. **Classes** (`GraduationCap`) — shadcn `Collapsible` listing each active class as a sub-link; footer item **+ New class** opens a `Dialog` with fields **Class name**, **Course**, **Section** → adds to in-memory store, generates a 6-char join code
-  4. **Archived classes** (`Archive`) → `/archived`
-- Active route highlighted via `Link activeProps`. Group stays expanded when a child class route is active.
-- Drawer persists across all `_instructor/*` routes by living in `_instructor.tsx` layout.
+**Deleted:** `src/routes/_instructor.classes.$classId.trend.tsx` and the associated nav tab.
 
-## 3. Home page (`/home`)
+## 10. Notes / things flagged
 
-- **Banner:** gradient card introducing Feeana ("AI-powered feedback intelligence…"), small CTA buttons → "Create class" / "View dashboard".
-- **Below:** "Your classes" heading + responsive grid (`grid-cols-1 md:grid-cols-2 xl:grid-cols-3`) of class cards. Each card shows: class name, course · section, join code (with copy button), session count, last-activity timestamp, and a footer link "Open class →".
-
-## 4. Class page (`/classes/$classId`)
-
-**Top banner (two-column on desktop, stacked on mobile):**
-
-```text
-┌────────────────────────────────────────────┬──────────────────────────────┐
-│ Start feedback collection                  │ Class details                │
-│ ┌─ Topic [input] ──────────────────────┐   │ Class: Intro to Programming  │
-│ ├─ Starts [datetime-local] ────────────┤   │ Course: CS 101               │
-│ ├─ Ends   [datetime-local] ────────────┤   │ Section: A                   │
-│ └─ [ Start collection ] (primary btn)  ┘   │ Code: 7K2P9X  [copy]         │
-│                                            │ Students: 24                 │
-└────────────────────────────────────────────┴──────────────────────────────┘
-```
-
-- Left card uses inline shadcn `Input`, `Input type="datetime-local"` x2, primary `Button`. No ILO field. Validation via Sonner toast.
-- Right card is read-only metadata.
-
-**Below banner — shadcn `Tabs`** with two tabs:
-- **Feedback collection sessions** (default): grid of session cards. Each card shows **topic**, **status badge** (active/closed), **start → end datetime**, **# of responses**, footer "Open analysis →" linking to the analysis route.
-- **Trend**: contents of the current `_instructor.history.tsx`, scoped to the class's sessions. Same line + bar charts, retitled "Class trend".
-
-## 5. Archived classes (`/archived`)
-
-Same card grid as home, but pulled from `classes.filter(c => c.archived)`. Card menu offers "Restore". Empty state when none.
-
-## 6. Student portal updates
-
-- New `/student/home`: banner + **flat list of active sessions grouped by class** (shadcn list with class-name subheaders). Each row shows topic, class name · section, time window, and a primary "Submit feedback" button → `/student/submit/$sessionId`.
-- **Join class:** `Dialog` triggered from header button "Join class" — single 6-char code input, validates against mock classes, toast on success/failure, adds to in-memory `joinedClassIds`.
-- `/student/submit/$sessionId` replaces today's session-picker dropdown; session is locked from the URL. Banner shows class + topic + time window. Existing privacy link kept.
-- Student `AppShell` keeps the simple top header (no right drawer) — drawer is instructor-only per the brief.
-
-## 7. Component & file plan
-
-**New files:**
-- `src/components/InstructorSidebar.tsx` — the right drawer
-- `src/components/CreateClassDialog.tsx`
-- `src/components/CreateSessionForm.tsx` — inline form used in class banner
-- `src/components/ClassCard.tsx`, `src/components/SessionCard.tsx`
-- `src/components/JoinClassDialog.tsx`
-- `src/lib/classStore.tsx` — context for classes, sessions, joined memberships (in-memory + localStorage)
-- Routes: `_instructor.home.tsx`, `_instructor.archived.tsx`, `_instructor.classes.$classId.tsx` (layout w/ tabs + Outlet), `_instructor.classes.$classId.index.tsx` (sessions tab), `_instructor.classes.$classId.trend.tsx`, `_instructor.classes.$classId.analysis.$sessionId.tsx`, `_student.home.tsx`, `_student.submit.$sessionId.tsx`
-
-**Modified files:**
-- `_instructor.tsx` — wrap children in `SidebarProvider` + `InstructorSidebar`, header keeps brand + user chip + sign-out + `SidebarTrigger`
-- `_student.tsx` — add "Join class" button in header
-- `_instructor.dashboard.tsx` — strip out Start-collection card and sessions table (now lives in class pages); keep KPIs as a global overview
-- Old `_instructor.history.tsx` — content moves into the class Trend tab; route deleted (or kept as redirect)
-- Old `_student.submit.tsx` — replaced by `/student/home` + `/student/submit/$sessionId`
-- `mockData.ts` — extend with classes + join codes; sessions gain `classId`, `startsAt`, `endsAt`
-
-## 8. Things worth flagging
-
-- **History route deletion:** the old top-level `/history` link is removed; bookmarks break. I'll leave a redirect to `/home`.
-- **Default landing after instructor login:** changes from `/dashboard` to `/home`. Login redirect updated.
-- **Drawer collapse state:** persisted to `localStorage` so it survives navigation/refresh.
-- **Empty states:** new home (no classes yet → "Create your first class"), class page (no sessions yet), archived (none), student home (no joined classes → big "Join a class" CTA).
-- **Join code generation:** 6-char base32-ish (no ambiguous chars) on class creation; displayed with copy-to-clipboard on class card and class banner.
-- **Mock data alignment:** existing analysis results keyed by `sessionId` continue to work — only routing changes around them.
-- **ILO removal from UI:** still exists on `Session` internally so analysis output keeps surfacing ILO codes inside the gap-analysis card (the only place they remain visible).
-- **Unchanged for now:** auth, analysis pipeline mocks, theme/background, recommendation hover cards.
+- The old `/classes/$classId/trend` URL goes away — links from anywhere else are removed in the same pass.
+- Soft-delete uses an `archived: boolean` and dims rows with `opacity-60` + an Archive badge; same pattern as classes.
+- All mock metric calculations live in pure helpers under `src/lib/metrics.ts` so a real backend can replace them later.
+- No backend, no database, no API calls — strictly mock + `localStorage`.
