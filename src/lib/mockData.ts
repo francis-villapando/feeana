@@ -1,10 +1,53 @@
-import type { Class, Course, Feedback, ILO, Session } from "./types";
+import type {
+  Class,
+  Course,
+  Feedback,
+  ILO,
+  Session,
+  Student,
+  Topic,
+} from "./types";
 
 export const MOCK_COURSE: Course = {
   id: "course-cs101",
   code: "CS 101",
   title: "Introduction to Programming",
+  archived: false,
 };
+
+export const MOCK_COURSES: Course[] = [
+  MOCK_COURSE,
+  {
+    id: "course-cs100",
+    code: "CS 100",
+    title: "Computing Foundations",
+    archived: false,
+  },
+];
+
+export const MOCK_TOPICS: Topic[] = [
+  {
+    id: "topic-1",
+    courseId: "course-cs101",
+    title: "Variables & Data Types",
+    archived: false,
+    createdAt: "2025-02-05T08:00:00.000Z",
+  },
+  {
+    id: "topic-2",
+    courseId: "course-cs101",
+    title: "Control Structures",
+    archived: false,
+    createdAt: "2025-02-12T08:00:00.000Z",
+  },
+  {
+    id: "topic-3",
+    courseId: "course-cs101",
+    title: "Functions & Scope",
+    archived: false,
+    createdAt: "2025-02-19T08:00:00.000Z",
+  },
+];
 
 export const MOCK_ILOS: ILO[] = [
   {
@@ -14,6 +57,7 @@ export const MOCK_ILOS: ILO[] = [
     statement:
       "Apply primitive data types and variable declarations to solve simple computational problems.",
     bloomLevel: "Apply",
+    archived: false,
   },
   {
     id: "ilo-2",
@@ -22,6 +66,7 @@ export const MOCK_ILOS: ILO[] = [
     statement:
       "Analyze type-conversion and scoping behavior in short Python programs.",
     bloomLevel: "Analyze",
+    archived: false,
   },
   {
     id: "ilo-3",
@@ -30,6 +75,7 @@ export const MOCK_ILOS: ILO[] = [
     statement:
       "Construct conditional and iterative control structures to model decision logic.",
     bloomLevel: "Create",
+    archived: false,
   },
   {
     id: "ilo-4",
@@ -38,6 +84,7 @@ export const MOCK_ILOS: ILO[] = [
     statement:
       "Evaluate the correctness of loops by tracing variable state across iterations.",
     bloomLevel: "Evaluate",
+    archived: false,
   },
 ];
 
@@ -73,6 +120,54 @@ export const MOCK_CLASSES: Class[] = [
     studentCount: 31,
   },
 ];
+
+function makeStudents(prefix: string, count: number): Student[] {
+  const names = [
+    "Aira Santos",
+    "Miguel Cruz",
+    "Joana Reyes",
+    "Liam Tan",
+    "Patricia Lim",
+    "Noah Garcia",
+    "Sofia Ramos",
+    "Ethan Dela Cruz",
+    "Maya Villanueva",
+    "Carlos Mendoza",
+    "Bea Aquino",
+    "Ramon Bautista",
+    "Trisha Domingo",
+    "Andre Velasco",
+    "Kim Ocampo",
+    "Joaquin Pascual",
+    "Lara Mercado",
+    "Diego Navarro",
+    "Faith Jimenez",
+    "Sam Robles",
+    "Cassey Bernal",
+    "Vince Castillo",
+    "Nina Salvador",
+    "Paolo Manalo",
+    "Bianca Reyes",
+    "Tomas Estrada",
+    "Yza Pineda",
+    "Rico Buenaventura",
+    "Hannah Cortes",
+    "Marco Padilla",
+    "Eli Roxas",
+  ];
+  return Array.from({ length: count }, (_, i) => ({
+    id: `${prefix}-stu-${i + 1}`,
+    name: names[i % names.length],
+    email: `${names[i % names.length].toLowerCase().replace(/[^a-z]/g, ".")}@uni.edu`,
+    joinedAt: new Date(2025, 1, 5 + (i % 20)).toISOString(),
+  }));
+}
+
+export const MOCK_STUDENTS_BY_CLASS: Record<string, Student[]> = {
+  "class-cs101-a": makeStudents("a", 28),
+  "class-cs101-b": makeStudents("b", 24),
+  "class-cs100-archived": makeStudents("c", 31),
+};
 
 export const MOCK_SESSIONS: Session[] = [
   {
@@ -122,7 +217,6 @@ export const MOCK_SESSIONS: Session[] = [
 ];
 
 export const MOCK_FEEDBACK: Feedback[] = [
-  // ----- Variables & Data Types -----
   {
     id: "fb-1",
     sessionId: "session-vars",
