@@ -31,7 +31,7 @@ function HomePage() {
       {/* Banner */}
       <section className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/70 to-card/40 p-8 backdrop-blur-xl">
         <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative flex flex-col gap-6">
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
               <Sparkles className="h-3 w-3" /> Welcome{user ? `, ${user.name}` : ""}
@@ -44,7 +44,7 @@ function HomePage() {
               Feeana surface ILO-aligned teaching cues from Taglish responses.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button onClick={() => setCreateOpen(true)} size="lg">
               <Plus className="h-4 w-4" /> Create class
             </Button>
