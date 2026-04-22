@@ -1,25 +1,27 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   Activity,
-  ArrowRight,
   Database,
   GraduationCap,
-  ListChecks,
   Target,
+  Users,
 } from "lucide-react";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { useClassStore } from "@/lib/classStore";
-import { MOCK_ILOS } from "@/lib/mockData";
+import {
+  averageRate,
+  iloAchievementForSession,
+  submissionRateForSession,
+} from "@/lib/metrics";
+import { CourseManagementHub } from "@/components/dashboard/CourseManagementHub";
+import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { CrossClassFeedbackCreator } from "@/components/dashboard/CrossClassFeedbackCreator";
 
 export const Route = createFileRoute("/_instructor/dashboard")({
   head: () => ({
@@ -28,7 +30,7 @@ export const Route = createFileRoute("/_instructor/dashboard")({
       {
         name: "description",
         content:
-          "Workspace KPIs at a glance: classes, sessions, and response volume.",
+          "Workspace KPIs, course management, and cross-class feedback launches.",
       },
     ],
   }),
@@ -37,14 +39,21 @@ export const Route = createFileRoute("/_instructor/dashboard")({
 
 function DashboardPage() {
   const { feedback } = useFeedbackStore();
-  const { activeClasses, sessions } = useClassStore();
+  const { activeClasses, sessions, classes } = useClassStore();
 
   const stats = useMemo(() => {
     const active = sessions.filter((s) => s.status === "active").length;
-    const total = feedback.length;
-    const pedagogical = feedback.filter((f) => f.isPedagogical).length;
-    return { active, total, pedagogical };
-  }, [feedback, sessions]);
+    const submission = averageRate(
+      sessions.map((s) => {
+        const cls = classes.find((c) => c.id === s.classId);
+        return submissionRateForSession(s, cls, feedback);
+      }),
+    );
+    const ilo = averageRate(
+      sessions.map((s) => iloAchievementForSession(s, feedback)),
+    );
+    return { active, submission, ilo };
+  }, [feedback, sessions, classes]);
 
   return (
     <div className="space-y-8">
@@ -57,7 +66,7 @@ function DashboardPage() {
             Dashboard
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Diagnose learning gaps before they compound.
+            Manage your curriculum and launch coordinated feedback.
           </p>
         </div>
         <Badge variant="outline" className="gap-1.5 border-primary/30 text-primary">
@@ -65,7 +74,18 @@ function DashboardPage() {
         </Badge>
       </div>
 
+      {/* KPI row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiTile
+          icon={<Users className="h-4 w-4" />}
+          label="Avg submission rate"
+          value={`${stats.submission}%`}
+        />
+        <KpiTile
+          icon={<Target className="h-4 w-4" />}
+          label="Avg ILO achievement"
+          value={`${stats.ilo}%`}
+        />
         <KpiTile
           icon={<GraduationCap className="h-4 w-4" />}
           label="Active classes"
@@ -76,52 +96,16 @@ function DashboardPage() {
           label="Active sessions"
           value={stats.active.toString()}
         />
-        <KpiTile
-          icon={<ListChecks className="h-4 w-4" />}
-          label="Total responses"
-          value={stats.total.toString()}
-          hint={`${stats.pedagogical} pedagogical`}
-        />
-        <KpiTile
-          icon={<Target className="h-4 w-4" />}
-          label="ILOs tracked"
-          value={MOCK_ILOS.length.toString()}
-        />
       </div>
 
-      <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-base">Your classes</CardTitle>
-          <CardDescription>
-            Jump into a class to manage its feedback collection sessions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {activeClasses.length === 0 && (
-            <p className="text-sm text-muted-foreground">No classes yet.</p>
-          )}
-          {activeClasses.map((c) => (
-            <Button
-              key={c.id}
-              asChild
-              variant="outline"
-              className="h-auto justify-between py-3"
-            >
-              <Link to="/classes/$classId" params={{ classId: c.id }}>
-                <span className="text-left">
-                  <span className="block text-sm font-medium">
-                    {c.course} · {c.section}
-                  </span>
-                  <span className="block text-xs text-muted-foreground">
-                    {c.name}
-                  </span>
-                </span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
+      {/* Hub + activity feed */}
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <CourseManagementHub />
+        <ActivityFeed />
+      </div>
+
+      {/* Cross-class creator */}
+      <CrossClassFeedbackCreator />
     </div>
   );
 }
