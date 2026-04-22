@@ -7,12 +7,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { MOCK_CLASSES, MOCK_SESSIONS } from "./mockData";
-import type { Class, Session } from "./types";
+import {
+  MOCK_CLASSES,
+  MOCK_SESSIONS,
+  MOCK_STUDENTS_BY_CLASS,
+} from "./mockData";
+import type { Class, Session, Student } from "./types";
 
 const CLASSES_KEY = "feeana.classes";
 const SESSIONS_KEY = "feeana.sessions";
 const JOINED_KEY = "feeana.joined";
+const STUDENTS_KEY = "feeana.students";
 
 const SAFE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function generateCode(len = 6): string {
@@ -27,10 +32,13 @@ interface ClassStoreValue {
   classes: Class[];
   sessions: Session[];
   joinedClassIds: string[];
+  studentsByClass: Record<string, Student[]>;
   activeClasses: Class[];
   archivedClasses: Class[];
   getClass: (id: string) => Class | undefined;
   sessionsForClass: (classId: string) => Session[];
+  studentsForClass: (classId: string) => Student[];
+  removeStudent: (classId: string, studentId: string) => void;
   createClass: (input: { name: string; course: string; section: string }) => Class;
   archiveClass: (id: string) => void;
   restoreClass: (id: string) => void;
@@ -64,29 +72,33 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     "class-cs101-a",
     "class-cs101-b",
   ]);
+  const [studentsByClass, setStudentsByClass] = useState<
+    Record<string, Student[]>
+  >(MOCK_STUDENTS_BY_CLASS);
 
-  // hydrate from localStorage
   useEffect(() => {
     setClasses(readJSON(CLASSES_KEY, MOCK_CLASSES));
     setSessions(readJSON(SESSIONS_KEY, MOCK_SESSIONS));
     setJoinedClassIds(readJSON(JOINED_KEY, ["class-cs101-a", "class-cs101-b"]));
+    setStudentsByClass(readJSON(STUDENTS_KEY, MOCK_STUDENTS_BY_CLASS));
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined")
       window.localStorage.setItem(CLASSES_KEY, JSON.stringify(classes));
-    }
   }, [classes]);
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined")
       window.localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-    }
   }, [sessions]);
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined")
       window.localStorage.setItem(JOINED_KEY, JSON.stringify(joinedClassIds));
-    }
   }, [joinedClassIds]);
+  useEffect(() => {
+    if (typeof window !== "undefined")
+      window.localStorage.setItem(STUDENTS_KEY, JSON.stringify(studentsByClass));
+  }, [studentsByClass]);
 
   const createClass = useCallback(
     (input: { name: string; course: string; section: string }) => {
@@ -101,6 +113,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
         studentCount: 0,
       };
       setClasses((prev) => [...prev, cls]);
+      setStudentsByClass((prev) => ({ ...prev, [cls.id]: [] }));
       return cls;
     },
     [],
@@ -126,11 +139,11 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       endsAt: string;
     }) => {
       const s: Session = {
-        id: `session-${Date.now()}`,
+        id: `session-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
         classId: input.classId,
         courseId: "course-cs101",
         topic: input.topic.trim(),
-        iloIds: ["ilo-1"], // internal default; not surfaced in UI
+        iloIds: ["ilo-1"],
         status: "active",
         createdAt: new Date().toISOString(),
         startsAt: input.startsAt,
@@ -155,6 +168,20 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     [classes],
   );
 
+  const removeStudent = useCallback((classId: string, studentId: string) => {
+    setStudentsByClass((prev) => ({
+      ...prev,
+      [classId]: (prev[classId] ?? []).filter((s) => s.id !== studentId),
+    }));
+    setClasses((prev) =>
+      prev.map((c) =>
+        c.id === classId
+          ? { ...c, studentCount: Math.max(0, c.studentCount - 1) }
+          : c,
+      ),
+    );
+  }, []);
+
   const value = useMemo<ClassStoreValue>(() => {
     const activeClasses = classes.filter((c) => !c.archived);
     const archivedClasses = classes.filter((c) => c.archived);
@@ -163,12 +190,15 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       classes,
       sessions,
       joinedClassIds,
+      studentsByClass,
       activeClasses,
       archivedClasses,
       activeSessions,
       getClass: (id) => classes.find((c) => c.id === id),
       sessionsForClass: (classId) =>
         sessions.filter((s) => s.classId === classId),
+      studentsForClass: (classId) => studentsByClass[classId] ?? [],
+      removeStudent,
       createClass,
       archiveClass,
       restoreClass,
@@ -179,11 +209,13 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     classes,
     sessions,
     joinedClassIds,
+    studentsByClass,
     createClass,
     archiveClass,
     restoreClass,
     createSession,
     joinClassByCode,
+    removeStudent,
   ]);
 
   return (

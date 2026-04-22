@@ -62,6 +62,7 @@ function SubmitPage() {
   const { addFeedback } = useFeedbackStore();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const isActive = session.status === "active";
 
   const handleSubmit = () => {
     if (text.trim().length < 4) {
@@ -78,8 +79,8 @@ function SubmitPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <Button variant="ghost" size="sm" asChild className="-ml-2">
+    <div className="mx-auto flex min-h-[calc(100dvh-8rem)] max-w-2xl flex-col gap-6">
+      <Button variant="ghost" size="sm" asChild className="-ml-2 self-start">
         <Link to="/student/home">
           <ArrowLeft className="h-4 w-4" /> Back home
         </Link>
@@ -98,44 +99,57 @@ function SubmitPage() {
         </p>
       </div>
 
-      <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+      <Card className="flex flex-1 flex-col border-border/60 bg-card/70 backdrop-blur-xl">
         <CardHeader>
           <CardTitle className="text-base">Your anonymous feedback</CardTitle>
           <CardDescription>
             Taglish is welcome — write naturally. Your submission is anonymous.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <Badge variant="outline" className="border-primary/30 text-primary">
-            Submitting to: {session.topic}
-          </Badge>
-          <div className="space-y-2">
-            <Textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="e.g. Sir mabilis po yung discussion sa typecasting, hirap mahabol…"
-              className="min-h-[160px] resize-none"
-              maxLength={600}
-            />
-            <p className="text-right text-[11px] text-muted-foreground">
-              {text.length} / 600
-            </p>
-          </div>
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="w-full"
-            size="lg"
-          >
-            <Send className="h-4 w-4" />
-            {submitting ? "Submitting…" : "Submit feedback"}
-          </Button>
-          <Link
-            to="/privacy"
-            className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <ShieldCheck className="h-3.5 w-3.5" /> Read the Privacy Policy
-          </Link>
+        <CardContent className="flex flex-1 flex-col gap-5">
+          {isActive ? (
+            <>
+              <Badge
+                variant="outline"
+                className="w-fit border-primary/30 text-primary"
+              >
+                active · {session.topic}
+              </Badge>
+              <div className="space-y-2">
+                <Textarea
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="e.g. Sir mabilis po yung discussion sa typecasting, hirap mahabol…"
+                  className="min-h-[160px] resize-none"
+                  maxLength={600}
+                />
+                <p className="text-right text-[11px] text-muted-foreground">
+                  {text.length} / 600
+                </p>
+              </div>
+              <div className="mt-auto space-y-3">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Send className="h-4 w-4" />
+                  {submitting ? "Submitting…" : "Submit feedback"}
+                </Button>
+                <Link
+                  to="/privacy"
+                  className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" /> Read the Privacy Policy
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-1 items-center justify-center py-12 text-center text-sm text-muted-foreground">
+              This collection has ended.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

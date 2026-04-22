@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { useClassStore } from "@/lib/classStore";
 
 export function CreateSessionForm({ classId }: { classId: string }) {
@@ -59,25 +60,13 @@ export function CreateSessionForm({ classId }: { classId: string }) {
             placeholder="e.g. Functions & Scope"
           />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="starts">Starts</Label>
-            <Input
-              id="starts"
-              type="datetime-local"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ends">Ends</Label>
-            <Input
-              id="ends"
-              type="datetime-local"
-              value={endsAt}
-              onChange={(e) => setEndsAt(e.target.value)}
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label>Starts</Label>
+          <DateTimePicker value={startsAt} onChange={setStartsAt} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Ends</Label>
+          <DateTimePicker value={endsAt} onChange={setEndsAt} />
         </div>
         <Button onClick={handleStart} className="w-full">
           Start collection

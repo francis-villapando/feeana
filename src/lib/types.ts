@@ -11,6 +11,7 @@ export interface Course {
   id: string;
   code: string;
   title: string;
+  archived: boolean;
 }
 
 export type BloomLevel =
@@ -27,6 +28,34 @@ export interface ILO {
   code: string;
   statement: string;
   bloomLevel: BloomLevel;
+  archived: boolean;
+}
+
+export interface Topic {
+  id: string;
+  courseId: string;
+  title: string;
+  archived: boolean;
+  createdAt: string;
+}
+
+export type EntityKind = "course" | "topic" | "ILO";
+export type ActivityAction = "created" | "updated" | "archived" | "restored";
+
+export interface ActivityEntry {
+  id: string;
+  entity: EntityKind;
+  entityId: string;
+  action: ActivityAction;
+  label: string;
+  timestamp: string;
+}
+
+export interface Student {
+  id: string;
+  name: string;
+  email: string;
+  joinedAt: string;
 }
 
 export interface Class {
