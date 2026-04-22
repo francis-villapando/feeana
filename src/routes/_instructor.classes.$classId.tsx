@@ -77,9 +77,15 @@ function ClassLayout() {
   const { getClass, sessionsForClass } = useClassStore();
   const { feedback } = useFeedbackStore();
   const cls = getClass(classId);
+  const location = useLocation();
+  const isAnalysis = location.pathname.includes("/analysis/");
 
   if (!cls) {
     throw notFound();
+  }
+
+  if (isAnalysis) {
+    return <Outlet />;
   }
 
   const sessions = sessionsForClass(classId);
