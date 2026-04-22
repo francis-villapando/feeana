@@ -78,16 +78,6 @@ function ClassLayout() {
   const { feedback } = useFeedbackStore();
   const cls = getClass(classId);
   const location = useLocation();
-  const isAnalysis = location.pathname.includes("/analysis/");
-
-  if (!cls) {
-    throw notFound();
-  }
-
-  if (isAnalysis) {
-    return <Outlet />;
-  }
-
   const sessions = sessionsForClass(classId);
 
   const submissionRate = useMemo(
@@ -105,6 +95,14 @@ function ClassLayout() {
     () => aspectTrendData(sessions, feedback),
     [sessions, feedback],
   );
+
+  if (!cls) {
+    throw notFound();
+  }
+
+  if (location.pathname.includes("/analysis/")) {
+    return <Outlet />;
+  }
 
   const copy = () => {
     navigator.clipboard.writeText(cls.code);
