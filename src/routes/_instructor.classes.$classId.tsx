@@ -1,4 +1,10 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  notFound,
+  Outlet,
+  useLocation,
+} from "@tanstack/react-router";
 import { ArrowLeft, Copy, Target, TrendingUp, Users } from "lucide-react";
 import { useMemo } from "react";
 import {
