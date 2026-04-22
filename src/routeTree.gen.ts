@@ -21,7 +21,6 @@ import { Route as StudentStudentHomeRouteImport } from './routes/_student.studen
 import { Route as InstructorClassesClassIdRouteImport } from './routes/_instructor.classes.$classId'
 import { Route as InstructorClassesClassIdIndexRouteImport } from './routes/_instructor.classes.$classId.index'
 import { Route as StudentStudentSubmitSessionIdRouteImport } from './routes/_student.student.submit.$sessionId'
-import { Route as InstructorClassesClassIdTrendRouteImport } from './routes/_instructor.classes.$classId.trend'
 import { Route as InstructorClassesClassIdAnalysisSessionIdRouteImport } from './routes/_instructor.classes.$classId.analysis.$sessionId'
 
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -85,12 +84,6 @@ const StudentStudentSubmitSessionIdRoute =
     path: '/student/submit/$sessionId',
     getParentRoute: () => StudentRoute,
   } as any)
-const InstructorClassesClassIdTrendRoute =
-  InstructorClassesClassIdTrendRouteImport.update({
-    id: '/trend',
-    path: '/trend',
-    getParentRoute: () => InstructorClassesClassIdRoute,
-  } as any)
 const InstructorClassesClassIdAnalysisSessionIdRoute =
   InstructorClassesClassIdAnalysisSessionIdRouteImport.update({
     id: '/analysis/$sessionId',
@@ -107,7 +100,6 @@ export interface FileRoutesByFullPath {
   '/home': typeof InstructorHomeRoute
   '/classes/$classId': typeof InstructorClassesClassIdRouteWithChildren
   '/student/home': typeof StudentStudentHomeRoute
-  '/classes/$classId/trend': typeof InstructorClassesClassIdTrendRoute
   '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
   '/classes/$classId/': typeof InstructorClassesClassIdIndexRoute
   '/classes/$classId/analysis/$sessionId': typeof InstructorClassesClassIdAnalysisSessionIdRoute
@@ -120,7 +112,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof InstructorDashboardRoute
   '/home': typeof InstructorHomeRoute
   '/student/home': typeof StudentStudentHomeRoute
-  '/classes/$classId/trend': typeof InstructorClassesClassIdTrendRoute
   '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
   '/classes/$classId': typeof InstructorClassesClassIdIndexRoute
   '/classes/$classId/analysis/$sessionId': typeof InstructorClassesClassIdAnalysisSessionIdRoute
@@ -137,7 +128,6 @@ export interface FileRoutesById {
   '/_instructor/home': typeof InstructorHomeRoute
   '/_instructor/classes/$classId': typeof InstructorClassesClassIdRouteWithChildren
   '/_student/student/home': typeof StudentStudentHomeRoute
-  '/_instructor/classes/$classId/trend': typeof InstructorClassesClassIdTrendRoute
   '/_student/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
   '/_instructor/classes/$classId/': typeof InstructorClassesClassIdIndexRoute
   '/_instructor/classes/$classId/analysis/$sessionId': typeof InstructorClassesClassIdAnalysisSessionIdRoute
@@ -153,7 +143,6 @@ export interface FileRouteTypes {
     | '/home'
     | '/classes/$classId'
     | '/student/home'
-    | '/classes/$classId/trend'
     | '/student/submit/$sessionId'
     | '/classes/$classId/'
     | '/classes/$classId/analysis/$sessionId'
@@ -166,7 +155,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/home'
     | '/student/home'
-    | '/classes/$classId/trend'
     | '/student/submit/$sessionId'
     | '/classes/$classId'
     | '/classes/$classId/analysis/$sessionId'
@@ -182,7 +170,6 @@ export interface FileRouteTypes {
     | '/_instructor/home'
     | '/_instructor/classes/$classId'
     | '/_student/student/home'
-    | '/_instructor/classes/$classId/trend'
     | '/_student/student/submit/$sessionId'
     | '/_instructor/classes/$classId/'
     | '/_instructor/classes/$classId/analysis/$sessionId'
@@ -282,13 +269,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentStudentSubmitSessionIdRouteImport
       parentRoute: typeof StudentRoute
     }
-    '/_instructor/classes/$classId/trend': {
-      id: '/_instructor/classes/$classId/trend'
-      path: '/trend'
-      fullPath: '/classes/$classId/trend'
-      preLoaderRoute: typeof InstructorClassesClassIdTrendRouteImport
-      parentRoute: typeof InstructorClassesClassIdRoute
-    }
     '/_instructor/classes/$classId/analysis/$sessionId': {
       id: '/_instructor/classes/$classId/analysis/$sessionId'
       path: '/analysis/$sessionId'
@@ -300,14 +280,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface InstructorClassesClassIdRouteChildren {
-  InstructorClassesClassIdTrendRoute: typeof InstructorClassesClassIdTrendRoute
   InstructorClassesClassIdIndexRoute: typeof InstructorClassesClassIdIndexRoute
   InstructorClassesClassIdAnalysisSessionIdRoute: typeof InstructorClassesClassIdAnalysisSessionIdRoute
 }
 
 const InstructorClassesClassIdRouteChildren: InstructorClassesClassIdRouteChildren =
   {
-    InstructorClassesClassIdTrendRoute: InstructorClassesClassIdTrendRoute,
     InstructorClassesClassIdIndexRoute: InstructorClassesClassIdIndexRoute,
     InstructorClassesClassIdAnalysisSessionIdRoute:
       InstructorClassesClassIdAnalysisSessionIdRoute,
