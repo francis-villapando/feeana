@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,20 +9,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { useClassStore } from "@/lib/classStore";
+import { useCourseStore } from "@/lib/courseStore";
+import { topicsForClass } from "@/lib/courseLookup";
 
 export function CreateSessionForm({ classId }: { classId: string }) {
-  const { createSession } = useClassStore();
-  const [topic, setTopic] = useState("");
+  const { createSession, getClass } = useClassStore();
+  const { courses, topics } = useCourseStore();
+  const cls = getClass(classId);
+
+  const availableTopics = useMemo(
+    () => topicsForClass(cls, courses, topics),
+    [cls, courses, topics],
+  );
+
+  const [topicId, setTopicId] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
 
   const handleStart = () => {
-    if (!topic.trim()) {
-      toast.error("Enter a topic for this collection.");
+    const topic = availableTopics.find((t) => t.id === topicId);
+    if (!topic) {
+      toast.error("Pick a topic for this collection.");
       return;
     }
     if (!startsAt || !endsAt) {
@@ -33,9 +50,15 @@ export function CreateSessionForm({ classId }: { classId: string }) {
       toast.error("End must be after start.");
       return;
     }
-    const s = createSession({ classId, topic, startsAt, endsAt });
+    const s = createSession({
+      classId,
+      topic: topic.title,
+      topicId: topic.id,
+      startsAt,
+      endsAt,
+    });
     toast.success(`Collection started: ${s.topic}`);
-    setTopic("");
+    setTopicId("");
     setStartsAt("");
     setEndsAt("");
   };
@@ -53,12 +76,31 @@ export function CreateSessionForm({ classId }: { classId: string }) {
       <CardContent className="space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="topic">Topic</Label>
-          <Input
-            id="topic"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="e.g. Functions & Scope"
-          />
+          <Select value={topicId} onValueChange={setTopicId}>
+            <SelectTrigger id="topic">
+              <SelectValue
+                placeholder={
+                  availableTopics.length === 0
+                    ? "No topics for this course"
+                    : "Select a topic"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTopics.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-muted-foreground">
+                  No topics for this course — add one in Dashboard → Course
+                  Management Hub.
+                </div>
+              ) : (
+                availableTopics.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.title}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label>Starts</Label>
