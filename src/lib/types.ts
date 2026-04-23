@@ -76,6 +76,7 @@ export interface Session {
   classId: string;
   courseId: string;
   topic: string;
+  topicId?: string;
   iloIds: string[];
   status: SessionStatus;
   createdAt: string;

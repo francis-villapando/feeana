@@ -45,6 +45,7 @@ interface ClassStoreValue {
   createSession: (input: {
     classId: string;
     topic: string;
+    topicId?: string;
     startsAt: string;
     endsAt: string;
   }) => Session;
@@ -135,6 +136,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     (input: {
       classId: string;
       topic: string;
+      topicId?: string;
       startsAt: string;
       endsAt: string;
     }) => {
@@ -143,6 +145,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
         classId: input.classId,
         courseId: "course-cs101",
         topic: input.topic.trim(),
+        topicId: input.topicId,
         iloIds: ["ilo-1"],
         status: "active",
         createdAt: new Date().toISOString(),
