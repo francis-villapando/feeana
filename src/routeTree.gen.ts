@@ -10,10 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as StudentRouteImport } from './routes/_student'
 import { Route as InstructorRouteImport } from './routes/_instructor'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginStudentRouteImport } from './routes/login.student'
+import { Route as LoginInstructorRouteImport } from './routes/login.instructor'
 import { Route as InstructorHomeRouteImport } from './routes/_instructor.home'
 import { Route as InstructorDashboardRouteImport } from './routes/_instructor.dashboard'
 import { Route as InstructorArchivedRouteImport } from './routes/_instructor.archived'
@@ -27,11 +28,6 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const StudentRoute = StudentRouteImport.update({
   id: '/_student',
   getParentRoute: () => rootRouteImport,
@@ -43,6 +39,16 @@ const InstructorRoute = InstructorRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginStudentRoute = LoginStudentRouteImport.update({
+  id: '/login/student',
+  path: '/login/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginInstructorRoute = LoginInstructorRouteImport.update({
+  id: '/login/instructor',
+  path: '/login/instructor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InstructorHomeRoute = InstructorHomeRouteImport.update({
@@ -86,11 +92,12 @@ const InstructorClassesClassIdAnalysisSessionIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/archived': typeof InstructorArchivedRoute
   '/dashboard': typeof InstructorDashboardRoute
   '/home': typeof InstructorHomeRoute
+  '/login/instructor': typeof LoginInstructorRoute
+  '/login/student': typeof LoginStudentRoute
   '/classes/$classId': typeof InstructorClassesClassIdRouteWithChildren
   '/student/home': typeof StudentStudentHomeRoute
   '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
@@ -98,11 +105,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/archived': typeof InstructorArchivedRoute
   '/dashboard': typeof InstructorDashboardRoute
   '/home': typeof InstructorHomeRoute
+  '/login/instructor': typeof LoginInstructorRoute
+  '/login/student': typeof LoginStudentRoute
   '/classes/$classId': typeof InstructorClassesClassIdRouteWithChildren
   '/student/home': typeof StudentStudentHomeRoute
   '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
@@ -113,11 +121,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_instructor': typeof InstructorRouteWithChildren
   '/_student': typeof StudentRouteWithChildren
-  '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/_instructor/archived': typeof InstructorArchivedRoute
   '/_instructor/dashboard': typeof InstructorDashboardRoute
   '/_instructor/home': typeof InstructorHomeRoute
+  '/login/instructor': typeof LoginInstructorRoute
+  '/login/student': typeof LoginStudentRoute
   '/_instructor/classes/$classId': typeof InstructorClassesClassIdRouteWithChildren
   '/_student/student/home': typeof StudentStudentHomeRoute
   '/_student/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
@@ -127,11 +136,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/login'
     | '/privacy'
     | '/archived'
     | '/dashboard'
     | '/home'
+    | '/login/instructor'
+    | '/login/student'
     | '/classes/$classId'
     | '/student/home'
     | '/student/submit/$sessionId'
@@ -139,11 +149,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/login'
     | '/privacy'
     | '/archived'
     | '/dashboard'
     | '/home'
+    | '/login/instructor'
+    | '/login/student'
     | '/classes/$classId'
     | '/student/home'
     | '/student/submit/$sessionId'
@@ -153,11 +164,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_instructor'
     | '/_student'
-    | '/login'
     | '/privacy'
     | '/_instructor/archived'
     | '/_instructor/dashboard'
     | '/_instructor/home'
+    | '/login/instructor'
+    | '/login/student'
     | '/_instructor/classes/$classId'
     | '/_student/student/home'
     | '/_student/student/submit/$sessionId'
@@ -168,8 +180,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   InstructorRoute: typeof InstructorRouteWithChildren
   StudentRoute: typeof StudentRouteWithChildren
-  LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  LoginInstructorRoute: typeof LoginInstructorRoute
+  LoginStudentRoute: typeof LoginStudentRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -179,13 +192,6 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_student': {
@@ -207,6 +213,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/student': {
+      id: '/login/student'
+      path: '/login/student'
+      fullPath: '/login/student'
+      preLoaderRoute: typeof LoginStudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/instructor': {
+      id: '/login/instructor'
+      path: '/login/instructor'
+      fullPath: '/login/instructor'
+      preLoaderRoute: typeof LoginInstructorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_instructor/home': {
@@ -311,8 +331,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   InstructorRoute: InstructorRouteWithChildren,
   StudentRoute: StudentRouteWithChildren,
-  LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  LoginInstructorRoute: LoginInstructorRoute,
+  LoginStudentRoute: LoginStudentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
