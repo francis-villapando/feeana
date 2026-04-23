@@ -41,9 +41,6 @@ function LandingPage() {
           >
             <ShieldCheck className="h-4 w-4" /> Privacy
           </Link>
-          <Button variant="ghost" asChild>
-            <Link to="/login">Sign in</Link>
-          </Button>
         </nav>
       </header>
 
@@ -67,23 +64,19 @@ function LandingPage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asChild>
-                <Link to="/login">
+                <Link to="/login/instructor">
                   <GraduationCap className="h-4 w-4" />
                   Instructor portal
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/login">
+                <Link to="/login/student">
                   <BookOpenCheck className="h-4 w-4" />
                   Student portal
                 </Link>
               </Button>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Demo creds: <code className="text-foreground">admin@feeana.edu / admin123</code>{" "}
-              · <code className="text-foreground">student@feeana.edu / student123</code>
-            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

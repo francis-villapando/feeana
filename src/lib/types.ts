@@ -76,6 +76,7 @@ export interface Session {
   classId: string;
   courseId: string;
   topic: string;
+  topicId?: string;
   iloIds: string[];
   status: SessionStatus;
   createdAt: string;
@@ -101,16 +102,23 @@ export interface Feedback {
   createdAt: string;
 }
 
-export type AnalysisMode = "online" | "offline";
-
 export type Theory = "RBT" | "CLT" | "TTI";
+
+export type TermKind = "issue" | "aspect" | "RBT" | "CLT" | "TTI" | "ILO";
+
+export interface RecommendationTerm {
+  text: string;
+  kind: TermKind;
+  detail: string;
+  iloId?: string;
+}
 
 export interface Recommendation {
   id: string;
-  cue: string;
-  theory: Theory;
-  theoryDetail: string;
-  triggerPattern: string;
+  paragraph: string;
+  terms: RecommendationTerm[];
+  theories: Theory[];
+  priority: number;
 }
 
 export type Severity = "low" | "medium" | "high";
@@ -129,7 +137,6 @@ export interface DistEntry {
 
 export interface AnalysisResult {
   sessionId: string;
-  mode: AnalysisMode;
   totalFeedback: number;
   pedagogicalCount: number;
   aspectDist: DistEntry[];

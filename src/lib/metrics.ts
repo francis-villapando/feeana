@@ -1,6 +1,6 @@
-import type { Class, Feedback, Session } from "./types";
+import type { AnalysisResult, Class, Feedback, Session } from "./types";
 
-/** % of students who submitted at least one feedback per session. Mock-friendly. */
+/** % of students who submitted at least one feedback per session. */
 export function submissionRateForSession(
   session: Session,
   cls: Class | undefined,
@@ -43,70 +43,58 @@ export function classParticipation(
   );
 }
 
-/** Top label per session for an aspect-like dimension. */
-export function topAspectPerSession(
-  session: Session,
-  feedback: Feedback[],
-): { aspect: string; issue: string; polarity: string } {
-  const items = feedback.filter((f) => f.sessionId === session.id);
-  const aspectCounts = new Map<string, number>();
-  const issueCounts = new Map<string, number>();
-  const polarityCounts = new Map<string, number>();
-  for (const f of items) {
-    for (const a of f.aspects) {
-      aspectCounts.set(a.aspect, (aspectCounts.get(a.aspect) ?? 0) + 1);
-      issueCounts.set(a.issue, (issueCounts.get(a.issue) ?? 0) + 1);
-      polarityCounts.set(a.polarity, (polarityCounts.get(a.polarity) ?? 0) + 1);
-    }
+/** Map polarity label to numeric score: pos=+1, neu=0, neg=-1. */
+function polarityScore(label: string): number {
+  switch (label.toLowerCase()) {
+    case "pos":
+    case "positive":
+      return 1;
+    case "neg":
+    case "negative":
+      return -1;
+    default:
+      return 0;
   }
-  const top = (m: Map<string, number>) =>
-    Array.from(m.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
-  return {
-    aspect: top(aspectCounts),
-    issue: top(issueCounts),
-    polarity: top(polarityCounts),
-  };
 }
 
-/** Numeric encodings for the trend line chart. */
-export function aspectTrendData(
-  sessions: Session[],
+/** Average polarity across all aspects of all feedback in the session. */
+export function avgPolarityForSession(
+  session: Session,
   feedback: Feedback[],
-): Array<{
+): number {
+  const items = feedback.filter((f) => f.sessionId === session.id);
+  const scores: number[] = [];
+  for (const f of items) {
+    for (const a of f.aspects) scores.push(polarityScore(a.polarity));
+  }
+  if (scores.length === 0) return 0;
+  return scores.reduce((a, b) => a + b, 0) / scores.length;
+}
+
+export interface RecommendationTrendPoint {
   topic: string;
-  aspect: number;
-  issue: number;
-  polarity: number;
-  aspectLabel: string;
-  issueLabel: string;
-  polarityLabel: string;
-}> {
-  const aspectIdx = new Map<string, number>();
-  const issueIdx = new Map<string, number>();
-  const polarityIdx = new Map<string, number>([
-    ["pos", 3],
-    ["neu", 2],
-    ["neg", 1],
-  ]);
-  let aIdx = 1;
-  let iIdx = 1;
+  recommendations: number;
+  avgPolarity: number;
+}
+
+/**
+ * Trend over sessions that have a stored analysis result: number of
+ * recommendations + average polarity. X is chronological by createdAt.
+ */
+export function recommendationTrendData(
+  sessions: Session[],
+  analyses: Record<string, AnalysisResult>,
+  feedback: Feedback[],
+): RecommendationTrendPoint[] {
   return [...sessions]
+    .filter((s) => analyses[s.id])
     .sort(
       (a, b) =>
-        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     )
-    .map((s) => {
-      const top = topAspectPerSession(s, feedback);
-      if (!aspectIdx.has(top.aspect)) aspectIdx.set(top.aspect, aIdx++);
-      if (!issueIdx.has(top.issue)) issueIdx.set(top.issue, iIdx++);
-      return {
-        topic: s.topic,
-        aspect: aspectIdx.get(top.aspect) ?? 0,
-        issue: issueIdx.get(top.issue) ?? 0,
-        polarity: polarityIdx.get(top.polarity) ?? 2,
-        aspectLabel: top.aspect,
-        issueLabel: top.issue,
-        polarityLabel: top.polarity,
-      };
-    });
+    .map((s) => ({
+      topic: s.topic,
+      recommendations: analyses[s.id].recommendations.length,
+      avgPolarity: Number(avgPolarityForSession(s, feedback).toFixed(2)),
+    }));
 }

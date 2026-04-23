@@ -11,12 +11,13 @@ export const Route = createFileRoute("/_student")({
     if (typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem("feeana.auth.user");
-      if (!raw) throw redirect({ to: "/login" });
+      if (!raw) throw redirect({ to: "/login/student" });
       const parsed = JSON.parse(raw) as { role?: string };
-      if (parsed.role !== "student") throw redirect({ to: "/login" });
+      if (parsed.role !== "student")
+        throw redirect({ to: "/login/student" });
     } catch (e) {
       if (e && typeof e === "object" && "to" in e) throw e;
-      throw redirect({ to: "/login" });
+      throw redirect({ to: "/login/student" });
     }
   },
   component: StudentLayout,

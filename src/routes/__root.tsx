@@ -8,6 +8,7 @@ import {
 import { Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import { AnalysisStoreProvider } from "@/lib/analysisStore";
 import { AuthProvider } from "@/lib/auth";
 import { ClassStoreProvider } from "@/lib/classStore";
 import { CourseStoreProvider } from "@/lib/courseStore";
@@ -97,8 +98,10 @@ function RootComponent() {
       <ClassStoreProvider>
         <CourseStoreProvider>
           <FeedbackStoreProvider>
-            <Outlet />
-            <Toaster richColors position="top-right" />
+            <AnalysisStoreProvider>
+              <Outlet />
+              <Toaster richColors position="top-right" />
+            </AnalysisStoreProvider>
           </FeedbackStoreProvider>
         </CourseStoreProvider>
       </ClassStoreProvider>

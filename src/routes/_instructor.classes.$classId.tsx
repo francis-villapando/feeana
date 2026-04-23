@@ -35,13 +35,14 @@ import {
 import { ClassStudentsTab } from "@/components/ClassStudentsTab";
 import { CreateSessionForm } from "@/components/CreateSessionForm";
 import { SessionCard } from "@/components/SessionCard";
+import { useAnalysisStore } from "@/lib/analysisStore";
 import { useClassStore } from "@/lib/classStore";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { MOCK_CLASSES } from "@/lib/mockData";
 import {
-  aspectTrendData,
   averageRate,
   iloAchievementForSession,
+  recommendationTrendData,
   submissionRateForSession,
 } from "@/lib/metrics";
 
@@ -76,6 +77,7 @@ function ClassLayout() {
   const { classId } = Route.useParams();
   const { getClass, sessionsForClass } = useClassStore();
   const { feedback } = useFeedbackStore();
+  const { results } = useAnalysisStore();
   const cls = getClass(classId);
   const location = useLocation();
   const sessions = sessionsForClass(classId);
@@ -92,8 +94,8 @@ function ClassLayout() {
     [sessions, feedback],
   );
   const trend = useMemo(
-    () => aspectTrendData(sessions, feedback),
-    [sessions, feedback],
+    () => recommendationTrendData(sessions, results, feedback),
+    [sessions, results, feedback],
   );
 
   if (!cls) {
@@ -140,13 +142,14 @@ function ClassLayout() {
             <TrendingUp className="h-4 w-4 text-primary" /> Class trend
           </CardTitle>
           <CardDescription>
-            Most prevalent aspect, issue, and polarity per session.
+            Number of recommendations and average polarity per analyzed session.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {trend.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">
-              Trend will appear once sessions collect feedback.
+              Trend will appear after you trigger analysis on at least one
+              session.
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
@@ -158,9 +161,17 @@ function ClassLayout() {
                   fontSize={11}
                 />
                 <YAxis
+                  yAxisId="recs"
                   stroke="var(--color-muted-foreground)"
                   fontSize={11}
                   allowDecimals={false}
+                />
+                <YAxis
+                  yAxisId="polarity"
+                  orientation="right"
+                  domain={[-1, 1]}
+                  stroke="var(--color-muted-foreground)"
+                  fontSize={11}
                 />
                 <Tooltip
                   contentStyle={{
@@ -169,41 +180,25 @@ function ClassLayout() {
                     borderRadius: 8,
                     fontSize: 12,
                   }}
-                  formatter={(_, name, p) => {
-                    const d = p.payload as Record<string, unknown>;
-                    if (name === "aspect")
-                      return [d.aspectLabel as string, "Top aspect"];
-                    if (name === "issue")
-                      return [d.issueLabel as string, "Top issue"];
-                    if (name === "polarity")
-                      return [d.polarityLabel as string, "Polarity"];
-                    return [String(_), String(name)];
-                  }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line
+                  yAxisId="recs"
                   type="monotone"
-                  dataKey="aspect"
+                  dataKey="recommendations"
                   stroke="var(--color-chart-1)"
                   strokeWidth={2.5}
                   dot={{ r: 4 }}
-                  name="Aspect"
+                  name="Recommendations"
                 />
                 <Line
+                  yAxisId="polarity"
                   type="monotone"
-                  dataKey="issue"
-                  stroke="var(--color-chart-2)"
-                  strokeWidth={2.5}
-                  dot={{ r: 4 }}
-                  name="Issue"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="polarity"
+                  dataKey="avgPolarity"
                   stroke="var(--color-chart-4)"
                   strokeWidth={2.5}
                   dot={{ r: 4 }}
-                  name="Polarity"
+                  name="Avg polarity"
                 />
               </LineChart>
             </ResponsiveContainer>
