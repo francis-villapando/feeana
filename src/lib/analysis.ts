@@ -1,13 +1,12 @@
 /**
  * Analysis pipeline mock.
- * Replace these functions with FastAPI/XLM-RoBERTa calls when the backend is ready.
+ * Replace with real backend calls when ready.
  */
-import type { AnalysisMode, AnalysisResult } from "./types";
+import type { AnalysisResult } from "./types";
 
-const ONLINE_RESULTS: Record<string, AnalysisResult> = {
+const RESULTS: Record<string, AnalysisResult> = {
   "session-vars": {
     sessionId: "session-vars",
-    mode: "online",
     totalFeedback: 12,
     pedagogicalCount: 10,
     aspectDist: [
@@ -47,52 +46,108 @@ const ONLINE_RESULTS: Record<string, AnalysisResult> = {
         expected:
           "Analyze type-conversion and scoping behavior in short Python programs.",
         actual:
-          "Recurring confusion between string and integer types when reading input — analysis depth not reached.",
+          "Recurring confusion between string and integer types when reading input.",
         severity: "high",
       },
     ],
     recommendations: [
       {
         id: "rec-1",
-        cue: "Insert a 5-minute board walkthrough of int↔float casting before the next lab to reduce extraneous load.",
-        theory: "CLT",
-        theoryDetail:
-          "Cognitive Load Theory: pre-teach the schema for type conversion to lower extraneous load before practice.",
-        triggerPattern:
-          "3 feedbacks reporting 'typecasting unclear' + 3 reporting 'pacing too fast' on the same aspect.",
+        priority: 3,
+        theories: ["RBT", "CLT"],
+        paragraph:
+          "Majority of the class is confused with typecasting. RBT suggests that students are having difficulty in applying their idea on the topic, while CLT points the cause to high intrinsic load. It is recommended to provide worked examples of the current topic and utilize scaffolding to bridge the gap toward the intended learning outcome.",
+        terms: [
+          {
+            text: "confused",
+            kind: "issue",
+            detail:
+              "Identified issue: students reported difficulty understanding typecasting concepts during the session.",
+          },
+          {
+            text: "typecasting",
+            kind: "aspect",
+            detail:
+              "Aspect: a specific content area extracted from feedback — here, type conversion between primitive types.",
+          },
+          {
+            text: "applying",
+            kind: "RBT",
+            detail:
+              "Revised Bloom's Taxonomy — Apply level: using learned concepts in new situations. Students struggle to operationalize typecasting rules in code.",
+          },
+          {
+            text: "intrinsic load",
+            kind: "CLT",
+            detail:
+              "Cognitive Load Theory — intrinsic load refers to the inherent complexity of the material. Type conversion involves multiple interacting concepts (types, casts, I/O), driving load high for novices.",
+          },
+          {
+            text: "intended learning outcome",
+            kind: "ILO",
+            detail: "",
+            iloId: "ilo-1",
+          },
+        ],
       },
       {
         id: "rec-2",
-        cue: "Reformulate the ILO assessment to require students to predict the type of input() return values before running code.",
-        theory: "RBT",
-        theoryDetail:
-          "Revised Bloom's Taxonomy: shift activity from Apply to Analyze, matching ILO-2's intended cognitive level.",
-        triggerPattern:
-          "Repeated 'string vs integer with input()' confusions across 2 distinct learners.",
+        priority: 3,
+        theories: ["CLT", "TTI"],
+        paragraph:
+          "Pacing was reported as too fast across multiple feedbacks. CLT explains this as extraneous load from rapid delivery exceeding working memory capacity. From a Teaching Through Interactions lens, instructional support drops when there's no time for concept development. Slowing down key transitions and inserting brief comprehension checks is recommended.",
+        terms: [
+          {
+            text: "too fast",
+            kind: "issue",
+            detail:
+              "Identified issue: students explicitly flagged pacing as outpacing their ability to follow.",
+          },
+          {
+            text: "Pacing",
+            kind: "aspect",
+            detail:
+              "Aspect: how time is allocated and transitions are managed during the session.",
+          },
+          {
+            text: "extraneous load",
+            kind: "CLT",
+            detail:
+              "Cognitive Load Theory — extraneous load is mental effort that does not contribute to learning. Rapid delivery without pauses inflates it.",
+          },
+          {
+            text: "instructional support",
+            kind: "TTI",
+            detail:
+              "Teaching Through Interactions — instructional support covers concept development, quality of feedback, and language modeling. It weakens when pacing prevents elaboration.",
+          },
+        ],
       },
       {
         id: "rec-3",
-        cue: "Replace dense slides with worked-example pairs and add 2 targeted casting drills to the next lab.",
-        theory: "CLT",
-        theoryDetail:
-          "Worked-example effect reduces problem-solving load while building schema, especially for novices.",
-        triggerPattern:
-          "Slide overload feedback co-occurring with practice insufficiency complaints.",
-      },
-      {
-        id: "rec-4",
-        cue: "Open the next session with a 3-question warm-up poll on naming + casting to reactivate prior knowledge.",
-        theory: "TTI",
-        theoryDetail:
-          "Teaching Through Interactions: emphasize Instructional Support via concept development and feedback loops.",
-        triggerPattern:
-          "Positive engagement feedback on Q&A suggests learners respond well to interaction.",
+        priority: 1,
+        theories: ["CLT"],
+        paragraph:
+          "Slide overload was raised in feedback. CLT recommends reducing extraneous load by replacing dense slides with paired worked examples that show problem and solution side-by-side, freeing working memory for schema construction.",
+        terms: [
+          {
+            text: "Slide overload",
+            kind: "issue",
+            detail:
+              "Identified issue: too much information per slide, making it hard to track key concepts.",
+          },
+          {
+            text: "extraneous load",
+            kind: "CLT",
+            detail:
+              "Cognitive Load Theory — extraneous load is mental effort unrelated to building understanding. Cluttered slides drive it up.",
+          },
+        ],
       },
     ],
   },
   "session-control": {
     sessionId: "session-control",
-    mode: "online",
     totalFeedback: 12,
     pedagogicalCount: 11,
     aspectDist: [
@@ -132,151 +187,126 @@ const ONLINE_RESULTS: Record<string, AnalysisResult> = {
         expected:
           "Evaluate the correctness of loops by tracing variable state across iterations.",
         actual:
-          "Multiple students explicitly request trace exercises — Evaluate-level competency not yet achieved.",
+          "Multiple students explicitly request trace exercises.",
         severity: "high",
       },
     ],
     recommendations: [
       {
         id: "rec-5",
-        cue: "Dedicate one micro-lesson to a side-by-side while/for decision tree with 3 paired examples.",
-        theory: "RBT",
-        theoryDetail:
-          "Bloom's Apply→Analyze: comparing constructs requires analyzing differences, the right level for ILO-3.",
-        triggerPattern:
-          "Direct feedback: 'don't know when to use while vs for'.",
+        priority: 2,
+        theories: ["RBT", "CLT"],
+        paragraph:
+          "Many students reported nested loops as confusing. RBT places nested-loop construction at the analyzing level, requiring decomposition skills students haven't yet built. CLT identifies high intrinsic load when multiple loop variables interact. Introducing structured trace tables reduces working memory demand and supports schema formation toward the intended learning outcome.",
+        terms: [
+          {
+            text: "confusing",
+            kind: "issue",
+            detail:
+              "Identified issue: students cannot mentally simulate nested iteration to predict outcomes.",
+          },
+          {
+            text: "nested loops",
+            kind: "aspect",
+            detail:
+              "Aspect: control flow construct where one loop is contained inside another.",
+          },
+          {
+            text: "analyzing",
+            kind: "RBT",
+            detail:
+              "Revised Bloom's Taxonomy — Analyze level: breaking material into parts and detecting how parts relate. Required to reason about nested iteration.",
+          },
+          {
+            text: "intrinsic load",
+            kind: "CLT",
+            detail:
+              "Cognitive Load Theory — intrinsic load reflects inherent complexity. Tracking inner + outer loop variables simultaneously drives it up.",
+          },
+          {
+            text: "intended learning outcome",
+            kind: "ILO",
+            detail: "",
+            iloId: "ilo-3",
+          },
+        ],
       },
       {
         id: "rec-6",
-        cue: "Introduce structured loop-trace tables (iteration, condition, vars) as required scaffolding for the next lab.",
-        theory: "CLT",
-        theoryDetail:
-          "External representation reduces working-memory load during multi-step reasoning.",
-        triggerPattern:
-          "Two requests for trace exercises + nested-loop confusion clustering.",
+        priority: 1,
+        theories: ["TTI"],
+        paragraph:
+          "Feedback flagged the material as abstract. Teaching Through Interactions emphasizes concept development through authentic, relatable examples. Embedding 2 real-world loop scenarios (grading sheet, attendance tally) before introducing nested iteration is recommended.",
+        terms: [
+          {
+            text: "abstract",
+            kind: "issue",
+            detail:
+              "Identified issue: students perceive the topic as disconnected from real applications.",
+          },
+          {
+            text: "concept development",
+            kind: "TTI",
+            detail:
+              "Teaching Through Interactions — concept development uses analysis, integration, and connections to real-world contexts to deepen understanding.",
+          },
+        ],
       },
       {
         id: "rec-7",
-        cue: "Embed 2 real-world loop scenarios (grading sheet, attendance) before introducing nested iteration.",
-        theory: "TTI",
-        theoryDetail:
-          "Concept Development: connect abstract constructs to authentic contexts to deepen understanding.",
-        triggerPattern:
-          "Repeated 'abstract' + 'need real-world examples' co-occurrence.",
+        priority: 1,
+        theories: ["CLT"],
+        paragraph:
+          "Students requested trace exercises. CLT supports this through external representations that offload working memory during multi-step reasoning. Provide a structured trace table template (iteration · condition · variable state) for the next lab.",
+        terms: [
+          {
+            text: "trace exercises",
+            kind: "issue",
+            detail:
+              "Identified issue: students lack structured practice for stepping through code execution.",
+          },
+          {
+            text: "working memory",
+            kind: "CLT",
+            detail:
+              "Cognitive Load Theory — working memory has limited capacity (~4 chunks). External scaffolds free capacity for reasoning rather than tracking.",
+          },
+        ],
       },
     ],
   },
 };
 
-const OFFLINE_RESULTS: Record<string, AnalysisResult> = {
-  "session-vars": {
-    sessionId: "session-vars",
-    mode: "offline",
-    totalFeedback: 12,
-    pedagogicalCount: 10,
-    aspectDist: [
-      { label: "Pacing", value: 4 },
-      { label: "Content", value: 5 },
-      { label: "Examples", value: 3 },
-      { label: "Other", value: 4 },
-    ],
-    issueDist: [
-      { label: "Typecasting unclear", value: 3 },
-      { label: "Too fast", value: 3 },
-      { label: "Slide overload", value: 1 },
-      { label: "Type confusion", value: 1 },
-    ],
-    polarityDist: [
-      { label: "Negative", value: 8 },
-      { label: "Neutral", value: 3 },
-      { label: "Positive", value: 5 },
-    ],
-    gaps: [
-      {
-        iloId: "ilo-1",
-        expected:
-          "Apply primitive data types and variable declarations to solve simple computational problems.",
-        actual:
-          "Difficulty applying typecasting consistently in lab exercises.",
-        severity: "medium",
-      },
-    ],
-    recommendations: [
-      {
-        id: "rec-off-1",
-        cue: "Slow down the casting walkthrough and add a recap of int vs float at the start of the next session.",
-        theory: "CLT",
-        theoryDetail:
-          "Cognitive Load Theory: reduce extraneous load by chunking type-conversion content.",
-        triggerPattern:
-          "Cluster of 'too fast' and 'typecasting unclear' negative feedbacks.",
-      },
-      {
-        id: "rec-off-2",
-        cue: "Add 2 short casting drills to the next lab.",
-        theory: "RBT",
-        theoryDetail:
-          "Strengthen the Apply level called out in ILO-1 with targeted practice.",
-        triggerPattern: "Multiple requests for more practice exercises.",
-      },
-    ],
-  },
-  "session-control": {
-    sessionId: "session-control",
-    mode: "offline",
-    totalFeedback: 12,
-    pedagogicalCount: 11,
-    aspectDist: [
-      { label: "Content", value: 5 },
-      { label: "Practice", value: 3 },
-      { label: "Delivery", value: 2 },
-      { label: "Other", value: 3 },
-    ],
-    issueDist: [
-      { label: "Nested loops confusing", value: 2 },
-      { label: "Loop choice unclear", value: 1 },
-      { label: "Workload too heavy", value: 1 },
-      { label: "Need trace exercises", value: 1 },
-    ],
-    polarityDist: [
-      { label: "Negative", value: 6 },
-      { label: "Neutral", value: 3 },
-      { label: "Positive", value: 6 },
-    ],
-    gaps: [
-      {
-        iloId: "ilo-4",
-        expected:
-          "Evaluate the correctness of loops by tracing variable state across iterations.",
-        actual: "Students request explicit trace exercises before evaluating loops.",
-        severity: "medium",
-      },
-    ],
-    recommendations: [
-      {
-        id: "rec-off-3",
-        cue: "Provide a structured trace table template for nested loops.",
-        theory: "CLT",
-        theoryDetail:
-          "External scaffolds reduce working-memory load during iteration tracing.",
-        triggerPattern:
-          "Repeated 'nested loops confusing' + trace-exercise requests.",
-      },
-    ],
-  },
-};
+/** Threshold for issue significance — issues at or above this count yield a recommendation. */
+export const ISSUE_THRESHOLD = 1;
 
-/** Simulated analysis call. Replace with real API call in production. */
+/** Simulated analysis call. */
 export async function runAnalysis(
   sessionId: string,
-  mode: AnalysisMode,
 ): Promise<AnalysisResult> {
-  // Simulate processing latency.
-  await new Promise((resolve) => setTimeout(resolve, mode === "online" ? 2500 : 1800));
-  const bank = mode === "online" ? ONLINE_RESULTS : OFFLINE_RESULTS;
-  const result = bank[sessionId];
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const result = RESULTS[sessionId];
   if (!result) {
-    throw new Error(`No mock analysis available for session ${sessionId}`);
+    // Synthesize a minimal result so newly-created sessions still produce output.
+    return {
+      sessionId,
+      totalFeedback: 0,
+      pedagogicalCount: 0,
+      aspectDist: [],
+      issueDist: [],
+      polarityDist: [],
+      gaps: [],
+      recommendations: [
+        {
+          id: `rec-default-${sessionId}`,
+          priority: 1,
+          theories: ["TTI"],
+          paragraph:
+            "No analyzed feedback yet for this session. Once students submit responses and the analysis is run, recommendations will surface here.",
+          terms: [],
+        },
+      ],
+    };
   }
   return result;
 }
