@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowRight, BookOpenCheck, Calendar, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -104,23 +103,18 @@ function StudentHome() {
                     key={s.id}
                     className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40"
                   >
-                    <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{s.topic}</h3>
-                          <Badge
-                            variant="outline"
-                            className="border-primary/30 text-primary"
-                          >
-                            active
-                          </Badge>
-                        </div>
-                        <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <h3 className="font-medium">{s.topic}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {group.cls.course} · {group.cls.section}
+                        </p>
+                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           {formatDT(s.startsAt)} → {formatDT(s.endsAt)}
                         </p>
                       </div>
-                      <Button asChild>
+                      <Button asChild className="w-full sm:w-auto">
                         <Link
                           to="/student/submit/$sessionId"
                           params={{ sessionId: s.id }}
