@@ -117,14 +117,14 @@ export function CrossClassFeedbackCreator() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-1.5">
-          <Label>Classes</Label>
+          <div className="space-y-1.5">
+          <Label className="block mb-2">Classes</Label>
           <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   role="combobox"
-                  className="w-full justify-between font-normal sm:w-[320px] mt-2"
+                  className="w-full justify-between font-normal sm:w-[320px]"
                 >
                 {rows.length > 0
                   ? `${rows.length} class${rows.length === 1 ? "" : "es"} selected`
