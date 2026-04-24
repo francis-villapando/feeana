@@ -120,12 +120,12 @@ export function CrossClassFeedbackCreator() {
         <div className="space-y-1.5">
           <Label>Classes</Label>
           <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                className="w-full justify-between font-normal sm:w-[320px]"
-              >
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between font-normal sm:w-[320px] mt-2"
+                >
                 {rows.length > 0
                   ? `${rows.length} class${rows.length === 1 ? "" : "es"} selected`
                   : "Select classes"}
