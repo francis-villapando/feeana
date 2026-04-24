@@ -10,8 +10,8 @@ import type {
 
 export const MOCK_COURSE: Course = {
   id: "course-cs101",
-  code: "CS 101",
-  title: "Introduction to Programming",
+  code: "CSEG2",
+  title: "Game Programming 1",
   archived: false,
 };
 
@@ -91,9 +91,9 @@ export const MOCK_ILOS: ILO[] = [
 export const MOCK_CLASSES: Class[] = [
   {
     id: "class-cs101-a",
-    name: "Intro to Programming",
-    course: "CS 101",
-    section: "A",
+    name: "Computer Programming 1",
+    course: "CSEG2",
+    section: "3CS-C",
     code: "7K2P9X",
     createdAt: "2025-02-01T08:00:00.000Z",
     archived: false,
@@ -101,9 +101,9 @@ export const MOCK_CLASSES: Class[] = [
   },
   {
     id: "class-cs101-b",
-    name: "Intro to Programming",
-    course: "CS 101",
-    section: "B",
+    name: "Computer Programming 1",
+    course: "CSEG2",
+    section: "3CS-D",
     code: "M4QH8R",
     createdAt: "2025-02-01T08:00:00.000Z",
     archived: false,
@@ -111,9 +111,9 @@ export const MOCK_CLASSES: Class[] = [
   },
   {
     id: "class-cs100-archived",
-    name: "Computing Foundations",
-    course: "CS 100",
-    section: "A",
+    name: "Computer Programming 1",
+    course: "CSEG2",
+    section: "3CS-A",
     code: "Z3NV6Y",
     createdAt: "2024-08-12T08:00:00.000Z",
     archived: true,
