@@ -35,6 +35,7 @@ function InstructorLayout() {
   }
   return (
     <SidebarProvider defaultOpen={true}>
+      <InstructorSidebar />
       <SidebarInset className="bg-transparent">
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
           <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
@@ -81,7 +82,6 @@ function InstructorLayout() {
           <Outlet />
         </main>
       </SidebarInset>
-      <InstructorSidebar />
     </SidebarProvider>
   );
 }

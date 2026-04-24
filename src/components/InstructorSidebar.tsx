@@ -42,7 +42,7 @@ export function InstructorSidebar() {
 
   return (
     <>
-      <Sidebar side="right" collapsible="icon" variant="floating">
+      <Sidebar side="left" collapsible="icon" variant="floating">
         <SidebarHeader className="px-3 py-3 group-data-[collapsible=icon]:px-1.5">
           <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/30">
