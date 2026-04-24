@@ -22,6 +22,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
   Collapsible,
@@ -44,14 +45,12 @@ export function InstructorSidebar() {
     <>
       <Sidebar side="left" collapsible="icon" variant="floating">
         <SidebarHeader className="px-3 py-3 group-data-[collapsible=icon]:px-1.5">
-          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/30">
-              <GraduationCap className="h-4 w-4" />
-            </span>
-            <span className="text-sm font-semibold group-data-[collapsible=icon]:hidden">
-              Workspace
-            </span>
-          </div>
+            <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+              <SidebarTrigger className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/30" />
+              <span className="text-sm font-semibold group-data-[collapsible=icon]:hidden">
+                Workspace
+              </span>
+            </div>
         </SidebarHeader>
 
         <SidebarContent>

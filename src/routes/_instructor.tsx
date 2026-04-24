@@ -74,7 +74,6 @@ function InstructorLayout() {
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Sign out</span>
               </Button>
-              <SidebarTrigger />
             </div>
           </div>
         </header>
