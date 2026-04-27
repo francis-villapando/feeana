@@ -40,7 +40,7 @@ function NotFoundComponent() {
   );
 }
 
-export const Route = createRootRouteWithContext<Record<string, never>>()({
+export const Route = createRootRouteWithContext()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -66,7 +66,6 @@ export const Route = createRootRouteWithContext<Record<string, never>>()({
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
-  // Inject the background image as a CSS variable consumed by body::before.
   const bgStyle = `:root { --feeana-bg-image: url(${bgImage}); }`;
   return (
     <html lang="en">

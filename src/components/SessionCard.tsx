@@ -83,7 +83,7 @@ export function SessionCard({ session }: { session: Session }) {
 
         <Button asChild variant="ghost" size="sm" className="w-full justify-between">
           <Link
-            to="/classes/$classId/analysis/$sessionId"
+            to="/$classId/analysis/$sessionId"
             params={{ classId: session.classId, sessionId: session.id }}
           >
             Open analysis

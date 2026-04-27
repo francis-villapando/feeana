@@ -58,7 +58,7 @@ export function ClassCard({ cls }: { cls: Class }) {
           </span>
         </button>
         <Button asChild variant="ghost" size="sm" className="w-full justify-between">
-          <Link to="/classes/$classId" params={{ classId: cls.id }}>
+          <Link to="/$classId" params={{ classId: cls.id }}>
             Open class
             <ArrowRight className="h-4 w-4" />
           </Link>

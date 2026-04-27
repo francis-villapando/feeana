@@ -97,7 +97,7 @@ function AnalysisPage() {
     <div className="space-y-8">
       <div>
         <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link to="/classes/$classId" params={{ classId }}>
+          <Link to="/$classId" params={{ classId }}>
             <ArrowLeft className="h-4 w-4" /> Back to class
           </Link>
         </Button>

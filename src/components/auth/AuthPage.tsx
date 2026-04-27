@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import type { UserRole } from "@/lib/types";
 
+const ALLOWED_FACULTY_DOMAIN = import.meta.env.VITE_FACULTY_DOMAIN as string | undefined;
+
 const ROLE_META: Record<
   UserRole,
   { title: string; description: string; icon: typeof GraduationCap }
@@ -44,12 +46,25 @@ export function AuthPage({ role }: { role: UserRole }) {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
   };
 
+  const validateFacultyDomain = (email: string): boolean => {
+    if (!ALLOWED_FACULTY_DOMAIN) return true;
+    const domain = email.split("@")[1]?.toLowerCase();
+    return domain === ALLOWED_FACULTY_DOMAIN.toLowerCase();
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
       toast.error("Email and password are required.");
       return;
     }
+
+    if (role === "faculty" && !validateFacultyDomain(email)) {
+      const domainHint = ALLOWED_FACULTY_DOMAIN ? `@${ALLOWED_FACULTY_DOMAIN}` : "the configured faculty domain";
+      toast.error(`Only ${domainHint} emails are allowed for faculty sign-up.`);
+      return;
+    }
+
     if (mode === "signup") {
       if (!name.trim()) {
         toast.error("Please enter your name.");
@@ -64,14 +79,15 @@ export function AuthPage({ role }: { role: UserRole }) {
         return;
       }
     }
+
     setSubmitting(true);
     try {
       if (mode === "signin") {
-        const u = await login(email, password, role);
+        const u = await login(email, password);
         toast.success(`Welcome, ${u.name}`);
         goHome(u.role);
       } else {
-        const u = await register({ name, email, password, role });
+        const u = await register(email, password, name, role);
         toast.success(`Account created — welcome, ${u.name}`);
         goHome(u.role);
       }
@@ -117,14 +133,21 @@ export function AuthPage({ role }: { role: UserRole }) {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">
+                  Email
+                  {role === "faculty" && mode === "signup" && ALLOWED_FACULTY_DOMAIN && (
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      (must be @{ALLOWED_FACULTY_DOMAIN})
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@feeana.edu"
+                  placeholder={role === "faculty" ? `you@${ALLOWED_FACULTY_DOMAIN}` : "you@example.com"}
                 />
               </div>
               <div className="space-y-2">
@@ -159,8 +182,8 @@ export function AuthPage({ role }: { role: UserRole }) {
                 )}
                 {submitting
                   ? mode === "signin"
-                    ? "Signing in…"
-                    : "Creating…"
+                    ? "Signing in..."
+                    : "Creating..."
                   : mode === "signin"
                     ? "Sign in"
                     : "Create account"}

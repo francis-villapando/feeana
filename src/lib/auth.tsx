@@ -7,176 +7,116 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { AuthUser, UserRole } from "./types";
-
-const STORAGE_KEY = "feeana.auth.user";
-const USERS_KEY = "feeana.auth.users";
-
-interface MockCredential {
-  email: string;
-  password: string;
-  user: AuthUser;
-}
-
-const SEEDED: MockCredential[] = [
-  {
-    email: "admin@feeana.edu",
-    password: "admin123",
-    user: {
-      id: "user-faculty",
-      email: "admin@feeana.edu",
-      name: "Prof. Reyes",
-      role: "faculty",
-    },
-  },
-  {
-    email: "student@feeana.edu",
-    password: "student123",
-    user: {
-      id: "user-student",
-      email: "student@feeana.edu",
-      name: "Juan Dela Cruz",
-      role: "student",
-    },
-  },
-];
-
-interface RegisteredUser {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: UserRole;
-}
-
-interface RegisterInput {
-  name: string;
-  email: string;
-  password: string;
-  role: UserRole;
-}
+import { supabase } from "./supabase";
+import type { UserRole } from "./types";
+import type { AuthUser } from "./types";
+import type { User } from "@supabase/supabase-js";
 
 interface AuthContextValue {
   user: AuthUser | null;
+  supabaseUser: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   hasRole: (role: UserRole) => boolean;
-  login: (email: string, password: string, role: UserRole) => Promise<AuthUser>;
-  register: (input: RegisterInput) => Promise<AuthUser>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  register: (email: string, password: string, name: string, role: UserRole) => Promise<AuthUser>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function readUsers(): RegisteredUser[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(USERS_KEY);
-    return raw ? (JSON.parse(raw) as RegisteredUser[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeUsers(users: RegisteredUser[]) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }
+function normalizeUserRole(role: string | undefined): UserRole {
+  return role === "faculty" ? "faculty" : "student";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setUser(JSON.parse(raw) as AuthUser);
-    } catch {
-      // ignore
-    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSupabaseUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSupabaseUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const persist = useCallback((u: AuthUser) => {
-    setUser(u);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
-    }
-  }, []);
+  const user = useMemo<AuthUser | null>(() => {
+    if (!supabaseUser) return null;
+    const meta = supabaseUser.user_metadata;
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email ?? "",
+      name: meta?.full_name ?? meta?.name ?? supabaseUser.email?.split("@")[0] ?? "User",
+      role: normalizeUserRole(meta?.role as string | undefined),
+    };
+  }, [supabaseUser]);
 
-  const login = useCallback(
-    async (email: string, password: string, role: UserRole) => {
-      const lower = email.toLowerCase().trim();
-      const seeded = SEEDED.find(
-        (c) => c.email.toLowerCase() === lower && c.password === password && c.user.role === role,
-      );
-      if (seeded) {
-        persist(seeded.user);
-        return seeded.user;
-      }
-      const users = readUsers();
-      const match = users.find(
-        (u) => u.email.toLowerCase() === lower && u.password === password && u.role === role,
-      );
-      if (!match) throw new Error("Invalid credentials for selected role.");
-      const auth: AuthUser = {
-        id: match.id,
-        email: match.email,
-        name: match.name,
-        role: match.role,
-      };
-      persist(auth);
-      return auth;
-    },
-    [persist],
-  );
+  const login = useCallback(async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw new Error(error.message);
+    if (!data.user) throw new Error("Login failed");
+    const meta = data.user.user_metadata;
+    return {
+      id: data.user.id,
+      email: data.user.email ?? email,
+      name: meta?.full_name ?? meta?.name ?? email.split("@")[0],
+      role: normalizeUserRole(meta?.role as string | undefined),
+    };
+  }, []);
 
   const register = useCallback(
-    async (input: RegisterInput) => {
-      const lower = input.email.toLowerCase().trim();
-      if (SEEDED.some((c) => c.email.toLowerCase() === lower)) {
-        throw new Error("An account with that email already exists.");
-      }
-      const users = readUsers();
-      if (users.some((u) => u.email.toLowerCase() === lower)) {
-        throw new Error("An account with that email already exists.");
-      }
-      const newUser: RegisteredUser = {
-        id: `user-${Date.now()}`,
-        name: input.name.trim(),
-        email: lower,
-        password: input.password,
-        role: input.role,
+    async (email: string, password: string, name: string, role: UserRole) => {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            role,
+          },
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (!data.user) throw new Error("Registration failed");
+      return {
+        id: data.user.id,
+        email: data.user.email ?? email,
+        name,
+        role,
       };
-      writeUsers([...users, newUser]);
-      const auth: AuthUser = {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-      };
-      persist(auth);
-      return auth;
     },
-    [persist],
+    [],
   );
 
-  const logout = useCallback(() => {
-    setUser(null);
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(STORAGE_KEY);
-    }
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
   }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      supabaseUser,
       isAuthenticated: user !== null,
+      isLoading,
       hasRole: (role: UserRole) => user?.role === role,
       login,
       register,
       logout,
     }),
-    [user, login, register, logout],
+    [user, supabaseUser, isLoading, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

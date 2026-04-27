@@ -1,33 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Activity, BookOpenCheck, LogOut, ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { Outlet, redirect } from "@tanstack/react-router";
+import { Outlet } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { JoinClassDialog } from "@/components/JoinClassDialog";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_student")({
-  beforeLoad: () => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem("feeana.auth.user");
-      if (!raw) throw redirect({ to: "/login/student" });
-      const parsed = JSON.parse(raw) as { role?: string };
-      if (parsed.role !== "student") throw redirect({ to: "/login/student" });
-    } catch (e) {
-      if (e && typeof e === "object" && "to" in e) throw e;
-      throw redirect({ to: "/login/student" });
-    }
-  },
   component: StudentLayout,
 });
 
 function StudentLayout() {
-  const { isAuthenticated, hasRole, user, logout } = useAuth();
+  const { hasRole, user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const [joinOpen, setJoinOpen] = useState(false);
 
-  if (!isAuthenticated || !hasRole("student")) return null;
+  if (isLoading) {
+    return null;
+  }
+
+  if (!hasRole("student")) {
+    navigate({ to: "/login/student" });
+    return null;
+  }
 
   return (
     <div className="min-h-screen">
@@ -59,8 +54,8 @@ function StudentLayout() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                logout();
+              onClick={async () => {
+                await logout();
                 navigate({ to: "/" });
               }}
             >

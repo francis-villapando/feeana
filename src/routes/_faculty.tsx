@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { Activity, LogOut, ShieldCheck } from "lucide-react";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -7,27 +7,22 @@ import { FacultySidebar } from "@/components/FacultySidebar";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_faculty")({
-  beforeLoad: () => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem("feeana.auth.user");
-      if (!raw) throw redirect({ to: "/login/faculty" });
-      const parsed = JSON.parse(raw) as { role?: string };
-      if (parsed.role !== "faculty") throw redirect({ to: "/login/faculty" });
-    } catch (e) {
-      if (e && typeof e === "object" && "to" in e) throw e;
-      throw redirect({ to: "/login/faculty" });
-    }
-  },
   component: FacultyLayout,
 });
 
 function FacultyLayout() {
-  const { isAuthenticated, hasRole, user, logout } = useAuth();
+  const { hasRole, user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
-  if (!isAuthenticated || !hasRole("faculty")) {
+
+  if (isLoading) {
     return null;
   }
+
+  if (!hasRole("faculty")) {
+    navigate({ to: "/login/faculty" });
+    return null;
+  }
+
   return (
     <SidebarProvider defaultOpen={true}>
       <FacultySidebar />
@@ -59,8 +54,8 @@ function FacultyLayout() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  logout();
+                onClick={async () => {
+                  await logout();
                   navigate({ to: "/" });
                 }}
               >

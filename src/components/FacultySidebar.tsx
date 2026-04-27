@@ -27,7 +27,7 @@ export function FacultySidebar() {
   const location = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
 
-  const inClass = location.pathname.startsWith("/classes/");
+  const inClass = location.pathname.match(/^\/\$classId/) !== null;
   const [classesOpen, setClassesOpen] = useState(inClass);
 
   return (
@@ -93,9 +93,9 @@ export function FacultySidebar() {
                           <SidebarMenuSubItem key={c.id}>
                             <SidebarMenuSubButton
                               asChild
-                              isActive={location.pathname.startsWith(`/classes/${c.id}`)}
+                              isActive={location.pathname.match(/^\/\$classId/) !== null}
                             >
-                              <Link to="/classes/$classId" params={{ classId: c.id }}>
+                              <Link to="/$classId" params={{ classId: c.id }}>
                                 <span className="truncate">
                                   {c.course} · {c.section}
                                 </span>
