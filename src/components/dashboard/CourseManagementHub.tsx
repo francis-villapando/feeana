@@ -2,22 +2,11 @@ import { useMemo, useState } from "react";
 import { Archive, Pencil, Plus, RotateCcw, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCourseStore } from "@/lib/courseStore";
 import type { BloomLevel, Course, ILO, Topic } from "@/lib/types";
 import { EntityFormDialog } from "./EntityFormDialog";
@@ -57,10 +46,7 @@ export function CourseManagementHub() {
     [courses, showArchived, query],
   );
   const visibleTopics = useMemo(
-    () =>
-      filterFn(topics).filter((t) =>
-        t.title.toLowerCase().includes(query.toLowerCase()),
-      ),
+    () => filterFn(topics).filter((t) => t.title.toLowerCase().includes(query.toLowerCase())),
     [topics, showArchived, query],
   );
   const visibleIlos = useMemo(
@@ -115,10 +101,7 @@ export function CourseManagementHub() {
           </TabsList>
 
           <TabsContent value="courses" className="mt-4 space-y-2">
-            <ListHeader
-              onAdd={() => setEdit({ kind: "course" })}
-              addLabel="Add course"
-            />
+            <ListHeader onAdd={() => setEdit({ kind: "course" })} addLabel="Add course" />
             {visibleCourses.length === 0 && <EmptyRow />}
             {visibleCourses.map((c) => (
               <Row
@@ -134,10 +117,7 @@ export function CourseManagementHub() {
           </TabsContent>
 
           <TabsContent value="topics" className="mt-4 space-y-2">
-            <ListHeader
-              onAdd={() => setEdit({ kind: "topic" })}
-              addLabel="Add topic"
-            />
+            <ListHeader onAdd={() => setEdit({ kind: "topic" })} addLabel="Add topic" />
             {visibleTopics.length === 0 && <EmptyRow />}
             {visibleTopics.map((t) => {
               const course = courses.find((c) => c.id === t.courseId);
@@ -156,10 +136,7 @@ export function CourseManagementHub() {
           </TabsContent>
 
           <TabsContent value="ilos" className="mt-4 space-y-2">
-            <ListHeader
-              onAdd={() => setEdit({ kind: "ILO" })}
-              addLabel="Add ILO"
-            />
+            <ListHeader onAdd={() => setEdit({ kind: "ILO" })} addLabel="Add ILO" />
             {visibleIlos.length === 0 && <EmptyRow />}
             {visibleIlos.map((i) => (
               <Row
@@ -176,23 +153,12 @@ export function CourseManagementHub() {
         </Tabs>
       </CardContent>
 
-      {edit && (
-        <EntityFormDialog
-          state={edit}
-          onClose={() => setEdit(null)}
-        />
-      )}
+      {edit && <EntityFormDialog state={edit} onClose={() => setEdit(null)} />}
     </Card>
   );
 }
 
-function ListHeader({
-  onAdd,
-  addLabel,
-}: {
-  onAdd: () => void;
-  addLabel: string;
-}) {
+function ListHeader({ onAdd, addLabel }: { onAdd: () => void; addLabel: string }) {
   return (
     <div className="flex justify-end">
       <Button size="sm" onClick={onAdd}>
@@ -249,21 +215,11 @@ function Row({
           </Button>
         )}
         {archived ? (
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onRestore}
-            aria-label="Restore"
-          >
+          <Button size="icon" variant="ghost" onClick={onRestore} aria-label="Restore">
             <RotateCcw className="h-3.5 w-3.5" />
           </Button>
         ) : (
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onArchive}
-            aria-label="Archive"
-          >
+          <Button size="icon" variant="ghost" onClick={onArchive} aria-label="Archive">
             <Archive className="h-3.5 w-3.5" />
           </Button>
         )}

@@ -8,12 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import type { Session } from "@/lib/types";
 
@@ -45,9 +40,7 @@ export function SessionCard({ session }: { session: Session }) {
           <Badge
             variant={session.status === "active" ? "default" : "secondary"}
             className={
-              session.status === "active"
-                ? "bg-primary/15 text-primary hover:bg-primary/20"
-                : ""
+              session.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/20" : ""
             }
           >
             {session.status}

@@ -46,26 +46,15 @@ export function AnalysisStoreProvider({ children }: { children: ReactNode }) {
     setResults((prev) => ({ ...prev, [sessionId]: result }));
   }, []);
 
-  const get = useCallback(
-    (sessionId: string) => results[sessionId],
-    [results],
-  );
+  const get = useCallback((sessionId: string) => results[sessionId], [results]);
 
-  const value = useMemo<AnalysisStoreValue>(
-    () => ({ results, set, get }),
-    [results, set, get],
-  );
+  const value = useMemo<AnalysisStoreValue>(() => ({ results, set, get }), [results, set, get]);
 
-  return (
-    <AnalysisStoreContext.Provider value={value}>
-      {children}
-    </AnalysisStoreContext.Provider>
-  );
+  return <AnalysisStoreContext.Provider value={value}>{children}</AnalysisStoreContext.Provider>;
 }
 
 export function useAnalysisStore() {
   const ctx = useContext(AnalysisStoreContext);
-  if (!ctx)
-    throw new Error("useAnalysisStore must be used within AnalysisStoreProvider");
+  if (!ctx) throw new Error("useAnalysisStore must be used within AnalysisStoreProvider");
   return ctx;
 }

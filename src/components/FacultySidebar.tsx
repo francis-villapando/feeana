@@ -1,12 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import {
-  Archive,
-  ChevronDown,
-  GraduationCap,
-  Home,
-  LayoutDashboard,
-  Plus,
-} from "lucide-react";
+import { Archive, ChevronDown, GraduationCap, Home, LayoutDashboard, Plus } from "lucide-react";
 import { useState } from "react";
 import {
   Sidebar,
@@ -24,16 +17,12 @@ import {
   SidebarMenuSubItem,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useClassStore } from "@/lib/classStore";
 import { CreateClassDialog } from "./CreateClassDialog";
 import { Button } from "@/components/ui/button";
 
-export function InstructorSidebar() {
+export function FacultySidebar() {
   const { activeClasses } = useClassStore();
   const location = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
@@ -45,12 +34,12 @@ export function InstructorSidebar() {
     <>
       <Sidebar side="left" collapsible="icon" variant="floating">
         <SidebarHeader className="px-3 py-3 group-data-[collapsible=icon]:px-1.5">
-            <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-              <SidebarTrigger className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/30" />
-              <span className="text-sm font-semibold group-data-[collapsible=icon]:hidden">
-                Workspace
-              </span>
-            </div>
+          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+            <SidebarTrigger className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/30" />
+            <span className="text-sm font-semibold group-data-[collapsible=icon]:hidden">
+              Workspace
+            </span>
+          </div>
         </SidebarHeader>
 
         <SidebarContent>
@@ -59,7 +48,11 @@ export function InstructorSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Home" isActive={location.pathname === "/home"}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Home"
+                    isActive={location.pathname === "/home"}
+                  >
                     <Link to="/home">
                       <Home />
                       <span>Home</span>
@@ -80,11 +73,7 @@ export function InstructorSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                <Collapsible
-                  open={classesOpen}
-                  onOpenChange={setClassesOpen}
-                  className="group/cls"
-                >
+                <Collapsible open={classesOpen} onOpenChange={setClassesOpen} className="group/cls">
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton tooltip="Classes" isActive={inClass}>
@@ -104,14 +93,9 @@ export function InstructorSidebar() {
                           <SidebarMenuSubItem key={c.id}>
                             <SidebarMenuSubButton
                               asChild
-                              isActive={location.pathname.startsWith(
-                                `/classes/${c.id}`,
-                              )}
+                              isActive={location.pathname.startsWith(`/classes/${c.id}`)}
                             >
-                              <Link
-                                to="/classes/$classId"
-                                params={{ classId: c.id }}
-                              >
+                              <Link to="/classes/$classId" params={{ classId: c.id }}>
                                 <span className="truncate">
                                   {c.course} · {c.section}
                                 </span>

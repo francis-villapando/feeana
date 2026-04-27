@@ -37,16 +37,13 @@ const RESULTS: Record<string, AnalysisResult> = {
         iloId: "ilo-1",
         expected:
           "Apply primitive data types and variable declarations to solve simple computational problems.",
-        actual:
-          "Students can declare variables but struggle to apply typecasting in I/O contexts.",
+        actual: "Students can declare variables but struggle to apply typecasting in I/O contexts.",
         severity: "medium",
       },
       {
         iloId: "ilo-2",
-        expected:
-          "Analyze type-conversion and scoping behavior in short Python programs.",
-        actual:
-          "Recurring confusion between string and integer types when reading input.",
+        expected: "Analyze type-conversion and scoping behavior in short Python programs.",
+        actual: "Recurring confusion between string and integer types when reading input.",
         severity: "high",
       },
     ],
@@ -106,8 +103,7 @@ const RESULTS: Record<string, AnalysisResult> = {
           {
             text: "Pacing",
             kind: "aspect",
-            detail:
-              "Aspect: how time is allocated and transitions are managed during the session.",
+            detail: "Aspect: how time is allocated and transitions are managed during the session.",
           },
           {
             text: "extraneous load",
@@ -176,18 +172,15 @@ const RESULTS: Record<string, AnalysisResult> = {
     gaps: [
       {
         iloId: "ilo-3",
-        expected:
-          "Construct conditional and iterative control structures to model decision logic.",
+        expected: "Construct conditional and iterative control structures to model decision logic.",
         actual:
           "Students confidently build if-else and single loops; nested loop construction remains shaky.",
         severity: "medium",
       },
       {
         iloId: "ilo-4",
-        expected:
-          "Evaluate the correctness of loops by tracing variable state across iterations.",
-        actual:
-          "Multiple students explicitly request trace exercises.",
+        expected: "Evaluate the correctness of loops by tracing variable state across iterations.",
+        actual: "Multiple students explicitly request trace exercises.",
         severity: "high",
       },
     ],
@@ -208,8 +201,7 @@ const RESULTS: Record<string, AnalysisResult> = {
           {
             text: "nested loops",
             kind: "aspect",
-            detail:
-              "Aspect: control flow construct where one loop is contained inside another.",
+            detail: "Aspect: control flow construct where one loop is contained inside another.",
           },
           {
             text: "analyzing",
@@ -281,9 +273,7 @@ const RESULTS: Record<string, AnalysisResult> = {
 export const ISSUE_THRESHOLD = 1;
 
 /** Simulated analysis call. */
-export async function runAnalysis(
-  sessionId: string,
-): Promise<AnalysisResult> {
+export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
   await new Promise((resolve) => setTimeout(resolve, 2000));
   const result = RESULTS[sessionId];
   if (!result) {

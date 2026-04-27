@@ -43,9 +43,7 @@ export function CreateClassDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create a class</DialogTitle>
-          <DialogDescription>
-            A 6-character join code is generated automatically.
-          </DialogDescription>
+          <DialogDescription>A 6-character join code is generated automatically.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">

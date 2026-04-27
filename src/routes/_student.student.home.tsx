@@ -2,10 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowRight, BookOpenCheck, Calendar, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { JoinClassDialog } from "@/components/JoinClassDialog";
 import { useClassStore } from "@/lib/classStore";
 
@@ -43,9 +40,7 @@ function StudentHome() {
   const activeByClass = joined
     .map((c) => ({
       cls: c,
-      sessions: sessions.filter(
-        (s) => s.classId === c.id && s.status === "active",
-      ),
+      sessions: sessions.filter((s) => s.classId === c.id && s.status === "active"),
     }))
     .filter((g) => g.sessions.length > 0);
 
@@ -62,8 +57,7 @@ function StudentHome() {
               Active feedback collections
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Pick an open session from any class you've joined. Taglish is
-              welcome.
+              Pick an open session from any class you've joined. Taglish is welcome.
             </p>
           </div>
           <Button onClick={() => setJoinOpen(true)} size="lg">
@@ -77,11 +71,9 @@ function StudentHome() {
       ) : activeByClass.length === 0 ? (
         <Card className="border-dashed border-border/60 bg-card/40">
           <CardContent className="px-6 py-16 text-center">
-            <h3 className="text-base font-semibold">
-              No active collections right now
-            </h3>
+            <h3 className="text-base font-semibold">No active collections right now</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Check back later — your instructors haven't opened a session yet.
+              Check back later — your faculty haven't opened a session yet.
             </p>
           </CardContent>
         </Card>
@@ -93,9 +85,7 @@ function StudentHome() {
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                   {group.cls.course} · {group.cls.section}
                 </h2>
-                <span className="text-xs text-muted-foreground">
-                  {group.cls.name}
-                </span>
+                <span className="text-xs text-muted-foreground">{group.cls.name}</span>
               </div>
               <div className="space-y-2">
                 {group.sessions.map((s) => (
@@ -115,10 +105,7 @@ function StudentHome() {
                         </p>
                       </div>
                       <Button asChild className="w-full sm:w-auto">
-                        <Link
-                          to="/student/submit/$sessionId"
-                          params={{ sessionId: s.id }}
-                        >
+                        <Link to="/student/submit/$sessionId" params={{ sessionId: s.id }}>
                           Submit feedback <ArrowRight className="h-4 w-4" />
                         </Link>
                       </Button>
@@ -141,11 +128,9 @@ function EmptyJoin({ onJoin }: { onJoin: () => void }) {
     <Card className="border-dashed border-border/60 bg-card/40">
       <CardContent className="px-6 py-16 text-center">
         <BookOpenCheck className="mx-auto h-8 w-8 text-muted-foreground" />
-        <h3 className="mt-3 text-base font-semibold">
-          You haven't joined any classes yet
-        </h3>
+        <h3 className="mt-3 text-base font-semibold">You haven't joined any classes yet</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Ask your instructor for a 6-character class code.
+          Ask your faculty for a 6-character class code.
         </p>
         <Button className="mt-4" onClick={onJoin}>
           <BookOpenCheck className="h-4 w-4" /> Join a class

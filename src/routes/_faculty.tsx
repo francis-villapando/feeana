@@ -1,41 +1,36 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { Activity, LogOut, ShieldCheck } from "lucide-react";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { InstructorSidebar } from "@/components/InstructorSidebar";
+import { FacultySidebar } from "@/components/FacultySidebar";
 import { useAuth } from "@/lib/auth";
 
-export const Route = createFileRoute("/_instructor")({
+export const Route = createFileRoute("/_faculty")({
   beforeLoad: () => {
     if (typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem("feeana.auth.user");
-      if (!raw) throw redirect({ to: "/login/instructor" });
+      if (!raw) throw redirect({ to: "/login/faculty" });
       const parsed = JSON.parse(raw) as { role?: string };
-      if (parsed.role !== "instructor")
-        throw redirect({ to: "/login/instructor" });
+      if (parsed.role !== "faculty") throw redirect({ to: "/login/faculty" });
     } catch (e) {
       if (e && typeof e === "object" && "to" in e) throw e;
-      throw redirect({ to: "/login/instructor" });
+      throw redirect({ to: "/login/faculty" });
     }
   },
-  component: InstructorLayout,
+  component: FacultyLayout,
 });
 
-function InstructorLayout() {
+function FacultyLayout() {
   const { isAuthenticated, hasRole, user, logout } = useAuth();
   const navigate = useNavigate();
-  if (!isAuthenticated || !hasRole("instructor")) {
+  if (!isAuthenticated || !hasRole("faculty")) {
     return null;
   }
   return (
     <SidebarProvider defaultOpen={true}>
-      <InstructorSidebar />
+      <FacultySidebar />
       <SidebarInset className="bg-transparent">
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
           <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
@@ -44,9 +39,7 @@ function InstructorLayout() {
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/30">
                   <Activity className="h-4 w-4 text-primary" />
                 </span>
-                <span className="text-base font-semibold tracking-tight">
-                  Feeana
-                </span>
+                <span className="text-base font-semibold tracking-tight">Feeana</span>
               </Link>
             </div>
             <div className="flex items-center gap-3">

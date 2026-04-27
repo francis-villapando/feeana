@@ -7,7 +7,7 @@ import { CreateClassDialog } from "@/components/CreateClassDialog";
 import { useClassStore } from "@/lib/classStore";
 import { useAuth } from "@/lib/auth";
 
-export const Route = createFileRoute("/_instructor/home")({
+export const Route = createFileRoute("/_faculty/home")({
   head: () => ({
     meta: [
       { title: "Home — Feeana" },
@@ -40,8 +40,8 @@ function HomePage() {
               Your feedback intelligence workspace.
             </h1>
             <p className="mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-              Spin up classes, schedule anonymous feedback collections, and let
-              Feeana surface ILO-aligned teaching cues from Taglish responses.
+              Spin up classes, schedule anonymous feedback collections, and let Feeana surface
+              ILO-aligned teaching cues from Taglish responses.
             </p>
           </div>
           <div className="flex flex-wrap justify-end gap-2">

@@ -17,17 +17,13 @@ export function computeIloStatuses(
   ilos: ILO[] = MOCK_ILOS,
 ): IloStatus[] {
   // Source ILOs: prefer session.courseId match, fall back to session.iloIds.
-  let scope = ilos.filter(
-    (i) => i.courseId === session.courseId && !i.archived,
-  );
+  let scope = ilos.filter((i) => i.courseId === session.courseId && !i.archived);
   if (scope.length === 0) {
     scope = ilos.filter((i) => session.iloIds.includes(i.id));
   }
 
   const sessionFeedback = feedback.filter((f) => f.sessionId === session.id);
-  const flaggedIloIds = new Set<string>(
-    (result?.gaps ?? []).map((g) => g.iloId),
-  );
+  const flaggedIloIds = new Set<string>((result?.gaps ?? []).map((g) => g.iloId));
 
   // Heuristic: any negative pedagogical feedback aspect implies the corresponding
   // session ILO(s) may not be met. Without explicit aspect↔ILO mapping in mock

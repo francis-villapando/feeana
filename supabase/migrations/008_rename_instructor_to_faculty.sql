@@ -1,0 +1,1 @@
+ALTER TABLE classes RENAME COLUMN instructor_id TO faculty_id;

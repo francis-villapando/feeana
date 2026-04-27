@@ -58,15 +58,15 @@ function LandingPage() {
               and actual learning.
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
-              Feeana ingests Taglish, code-switched student feedback and turns it
-              into theory-grounded teaching cues — mapped to your ILOs, Bloom's
-              taxonomy, and Cognitive Load principles.
+              Feeana ingests Taglish, code-switched student feedback and turns it into
+              theory-grounded teaching cues — mapped to your ILOs, Bloom's taxonomy, and Cognitive
+              Load principles.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asChild>
-                <Link to="/login/instructor">
+                <Link to="/login/faculty">
                   <GraduationCap className="h-4 w-4" />
-                  Instructor portal
+                  Faculty portal
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>

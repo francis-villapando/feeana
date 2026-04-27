@@ -13,8 +13,7 @@ export const Route = createFileRoute("/_student")({
       const raw = window.localStorage.getItem("feeana.auth.user");
       if (!raw) throw redirect({ to: "/login/student" });
       const parsed = JSON.parse(raw) as { role?: string };
-      if (parsed.role !== "student")
-        throw redirect({ to: "/login/student" });
+      if (parsed.role !== "student") throw redirect({ to: "/login/student" });
     } catch (e) {
       if (e && typeof e === "object" && "to" in e) throw e;
       throw redirect({ to: "/login/student" });
@@ -41,11 +40,7 @@ function StudentLayout() {
             <span className="text-base font-semibold tracking-tight">Feeana</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setJoinOpen(true)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setJoinOpen(true)}>
               <BookOpenCheck className="h-4 w-4" /> Join class
             </Button>
             <Link

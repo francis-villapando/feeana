@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { MOCK_FEEDBACK } from "./mockData";
 import type { Feedback } from "./types";
 
@@ -44,11 +37,7 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
     [feedback, addFeedback, feedbackForSession],
   );
 
-  return (
-    <FeedbackStoreContext.Provider value={value}>
-      {children}
-    </FeedbackStoreContext.Provider>
-  );
+  return <FeedbackStoreContext.Provider value={value}>{children}</FeedbackStoreContext.Provider>;
 }
 
 export function useFeedbackStore() {

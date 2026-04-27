@@ -4,13 +4,7 @@ import { ArrowLeft, Calendar, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { MOCK_SESSIONS, MOCK_CLASSES } from "@/lib/mockData";
@@ -90,9 +84,7 @@ function SubmitPage() {
         <p className="text-xs uppercase tracking-widest text-muted-foreground">
           {cls ? `${cls.course} · ${cls.section}` : "Session"}
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-          {session.topic}
-        </h1>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">{session.topic}</h1>
         <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
           Open {formatDT(session.startsAt)} → {formatDT(session.endsAt)}
@@ -109,10 +101,7 @@ function SubmitPage() {
         <CardContent className="flex flex-1 flex-col gap-5">
           {isActive ? (
             <>
-              <Badge
-                variant="outline"
-                className="w-fit border-primary/30 text-primary"
-              >
+              <Badge variant="outline" className="w-fit border-primary/30 text-primary">
                 active · {session.topic}
               </Badge>
               <div className="space-y-2">
@@ -123,17 +112,10 @@ function SubmitPage() {
                   className="min-h-[160px] resize-none"
                   maxLength={600}
                 />
-                <p className="text-right text-[11px] text-muted-foreground">
-                  {text.length} / 600
-                </p>
+                <p className="text-right text-[11px] text-muted-foreground">{text.length} / 600</p>
               </div>
               <div className="mt-auto space-y-3">
-                <Button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="w-full"
-                  size="lg"
-                >
+                <Button onClick={handleSubmit} disabled={submitting} className="w-full" size="lg">
                   <Send className="h-4 w-4" />
                   {submitting ? "Submitting…" : "Submit feedback"}
                 </Button>

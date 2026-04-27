@@ -1,12 +1,4 @@
-import type {
-  Class,
-  Course,
-  Feedback,
-  ILO,
-  Session,
-  Student,
-  Topic,
-} from "./types";
+import type { Class, Course, Feedback, ILO, Session, Student, Topic } from "./types";
 
 export const MOCK_COURSE: Course = {
   id: "course-cs101",
@@ -63,8 +55,7 @@ export const MOCK_ILOS: ILO[] = [
     id: "ilo-2",
     courseId: "course-cs101",
     code: "ILO-2",
-    statement:
-      "Analyze type-conversion and scoping behavior in short Python programs.",
+    statement: "Analyze type-conversion and scoping behavior in short Python programs.",
     bloomLevel: "Analyze",
     archived: false,
   },
@@ -72,8 +63,7 @@ export const MOCK_ILOS: ILO[] = [
     id: "ilo-3",
     courseId: "course-cs101",
     code: "ILO-3",
-    statement:
-      "Construct conditional and iterative control structures to model decision logic.",
+    statement: "Construct conditional and iterative control structures to model decision logic.",
     bloomLevel: "Create",
     archived: false,
   },
@@ -81,8 +71,7 @@ export const MOCK_ILOS: ILO[] = [
     id: "ilo-4",
     courseId: "course-cs101",
     code: "ILO-4",
-    statement:
-      "Evaluate the correctness of loops by tracing variable state across iterations.",
+    statement: "Evaluate the correctness of loops by tracing variable state across iterations.",
     bloomLevel: "Evaluate",
     archived: false,
   },
@@ -222,8 +211,7 @@ export const MOCK_FEEDBACK: Feedback[] = [
     sessionId: "session-vars",
     rawText:
       "Sir medyo mabilis yung discussion sa typecasting, di ko masyado nahabol yung int to float conversion.",
-    cleanedText:
-      "discussion on typecasting was too fast, hard to follow int to float conversion",
+    cleanedText: "discussion on typecasting was too fast, hard to follow int to float conversion",
     isPedagogical: true,
     aspects: [
       { aspect: "Pacing", issue: "Too fast", polarity: "neg" },
@@ -245,8 +233,7 @@ export const MOCK_FEEDBACK: Feedback[] = [
     sessionId: "session-vars",
     rawText:
       "Confusing yung difference ng string at integer pag may input(), parang lagi syang string?",
-    cleanedText:
-      "difference between string and integer with input() is confusing",
+    cleanedText: "difference between string and integer with input() is confusing",
     isPedagogical: true,
     aspects: [
       { aspect: "Content", issue: "Type confusion", polarity: "neg" },
@@ -308,9 +295,7 @@ export const MOCK_FEEDBACK: Feedback[] = [
     rawText: "Mas marami sana exercises sa list comprehension.",
     cleanedText: "needs more list comprehension exercises",
     isPedagogical: true,
-    aspects: [
-      { aspect: "Practice", issue: "Insufficient exercises", polarity: "neg" },
-    ],
+    aspects: [{ aspect: "Practice", issue: "Insufficient exercises", polarity: "neg" }],
     createdAt: "2025-03-20T10:30:00.000Z",
   },
 ];

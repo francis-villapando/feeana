@@ -1,4 +1,4 @@
-export type UserRole = "instructor" | "student";
+export type UserRole = "faculty" | "student";
 
 export interface AuthUser {
   id: string;
@@ -14,13 +14,7 @@ export interface Course {
   archived: boolean;
 }
 
-export type BloomLevel =
-  | "Remember"
-  | "Understand"
-  | "Apply"
-  | "Analyze"
-  | "Evaluate"
-  | "Create";
+export type BloomLevel = "Remember" | "Understand" | "Apply" | "Analyze" | "Evaluate" | "Create";
 
 export interface ILO {
   id: string;

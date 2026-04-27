@@ -1,17 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Archive, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useClassStore } from "@/lib/classStore";
 
-export const Route = createFileRoute("/_instructor/archived")({
+export const Route = createFileRoute("/_faculty/archived")({
   head: () => ({
     meta: [
       { title: "Archived classes — Feeana" },
@@ -30,12 +24,8 @@ function ArchivedPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">
-          Archive
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-          Archived classes
-        </h1>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Archive</p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Archived classes</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Restore a class to bring it back into your active workspace.
         </p>
@@ -45,17 +35,12 @@ function ArchivedPage() {
         <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
           <Archive className="mx-auto h-8 w-8 text-muted-foreground" />
           <h3 className="mt-3 text-base font-semibold">Nothing archived</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Archived classes will appear here.
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Archived classes will appear here.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {archivedClasses.map((c) => (
-            <Card
-              key={c.id}
-              className="border-border/60 bg-card/70 backdrop-blur-xl"
-            >
+            <Card key={c.id} className="border-border/60 bg-card/70 backdrop-blur-xl">
               <CardHeader>
                 <CardTitle className="text-base">{c.name}</CardTitle>
                 <CardDescription>

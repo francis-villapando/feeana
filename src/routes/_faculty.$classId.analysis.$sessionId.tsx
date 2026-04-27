@@ -24,13 +24,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RecommendationParagraph } from "@/components/analysis/RecommendationParagraph";
 import { runAnalysis } from "@/lib/analysis";
@@ -40,9 +34,7 @@ import { computeIloStatuses } from "@/lib/iloStatus";
 import { MOCK_SESSIONS } from "@/lib/mockData";
 import type { AnalysisResult } from "@/lib/types";
 
-export const Route = createFileRoute(
-  "/_instructor/classes/$classId/analysis/$sessionId",
-)({
+export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
   loader: ({ params }) => {
     const session = MOCK_SESSIONS.find((s) => s.id === params.sessionId);
     if (!session) throw notFound();
@@ -51,9 +43,7 @@ export const Route = createFileRoute(
   head: ({ loaderData }) => ({
     meta: [
       {
-        title: loaderData
-          ? `${loaderData.session.topic} — Analysis · Feeana`
-          : "Analysis — Feeana",
+        title: loaderData ? `${loaderData.session.topic} — Analysis · Feeana` : "Analysis — Feeana",
       },
     ],
   }),
@@ -116,9 +106,7 @@ function AnalysisPage() {
             <p className="text-xs uppercase tracking-widest text-muted-foreground">
               Session analysis
             </p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-              {session.topic}
-            </h1>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight">{session.topic}</h1>
           </div>
           <Button size="lg" onClick={handleTrigger} disabled={loading}>
             <PlayCircle className="h-4 w-4" />
@@ -144,9 +132,8 @@ function EmptyState({ onTrigger }: { onTrigger: () => void }) {
         <div>
           <h2 className="text-lg font-semibold">Analysis not yet triggered</h2>
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            Trigger the pipeline to see aspect, issue, and polarity
-            distributions, an ILO checklist, and theory-grounded teaching
-            recommendations.
+            Trigger the pipeline to see aspect, issue, and polarity distributions, an ILO checklist,
+            and theory-grounded teaching recommendations.
           </p>
         </div>
         <Button onClick={onTrigger} size="lg">
@@ -172,9 +159,7 @@ function Results({ result }: { result: AnalysisResult }) {
   const { session } = Route.useLoaderData();
   const { feedback } = useFeedbackStore();
   const iloStatuses = computeIloStatuses(session, result, feedback);
-  const sortedRecs = [...result.recommendations].sort(
-    (a, b) => b.priority - a.priority,
-  );
+  const sortedRecs = [...result.recommendations].sort((a, b) => b.priority - a.priority);
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -314,8 +299,7 @@ function Results({ result }: { result: AnalysisResult }) {
             <Lightbulb className="h-4 w-4 text-primary" /> Recommendation cues
           </CardTitle>
           <CardDescription>
-            Hover the highlighted terms to see how each maps across pedagogical
-            frameworks.
+            Hover the highlighted terms to see how each maps across pedagogical frameworks.
           </CardDescription>
         </CardHeader>
         <CardContent>

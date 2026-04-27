@@ -9,13 +9,7 @@ interface NavItem {
   to: string;
 }
 
-export function AppShell({
-  navItems,
-  children,
-}: {
-  navItems: NavItem[];
-  children: ReactNode;
-}) {
+export function AppShell({ navItems, children }: { navItems: NavItem[]; children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 

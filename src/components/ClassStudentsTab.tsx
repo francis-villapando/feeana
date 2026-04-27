@@ -25,16 +25,13 @@ import { useFeedbackStore } from "@/lib/feedbackStore";
 import { classParticipation } from "@/lib/metrics";
 
 export function ClassStudentsTab({ classId }: { classId: string }) {
-  const { studentsForClass, removeStudent, getClass, sessionsForClass } =
-    useClassStore();
+  const { studentsForClass, removeStudent, getClass, sessionsForClass } = useClassStore();
   const { feedback } = useFeedbackStore();
   const students = studentsForClass(classId);
   const cls = getClass(classId);
   const sessions = sessionsForClass(classId);
   const participation = cls ? classParticipation(cls, sessions, feedback) : 0;
-  const [pending, setPending] = useState<{ id: string; name: string } | null>(
-    null,
-  );
+  const [pending, setPending] = useState<{ id: string; name: string } | null>(null);
 
   if (!cls) return null;
 
@@ -44,9 +41,7 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
         {students.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <Users className="mx-auto h-8 w-8 text-muted-foreground" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              No students in this class yet.
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">No students in this class yet.</p>
           </div>
         ) : (
           <Table>
@@ -86,22 +81,17 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">
-          Participation: {participation}%
-        </span>{" "}
-        — anonymous; never tied to individual names.
+        <span className="font-semibold text-foreground">Participation: {participation}%</span> —
+        anonymous; never tied to individual names.
       </p>
 
-      <AlertDialog
-        open={!!pending}
-        onOpenChange={(o) => !o && setPending(null)}
-      >
+      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remove {pending?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              They will lose access to this class. Their previously submitted
-              anonymous feedback stays unaffected.
+              They will lose access to this class. Their previously submitted anonymous feedback
+              stays unaffected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

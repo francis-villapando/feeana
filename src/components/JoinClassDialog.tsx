@@ -46,9 +46,7 @@ export function JoinClassDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Join a class</DialogTitle>
-          <DialogDescription>
-            Ask your instructor for the 6-character class code.
-          </DialogDescription>
+          <DialogDescription>Ask your faculty for the 6-character class code.</DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
           <Label htmlFor="join-code">Class code</Label>

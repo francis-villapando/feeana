@@ -23,10 +23,10 @@ const SEEDED: MockCredential[] = [
     email: "admin@feeana.edu",
     password: "admin123",
     user: {
-      id: "user-instructor",
+      id: "user-faculty",
       email: "admin@feeana.edu",
       name: "Prof. Reyes",
-      role: "instructor",
+      role: "faculty",
     },
   },
   {
@@ -107,10 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string, role: UserRole) => {
       const lower = email.toLowerCase().trim();
       const seeded = SEEDED.find(
-        (c) =>
-          c.email.toLowerCase() === lower &&
-          c.password === password &&
-          c.user.role === role,
+        (c) => c.email.toLowerCase() === lower && c.password === password && c.user.role === role,
       );
       if (seeded) {
         persist(seeded.user);
@@ -118,10 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const users = readUsers();
       const match = users.find(
-        (u) =>
-          u.email.toLowerCase() === lower &&
-          u.password === password &&
-          u.role === role,
+        (u) => u.email.toLowerCase() === lower && u.password === password && u.role === role,
       );
       if (!match) throw new Error("Invalid credentials for selected role.");
       const auth: AuthUser = {

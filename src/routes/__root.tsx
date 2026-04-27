@@ -49,13 +49,12 @@ export const Route = createRootRouteWithContext<Record<string, never>>()({
       {
         name: "description",
         content:
-          "Feeana diagnoses learning gaps by comparing student feedback against Intended Learning Outcomes for CS instructors.",
+          "Feeana diagnoses learning gaps by comparing student feedback against Intended Learning Outcomes for CS faculty.",
       },
       { property: "og:title", content: "Feeana — Feedback intelligence" },
       {
         property: "og:description",
-        content:
-          "AI-powered, outcome-aligned feedback intelligence for Computer Science instructors.",
+        content: "AI-powered, outcome-aligned feedback intelligence for Computer Science faculty.",
       },
       { property: "og:type", content: "website" },
     ],
@@ -73,11 +72,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
-        <link
-          rel="preconnect"
-          href="https://fonts.googleapis.com"
-          crossOrigin=""
-        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"

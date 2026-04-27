@@ -11,17 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as StudentRouteImport } from './routes/_student'
-import { Route as InstructorRouteImport } from './routes/_instructor'
+import { Route as FacultyRouteImport } from './routes/_faculty'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginStudentRouteImport } from './routes/login.student'
-import { Route as LoginInstructorRouteImport } from './routes/login.instructor'
-import { Route as InstructorHomeRouteImport } from './routes/_instructor.home'
-import { Route as InstructorDashboardRouteImport } from './routes/_instructor.dashboard'
-import { Route as InstructorArchivedRouteImport } from './routes/_instructor.archived'
+import { Route as LoginFacultyRouteImport } from './routes/login.faculty'
+import { Route as FacultyHomeRouteImport } from './routes/_faculty.home'
+import { Route as FacultyDashboardRouteImport } from './routes/_faculty.dashboard'
+import { Route as FacultyArchivedRouteImport } from './routes/_faculty.archived'
+import { Route as FacultyClassIdRouteImport } from './routes/_faculty.$classId'
 import { Route as StudentStudentHomeRouteImport } from './routes/_student.student.home'
-import { Route as InstructorClassesClassIdRouteImport } from './routes/_instructor.classes.$classId'
 import { Route as StudentStudentSubmitSessionIdRouteImport } from './routes/_student.student.submit.$sessionId'
-import { Route as InstructorClassesClassIdAnalysisSessionIdRouteImport } from './routes/_instructor.classes.$classId.analysis.$sessionId'
+import { Route as FacultyClassIdAnalysisSessionIdRouteImport } from './routes/_faculty.$classId.analysis.$sessionId'
 
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
@@ -32,8 +32,8 @@ const StudentRoute = StudentRouteImport.update({
   id: '/_student',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InstructorRoute = InstructorRouteImport.update({
-  id: '/_instructor',
+const FacultyRoute = FacultyRouteImport.update({
+  id: '/_faculty',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -46,142 +46,141 @@ const LoginStudentRoute = LoginStudentRouteImport.update({
   path: '/login/student',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginInstructorRoute = LoginInstructorRouteImport.update({
-  id: '/login/instructor',
-  path: '/login/instructor',
+const LoginFacultyRoute = LoginFacultyRouteImport.update({
+  id: '/login/faculty',
+  path: '/login/faculty',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InstructorHomeRoute = InstructorHomeRouteImport.update({
+const FacultyHomeRoute = FacultyHomeRouteImport.update({
   id: '/home',
   path: '/home',
-  getParentRoute: () => InstructorRoute,
+  getParentRoute: () => FacultyRoute,
 } as any)
-const InstructorDashboardRoute = InstructorDashboardRouteImport.update({
+const FacultyDashboardRoute = FacultyDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => InstructorRoute,
+  getParentRoute: () => FacultyRoute,
 } as any)
-const InstructorArchivedRoute = InstructorArchivedRouteImport.update({
+const FacultyArchivedRoute = FacultyArchivedRouteImport.update({
   id: '/archived',
   path: '/archived',
-  getParentRoute: () => InstructorRoute,
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyClassIdRoute = FacultyClassIdRouteImport.update({
+  id: '/$classId',
+  path: '/$classId',
+  getParentRoute: () => FacultyRoute,
 } as any)
 const StudentStudentHomeRoute = StudentStudentHomeRouteImport.update({
   id: '/student/home',
   path: '/student/home',
   getParentRoute: () => StudentRoute,
 } as any)
-const InstructorClassesClassIdRoute =
-  InstructorClassesClassIdRouteImport.update({
-    id: '/classes/$classId',
-    path: '/classes/$classId',
-    getParentRoute: () => InstructorRoute,
-  } as any)
 const StudentStudentSubmitSessionIdRoute =
   StudentStudentSubmitSessionIdRouteImport.update({
     id: '/student/submit/$sessionId',
     path: '/student/submit/$sessionId',
     getParentRoute: () => StudentRoute,
   } as any)
-const InstructorClassesClassIdAnalysisSessionIdRoute =
-  InstructorClassesClassIdAnalysisSessionIdRouteImport.update({
+const FacultyClassIdAnalysisSessionIdRoute =
+  FacultyClassIdAnalysisSessionIdRouteImport.update({
     id: '/analysis/$sessionId',
     path: '/analysis/$sessionId',
-    getParentRoute: () => InstructorClassesClassIdRoute,
+    getParentRoute: () => FacultyClassIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
-  '/archived': typeof InstructorArchivedRoute
-  '/dashboard': typeof InstructorDashboardRoute
-  '/home': typeof InstructorHomeRoute
-  '/login/instructor': typeof LoginInstructorRoute
+  '/$classId': typeof FacultyClassIdRouteWithChildren
+  '/archived': typeof FacultyArchivedRoute
+  '/dashboard': typeof FacultyDashboardRoute
+  '/home': typeof FacultyHomeRoute
+  '/login/faculty': typeof LoginFacultyRoute
   '/login/student': typeof LoginStudentRoute
-  '/classes/$classId': typeof InstructorClassesClassIdRouteWithChildren
   '/student/home': typeof StudentStudentHomeRoute
+  '/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
   '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
-  '/classes/$classId/analysis/$sessionId': typeof InstructorClassesClassIdAnalysisSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
-  '/archived': typeof InstructorArchivedRoute
-  '/dashboard': typeof InstructorDashboardRoute
-  '/home': typeof InstructorHomeRoute
-  '/login/instructor': typeof LoginInstructorRoute
+  '/$classId': typeof FacultyClassIdRouteWithChildren
+  '/archived': typeof FacultyArchivedRoute
+  '/dashboard': typeof FacultyDashboardRoute
+  '/home': typeof FacultyHomeRoute
+  '/login/faculty': typeof LoginFacultyRoute
   '/login/student': typeof LoginStudentRoute
-  '/classes/$classId': typeof InstructorClassesClassIdRouteWithChildren
   '/student/home': typeof StudentStudentHomeRoute
+  '/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
   '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
-  '/classes/$classId/analysis/$sessionId': typeof InstructorClassesClassIdAnalysisSessionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_instructor': typeof InstructorRouteWithChildren
+  '/_faculty': typeof FacultyRouteWithChildren
   '/_student': typeof StudentRouteWithChildren
   '/privacy': typeof PrivacyRoute
-  '/_instructor/archived': typeof InstructorArchivedRoute
-  '/_instructor/dashboard': typeof InstructorDashboardRoute
-  '/_instructor/home': typeof InstructorHomeRoute
-  '/login/instructor': typeof LoginInstructorRoute
+  '/_faculty/$classId': typeof FacultyClassIdRouteWithChildren
+  '/_faculty/archived': typeof FacultyArchivedRoute
+  '/_faculty/dashboard': typeof FacultyDashboardRoute
+  '/_faculty/home': typeof FacultyHomeRoute
+  '/login/faculty': typeof LoginFacultyRoute
   '/login/student': typeof LoginStudentRoute
-  '/_instructor/classes/$classId': typeof InstructorClassesClassIdRouteWithChildren
   '/_student/student/home': typeof StudentStudentHomeRoute
+  '/_faculty/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
   '/_student/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
-  '/_instructor/classes/$classId/analysis/$sessionId': typeof InstructorClassesClassIdAnalysisSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/privacy'
+    | '/$classId'
     | '/archived'
     | '/dashboard'
     | '/home'
-    | '/login/instructor'
+    | '/login/faculty'
     | '/login/student'
-    | '/classes/$classId'
     | '/student/home'
+    | '/$classId/analysis/$sessionId'
     | '/student/submit/$sessionId'
-    | '/classes/$classId/analysis/$sessionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/privacy'
+    | '/$classId'
     | '/archived'
     | '/dashboard'
     | '/home'
-    | '/login/instructor'
+    | '/login/faculty'
     | '/login/student'
-    | '/classes/$classId'
     | '/student/home'
+    | '/$classId/analysis/$sessionId'
     | '/student/submit/$sessionId'
-    | '/classes/$classId/analysis/$sessionId'
   id:
     | '__root__'
     | '/'
-    | '/_instructor'
+    | '/_faculty'
     | '/_student'
     | '/privacy'
-    | '/_instructor/archived'
-    | '/_instructor/dashboard'
-    | '/_instructor/home'
-    | '/login/instructor'
+    | '/_faculty/$classId'
+    | '/_faculty/archived'
+    | '/_faculty/dashboard'
+    | '/_faculty/home'
+    | '/login/faculty'
     | '/login/student'
-    | '/_instructor/classes/$classId'
     | '/_student/student/home'
+    | '/_faculty/$classId/analysis/$sessionId'
     | '/_student/student/submit/$sessionId'
-    | '/_instructor/classes/$classId/analysis/$sessionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  InstructorRoute: typeof InstructorRouteWithChildren
+  FacultyRoute: typeof FacultyRouteWithChildren
   StudentRoute: typeof StudentRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
-  LoginInstructorRoute: typeof LoginInstructorRoute
+  LoginFacultyRoute: typeof LoginFacultyRoute
   LoginStudentRoute: typeof LoginStudentRoute
 }
 
@@ -201,11 +200,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_instructor': {
-      id: '/_instructor'
+    '/_faculty': {
+      id: '/_faculty'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof InstructorRouteImport
+      preLoaderRoute: typeof FacultyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -222,33 +221,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginStudentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login/instructor': {
-      id: '/login/instructor'
-      path: '/login/instructor'
-      fullPath: '/login/instructor'
-      preLoaderRoute: typeof LoginInstructorRouteImport
+    '/login/faculty': {
+      id: '/login/faculty'
+      path: '/login/faculty'
+      fullPath: '/login/faculty'
+      preLoaderRoute: typeof LoginFacultyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_instructor/home': {
-      id: '/_instructor/home'
+    '/_faculty/home': {
+      id: '/_faculty/home'
       path: '/home'
       fullPath: '/home'
-      preLoaderRoute: typeof InstructorHomeRouteImport
-      parentRoute: typeof InstructorRoute
+      preLoaderRoute: typeof FacultyHomeRouteImport
+      parentRoute: typeof FacultyRoute
     }
-    '/_instructor/dashboard': {
-      id: '/_instructor/dashboard'
+    '/_faculty/dashboard': {
+      id: '/_faculty/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
-      preLoaderRoute: typeof InstructorDashboardRouteImport
-      parentRoute: typeof InstructorRoute
+      preLoaderRoute: typeof FacultyDashboardRouteImport
+      parentRoute: typeof FacultyRoute
     }
-    '/_instructor/archived': {
-      id: '/_instructor/archived'
+    '/_faculty/archived': {
+      id: '/_faculty/archived'
       path: '/archived'
       fullPath: '/archived'
-      preLoaderRoute: typeof InstructorArchivedRouteImport
-      parentRoute: typeof InstructorRoute
+      preLoaderRoute: typeof FacultyArchivedRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/_faculty/$classId': {
+      id: '/_faculty/$classId'
+      path: '/$classId'
+      fullPath: '/$classId'
+      preLoaderRoute: typeof FacultyClassIdRouteImport
+      parentRoute: typeof FacultyRoute
     }
     '/_student/student/home': {
       id: '/_student/student/home'
@@ -257,13 +263,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentStudentHomeRouteImport
       parentRoute: typeof StudentRoute
     }
-    '/_instructor/classes/$classId': {
-      id: '/_instructor/classes/$classId'
-      path: '/classes/$classId'
-      fullPath: '/classes/$classId'
-      preLoaderRoute: typeof InstructorClassesClassIdRouteImport
-      parentRoute: typeof InstructorRoute
-    }
     '/_student/student/submit/$sessionId': {
       id: '/_student/student/submit/$sessionId'
       path: '/student/submit/$sessionId'
@@ -271,48 +270,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentStudentSubmitSessionIdRouteImport
       parentRoute: typeof StudentRoute
     }
-    '/_instructor/classes/$classId/analysis/$sessionId': {
-      id: '/_instructor/classes/$classId/analysis/$sessionId'
+    '/_faculty/$classId/analysis/$sessionId': {
+      id: '/_faculty/$classId/analysis/$sessionId'
       path: '/analysis/$sessionId'
-      fullPath: '/classes/$classId/analysis/$sessionId'
-      preLoaderRoute: typeof InstructorClassesClassIdAnalysisSessionIdRouteImport
-      parentRoute: typeof InstructorClassesClassIdRoute
+      fullPath: '/$classId/analysis/$sessionId'
+      preLoaderRoute: typeof FacultyClassIdAnalysisSessionIdRouteImport
+      parentRoute: typeof FacultyClassIdRoute
     }
   }
 }
 
-interface InstructorClassesClassIdRouteChildren {
-  InstructorClassesClassIdAnalysisSessionIdRoute: typeof InstructorClassesClassIdAnalysisSessionIdRoute
+interface FacultyClassIdRouteChildren {
+  FacultyClassIdAnalysisSessionIdRoute: typeof FacultyClassIdAnalysisSessionIdRoute
 }
 
-const InstructorClassesClassIdRouteChildren: InstructorClassesClassIdRouteChildren =
-  {
-    InstructorClassesClassIdAnalysisSessionIdRoute:
-      InstructorClassesClassIdAnalysisSessionIdRoute,
-  }
-
-const InstructorClassesClassIdRouteWithChildren =
-  InstructorClassesClassIdRoute._addFileChildren(
-    InstructorClassesClassIdRouteChildren,
-  )
-
-interface InstructorRouteChildren {
-  InstructorArchivedRoute: typeof InstructorArchivedRoute
-  InstructorDashboardRoute: typeof InstructorDashboardRoute
-  InstructorHomeRoute: typeof InstructorHomeRoute
-  InstructorClassesClassIdRoute: typeof InstructorClassesClassIdRouteWithChildren
+const FacultyClassIdRouteChildren: FacultyClassIdRouteChildren = {
+  FacultyClassIdAnalysisSessionIdRoute: FacultyClassIdAnalysisSessionIdRoute,
 }
 
-const InstructorRouteChildren: InstructorRouteChildren = {
-  InstructorArchivedRoute: InstructorArchivedRoute,
-  InstructorDashboardRoute: InstructorDashboardRoute,
-  InstructorHomeRoute: InstructorHomeRoute,
-  InstructorClassesClassIdRoute: InstructorClassesClassIdRouteWithChildren,
-}
-
-const InstructorRouteWithChildren = InstructorRoute._addFileChildren(
-  InstructorRouteChildren,
+const FacultyClassIdRouteWithChildren = FacultyClassIdRoute._addFileChildren(
+  FacultyClassIdRouteChildren,
 )
+
+interface FacultyRouteChildren {
+  FacultyClassIdRoute: typeof FacultyClassIdRouteWithChildren
+  FacultyArchivedRoute: typeof FacultyArchivedRoute
+  FacultyDashboardRoute: typeof FacultyDashboardRoute
+  FacultyHomeRoute: typeof FacultyHomeRoute
+}
+
+const FacultyRouteChildren: FacultyRouteChildren = {
+  FacultyClassIdRoute: FacultyClassIdRouteWithChildren,
+  FacultyArchivedRoute: FacultyArchivedRoute,
+  FacultyDashboardRoute: FacultyDashboardRoute,
+  FacultyHomeRoute: FacultyHomeRoute,
+}
+
+const FacultyRouteWithChildren =
+  FacultyRoute._addFileChildren(FacultyRouteChildren)
 
 interface StudentRouteChildren {
   StudentStudentHomeRoute: typeof StudentStudentHomeRoute
@@ -329,10 +324,10 @@ const StudentRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  InstructorRoute: InstructorRouteWithChildren,
+  FacultyRoute: FacultyRouteWithChildren,
   StudentRoute: StudentRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
-  LoginInstructorRoute: LoginInstructorRoute,
+  LoginFacultyRoute: LoginFacultyRoute,
   LoginStudentRoute: LoginStudentRoute,
 }
 export const routeTree = rootRouteImport

@@ -2,13 +2,7 @@ import { useMemo, useState } from "react";
 import { PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -80,17 +74,14 @@ export function CreateSessionForm({ classId }: { classId: string }) {
             <SelectTrigger id="topic">
               <SelectValue
                 placeholder={
-                  availableTopics.length === 0
-                    ? "No topics for this course"
-                    : "Select a topic"
+                  availableTopics.length === 0 ? "No topics for this course" : "Select a topic"
                 }
               />
             </SelectTrigger>
             <SelectContent>
               {availableTopics.length === 0 ? (
                 <div className="px-3 py-2 text-xs text-muted-foreground">
-                  No topics for this course — add one in Dashboard → Course
-                  Management Hub.
+                  No topics for this course — add one in Dashboard → Course Management Hub.
                 </div>
               ) : (
                 availableTopics.map((t) => (

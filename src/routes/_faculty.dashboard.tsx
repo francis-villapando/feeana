@@ -1,36 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Activity,
-  Database,
-  GraduationCap,
-  Target,
-  Users,
-} from "lucide-react";
+import { Activity, Database, GraduationCap, Target, Users } from "lucide-react";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { useClassStore } from "@/lib/classStore";
-import {
-  averageRate,
-  iloAchievementForSession,
-  submissionRateForSession,
-} from "@/lib/metrics";
+import { averageRate, iloAchievementForSession, submissionRateForSession } from "@/lib/metrics";
 import { CourseManagementHub } from "@/components/dashboard/CourseManagementHub";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { CrossClassFeedbackCreator } from "@/components/dashboard/CrossClassFeedbackCreator";
 
-export const Route = createFileRoute("/_instructor/dashboard")({
+export const Route = createFileRoute("/_faculty/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — Feeana" },
       {
         name: "description",
-        content:
-          "Workspace KPIs, course management, and cross-class feedback launches.",
+        content: "Workspace KPIs, course management, and cross-class feedback launches.",
       },
     ],
   }),
@@ -49,9 +35,7 @@ function DashboardPage() {
         return submissionRateForSession(s, cls, feedback);
       }),
     );
-    const ilo = averageRate(
-      sessions.map((s) => iloAchievementForSession(s, feedback)),
-    );
+    const ilo = averageRate(sessions.map((s) => iloAchievementForSession(s, feedback)));
     return { active, submission, ilo };
   }, [feedback, sessions, classes]);
 
@@ -62,9 +46,7 @@ function DashboardPage() {
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
             Workspace overview
           </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-            Dashboard
-          </h1>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage your curriculum and launch coordinated feedback.
           </p>

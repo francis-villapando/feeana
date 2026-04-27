@@ -1,7 +1,7 @@
 import { serve } from "std/server";
 import { hashToken, genToken } from "./helpers";
 
-// Minimal instructor create class function
+// Minimal faculty create class function
 serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -9,7 +9,9 @@ serve(async (req) => {
     const body = await req.json();
     const { course, section, name, topics, ilos } = body;
     if (!course || !section) {
-      return new Response(JSON.stringify({ error: "course and section required" }), { status: 400 });
+      return new Response(JSON.stringify({ error: "course and section required" }), {
+        status: 400,
+      });
     }
 
     // verify auth token and role (simple check via supabase / user info)
@@ -20,13 +22,14 @@ serve(async (req) => {
     const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
       headers: { Authorization: auth },
     });
-    if (!userRes.ok) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
+    if (!userRes.ok)
+      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
     const user = await userRes.json();
 
-    // For MVP we allow any authenticated user to create class as instructor
+    // For MVP we allow any authenticated user to create class as faculty
     // Ensure profile exists; insert if needed
     const profileResp = await fetch(`${supabaseUrl}/rest/v1/profiles?select=id&eq.id=${user.id}`, {
-      headers: { Authorization: `Bearer ${serviceKey}`, "apikey": serviceKey },
+      headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
     });
 
     // create a join code (8 chars)
@@ -40,7 +43,15 @@ serve(async (req) => {
         apikey: serviceKey,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ instructor_id: user.id, course, section, name, join_code: joinCode, topics: topics || [], ilos: ilos || [] }),
+      body: JSON.stringify({
+        faculty_id: user.id,
+        course,
+        section,
+        name,
+        join_code: joinCode,
+        topics: topics || [],
+        ilos: ilos || [],
+      }),
     });
     const insertJson = await insertRes.json();
     if (!insertRes.ok) return new Response(JSON.stringify({ error: insertJson }), { status: 500 });

@@ -27,31 +27,11 @@ type State =
   | { kind: "topic"; entity?: Topic }
   | { kind: "ILO"; entity?: ILO };
 
-const BLOOMS: BloomLevel[] = [
-  "Remember",
-  "Understand",
-  "Apply",
-  "Analyze",
-  "Evaluate",
-  "Create",
-];
+const BLOOMS: BloomLevel[] = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
 
-export function EntityFormDialog({
-  state,
-  onClose,
-}: {
-  state: State;
-  onClose: () => void;
-}) {
-  const {
-    courses,
-    createCourse,
-    updateCourse,
-    createTopic,
-    updateTopic,
-    createILO,
-    updateILO,
-  } = useCourseStore();
+export function EntityFormDialog({ state, onClose }: { state: State; onClose: () => void }) {
+  const { courses, createCourse, updateCourse, createTopic, updateTopic, createILO, updateILO } =
+    useCourseStore();
 
   const isEdit = !!state.entity;
   const labels: Record<EntityKind, string> = {
@@ -61,35 +41,29 @@ export function EntityFormDialog({
   };
 
   // Course
-  const [code, setCode] = useState(
-    state.kind === "course" ? state.entity?.code ?? "" : "",
-  );
-  const [title, setTitle] = useState(
-    state.kind === "course" ? state.entity?.title ?? "" : "",
-  );
+  const [code, setCode] = useState(state.kind === "course" ? (state.entity?.code ?? "") : "");
+  const [title, setTitle] = useState(state.kind === "course" ? (state.entity?.title ?? "") : "");
   // Topic
   const [topicTitle, setTopicTitle] = useState(
-    state.kind === "topic" ? state.entity?.title ?? "" : "",
+    state.kind === "topic" ? (state.entity?.title ?? "") : "",
   );
   const [topicCourseId, setTopicCourseId] = useState(
     state.kind === "topic"
-      ? state.entity?.courseId ?? courses[0]?.id ?? ""
-      : courses[0]?.id ?? "",
+      ? (state.entity?.courseId ?? courses[0]?.id ?? "")
+      : (courses[0]?.id ?? ""),
   );
   // ILO
-  const [iloCode, setIloCode] = useState(
-    state.kind === "ILO" ? state.entity?.code ?? "" : "",
-  );
+  const [iloCode, setIloCode] = useState(state.kind === "ILO" ? (state.entity?.code ?? "") : "");
   const [iloStatement, setIloStatement] = useState(
-    state.kind === "ILO" ? state.entity?.statement ?? "" : "",
+    state.kind === "ILO" ? (state.entity?.statement ?? "") : "",
   );
   const [iloCourseId, setIloCourseId] = useState(
     state.kind === "ILO"
-      ? state.entity?.courseId ?? courses[0]?.id ?? ""
-      : courses[0]?.id ?? "",
+      ? (state.entity?.courseId ?? courses[0]?.id ?? "")
+      : (courses[0]?.id ?? ""),
   );
   const [iloBloom, setIloBloom] = useState<BloomLevel>(
-    state.kind === "ILO" ? state.entity?.bloomLevel ?? "Apply" : "Apply",
+    state.kind === "ILO" ? (state.entity?.bloomLevel ?? "Apply") : "Apply",
   );
 
   const handleSave = () => {
@@ -247,10 +221,7 @@ export function EntityFormDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>Bloom level</Label>
-                <Select
-                  value={iloBloom}
-                  onValueChange={(v) => setIloBloom(v as BloomLevel)}
-                >
+                <Select value={iloBloom} onValueChange={(v) => setIloBloom(v as BloomLevel)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

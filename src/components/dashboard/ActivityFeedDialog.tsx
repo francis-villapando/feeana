@@ -23,9 +23,7 @@ export function ActivityFeedDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Activity — last 30 days</DialogTitle>
-          <DialogDescription>
-            Every course, topic, and ILO change.
-          </DialogDescription>
+          <DialogDescription>Every course, topic, and ILO change.</DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-3">
           <div className="space-y-2">

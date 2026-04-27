@@ -12,10 +12,7 @@ export function submissionRateForSession(
 }
 
 /** Mock ILO achievement = % of pedagogical feedback in session. */
-export function iloAchievementForSession(
-  session: Session,
-  feedback: Feedback[],
-): number {
+export function iloAchievementForSession(session: Session, feedback: Feedback[]): number {
   const items = feedback.filter((f) => f.sessionId === session.id);
   if (items.length === 0) return 0;
   const pedagogical = items.filter((f) => f.isPedagogical).length;
@@ -28,19 +25,10 @@ export function averageRate(values: number[]): number {
 }
 
 /** Class-level participation: responses / (students × sessions). */
-export function classParticipation(
-  cls: Class,
-  sessions: Session[],
-  feedback: Feedback[],
-): number {
+export function classParticipation(cls: Class, sessions: Session[], feedback: Feedback[]): number {
   if (!cls || cls.studentCount === 0 || sessions.length === 0) return 0;
-  const responses = feedback.filter((f) =>
-    sessions.some((s) => s.id === f.sessionId),
-  ).length;
-  return Math.min(
-    100,
-    Math.round((responses / (cls.studentCount * sessions.length)) * 100),
-  );
+  const responses = feedback.filter((f) => sessions.some((s) => s.id === f.sessionId)).length;
+  return Math.min(100, Math.round((responses / (cls.studentCount * sessions.length)) * 100));
 }
 
 /** Map polarity label to numeric score: pos=+1, neu=0, neg=-1. */
@@ -58,10 +46,7 @@ function polarityScore(label: string): number {
 }
 
 /** Average polarity across all aspects of all feedback in the session. */
-export function avgPolarityForSession(
-  session: Session,
-  feedback: Feedback[],
-): number {
+export function avgPolarityForSession(session: Session, feedback: Feedback[]): number {
   const items = feedback.filter((f) => f.sessionId === session.id);
   const scores: number[] = [];
   for (const f of items) {
@@ -88,10 +73,7 @@ export function recommendationTrendData(
 ): RecommendationTrendPoint[] {
   return [...sessions]
     .filter((s) => analyses[s.id])
-    .sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    )
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .map((s) => ({
       topic: s.topic,
       recommendations: analyses[s.id].recommendations.length,

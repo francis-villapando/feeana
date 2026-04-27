@@ -1,4 +1,3 @@
-
 # Plan Update — ILO Gap Analysis row simplification
 
 Single targeted change folded into the previously approved plan (Section 5).

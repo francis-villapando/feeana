@@ -97,8 +97,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       window.localStorage.setItem(TOPICS_KEY, JSON.stringify(topics));
   }, [topics]);
   useEffect(() => {
-    if (typeof window !== "undefined")
-      window.localStorage.setItem(ILOS_KEY, JSON.stringify(ilos));
+    if (typeof window !== "undefined") window.localStorage.setItem(ILOS_KEY, JSON.stringify(ilos));
   }, [ilos]);
   useEffect(() => {
     if (typeof window !== "undefined")
@@ -106,12 +105,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   }, [activity]);
 
   const log = useCallback(
-    (
-      entity: EntityKind,
-      entityId: string,
-      action: ActivityAction,
-      label: string,
-    ) => {
+    (entity: EntityKind, entityId: string, action: ActivityAction, label: string) => {
       setActivity((prev) =>
         [
           {
@@ -148,9 +142,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     (id: string, input: { code: string; title: string }) => {
       setCourses((prev) =>
         prev.map((c) =>
-          c.id === id
-            ? { ...c, code: input.code.trim(), title: input.title.trim() }
-            : c,
+          c.id === id ? { ...c, code: input.code.trim(), title: input.title.trim() } : c,
         ),
       );
       log("course", id, "updated", `${input.code} — ${input.title}`);
@@ -160,9 +152,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   const archiveCourse = useCallback(
     (id: string) => {
       const c = courses.find((x) => x.id === id);
-      setCourses((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, archived: true } : x)),
-      );
+      setCourses((prev) => prev.map((x) => (x.id === id ? { ...x, archived: true } : x)));
       if (c) log("course", id, "archived", `${c.code} — ${c.title}`);
     },
     [courses, log],
@@ -170,9 +160,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   const restoreCourse = useCallback(
     (id: string) => {
       const c = courses.find((x) => x.id === id);
-      setCourses((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, archived: false } : x)),
-      );
+      setCourses((prev) => prev.map((x) => (x.id === id ? { ...x, archived: false } : x)));
       if (c) log("course", id, "restored", `${c.code} — ${c.title}`);
     },
     [courses, log],
@@ -198,9 +186,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     (id: string, input: { courseId: string; title: string }) => {
       setTopics((prev) =>
         prev.map((t) =>
-          t.id === id
-            ? { ...t, courseId: input.courseId, title: input.title.trim() }
-            : t,
+          t.id === id ? { ...t, courseId: input.courseId, title: input.title.trim() } : t,
         ),
       );
       log("topic", id, "updated", input.title);
@@ -210,9 +196,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   const archiveTopic = useCallback(
     (id: string) => {
       const t = topics.find((x) => x.id === id);
-      setTopics((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, archived: true } : x)),
-      );
+      setTopics((prev) => prev.map((x) => (x.id === id ? { ...x, archived: true } : x)));
       if (t) log("topic", id, "archived", t.title);
     },
     [topics, log],
@@ -220,9 +204,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   const restoreTopic = useCallback(
     (id: string) => {
       const t = topics.find((x) => x.id === id);
-      setTopics((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, archived: false } : x)),
-      );
+      setTopics((prev) => prev.map((x) => (x.id === id ? { ...x, archived: false } : x)));
       if (t) log("topic", id, "restored", t.title);
     },
     [topics, log],
@@ -230,12 +212,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
 
   // ILOs
   const createILO = useCallback(
-    (input: {
-      courseId: string;
-      code: string;
-      statement: string;
-      bloomLevel: BloomLevel;
-    }) => {
+    (input: { courseId: string; code: string; statement: string; bloomLevel: BloomLevel }) => {
       const i: ILO = {
         id: uid("ilo"),
         courseId: input.courseId,
@@ -280,9 +257,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   const archiveILO = useCallback(
     (id: string) => {
       const i = ilos.find((x) => x.id === id);
-      setIlos((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, archived: true } : x)),
-      );
+      setIlos((prev) => prev.map((x) => (x.id === id ? { ...x, archived: true } : x)));
       if (i) log("ILO", id, "archived", i.code);
     },
     [ilos, log],
@@ -290,9 +265,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   const restoreILO = useCallback(
     (id: string) => {
       const i = ilos.find((x) => x.id === id);
-      setIlos((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, archived: false } : x)),
-      );
+      setIlos((prev) => prev.map((x) => (x.id === id ? { ...x, archived: false } : x)));
       if (i) log("ILO", id, "restored", i.code);
     },
     [ilos, log],
@@ -337,16 +310,11 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return (
-    <CourseStoreContext.Provider value={value}>
-      {children}
-    </CourseStoreContext.Provider>
-  );
+  return <CourseStoreContext.Provider value={value}>{children}</CourseStoreContext.Provider>;
 }
 
 export function useCourseStore() {
   const ctx = useContext(CourseStoreContext);
-  if (!ctx)
-    throw new Error("useCourseStore must be used within CourseStoreProvider");
+  if (!ctx) throw new Error("useCourseStore must be used within CourseStoreProvider");
   return ctx;
 }

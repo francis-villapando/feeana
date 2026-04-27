@@ -7,11 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  MOCK_CLASSES,
-  MOCK_SESSIONS,
-  MOCK_STUDENTS_BY_CLASS,
-} from "./mockData";
+import { MOCK_CLASSES, MOCK_SESSIONS, MOCK_STUDENTS_BY_CLASS } from "./mockData";
 import type { Class, Session, Student } from "./types";
 
 const CLASSES_KEY = "feeana.classes";
@@ -73,9 +69,8 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     "class-cs101-a",
     "class-cs101-b",
   ]);
-  const [studentsByClass, setStudentsByClass] = useState<
-    Record<string, Student[]>
-  >(MOCK_STUDENTS_BY_CLASS);
+  const [studentsByClass, setStudentsByClass] =
+    useState<Record<string, Student[]>>(MOCK_STUDENTS_BY_CLASS);
 
   useEffect(() => {
     setClasses(readJSON(CLASSES_KEY, MOCK_CLASSES));
@@ -101,35 +96,28 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       window.localStorage.setItem(STUDENTS_KEY, JSON.stringify(studentsByClass));
   }, [studentsByClass]);
 
-  const createClass = useCallback(
-    (input: { name: string; course: string; section: string }) => {
-      const cls: Class = {
-        id: `class-${Date.now()}`,
-        name: input.name.trim(),
-        course: input.course.trim(),
-        section: input.section.trim(),
-        code: generateCode(6),
-        createdAt: new Date().toISOString(),
-        archived: false,
-        studentCount: 0,
-      };
-      setClasses((prev) => [...prev, cls]);
-      setStudentsByClass((prev) => ({ ...prev, [cls.id]: [] }));
-      return cls;
-    },
-    [],
-  );
+  const createClass = useCallback((input: { name: string; course: string; section: string }) => {
+    const cls: Class = {
+      id: `class-${Date.now()}`,
+      name: input.name.trim(),
+      course: input.course.trim(),
+      section: input.section.trim(),
+      code: generateCode(6),
+      createdAt: new Date().toISOString(),
+      archived: false,
+      studentCount: 0,
+    };
+    setClasses((prev) => [...prev, cls]);
+    setStudentsByClass((prev) => ({ ...prev, [cls.id]: [] }));
+    return cls;
+  }, []);
 
   const archiveClass = useCallback((id: string) => {
-    setClasses((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, archived: true } : c)),
-    );
+    setClasses((prev) => prev.map((c) => (c.id === id ? { ...c, archived: true } : c)));
   }, []);
 
   const restoreClass = useCallback((id: string) => {
-    setClasses((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, archived: false } : c)),
-    );
+    setClasses((prev) => prev.map((c) => (c.id === id ? { ...c, archived: false } : c)));
   }, []);
 
   const createSession = useCallback(
@@ -163,9 +151,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       const normalized = code.trim().toUpperCase();
       const cls = classes.find((c) => c.code === normalized && !c.archived);
       if (!cls) return null;
-      setJoinedClassIds((prev) =>
-        prev.includes(cls.id) ? prev : [...prev, cls.id],
-      );
+      setJoinedClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
       return cls;
     },
     [classes],
@@ -178,9 +164,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     }));
     setClasses((prev) =>
       prev.map((c) =>
-        c.id === classId
-          ? { ...c, studentCount: Math.max(0, c.studentCount - 1) }
-          : c,
+        c.id === classId ? { ...c, studentCount: Math.max(0, c.studentCount - 1) } : c,
       ),
     );
   }, []);
@@ -198,8 +182,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       archivedClasses,
       activeSessions,
       getClass: (id) => classes.find((c) => c.id === id),
-      sessionsForClass: (classId) =>
-        sessions.filter((s) => s.classId === classId),
+      sessionsForClass: (classId) => sessions.filter((s) => s.classId === classId),
       studentsForClass: (classId) => studentsByClass[classId] ?? [],
       removeStudent,
       createClass,
@@ -221,11 +204,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     removeStudent,
   ]);
 
-  return (
-    <ClassStoreContext.Provider value={value}>
-      {children}
-    </ClassStoreContext.Provider>
-  );
+  return <ClassStoreContext.Provider value={value}>{children}</ClassStoreContext.Provider>;
 }
 
 export function useClassStore() {

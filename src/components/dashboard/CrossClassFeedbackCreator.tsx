@@ -2,13 +2,7 @@ import { useState } from "react";
 import { Check, ChevronsUpDown, PlusCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Command,
   CommandEmpty,
@@ -18,11 +12,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -58,9 +48,7 @@ export function CrossClassFeedbackCreator() {
   };
 
   const updateRow = (classId: string, patch: Partial<PerClass>) => {
-    setRows((prev) =>
-      prev.map((r) => (r.classId === classId ? { ...r, ...patch } : r)),
-    );
+    setRows((prev) => prev.map((r) => (r.classId === classId ? { ...r, ...patch } : r)));
   };
 
   const handleLaunch = () => {
@@ -108,24 +96,23 @@ export function CrossClassFeedbackCreator() {
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <PlusCircle className="h-4 w-4 text-primary" /> Cross-class feedback
-          creator
+          <PlusCircle className="h-4 w-4 text-primary" /> Cross-class feedback creator
         </CardTitle>
         <CardDescription>
-          Launch a feedback collection across multiple classes — each picks its
-          own topic and schedule.
+          Launch a feedback collection across multiple classes — each picks its own topic and
+          schedule.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-          <div className="space-y-1.5">
+        <div className="space-y-1.5">
           <Label className="block mb-2">Classes</Label>
           <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  className="w-full justify-between font-normal sm:w-[320px]"
-                >
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="w-full justify-between font-normal sm:w-[320px]"
+              >
                 {rows.length > 0
                   ? `${rows.length} class${rows.length === 1 ? "" : "es"} selected`
                   : "Select classes"}
@@ -147,15 +134,10 @@ export function CrossClassFeedbackCreator() {
                           onSelect={() => toggleClass(c.id)}
                         >
                           <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selected ? "opacity-100" : "opacity-0",
-                            )}
+                            className={cn("mr-2 h-4 w-4", selected ? "opacity-100" : "opacity-0")}
                           />
                           {c.course} · {c.section}{" "}
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {c.name}
-                          </span>
+                          <span className="ml-2 text-xs text-muted-foreground">{c.name}</span>
                         </CommandItem>
                       );
                     })}
@@ -186,22 +168,14 @@ export function CrossClassFeedbackCreator() {
                     <p className="text-xs text-muted-foreground">{cls?.name}</p>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] uppercase tracking-wider">
-                      Topic
-                    </Label>
+                    <Label className="text-[10px] uppercase tracking-wider">Topic</Label>
                     <Select
                       value={r.topicId}
-                      onValueChange={(v) =>
-                        updateRow(r.classId, { topicId: v })
-                      }
+                      onValueChange={(v) => updateRow(r.classId, { topicId: v })}
                     >
                       <SelectTrigger>
                         <SelectValue
-                          placeholder={
-                            cTopics.length === 0
-                              ? "No topics"
-                              : "Select topic"
-                          }
+                          placeholder={cTopics.length === 0 ? "No topics" : "Select topic"}
                         />
                       </SelectTrigger>
                       <SelectContent>
@@ -220,20 +194,14 @@ export function CrossClassFeedbackCreator() {
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] uppercase tracking-wider">
-                      Starts
-                    </Label>
+                    <Label className="text-[10px] uppercase tracking-wider">Starts</Label>
                     <DateTimePicker
                       value={r.startsAt}
-                      onChange={(iso) =>
-                        updateRow(r.classId, { startsAt: iso })
-                      }
+                      onChange={(iso) => updateRow(r.classId, { startsAt: iso })}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] uppercase tracking-wider">
-                      Ends
-                    </Label>
+                    <Label className="text-[10px] uppercase tracking-wider">Ends</Label>
                     <DateTimePicker
                       value={r.endsAt}
                       onChange={(iso) => updateRow(r.classId, { endsAt: iso })}

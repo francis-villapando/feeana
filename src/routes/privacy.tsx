@@ -30,43 +30,38 @@ function PrivacyPage() {
         </span>
         <h1 className="text-3xl font-semibold tracking-tight">Privacy Policy</h1>
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Consent Module — Feeana Research Build
-      </p>
+      <p className="mt-2 text-sm text-muted-foreground">Consent Module — Feeana Research Build</p>
 
       <div className="mt-8 space-y-6 text-sm leading-relaxed text-muted-foreground">
         <section>
           <h2 className="text-base font-semibold text-foreground">What we collect</h2>
           <p className="mt-2">
-            Feeana collects short, free-text feedback you submit during a class
-            session. Submissions are tied to the session you select, not to your
-            personal identity. Instructors see aggregated analyses, not your
-            name.
+            Feeana collects short, free-text feedback you submit during a class session. Submissions
+            are tied to the session you select, not to your personal identity. Faculty see
+            aggregated analyses, not your name.
           </p>
         </section>
         <section>
           <h2 className="text-base font-semibold text-foreground">How it is used</h2>
           <p className="mt-2">
-            Your text is preprocessed (noise removal, vowel normalization,
-            abbreviation expansion), classified as pedagogical or non-pedagogical,
-            and analyzed for aspects and sentiment. Results are mapped to
-            Intended Learning Outcomes and educational theories (Revised Bloom,
-            Cognitive Load Theory, Teaching Through Interactions).
+            Your text is preprocessed (noise removal, vowel normalization, abbreviation expansion),
+            classified as pedagogical or non-pedagogical, and analyzed for aspects and sentiment.
+            Results are mapped to Intended Learning Outcomes and educational theories (Revised
+            Bloom, Cognitive Load Theory, Teaching Through Interactions).
           </p>
         </section>
         <section>
           <h2 className="text-base font-semibold text-foreground">Your consent</h2>
           <p className="mt-2">
-            By submitting feedback you confirm voluntary participation. You can
-            withhold any session — there is no penalty for not submitting. No
-            personally identifying content should be included in your text.
+            By submitting feedback you confirm voluntary participation. You can withhold any session
+            — there is no penalty for not submitting. No personally identifying content should be
+            included in your text.
           </p>
         </section>
         <section>
           <h2 className="text-base font-semibold text-foreground">Storage</h2>
           <p className="mt-2">
-            This MVP stores all data in browser memory only. No external server
-            persists your input.
+            This MVP stores all data in browser memory only. No external server persists your input.
           </p>
         </section>
       </div>

@@ -1,12 +1,6 @@
 import { useMemo, useState } from "react";
 import { Activity, BookOpen, ListChecks, Target } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCourseStore } from "@/lib/courseStore";
 import type { ActivityEntry, EntityKind } from "@/lib/types";
@@ -38,10 +32,7 @@ export function ActivityFeed() {
   const { activity } = useCourseStore();
   const [open, setOpen] = useState(false);
 
-  const recent = useMemo(
-    () => activity.filter((a) => withinDays(a.timestamp, 30)),
-    [activity],
-  );
+  const recent = useMemo(() => activity.filter((a) => withinDays(a.timestamp, 30)), [activity]);
   const top = recent.slice(0, 6);
 
   return (
@@ -50,9 +41,7 @@ export function ActivityFeed() {
         <CardTitle className="flex items-center gap-2 text-base">
           <Activity className="h-4 w-4 text-primary" /> Activity feed
         </CardTitle>
-        <CardDescription>
-          Course / topic / ILO changes from the last 30 days.
-        </CardDescription>
+        <CardDescription>Course / topic / ILO changes from the last 30 days.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         {top.length === 0 ? (
@@ -90,9 +79,7 @@ export function ActivityRow({ entry }: { entry: ActivityEntry }) {
           <span className="text-muted-foreground">{entry.action}</span>{" "}
           <span className="font-medium">— {entry.label}</span>
         </p>
-        <p className="text-[10px] text-muted-foreground">
-          {relativeTime(entry.timestamp)}
-        </p>
+        <p className="text-[10px] text-muted-foreground">{relativeTime(entry.timestamp)}</p>
       </div>
     </div>
   );

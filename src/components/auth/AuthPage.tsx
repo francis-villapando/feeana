@@ -1,21 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  BookOpenCheck,
-  GraduationCap,
-  LogIn,
-  UserPlus,
-} from "lucide-react";
+import { ArrowLeft, BookOpenCheck, GraduationCap, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
@@ -25,9 +13,9 @@ const ROLE_META: Record<
   UserRole,
   { title: string; description: string; icon: typeof GraduationCap }
 > = {
-  instructor: {
-    title: "Instructor portal",
-    description: "Sign in or create your instructor account.",
+  faculty: {
+    title: "Faculty portal",
+    description: "Sign in or create your faculty account.",
     icon: GraduationCap,
   },
   student: {
@@ -53,7 +41,7 @@ export function AuthPage({ role }: { role: UserRole }) {
   const [submitting, setSubmitting] = useState(false);
 
   const goHome = (r: UserRole) => {
-    navigate({ to: r === "instructor" ? "/home" : "/student/home" });
+    navigate({ to: r === "faculty" ? "/home" : "/student/home" });
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -144,9 +132,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                 <Input
                   id="password"
                   type="password"
-                  autoComplete={
-                    mode === "signin" ? "current-password" : "new-password"
-                  }
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -188,10 +174,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                   className="text-muted-foreground hover:text-foreground"
                   onClick={() => setMode("signup")}
                 >
-                  New here?{" "}
-                  <span className="text-primary hover:underline">
-                    Create an account
-                  </span>
+                  New here? <span className="text-primary hover:underline">Create an account</span>
                 </button>
               ) : (
                 <button

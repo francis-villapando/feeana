@@ -1,14 +1,6 @@
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { MOCK_ILOS } from "@/lib/mockData";
-import type {
-  Recommendation,
-  RecommendationTerm,
-  TermKind,
-} from "@/lib/types";
+import type { Recommendation, RecommendationTerm, TermKind } from "@/lib/types";
 
 const KIND_LABEL: Record<TermKind, string> = {
   issue: "Issue",
@@ -66,13 +58,7 @@ function resolveDetail(term: RecommendationTerm): {
   return { heading: KIND_LABEL[term.kind], body: term.detail };
 }
 
-export function RecommendationParagraph({
-  rec,
-  index,
-}: {
-  rec: Recommendation;
-  index: number;
-}) {
+export function RecommendationParagraph({ rec, index }: { rec: Recommendation; index: number }) {
   const segments = tokenize(rec.paragraph, rec.terms);
   return (
     <li className="rounded-lg border border-border/60 bg-background/40 p-4">

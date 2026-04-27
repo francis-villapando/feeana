@@ -1,10 +1,4 @@
-import {
-  createFileRoute,
-  Link,
-  notFound,
-  Outlet,
-  useLocation,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, Outlet, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Target, TrendingUp, Users } from "lucide-react";
 import { useMemo } from "react";
 import {
@@ -19,19 +13,8 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClassStudentsTab } from "@/components/ClassStudentsTab";
 import { CreateSessionForm } from "@/components/CreateSessionForm";
 import { SessionCard } from "@/components/SessionCard";
@@ -46,7 +29,7 @@ import {
   submissionRateForSession,
 } from "@/lib/metrics";
 
-export const Route = createFileRoute("/_instructor/classes/$classId")({
+export const Route = createFileRoute("/_faculty/$classId")({
   loader: ({ params }) => {
     const cls = MOCK_CLASSES.find((c) => c.id === params.classId);
     return { seed: cls ?? null };
@@ -83,10 +66,7 @@ function ClassLayout() {
   const sessions = sessionsForClass(classId);
 
   const submissionRate = useMemo(
-    () =>
-      averageRate(
-        sessions.map((s) => submissionRateForSession(s, cls, feedback)),
-      ),
+    () => averageRate(sessions.map((s) => submissionRateForSession(s, cls, feedback))),
     [sessions, cls, feedback],
   );
   const iloRate = useMemo(
@@ -148,18 +128,13 @@ function ClassLayout() {
         <CardContent>
           {trend.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">
-              Trend will appear after you trigger analysis on at least one
-              session.
+              Trend will appear after you trigger analysis on at least one session.
             </p>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={trend}>
                 <CartesianGrid stroke="oklch(1 0 0 / 8%)" vertical={false} />
-                <XAxis
-                  dataKey="topic"
-                  stroke="var(--color-muted-foreground)"
-                  fontSize={11}
-                />
+                <XAxis dataKey="topic" stroke="var(--color-muted-foreground)" fontSize={11} />
                 <YAxis
                   yAxisId="recs"
                   stroke="var(--color-muted-foreground)"
@@ -282,18 +257,10 @@ function SessionsList({ classId }: { classId: string }) {
   );
 }
 
-function DetailRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-border/40 pb-2 last:border-0 last:pb-0">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
+      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
     </div>
   );
@@ -321,9 +288,7 @@ function KpiTile({
             {icon}
           </span>
         </div>
-        <div className="mt-3 text-3xl font-semibold tracking-tight">
-          {value}
-        </div>
+        <div className="mt-3 text-3xl font-semibold tracking-tight">{value}</div>
         {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
       </CardContent>
     </Card>
