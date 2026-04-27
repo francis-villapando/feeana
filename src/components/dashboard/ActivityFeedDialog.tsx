@@ -13,10 +13,12 @@ export function ActivityFeedDialog({
   open,
   onOpenChange,
   entries,
+  currentUserId,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   entries: ActivityEntry[];
+  currentUserId: string | null;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,7 +35,7 @@ export function ActivityFeedDialog({
               </p>
             )}
             {entries.map((e) => (
-              <ActivityRow key={e.id} entry={e} />
+              <ActivityRow key={e.id} entry={e} currentUserId={currentUserId} />
             ))}
           </div>
         </ScrollArea>

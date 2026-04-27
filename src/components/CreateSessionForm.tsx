@@ -30,7 +30,7 @@ export function CreateSessionForm({ classId }: { classId: string }) {
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
 
-  const handleStart = () => {
+  const handleStart = async () => {
     const topic = availableTopics.find((t) => t.id === topicId);
     if (!topic) {
       toast.error("Pick a topic for this collection.");
@@ -44,17 +44,22 @@ export function CreateSessionForm({ classId }: { classId: string }) {
       toast.error("End must be after start.");
       return;
     }
-    const s = createSession({
-      classId,
-      topic: topic.title,
-      topicId: topic.id,
-      startsAt,
-      endsAt,
-    });
-    toast.success(`Collection started: ${s.topic}`);
-    setTopicId("");
-    setStartsAt("");
-    setEndsAt("");
+    try {
+      const s = await createSession({
+        classId,
+        topic: topic.title,
+        topicId: topic.id,
+        courseId: topic.courseId,
+        startsAt,
+        endsAt,
+      });
+      toast.success(`Collection started: ${s.topic}`);
+      setTopicId("");
+      setStartsAt("");
+      setEndsAt("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to start collection");
+    }
   };
 
   return (

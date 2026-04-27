@@ -29,7 +29,7 @@ function relativeTime(iso: string): string {
 }
 
 export function ActivityFeed() {
-  const { activity } = useCourseStore();
+  const { activity, currentUserId } = useCourseStore();
   const [open, setOpen] = useState(false);
 
   const recent = useMemo(() => activity.filter((a) => withinDays(a.timestamp, 30)), [activity]);
@@ -49,7 +49,7 @@ export function ActivityFeed() {
             No activity yet. Make an edit to see it here.
           </p>
         ) : (
-          top.map((a) => <ActivityRow key={a.id} entry={a} />)
+          top.map((a) => <ActivityRow key={a.id} entry={a} currentUserId={currentUserId} />)
         )}
         <Button
           variant="outline"
@@ -61,13 +61,14 @@ export function ActivityFeed() {
           View all
         </Button>
       </CardContent>
-      <ActivityFeedDialog open={open} onOpenChange={setOpen} entries={recent} />
+      <ActivityFeedDialog open={open} onOpenChange={setOpen} entries={recent} currentUserId={currentUserId} />
     </Card>
   );
 }
 
-export function ActivityRow({ entry }: { entry: ActivityEntry }) {
+export function ActivityRow({ entry, currentUserId }: { entry: ActivityEntry; currentUserId: string | null }) {
   const Icon = ICONS[entry.entity];
+  const isCurrentUser = entry.userId === currentUserId;
   return (
     <div className="flex items-start gap-3 rounded-md border border-border/60 bg-background/30 px-3 py-2">
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30">
@@ -79,7 +80,16 @@ export function ActivityRow({ entry }: { entry: ActivityEntry }) {
           <span className="text-muted-foreground">{entry.action}</span>{" "}
           <span className="font-medium">— {entry.label}</span>
         </p>
-        <p className="text-[10px] text-muted-foreground">{relativeTime(entry.timestamp)}</p>
+        <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          {entry.userName && (
+            <span>
+              {entry.userName}
+              {isCurrentUser && " (You)"}
+            </span>
+          )}
+          {entry.userName && <span>·</span>}
+          <span>{relativeTime(entry.timestamp)}</span>
+        </p>
       </div>
     </div>
   );

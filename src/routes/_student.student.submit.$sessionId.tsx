@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/lib/feedbackStore";
-import { MOCK_SESSIONS, MOCK_CLASSES } from "@/lib/mockData";
+import { useClassStore } from "@/lib/classStore";
+import { getSessionById } from "@/lib/services/classService";
 
 export const Route = createFileRoute("/_student/student/submit/$sessionId")({
-  loader: ({ params }) => {
-    const session = MOCK_SESSIONS.find((s) => s.id === params.sessionId);
+  loader: async ({ params }) => {
+    const session = await getSessionById(params.sessionId);
     if (!session) throw notFound();
-    const cls = MOCK_CLASSES.find((c) => c.id === session.classId) ?? null;
-    return { session, cls };
+    return { session };
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -52,11 +52,14 @@ function formatDT(iso: string): string {
 }
 
 function SubmitPage() {
-  const { session, cls } = Route.useLoaderData();
+  const { session } = Route.useLoaderData();
   const { addFeedback } = useFeedbackStore();
+  const { classes } = useClassStore();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const isActive = session.status === "active";
+
+  const cls = classes.find((c) => c.id === session.classId);
 
   const handleSubmit = () => {
     if (text.trim().length < 4) {

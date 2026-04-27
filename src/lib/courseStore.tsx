@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { MOCK_COURSES, MOCK_ILOS, MOCK_TOPICS } from "./mockData";
+import { useAuth } from "./auth";
 import type {
   ActivityAction,
   ActivityEntry,
@@ -17,259 +17,199 @@ import type {
   ILO,
   Topic,
 } from "./types";
-
-const COURSES_KEY = "feeana.courses";
-const TOPICS_KEY = "feeana.topics";
-const ILOS_KEY = "feeana.ilos";
-const ACTIVITY_KEY = "feeana.activity";
-
-function readJSON<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function uid(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-}
+import * as courseService from "./services/courseService";
 
 interface CourseStoreValue {
   courses: Course[];
   topics: Topic[];
   ilos: ILO[];
   activity: ActivityEntry[];
-  // Course CRUD
-  createCourse: (input: { code: string; title: string }) => Course;
-  updateCourse: (id: string, input: { code: string; title: string }) => void;
-  archiveCourse: (id: string) => void;
-  restoreCourse: (id: string) => void;
-  // Topic CRUD
-  createTopic: (input: { courseId: string; title: string }) => Topic;
-  updateTopic: (id: string, input: { courseId: string; title: string }) => void;
-  archiveTopic: (id: string) => void;
-  restoreTopic: (id: string) => void;
-  // ILO CRUD
+  isLoading: boolean;
+  error: string | null;
+  currentUserId: string | null;
+  createCourse: (input: { code: string; title: string }) => Promise<Course>;
+  updateCourse: (id: string, input: { code: string; title: string }) => Promise<void>;
+  archiveCourse: (id: string) => Promise<void>;
+  restoreCourse: (id: string) => Promise<void>;
+  createTopic: (input: { courseId: string; title: string }) => Promise<Topic>;
+  updateTopic: (id: string, input: { courseId: string; title: string }) => Promise<void>;
+  archiveTopic: (id: string) => Promise<void>;
+  restoreTopic: (id: string) => Promise<void>;
   createILO: (input: {
     courseId: string;
-    code: string;
+    topicId: string;
     statement: string;
     bloomLevel: BloomLevel;
-  }) => ILO;
+  }) => Promise<ILO>;
   updateILO: (
     id: string,
     input: {
       courseId: string;
-      code: string;
+      topicId: string;
       statement: string;
       bloomLevel: BloomLevel;
     },
-  ) => void;
-  archiveILO: (id: string) => void;
-  restoreILO: (id: string) => void;
+  ) => Promise<void>;
+  archiveILO: (id: string) => Promise<void>;
+  restoreILO: (id: string) => Promise<void>;
+  refreshActivity: () => Promise<void>;
 }
 
 const CourseStoreContext = createContext<CourseStoreValue | null>(null);
 
 export function CourseStoreProvider({ children }: { children: ReactNode }) {
-  const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
-  const [topics, setTopics] = useState<Topic[]>(MOCK_TOPICS);
-  const [ilos, setIlos] = useState<ILO[]>(MOCK_ILOS);
+  const { user } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [ilos, setIlos] = useState<ILO[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setCourses(readJSON(COURSES_KEY, MOCK_COURSES));
-    setTopics(readJSON(TOPICS_KEY, MOCK_TOPICS));
-    setIlos(readJSON(ILOS_KEY, MOCK_ILOS));
-    setActivity(readJSON<ActivityEntry[]>(ACTIVITY_KEY, []));
+    setIsLoading(true);
+    Promise.all([
+      courseService.getCourses(),
+      courseService.getTopics(),
+      courseService.getILOs(),
+      courseService.getActivity(),
+    ])
+      .then(([c, t, i, a]) => {
+        setCourses(c);
+        setTopics(t);
+        setIlos(i);
+        setActivity(a);
+        setError(null);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load data"))
+      .finally(() => setIsLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (typeof window !== "undefined")
-      window.localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
-  }, [courses]);
-  useEffect(() => {
-    if (typeof window !== "undefined")
-      window.localStorage.setItem(TOPICS_KEY, JSON.stringify(topics));
-  }, [topics]);
-  useEffect(() => {
-    if (typeof window !== "undefined") window.localStorage.setItem(ILOS_KEY, JSON.stringify(ilos));
-  }, [ilos]);
-  useEffect(() => {
-    if (typeof window !== "undefined")
-      window.localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity));
-  }, [activity]);
+  const refreshActivity = useCallback(async () => {
+    try {
+      const data = await courseService.getActivity();
+      setActivity(data);
+    } catch (e) {
+      // silent fail for activity refresh
+    }
+  }, []);
 
-  const log = useCallback(
-    (entity: EntityKind, entityId: string, action: ActivityAction, label: string) => {
-      setActivity((prev) =>
-        [
-          {
-            id: uid("act"),
-            entity,
-            entityId,
-            action,
-            label,
-            timestamp: new Date().toISOString(),
-          },
-          ...prev,
-        ].slice(0, 200),
-      );
-    },
-    [],
-  );
+  const createCourse = useCallback(async (input: { code: string; title: string }) => {
+    const c = await courseService.createCourse(input);
+    setCourses((prev) => [c, ...prev]);
+    await refreshActivity();
+    return c;
+  }, []);
 
-  // Courses
-  const createCourse = useCallback(
-    (input: { code: string; title: string }) => {
-      const c: Course = {
-        id: uid("course"),
-        code: input.code.trim(),
-        title: input.title.trim(),
-        archived: false,
-      };
-      setCourses((prev) => [...prev, c]);
-      log("course", c.id, "created", `${c.code} — ${c.title}`);
-      return c;
-    },
-    [log],
-  );
-  const updateCourse = useCallback(
-    (id: string, input: { code: string; title: string }) => {
-      setCourses((prev) =>
-        prev.map((c) =>
-          c.id === id ? { ...c, code: input.code.trim(), title: input.title.trim() } : c,
-        ),
-      );
-      log("course", id, "updated", `${input.code} — ${input.title}`);
-    },
-    [log],
-  );
-  const archiveCourse = useCallback(
-    (id: string) => {
-      const c = courses.find((x) => x.id === id);
-      setCourses((prev) => prev.map((x) => (x.id === id ? { ...x, archived: true } : x)));
-      if (c) log("course", id, "archived", `${c.code} — ${c.title}`);
-    },
-    [courses, log],
-  );
-  const restoreCourse = useCallback(
-    (id: string) => {
-      const c = courses.find((x) => x.id === id);
-      setCourses((prev) => prev.map((x) => (x.id === id ? { ...x, archived: false } : x)));
-      if (c) log("course", id, "restored", `${c.code} — ${c.title}`);
-    },
-    [courses, log],
-  );
+  const updateCourse = useCallback(async (id: string, input: { code: string; title: string }) => {
+    await courseService.updateCourse(id, input);
+    setCourses((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, code: input.code.trim(), title: input.title.trim() } : c,
+      ),
+    );
+    await refreshActivity();
+  }, []);
 
-  // Topics
-  const createTopic = useCallback(
-    (input: { courseId: string; title: string }) => {
-      const t: Topic = {
-        id: uid("topic"),
-        courseId: input.courseId,
-        title: input.title.trim(),
-        archived: false,
-        createdAt: new Date().toISOString(),
-      };
-      setTopics((prev) => [...prev, t]);
-      log("topic", t.id, "created", t.title);
-      return t;
-    },
-    [log],
-  );
+  const archiveCourse = useCallback(async (id: string) => {
+    await courseService.archiveCourse(id);
+    setCourses((prev) => prev.map((x) => (x.id === id ? { ...x, archived: true } : x)));
+    await refreshActivity();
+  }, []);
+
+  const restoreCourse = useCallback(async (id: string) => {
+    await courseService.restoreCourse(id);
+    setCourses((prev) => prev.map((x) => (x.id === id ? { ...x, archived: false } : x)));
+    await refreshActivity();
+  }, []);
+
+  const createTopic = useCallback(async (input: { courseId: string; title: string }) => {
+    const t = await courseService.createTopic(input);
+    setTopics((prev) => [t, ...prev]);
+    await refreshActivity();
+    return t;
+  }, []);
+
   const updateTopic = useCallback(
-    (id: string, input: { courseId: string; title: string }) => {
+    async (id: string, input: { courseId: string; title: string }) => {
+      await courseService.updateTopic(id, input);
       setTopics((prev) =>
         prev.map((t) =>
           t.id === id ? { ...t, courseId: input.courseId, title: input.title.trim() } : t,
         ),
       );
-      log("topic", id, "updated", input.title);
+      await refreshActivity();
     },
-    [log],
-  );
-  const archiveTopic = useCallback(
-    (id: string) => {
-      const t = topics.find((x) => x.id === id);
-      setTopics((prev) => prev.map((x) => (x.id === id ? { ...x, archived: true } : x)));
-      if (t) log("topic", id, "archived", t.title);
-    },
-    [topics, log],
-  );
-  const restoreTopic = useCallback(
-    (id: string) => {
-      const t = topics.find((x) => x.id === id);
-      setTopics((prev) => prev.map((x) => (x.id === id ? { ...x, archived: false } : x)));
-      if (t) log("topic", id, "restored", t.title);
-    },
-    [topics, log],
+    [],
   );
 
-  // ILOs
+  const archiveTopic = useCallback(async (id: string) => {
+    await courseService.archiveTopic(id);
+    setTopics((prev) => prev.map((x) => (x.id === id ? { ...x, archived: true } : x)));
+    await refreshActivity();
+  }, []);
+
+  const restoreTopic = useCallback(async (id: string) => {
+    await courseService.restoreTopic(id);
+    setTopics((prev) => prev.map((x) => (x.id === id ? { ...x, archived: false } : x)));
+    await refreshActivity();
+  }, []);
+
   const createILO = useCallback(
-    (input: { courseId: string; code: string; statement: string; bloomLevel: BloomLevel }) => {
-      const i: ILO = {
-        id: uid("ilo"),
-        courseId: input.courseId,
-        code: input.code.trim(),
-        statement: input.statement.trim(),
-        bloomLevel: input.bloomLevel,
-        archived: false,
-      };
+    async (input: {
+      courseId: string;
+      topicId: string;
+      statement: string;
+      bloomLevel: BloomLevel;
+    }) => {
+      const i = await courseService.createILO(input);
       setIlos((prev) => [...prev, i]);
-      log("ILO", i.id, "created", `${i.code} — ${i.statement.slice(0, 40)}`);
+      await refreshActivity();
       return i;
     },
-    [log],
+    [],
   );
+
   const updateILO = useCallback(
-    (
+    async (
       id: string,
       input: {
         courseId: string;
-        code: string;
+        topicId: string;
         statement: string;
         bloomLevel: BloomLevel;
       },
     ) => {
+      await courseService.updateILO(id, input);
       setIlos((prev) =>
         prev.map((i) =>
           i.id === id
             ? {
                 ...i,
                 courseId: input.courseId,
-                code: input.code.trim(),
+                topicId: input.topicId,
                 statement: input.statement.trim(),
                 bloomLevel: input.bloomLevel,
               }
             : i,
         ),
       );
-      log("ILO", id, "updated", `${input.code} — ${input.statement.slice(0, 40)}`);
+      await refreshActivity();
     },
-    [log],
+    [],
   );
-  const archiveILO = useCallback(
-    (id: string) => {
-      const i = ilos.find((x) => x.id === id);
-      setIlos((prev) => prev.map((x) => (x.id === id ? { ...x, archived: true } : x)));
-      if (i) log("ILO", id, "archived", i.code);
-    },
-    [ilos, log],
-  );
-  const restoreILO = useCallback(
-    (id: string) => {
-      const i = ilos.find((x) => x.id === id);
-      setIlos((prev) => prev.map((x) => (x.id === id ? { ...x, archived: false } : x)));
-      if (i) log("ILO", id, "restored", i.code);
-    },
-    [ilos, log],
-  );
+
+  const archiveILO = useCallback(async (id: string) => {
+    await courseService.archiveILO(id);
+    setIlos((prev) => prev.map((x) => (x.id === id ? { ...x, archived: true } : x)));
+    await refreshActivity();
+  }, []);
+
+  const restoreILO = useCallback(async (id: string) => {
+    await courseService.restoreILO(id);
+    setIlos((prev) => prev.map((x) => (x.id === id ? { ...x, archived: false } : x)));
+    await refreshActivity();
+  }, []);
 
   const value = useMemo<CourseStoreValue>(
     () => ({
@@ -277,6 +217,9 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       topics,
       ilos,
       activity,
+      isLoading,
+      error,
+      currentUserId: user?.id ?? null,
       createCourse,
       updateCourse,
       archiveCourse,
@@ -289,6 +232,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       updateILO,
       archiveILO,
       restoreILO,
+      refreshActivity,
     }),
     [
       courses,
@@ -307,6 +251,10 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       updateILO,
       archiveILO,
       restoreILO,
+      isLoading,
+      error,
+      refreshActivity,
+      user,
     ],
   );
 

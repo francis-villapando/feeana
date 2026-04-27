@@ -6,14 +6,12 @@ export function findCourseByCode(code: string, courses: Course[]): Course | unde
   return courses.find((c) => c.code.trim().toLowerCase() === norm);
 }
 
-/** Active topics for the course referenced by `cls.course` (display code). */
+/** Active topics for the course referenced by `cls.courseId`. */
 export function topicsForClass(
   cls: Class | undefined,
   courses: Course[],
   topics: Topic[],
 ): Topic[] {
-  if (!cls) return [];
-  const course = findCourseByCode(cls.course, courses);
-  if (!course) return [];
-  return topics.filter((t) => t.courseId === course.id && !t.archived);
+  if (!cls?.courseId) return [];
+  return topics.filter((t) => t.courseId === cls.courseId && !t.archived);
 }

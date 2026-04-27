@@ -53,7 +53,6 @@ export function CourseManagementHub() {
     () =>
       filterFn(ilos).filter(
         (i) =>
-          i.code.toLowerCase().includes(query.toLowerCase()) ||
           i.statement.toLowerCase().includes(query.toLowerCase()),
       ),
     [ilos, showArchived, query],
@@ -142,7 +141,7 @@ export function CourseManagementHub() {
               <Row
                 key={i.id}
                 archived={i.archived}
-                primary={`${i.code} · ${i.bloomLevel}`}
+                primary={i.bloomLevel}
                 secondary={i.statement}
                 onEdit={() => setEdit({ kind: "ILO", entity: i })}
                 onArchive={() => archiveILO(i.id)}

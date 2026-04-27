@@ -30,7 +30,7 @@ type State =
 const BLOOMS: BloomLevel[] = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
 
 export function EntityFormDialog({ state, onClose }: { state: State; onClose: () => void }) {
-  const { courses, createCourse, updateCourse, createTopic, updateTopic, createILO, updateILO } =
+  const { courses, topics, createCourse, updateCourse, createTopic, updateTopic, createILO, updateILO } =
     useCourseStore();
 
   const isEdit = !!state.entity;
@@ -53,7 +53,6 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
       : (courses[0]?.id ?? ""),
   );
   // ILO
-  const [iloCode, setIloCode] = useState(state.kind === "ILO" ? (state.entity?.code ?? "") : "");
   const [iloStatement, setIloStatement] = useState(
     state.kind === "ILO" ? (state.entity?.statement ?? "") : "",
   );
@@ -62,8 +61,15 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
       ? (state.entity?.courseId ?? courses[0]?.id ?? "")
       : (courses[0]?.id ?? ""),
   );
+  const [iloTopicId, setIloTopicId] = useState(
+    state.kind === "ILO" ? (state.entity?.topicId ?? "") : "",
+  );
   const [iloBloom, setIloBloom] = useState<BloomLevel>(
-    state.kind === "ILO" ? (state.entity?.bloomLevel ?? "Apply") : "Apply",
+    state.kind === "ILO" ? (state.entity?.bloomLevel ?? "Remember") : "Remember",
+  );
+
+  const availableTopics = topics.filter(
+    (t) => t.courseId === iloCourseId && !t.archived,
   );
 
   const handleSave = () => {
@@ -96,14 +102,14 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           toast.success("Topic created.");
         }
       } else {
-        if (!iloCode.trim() || !iloStatement.trim() || !iloCourseId) {
-          toast.error("Code, statement, and course required.");
+        if (!iloStatement.trim() || !iloCourseId || !iloTopicId) {
+          toast.error("Course, topic, and statement required.");
           return;
         }
         if (state.entity) {
           updateILO(state.entity.id, {
             courseId: iloCourseId,
-            code: iloCode,
+            topicId: iloTopicId,
             statement: iloStatement,
             bloomLevel: iloBloom,
           });
@@ -111,7 +117,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
         } else {
           createILO({
             courseId: iloCourseId,
-            code: iloCode,
+            topicId: iloTopicId,
             statement: iloStatement,
             bloomLevel: iloBloom,
           });
@@ -144,16 +150,16 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                 id="course-code"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="CS 102"
+                placeholder="CSEG2"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="course-title">Title</Label>
+              <Label htmlFor="course-title">Description</Label>
               <Input
                 id="course-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Data Structures"
+                placeholder="Game Programming 1"
               />
             </div>
           </div>
@@ -194,7 +200,13 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label>Course</Label>
-              <Select value={iloCourseId} onValueChange={setIloCourseId}>
+              <Select
+                value={iloCourseId}
+                onValueChange={(v) => {
+                  setIloCourseId(v);
+                  setIloTopicId("");
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -209,31 +221,53 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="ilo-code">Code</Label>
-                <Input
-                  id="ilo-code"
-                  value={iloCode}
-                  onChange={(e) => setIloCode(e.target.value)}
-                  placeholder="ILO-5"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Bloom level</Label>
-                <Select value={iloBloom} onValueChange={(v) => setIloBloom(v as BloomLevel)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BLOOMS.map((b) => (
-                      <SelectItem key={b} value={b}>
-                        {b}
+            <div className="space-y-1.5">
+              <Label>Topic</Label>
+              <Select
+                value={iloTopicId}
+                onValueChange={setIloTopicId}
+                disabled={!iloCourseId}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      !iloCourseId
+                        ? "Select a course first"
+                        : availableTopics.length === 0
+                        ? "No topics for this course"
+                        : "Select a topic"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTopics.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">
+                      No topics for this course — add one first.
+                    </div>
+                  ) : (
+                    availableTopics.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.title}
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Bloom level</Label>
+              <Select value={iloBloom} onValueChange={(v) => setIloBloom(v as BloomLevel)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BLOOMS.map((b) => (
+                    <SelectItem key={b} value={b}>
+                      {b}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ilo-stmt">Statement</Label>

@@ -1,6 +1,5 @@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { MOCK_ILOS } from "@/lib/mockData";
-import type { Recommendation, RecommendationTerm, TermKind } from "@/lib/types";
+import type { ILO, Recommendation, RecommendationTerm, TermKind } from "@/lib/types";
 
 const KIND_LABEL: Record<TermKind, string> = {
   issue: "Issue",
@@ -44,12 +43,12 @@ function tokenize(paragraph: string, terms: RecommendationTerm[]): Segment[] {
   return segments;
 }
 
-function resolveDetail(term: RecommendationTerm): {
+function resolveDetail(term: RecommendationTerm, ilos?: ILO[]): {
   heading: string;
   body: string;
 } {
   if (term.kind === "ILO" && term.iloId) {
-    const ilo = MOCK_ILOS.find((i) => i.id === term.iloId);
+    const ilo = ilos?.find((i) => i.id === term.iloId);
     return {
       heading: KIND_LABEL.ILO,
       body: ilo?.statement ?? term.detail,
@@ -58,7 +57,13 @@ function resolveDetail(term: RecommendationTerm): {
   return { heading: KIND_LABEL[term.kind], body: term.detail };
 }
 
-export function RecommendationParagraph({ rec, index }: { rec: Recommendation; index: number }) {
+interface RecommendationParagraphProps {
+  rec: Recommendation;
+  index: number;
+  ilos?: ILO[];
+}
+
+export function RecommendationParagraph({ rec, index, ilos }: RecommendationParagraphProps) {
   const segments = tokenize(rec.paragraph, rec.terms);
   return (
     <li className="rounded-lg border border-border/60 bg-background/40 p-4">
@@ -69,7 +74,7 @@ export function RecommendationParagraph({ rec, index }: { rec: Recommendation; i
         <p className="flex-1 text-sm leading-relaxed">
           {segments.map((seg, i) => {
             if (!seg.term) return <span key={i}>{seg.text}</span>;
-            const { heading, body } = resolveDetail(seg.term);
+            const { heading, body } = resolveDetail(seg.term, ilos);
             return (
               <HoverCard key={i} openDelay={120} closeDelay={80}>
                 <HoverCardTrigger asChild>

@@ -19,7 +19,7 @@ export type BloomLevel = "Remember" | "Understand" | "Apply" | "Analyze" | "Eval
 export interface ILO {
   id: string;
   courseId: string;
-  code: string;
+  topicId: string;
   statement: string;
   bloomLevel: BloomLevel;
   archived: boolean;
@@ -43,6 +43,8 @@ export interface ActivityEntry {
   action: ActivityAction;
   label: string;
   timestamp: string;
+  userId?: string;
+  userName?: string;
 }
 
 export interface Student {
@@ -55,6 +57,7 @@ export interface Student {
 export interface Class {
   id: string;
   name: string;
+  courseId: string;
   course: string;
   section: string;
   code: string;

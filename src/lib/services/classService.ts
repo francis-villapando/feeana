@@ -1,0 +1,235 @@
+import { supabase } from "@/lib/supabase";
+import type { Class, Session, Student } from "@/lib/types";
+
+const SAFE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function generateCode(len = 6): string {
+  let out = "";
+  for (let i = 0; i < len; i++) {
+    out += SAFE_CHARS[Math.floor(Math.random() * SAFE_CHARS.length)];
+  }
+  return out;
+}
+
+function fromDbClass(row: Record<string, unknown>): Class {
+  return {
+    id: row.id as string,
+    name: (row.name as string) ?? "",
+    courseId: (row.course_id as string) ?? "",
+    course: row.course as string,
+    section: row.section as string,
+    code: row.join_code as string,
+    createdAt: row.created_at as string,
+    archived: row.archived as boolean,
+    studentCount: (row.student_count as number) ?? 0,
+  };
+}
+
+function fromDbSession(row: Record<string, unknown>): Session {
+  return {
+    id: row.id as string,
+    classId: row.class_id as string,
+    courseId: (row.course_id as string) ?? "",
+    topic: (row.topic as string) ?? "",
+    topicId: row.topic_id as string | undefined,
+    iloIds: (row.ilo_ids as string[]) ?? [],
+    status: (row.status as "active" | "archived" | "closed") ?? "active",
+    createdAt: row.created_at as string,
+    startsAt: row.starts_at as string,
+    endsAt: row.ends_at as string,
+  };
+}
+
+function toDbSession(s: Session) {
+  return {
+    id: s.id,
+    class_id: s.classId,
+    course_id: s.courseId,
+    topic: s.topic,
+    topic_id: s.topicId,
+    ilo_ids: s.iloIds,
+    status: s.status,
+    starts_at: s.startsAt,
+    ends_at: s.endsAt,
+  };
+}
+
+export async function getClasses(facultyId: string): Promise<Class[]> {
+  const { data, error } = await supabase
+    .from("classes")
+    .select("*")
+    .eq("faculty_id", facultyId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(fromDbClass);
+}
+
+export async function createClass(
+  facultyId: string,
+  input: {
+    courseId: string;
+    courseCode: string;
+    courseTitle: string;
+    section: string;
+  },
+): Promise<Class> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const joinCode = generateCode(8);
+
+  const { data, error } = await supabase
+    .from("classes")
+    .insert({
+      faculty_id: facultyId,
+      course_id: input.courseId,
+      course: `${input.courseCode} — ${input.courseTitle}`,
+      name: input.courseCode,
+      section: input.section.trim(),
+      join_code: joinCode,
+      archived: false,
+      student_count: 0,
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return fromDbClass(data);
+}
+
+export async function archiveClass(id: string): Promise<void> {
+  const { error } = await supabase.from("classes").update({ archived: true }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function restoreClass(id: string): Promise<void> {
+  const { error } = await supabase.from("classes").update({ archived: false }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function getSessions(classId: string): Promise<Session[]> {
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("class_id", classId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(fromDbSession);
+}
+
+export async function createSession(input: {
+  classId: string;
+  topic: string;
+  topicId?: string;
+  courseId?: string;
+  startsAt: string;
+  endsAt: string;
+  iloIds?: string[];
+}): Promise<Session> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase
+    .from("sessions")
+    .insert({
+      class_id: input.classId,
+      topic: input.topic.trim(),
+      topic_id: input.topicId ?? null,
+      course_id: input.courseId ?? null,
+      ilo_ids: input.iloIds ?? [],
+      status: "active",
+      starts_at: input.startsAt,
+      ends_at: input.endsAt,
+      created_by: user?.id,
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return fromDbSession(data);
+}
+
+export async function closeSession(id: string): Promise<void> {
+  const { error } = await supabase.from("sessions").update({ status: "closed" }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function getStudents(classId: string): Promise<Student[]> {
+  const { data, error } = await supabase
+    .from("enrollments")
+    .select(
+      `
+      id,
+      created_at,
+      profiles!student_id (
+        id,
+        full_name,
+        email
+      )
+    `,
+    )
+    .eq("class_id", classId);
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row: Record<string, unknown>) => {
+    const profile = row.profiles as Record<string, unknown>;
+    return {
+      id: (profile?.id as string) ?? (row.id as string),
+      name: (profile?.full_name as string) ?? "Unknown",
+      email: (profile?.email as string) ?? "",
+      joinedAt: row.created_at as string,
+    };
+  });
+}
+
+export async function joinClassByCode(code: string, studentId: string): Promise<Class | null> {
+  const { data: cls, error: clsError } = await supabase
+    .from("classes")
+    .select("*")
+    .eq("join_code", code.trim().toUpperCase())
+    .eq("archived", false)
+    .single();
+  if (clsError || !cls) return null;
+
+  await supabase.from("enrollments").delete().eq("class_id", cls.id).eq("student_id", studentId);
+
+  const { error } = await supabase
+    .from("enrollments")
+    .insert({ class_id: cls.id, student_id: studentId });
+  if (error && error.code !== "23505") throw new Error(error.message);
+
+  return fromDbClass(cls);
+}
+
+export async function removeStudent(classId: string, studentId: string): Promise<void> {
+  const { error } = await supabase
+    .from("enrollments")
+    .delete()
+    .eq("class_id", classId)
+    .eq("student_id", studentId);
+  if (error) throw new Error(error.message);
+}
+
+export async function getClassById(id: string): Promise<Class | null> {
+  const { data, error } = await supabase.from("classes").select("*").eq("id", id).single();
+  if (error?.code === "PGRST116") return null;
+  if (error) throw new Error(error.message);
+  return data ? fromDbClass(data) : null;
+}
+
+export async function getSessionById(id: string): Promise<Session | null> {
+  const { data, error } = await supabase.from("sessions").select("*").eq("id", id).single();
+  if (error?.code === "PGRST116") return null;
+  if (error) throw new Error(error.message);
+  return data ? fromDbSession(data) : null;
+}
+
+export async function getActiveSessionsCount(facultyId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("id", { count: "exact" })
+    .eq("status", "active")
+    .eq("classes!inner.faculty_id", facultyId);
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
+}

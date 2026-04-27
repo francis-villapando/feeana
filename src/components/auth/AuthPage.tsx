@@ -60,7 +60,9 @@ export function AuthPage({ role }: { role: UserRole }) {
     }
 
     if (role === "faculty" && !validateFacultyDomain(email)) {
-      const domainHint = ALLOWED_FACULTY_DOMAIN ? `@${ALLOWED_FACULTY_DOMAIN}` : "the configured faculty domain";
+      const domainHint = ALLOWED_FACULTY_DOMAIN
+        ? `@${ALLOWED_FACULTY_DOMAIN}`
+        : "the configured faculty domain";
       toast.error(`Only ${domainHint} emails are allowed for faculty sign-up.`);
       return;
     }
@@ -147,7 +149,9 @@ export function AuthPage({ role }: { role: UserRole }) {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={role === "faculty" ? `you@${ALLOWED_FACULTY_DOMAIN}` : "you@example.com"}
+                  placeholder={
+                    role === "faculty" ? `you@${ALLOWED_FACULTY_DOMAIN}` : "you@example.com"
+                  }
                 />
               </div>
               <div className="space-y-2">

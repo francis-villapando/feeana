@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, Outlet, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Target, TrendingUp, Users } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClassStudentsTab } from "@/components/ClassStudentsTab";
 import { CreateSessionForm } from "@/components/CreateSessionForm";
@@ -21,7 +22,6 @@ import { SessionCard } from "@/components/SessionCard";
 import { useAnalysisStore } from "@/lib/analysisStore";
 import { useClassStore } from "@/lib/classStore";
 import { useFeedbackStore } from "@/lib/feedbackStore";
-import { MOCK_CLASSES } from "@/lib/mockData";
 import {
   averageRate,
   iloAchievementForSession,
@@ -30,16 +30,13 @@ import {
 } from "@/lib/metrics";
 
 export const Route = createFileRoute("/_faculty/$classId")({
-  loader: ({ params }) => {
-    const cls = MOCK_CLASSES.find((c) => c.id === params.classId);
-    return { seed: cls ?? null };
+  loader: async ({ params }) => {
+    return { classId: params.classId };
   },
   head: ({ loaderData }) => ({
     meta: [
       {
-        title: loaderData?.seed
-          ? `${loaderData.seed.course} · ${loaderData.seed.section} — Feeana`
-          : "Class — Feeana",
+        title: loaderData?.classId ? `Class — Feeana` : "Class — Feeana",
       },
     ],
   }),
@@ -58,12 +55,18 @@ export const Route = createFileRoute("/_faculty/$classId")({
 
 function ClassLayout() {
   const { classId } = Route.useParams();
-  const { getClass, sessionsForClass } = useClassStore();
-  const { feedback } = useFeedbackStore();
+  const { getClass, sessionsForClass, isLoading } = useClassStore();
+  const { feedback, fetchFeedback } = useFeedbackStore();
   const { results } = useAnalysisStore();
   const cls = getClass(classId);
   const location = useLocation();
   const sessions = sessionsForClass(classId);
+
+  useEffect(() => {
+    if (classId) {
+      fetchFeedback(classId);
+    }
+  }, [classId, fetchFeedback]);
 
   const submissionRate = useMemo(
     () => averageRate(sessions.map((s) => submissionRateForSession(s, cls, feedback))),
@@ -77,6 +80,10 @@ function ClassLayout() {
     () => recommendationTrendData(sessions, results, feedback),
     [sessions, results, feedback],
   );
+
+  if (isLoading) {
+    return <ClassLoadingSkeleton />;
+  }
 
   if (!cls) {
     throw notFound();
@@ -181,6 +188,23 @@ function ClassLayout() {
         </CardContent>
       </Card>
 
+      {/* Trend interpretation */}
+      <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+        <CardHeader>
+          <CardTitle className="text-base">Trend Interpretation</CardTitle>
+          <CardDescription>AI-generated insights from class performance data.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border border-border/60 bg-background/40 p-4 text-sm text-muted-foreground">
+            {trend.length === 0 ? (
+              <p>Trend interpretation will appear once you have enough analyzed sessions.</p>
+            ) : (
+              <p>Interpreting class trends over time...</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Two-column: tabs left, details + creator right */}
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Tabs defaultValue="sessions" className="space-y-4">
@@ -199,11 +223,10 @@ function ClassLayout() {
         <div className="space-y-4">
           <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle className="text-base">{cls.name}</CardTitle>
-              <CardDescription>Class details</CardDescription>
+              <CardTitle className="text-base">Class Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <DetailRow label="Course" value={cls.course} />
+              <DetailRow label="Course" value={<span className="ml-1">{cls.course}</span>} />
               <DetailRow label="Section" value={cls.section} />
               <DetailRow
                 label="Students"
@@ -261,7 +284,27 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
   return (
     <div className="flex items-center justify-between border-b border-border/40 pb-2 last:border-0 last:pb-0">
       <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+      <span className="font-medium text-right">{value}</span>
+    </div>
+  );
+}
+
+function ClassLoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-6 w-24" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Skeleton className="h-28" />
+        <Skeleton className="h-28" />
+      </div>
+      <Skeleton className="h-80" />
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <Skeleton className="h-64" />
+        <div className="space-y-4">
+          <Skeleton className="h-48" />
+          <Skeleton className="h-32" />
+        </div>
+      </div>
     </div>
   );
 }

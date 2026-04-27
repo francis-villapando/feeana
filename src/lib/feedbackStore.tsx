@@ -1,28 +1,43 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { MOCK_FEEDBACK } from "./mockData";
 import type { Feedback } from "./types";
+import * as feedbackService from "./services/feedbackService";
 
 interface FeedbackStoreValue {
   feedback: Feedback[];
-  addFeedback: (sessionId: string, rawText: string) => Feedback;
+  isLoading: boolean;
+  error: string | null;
+  addFeedback: (sessionId: string, rawText: string) => Promise<Feedback>;
+  fetchFeedback: (sessionId: string) => Promise<Feedback[]>;
   feedbackForSession: (sessionId: string) => Feedback[];
 }
 
 const FeedbackStoreContext = createContext<FeedbackStoreValue | null>(null);
 
 export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
-  const [feedback, setFeedback] = useState<Feedback[]>(MOCK_FEEDBACK);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const addFeedback = useCallback((sessionId: string, rawText: string) => {
-    const entry: Feedback = {
-      id: `fb-${Date.now()}`,
-      sessionId,
-      rawText,
-      cleanedText: rawText.trim().toLowerCase(),
-      isPedagogical: rawText.trim().length > 8,
-      aspects: [],
-      createdAt: new Date().toISOString(),
-    };
+  const fetchFeedback = useCallback(async (sessionId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await feedbackService.getFeedback(sessionId);
+      setFeedback((prev) => {
+        const others = prev.filter((f) => f.sessionId !== sessionId);
+        return [...others, ...data];
+      });
+      return data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load feedback");
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const addFeedback = useCallback(async (sessionId: string, rawText: string) => {
+    const entry = await feedbackService.submitFeedback(sessionId, rawText);
     setFeedback((prev) => [...prev, entry]);
     return entry;
   }, []);
@@ -33,8 +48,8 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<FeedbackStoreValue>(
-    () => ({ feedback, addFeedback, feedbackForSession }),
-    [feedback, addFeedback, feedbackForSession],
+    () => ({ feedback, isLoading, error, addFeedback, fetchFeedback, feedbackForSession }),
+    [feedback, isLoading, error, addFeedback, fetchFeedback, feedbackForSession],
   );
 
   return <FeedbackStoreContext.Provider value={value}>{children}</FeedbackStoreContext.Provider>;

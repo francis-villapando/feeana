@@ -7,22 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { MOCK_CLASSES, MOCK_SESSIONS, MOCK_STUDENTS_BY_CLASS } from "./mockData";
+import { useAuth } from "./auth";
 import type { Class, Session, Student } from "./types";
-
-const CLASSES_KEY = "feeana.classes";
-const SESSIONS_KEY = "feeana.sessions";
-const JOINED_KEY = "feeana.joined";
-const STUDENTS_KEY = "feeana.students";
-
-const SAFE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-function generateCode(len = 6): string {
-  let out = "";
-  for (let i = 0; i < len; i++) {
-    out += SAFE_CHARS[Math.floor(Math.random() * SAFE_CHARS.length)];
-  }
-  return out;
-}
+import * as classService from "./services/classService";
 
 interface ClassStoreValue {
   classes: Class[];
@@ -31,133 +18,166 @@ interface ClassStoreValue {
   studentsByClass: Record<string, Student[]>;
   activeClasses: Class[];
   archivedClasses: Class[];
+  isLoading: boolean;
+  error: string | null;
   getClass: (id: string) => Class | undefined;
   sessionsForClass: (classId: string) => Session[];
   studentsForClass: (classId: string) => Student[];
   removeStudent: (classId: string, studentId: string) => void;
-  createClass: (input: { name: string; course: string; section: string }) => Class;
-  archiveClass: (id: string) => void;
-  restoreClass: (id: string) => void;
+  createClass: (input: { courseId: string; courseCode: string; courseTitle: string; section: string }) => Promise<Class>;
+  archiveClass: (id: string) => Promise<void>;
+  restoreClass: (id: string) => Promise<void>;
   createSession: (input: {
     classId: string;
     topic: string;
     topicId?: string;
+    courseId?: string;
     startsAt: string;
     endsAt: string;
-  }) => Session;
-  joinClassByCode: (code: string) => Class | null;
+  }) => Promise<Session>;
+  joinClassByCode: (code: string) => Promise<Class | null>;
   activeSessions: Session[];
+  refreshClasses: () => Promise<void>;
+  refreshSessions: (classId: string) => Promise<void>;
+  refreshStudents: (classId: string) => Promise<void>;
 }
 
 const ClassStoreContext = createContext<ClassStoreValue | null>(null);
 
-function readJSON<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
 export function ClassStoreProvider({ children }: { children: ReactNode }) {
-  const [classes, setClasses] = useState<Class[]>(MOCK_CLASSES);
-  const [sessions, setSessions] = useState<Session[]>(MOCK_SESSIONS);
-  const [joinedClassIds, setJoinedClassIds] = useState<string[]>([
-    "class-cs101-a",
-    "class-cs101-b",
-  ]);
-  const [studentsByClass, setStudentsByClass] =
-    useState<Record<string, Student[]>>(MOCK_STUDENTS_BY_CLASS);
+  const { user } = useAuth();
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [joinedClassIds, setJoinedClassIds] = useState<string[]>([]);
+  const [studentsByClass, setStudentsByClass] = useState<Record<string, Student[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setClasses(readJSON(CLASSES_KEY, MOCK_CLASSES));
-    setSessions(readJSON(SESSIONS_KEY, MOCK_SESSIONS));
-    setJoinedClassIds(readJSON(JOINED_KEY, ["class-cs101-a", "class-cs101-b"]));
-    setStudentsByClass(readJSON(STUDENTS_KEY, MOCK_STUDENTS_BY_CLASS));
+  const refreshClasses = useCallback(async () => {
+    if (!user) return;
+    try {
+      const data = await classService.getClasses(user.id);
+      setClasses(data);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load classes");
+    }
+  }, [user]);
+
+  const refreshSessions = useCallback(
+    async (classId?: string) => {
+      try {
+        if (classId) {
+          const data = await classService.getSessions(classId);
+          setSessions((prev) => {
+            const others = prev.filter((s) => s.classId !== classId);
+            return [...others, ...data];
+          });
+        } else {
+          const allClasses = classes.length > 0 ? classes : [];
+          const results = await Promise.all(allClasses.map((c) => classService.getSessions(c.id)));
+          setSessions(results.flat());
+        }
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load sessions");
+      }
+    },
+    [classes],
+  );
+
+  const refreshStudents = useCallback(async (classId: string) => {
+    try {
+      const data = await classService.getStudents(classId);
+      setStudentsByClass((prev) => ({ ...prev, [classId]: data }));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load students");
+    }
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined")
-      window.localStorage.setItem(CLASSES_KEY, JSON.stringify(classes));
-  }, [classes]);
-  useEffect(() => {
-    if (typeof window !== "undefined")
-      window.localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-  }, [sessions]);
-  useEffect(() => {
-    if (typeof window !== "undefined")
-      window.localStorage.setItem(JOINED_KEY, JSON.stringify(joinedClassIds));
-  }, [joinedClassIds]);
-  useEffect(() => {
-    if (typeof window !== "undefined")
-      window.localStorage.setItem(STUDENTS_KEY, JSON.stringify(studentsByClass));
-  }, [studentsByClass]);
+    if (!user) return;
+    setIsLoading(true);
+    classService
+      .getClasses(user.id)
+      .then(async (clsData) => {
+        setClasses(clsData);
+        setJoinedClassIds(clsData.filter((c) => !c.archived).map((c) => c.id));
+        try {
+          const sessionResults = await Promise.all(
+            clsData.map((c) => classService.getSessions(c.id)),
+          );
+          setSessions(sessionResults.flat());
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Failed to load sessions");
+        }
+        setError(null);
+        setIsLoading(false);
+      })
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : "Failed to load classes");
+        setIsLoading(false);
+      });
+  }, [user]);
 
-  const createClass = useCallback((input: { name: string; course: string; section: string }) => {
-    const cls: Class = {
-      id: `class-${Date.now()}`,
-      name: input.name.trim(),
-      course: input.course.trim(),
-      section: input.section.trim(),
-      code: generateCode(6),
-      createdAt: new Date().toISOString(),
-      archived: false,
-      studentCount: 0,
-    };
-    setClasses((prev) => [...prev, cls]);
-    setStudentsByClass((prev) => ({ ...prev, [cls.id]: [] }));
-    return cls;
-  }, []);
+  const createClass = useCallback(
+    async (input: { courseId: string; courseCode: string; courseTitle: string; section: string }) => {
+      if (!user) throw new Error("Not authenticated");
+      const cls = await classService.createClass(user.id, input);
+      setClasses((prev) => [cls, ...prev]);
+      if (!cls.archived) setJoinedClassIds((prev) => [cls.id, ...prev]);
+      return cls;
+    },
+    [user],
+  );
 
-  const archiveClass = useCallback((id: string) => {
+  const archiveClass = useCallback(async (id: string) => {
+    await classService.archiveClass(id);
     setClasses((prev) => prev.map((c) => (c.id === id ? { ...c, archived: true } : c)));
   }, []);
 
-  const restoreClass = useCallback((id: string) => {
+  const restoreClass = useCallback(async (id: string) => {
+    await classService.restoreClass(id);
     setClasses((prev) => prev.map((c) => (c.id === id ? { ...c, archived: false } : c)));
   }, []);
 
   const createSession = useCallback(
-    (input: {
+    async (input: {
       classId: string;
       topic: string;
       topicId?: string;
+      courseId?: string;
       startsAt: string;
       endsAt: string;
     }) => {
-      const s: Session = {
-        id: `session-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      const s = await classService.createSession({
         classId: input.classId,
-        courseId: "course-cs101",
-        topic: input.topic.trim(),
+        topic: input.topic,
         topicId: input.topicId,
-        iloIds: ["ilo-1"],
-        status: "active",
-        createdAt: new Date().toISOString(),
         startsAt: input.startsAt,
         endsAt: input.endsAt,
-      };
-      setSessions((prev) => [...prev, s]);
+        courseId: input.courseId,
+        iloIds: [],
+      });
+      setSessions((prev) => [s, ...prev]);
       return s;
     },
     [],
   );
 
   const joinClassByCode = useCallback(
-    (code: string) => {
-      const normalized = code.trim().toUpperCase();
-      const cls = classes.find((c) => c.code === normalized && !c.archived);
-      if (!cls) return null;
-      setJoinedClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
+    async (code: string) => {
+      if (!user) return null;
+      const cls = await classService.joinClassByCode(code, user.id);
+      if (cls) setJoinedClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
       return cls;
     },
-    [classes],
+    [user],
   );
 
-  const removeStudent = useCallback((classId: string, studentId: string) => {
+  const removeStudent = useCallback(async (classId: string, studentId: string) => {
+    await classService.removeStudent(classId, studentId);
     setStudentsByClass((prev) => ({
       ...prev,
       [classId]: (prev[classId] ?? []).filter((s) => s.id !== studentId),
@@ -181,6 +201,8 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       activeClasses,
       archivedClasses,
       activeSessions,
+      isLoading,
+      error,
       getClass: (id) => classes.find((c) => c.id === id),
       sessionsForClass: (classId) => sessions.filter((s) => s.classId === classId),
       studentsForClass: (classId) => studentsByClass[classId] ?? [],
@@ -190,6 +212,9 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       restoreClass,
       createSession,
       joinClassByCode,
+      refreshClasses,
+      refreshSessions,
+      refreshStudents,
     };
   }, [
     classes,
@@ -202,6 +227,11 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     createSession,
     joinClassByCode,
     removeStudent,
+    isLoading,
+    error,
+    refreshClasses,
+    refreshSessions,
+    refreshStudents,
   ]);
 
   return <ClassStoreContext.Provider value={value}>{children}</ClassStoreContext.Provider>;

@@ -11,7 +11,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useClassStore } from "@/lib/classStore";
+import { useCourseStore } from "@/lib/courseStore";
 
 export function CreateClassDialog({
   open,
@@ -21,21 +29,31 @@ export function CreateClassDialog({
   onOpenChange: (v: boolean) => void;
 }) {
   const { createClass } = useClassStore();
-  const [name, setName] = useState("");
-  const [course, setCourse] = useState("");
+  const { courses } = useCourseStore();
+  const [courseId, setCourseId] = useState("");
   const [section, setSection] = useState("");
 
-  const handleCreate = () => {
-    if (!name.trim() || !course.trim() || !section.trim()) {
-      toast.error("Class name, course, and section are required.");
+  const selectedCourse = courses.find((c) => c.id === courseId);
+
+  const handleCreate = async () => {
+    if (!courseId || !section.trim()) {
+      toast.error("Course and section are required.");
       return;
     }
-    const cls = createClass({ name, course, section });
-    toast.success(`Class created. Join code: ${cls.code}`);
-    setName("");
-    setCourse("");
-    setSection("");
-    onOpenChange(false);
+    try {
+      const cls = await createClass({
+        courseId,
+        courseCode: selectedCourse?.code ?? "",
+        courseTitle: selectedCourse?.title ?? "",
+        section: section.trim(),
+      });
+      toast.success(`Class created. Join code: ${cls.code}`);
+      setCourseId("");
+      setSection("");
+      onOpenChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create class");
+    }
   };
 
   return (
@@ -47,33 +65,36 @@ export function CreateClassDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="class-name">Class name</Label>
-            <Input
-              id="class-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Intro to Programming"
-            />
+            <Label htmlFor="class-course">Course</Label>
+            <Select value={courseId} onValueChange={setCourseId}>
+              <SelectTrigger id="class-course">
+                <SelectValue placeholder="Select a course" />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.filter((c) => !c.archived).length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-muted-foreground">
+                    No courses yet — add one in Dashboard → Course Management Hub.
+                  </div>
+                ) : (
+                  courses
+                    .filter((c) => !c.archived)
+                    .map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.code} — {c.title}
+                      </SelectItem>
+                    ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="class-course">Course</Label>
-              <Input
-                id="class-course"
-                value={course}
-                onChange={(e) => setCourse(e.target.value)}
-                placeholder="CS 101"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="class-section">Section</Label>
-              <Input
-                id="class-section"
-                value={section}
-                onChange={(e) => setSection(e.target.value)}
-                placeholder="A"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="class-section">Section</Label>
+            <Input
+              id="class-section"
+              value={section}
+              onChange={(e) => setSection(e.target.value)}
+              placeholder="e.g. 1CS-A, 2CS-B"
+            />
           </div>
         </div>
         <DialogFooter>

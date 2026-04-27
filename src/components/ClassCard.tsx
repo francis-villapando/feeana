@@ -23,7 +23,7 @@ export function ClassCard({ cls }: { cls: Class }) {
     <Card className="group relative overflow-hidden border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40">
       <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-primary/10 blur-3xl transition group-hover:bg-primary/20" />
       <CardHeader className="relative">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <CardTitle className="text-base">{cls.name}</CardTitle>
             <CardDescription>
@@ -31,7 +31,7 @@ export function ClassCard({ cls }: { cls: Class }) {
             </CardDescription>
           </div>
           {!cls.archived && (
-            <Badge variant="outline" className="border-primary/30 text-primary">
+            <Badge variant="outline" className="whitespace-nowrap border-primary/30 text-primary">
               {activeCount} active
             </Badge>
           )}

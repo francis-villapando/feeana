@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowLeft,
@@ -30,20 +30,19 @@ import { RecommendationParagraph } from "@/components/analysis/RecommendationPar
 import { runAnalysis } from "@/lib/analysis";
 import { useAnalysisStore } from "@/lib/analysisStore";
 import { useFeedbackStore } from "@/lib/feedbackStore";
+import { useClassStore } from "@/lib/classStore";
+import { useCourseStore } from "@/lib/courseStore";
 import { computeIloStatuses } from "@/lib/iloStatus";
-import { MOCK_SESSIONS } from "@/lib/mockData";
 import type { AnalysisResult } from "@/lib/types";
 
 export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
-  loader: ({ params }) => {
-    const session = MOCK_SESSIONS.find((s) => s.id === params.sessionId);
-    if (!session) throw notFound();
-    return { session };
+  loader: async ({ params }) => {
+    return { sessionId: params.sessionId, classId: params.classId };
   },
   head: ({ loaderData }) => ({
     meta: [
       {
-        title: loaderData ? `${loaderData.session.topic} — Analysis · Feeana` : "Analysis — Feeana",
+        title: loaderData ? `Analysis — Feeana` : "Analysis — Feeana",
       },
     ],
   }),
@@ -67,16 +66,17 @@ const POLARITY_COLORS: Record<string, string> = {
 };
 
 function AnalysisPage() {
-  const { session } = Route.useLoaderData();
-  const { classId } = Route.useParams();
+  const { classId, sessionId } = Route.useParams();
+  const { sessions } = useClassStore();
+  const session = sessions.find((s) => s.id === sessionId);
   const { get, set } = useAnalysisStore();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
   useEffect(() => {
-    const cached = get(session.id);
+    const cached = get(sessionId);
     if (cached) setResult(cached);
-  }, [get, session.id]);
+  }, [get, sessionId]);
 
   const handleTrigger = async () => {
     setLoading(true);
@@ -156,9 +156,13 @@ function LoadingState() {
 }
 
 function Results({ result }: { result: AnalysisResult }) {
-  const { session } = Route.useLoaderData();
+  const { sessionId } = Route.useParams();
+  const { sessions } = useClassStore();
+  const session = sessions.find((s) => s.id === sessionId);
   const { feedback } = useFeedbackStore();
-  const iloStatuses = computeIloStatuses(session, result, feedback);
+  const { ilos } = useCourseStore();
+  if (!session) return null;
+  const iloStatuses = computeIloStatuses(session, result, feedback, ilos);
   const sortedRecs = [...result.recommendations].sort((a, b) => b.priority - a.priority);
 
   return (
@@ -305,7 +309,7 @@ function Results({ result }: { result: AnalysisResult }) {
         <CardContent>
           <ol className="space-y-3">
             {sortedRecs.map((rec, i) => (
-              <RecommendationParagraph key={rec.id} rec={rec} index={i} />
+              <RecommendationParagraph key={rec.id} rec={rec} index={i} ilos={ilos} />
             ))}
           </ol>
         </CardContent>
