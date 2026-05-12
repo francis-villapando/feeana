@@ -187,18 +187,19 @@ export async function joinClassByCode(code: string, studentId: string): Promise<
     .from("classes")
     .select("*")
     .eq("join_code", code.trim().toUpperCase())
-    .eq("archived", false)
-    .single();
-  if (clsError || !cls) return null;
+    .eq("archived", false);
+  if (clsError) throw new Error(clsError.message);
+  if (!cls || cls.length === 0) return null;
+  const classData = cls[0];
 
-  await supabase.from("enrollments").delete().eq("class_id", cls.id).eq("student_id", studentId);
+  await supabase.from("enrollments").delete().eq("class_id", classData.id).eq("student_id", studentId);
 
   const { error } = await supabase
     .from("enrollments")
-    .insert({ class_id: cls.id, student_id: studentId });
+    .insert({ class_id: classData.id, student_id: studentId });
   if (error && error.code !== "23505") throw new Error(error.message);
 
-  return fromDbClass(cls);
+  return fromDbClass(classData);
 }
 
 export async function removeStudent(classId: string, studentId: string): Promise<void> {
@@ -232,4 +233,35 @@ export async function getActiveSessionsCount(facultyId: string): Promise<number>
     .eq("classes!inner.faculty_id", facultyId);
   if (error) throw new Error(error.message);
   return data?.length ?? 0;
+}
+
+export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
+  const { data, error } = await supabase
+    .from("enrollments")
+    .select(
+      `
+      class_id,
+      classes!inner (
+        id,
+        name,
+        course_id,
+        course,
+        section,
+        join_code,
+        created_at,
+        archived,
+        student_count
+      )
+    `
+    )
+    .eq("student_id", studentId);
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? [])
+    .map((row: Record<string, unknown>) => {
+      const cls = (row.classes as Record<string, unknown>[])?.[0];
+      return fromDbClass(cls || {});
+    })
+    .filter((c) => c.id);
 }

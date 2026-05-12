@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Target, TrendingUp, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,18 +56,22 @@ export const Route = createFileRoute("/_faculty/$classId")({
 
 function ClassLayout() {
   const { classId } = Route.useParams();
-  const { getClass, sessionsForClass, isLoading } = useClassStore();
+  const { getClass, sessionsForClass, isLoading, archiveClass, refreshStudents } = useClassStore();
   const { feedback, fetchFeedback } = useFeedbackStore();
   const { results } = useAnalysisStore();
-  const cls = getClass(classId);
   const location = useLocation();
+  const navigate = useNavigate();
+  const [archiveOpen, setArchiveOpen] = useState(false);
+
+  const cls = getClass(classId);
   const sessions = sessionsForClass(classId);
 
   useEffect(() => {
     if (classId) {
       fetchFeedback(classId);
+      refreshStudents(classId);
     }
-  }, [classId, fetchFeedback]);
+  }, [classId, fetchFeedback, refreshStudents]);
 
   const submissionRate = useMemo(
     () => averageRate(sessions.map((s) => submissionRateForSession(s, cls, feedback))),
@@ -94,8 +99,20 @@ function ClassLayout() {
   }
 
   const copy = () => {
-    navigator.clipboard.writeText(cls.code);
+    navigator.clipboard.writeText(cls?.code ?? "");
     toast.success("Class code copied");
+  };
+
+  const handleArchive = async () => {
+    if (!cls) return;
+    try {
+      await archiveClass(cls.id);
+      toast.success("Class archived");
+      setArchiveOpen(false);
+      navigate({ to: "/home" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to archive");
+    }
   };
 
   return (
@@ -248,12 +265,37 @@ function ClassLayout() {
                   <Copy className="h-3 w-3 text-muted-foreground" />
                 </span>
               </button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="w-full"
+                onClick={() => setArchiveOpen(true)}
+              >
+                Archive class
+              </Button>
             </CardContent>
           </Card>
 
           <CreateSessionForm classId={cls.id} />
         </div>
       </div>
+
+      <AlertDialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {cls.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This class will be hidden from your dashboard. You can restore it later
+              from the archived classes page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleArchive}>Archive</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

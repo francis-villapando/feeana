@@ -53,14 +53,14 @@ function LandingPage() {
             <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
               Bridge the gap between{" "}
               <span className="bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-transparent">
-                expected
+                intended
               </span>{" "}
               and actual learning.
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
               Feeana ingests Taglish, code-switched student feedback and turns it into
-              theory-grounded teaching cues — mapped to your ILOs, Bloom's taxonomy, and Cognitive
-              Load principles.
+              theory-grounded teaching cues — mapped to your ILOs, Revised Bloom's Taxonomy, Cognitive
+              Load Theory, and Teaching Through Interactions principles.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asChild>
@@ -74,6 +74,7 @@ function LandingPage() {
                 <Link to="/login/student">
                   <BookOpenCheck className="h-4 w-4" />
                   Student portal
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
@@ -82,13 +83,13 @@ function LandingPage() {
           <div className="grid grid-cols-2 gap-3">
             <FeatureTile
               icon={<Target className="h-4 w-4" />}
-              title="ILO Gap Analysis"
+              title="ILO Alignment Analysis"
               body="Compare expected outcomes to what students actually experience."
               span="row-span-2"
             />
             <FeatureTile
               icon={<LineChart className="h-4 w-4" />}
-              title="Aspect & Polarity"
+              title="Aspect, Issue, & Polarity"
               body="ABSA distributions across every collected feedback batch."
             />
             <FeatureTile
@@ -98,7 +99,7 @@ function LandingPage() {
             />
             <FeatureTile
               icon={<BookOpenCheck className="h-4 w-4" />}
-              title="Before vs After"
+              title="Longitudinal Trends"
               body="Track sentiment and issue persistence across sessions."
               span="col-span-2"
             />

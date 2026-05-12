@@ -38,6 +38,7 @@ interface ClassStoreValue {
   joinClassByCode: (code: string) => Promise<Class | null>;
   activeSessions: Session[];
   refreshClasses: () => Promise<void>;
+  refreshEnrolledClasses: () => Promise<void>;
   refreshSessions: (classId: string) => Promise<void>;
   refreshStudents: (classId: string) => Promise<void>;
 }
@@ -61,6 +62,18 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load classes");
+    }
+  }, [user]);
+
+  const refreshEnrolledClasses = useCallback(async () => {
+    if (!user) return;
+    try {
+      const data = await classService.getEnrolledClasses(user.id);
+      setClasses(data);
+      setJoinedClassIds(data.filter((c) => !c.archived).map((c) => c.id));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load enrolled classes");
     }
   }, [user]);
 
@@ -115,9 +128,27 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
         setError(null);
         setIsLoading(false);
       })
-      .catch((e) => {
-        setError(e instanceof Error ? e.message : "Failed to load classes");
-        setIsLoading(false);
+      .catch(() => {
+        classService
+          .getEnrolledClasses(user.id)
+          .then(async (enrolledData) => {
+            setClasses(enrolledData);
+            setJoinedClassIds(enrolledData.filter((c) => !c.archived).map((c) => c.id));
+            try {
+              const sessionResults = await Promise.all(
+                enrolledData.map((c) => classService.getSessions(c.id)),
+              );
+              setSessions(sessionResults.flat());
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Failed to load sessions");
+            }
+            setError(null);
+            setIsLoading(false);
+          })
+          .catch((e) => {
+            setError(e instanceof Error ? e.message : "Failed to load classes");
+            setIsLoading(false);
+          });
       });
   }, [user]);
 
@@ -170,7 +201,15 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     async (code: string) => {
       if (!user) return null;
       const cls = await classService.joinClassByCode(code, user.id);
-      if (cls) setJoinedClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
+      if (cls) {
+        setJoinedClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
+        setClasses((prev) => (prev.find((c) => c.id === cls.id) ? prev : [...prev, cls]));
+        const newSessions = await classService.getSessions(cls.id);
+        setSessions((prev) => {
+          const existing = prev.filter((s) => s.classId === cls.id);
+          return [...prev, ...newSessions.filter((s) => !existing.some((e) => e.id === s.id))];
+        });
+      }
       return cls;
     },
     [user],
@@ -213,6 +252,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       createSession,
       joinClassByCode,
       refreshClasses,
+      refreshEnrolledClasses,
       refreshSessions,
       refreshStudents,
     };
@@ -230,6 +270,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     isLoading,
     error,
     refreshClasses,
+    refreshEnrolledClasses,
     refreshSessions,
     refreshStudents,
   ]);

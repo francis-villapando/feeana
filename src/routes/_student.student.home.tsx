@@ -130,7 +130,7 @@ function EmptyJoin({ onJoin }: { onJoin: () => void }) {
         <BookOpenCheck className="mx-auto h-8 w-8 text-muted-foreground" />
         <h3 className="mt-3 text-base font-semibold">You haven't joined any classes yet</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Ask your faculty for a 6-character class code.
+          Ask your faculty for the 8-character class code.
         </p>
         <Button className="mt-4" onClick={onJoin}>
           <BookOpenCheck className="h-4 w-4" /> Join a class

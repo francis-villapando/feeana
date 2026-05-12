@@ -23,22 +23,28 @@ export function JoinClassDialog({
 }) {
   const { joinClassByCode } = useClassStore();
   const [code, setCode] = useState("");
+  const [joining, setJoining] = useState(false);
   const navigate = useNavigate();
 
-  const handleJoin = () => {
-    if (code.trim().length !== 6) {
-      toast.error("Enter the full 6-character class code.");
+  const handleJoin = async () => {
+    if (code.trim().length !== 8) {
+      toast.error("Enter the full 8-character class code.");
       return;
     }
-    const cls = joinClassByCode(code);
-    if (!cls) {
-      toast.error("No class found for that code.");
-      return;
+    setJoining(true);
+    try {
+      const cls = await joinClassByCode(code);
+      if (!cls) {
+        toast.error("No class found for that code.");
+        return;
+      }
+      toast.success(`Joined ${cls.course} · ${cls.section}`);
+      setCode("");
+      onOpenChange(false);
+      navigate({ to: "/student/home" });
+    } finally {
+      setJoining(false);
     }
-    toast.success(`Joined ${cls.course} · ${cls.section}`);
-    setCode("");
-    onOpenChange(false);
-    navigate({ to: "/student/home" });
   };
 
   return (
@@ -46,7 +52,7 @@ export function JoinClassDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Join a class</DialogTitle>
-          <DialogDescription>Ask your faculty for the 6-character class code.</DialogDescription>
+          <DialogDescription>Ask your faculty for the 8-character class code.</DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
           <Label htmlFor="join-code">Class code</Label>
@@ -54,16 +60,18 @@ export function JoinClassDialog({
             id="join-code"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="7K2P9X"
-            maxLength={6}
-            className="text-center font-mono text-lg tracking-[0.4em]"
+            placeholder="87NUM8QU"
+            maxLength={8}
+            className="text-center font-mono text-lg tracking-[0.3em]"
           />
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleJoin}>Join class</Button>
+          <Button onClick={handleJoin} disabled={joining}>
+            {joining ? "Joining..." : "Join class"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -269,34 +269,197 @@ const RESULTS: Record<string, AnalysisResult> = {
   },
 };
 
+/** Unified mock analysis result for all sessions — demonstration purposes. */
+const UNIFIED_RESULT: AnalysisResult = {
+  sessionId: "unified",
+  totalFeedback: 24,
+  pedagogicalCount: 21,
+  aspectDist: [
+    { label: "Pacing", value: 8 },
+    { label: "Content", value: 10 },
+    { label: "Examples", value: 6 },
+    { label: "Materials", value: 4 },
+    { label: "Practice", value: 5 },
+    { label: "Engagement", value: 3 },
+    { label: "Delivery", value: 4 },
+  ],
+  issueDist: [
+    { label: "Too fast", value: 6 },
+    { label: "Typecasting unclear", value: 5 },
+    { label: "Need more examples", value: 4 },
+    { label: "Slide overload", value: 3 },
+    { label: "Abstract concepts", value: 3 },
+    { label: "Insufficient practice", value: 2 },
+    { label: "Need step-by-step", value: 1 },
+  ],
+  polarityDist: [
+    { label: "Negative", value: 12 },
+    { label: "Neutral", value: 6 },
+    { label: "Positive", value: 6 },
+  ],
+  gaps: [
+    {
+      iloId: "ilo-1",
+      expected:
+        "Understand the history of game programming.",
+      actual:
+        "Students can recall major milestones but struggle to connect historical evolution to modern practices.",
+      severity: "medium",
+    },
+    {
+      iloId: "ilo-2",
+      expected: "Understand the era of computer.",
+      actual:
+        "Students recognize key computing eras but difficulty linking technological advances to software evolution.",
+      severity: "medium",
+    },
+    {
+      iloId: "ilo-3",
+      expected: "Understand of Artificial Intelligence.",
+      actual:
+        "Students grasp basic AI concepts but misconceptions remain about modern AI capabilities and limitations.",
+      severity: "high",
+    },
+  ],
+  recommendations: [
+    {
+      id: "rec-1",
+      priority: 3,
+      theories: ["RBT", "CLT"],
+      paragraph:
+        "Majority of the class is confused with typecasting. RBT suggests that students are having difficulty in applying their idea on the topic, while CLT points the cause to high intrinsic load. It is recommended to provide worked examples of the current topic and utilize scaffolding to bridge the gap toward the intended learning outcome.",
+      terms: [
+        {
+          text: "confused",
+          kind: "issue",
+          detail:
+            "Identified issue: students reported difficulty understanding typecasting concepts during the session.",
+        },
+        {
+          text: "typecasting",
+          kind: "aspect",
+          detail:
+            "Aspect: a specific content area extracted from feedback — here, type conversion between primitive types.",
+        },
+        {
+          text: "applying",
+          kind: "RBT",
+          detail:
+            "Revised Bloom's Taxonomy — Apply level: using learned concepts in new situations. Students struggle to operationalize typecasting rules in code.",
+        },
+        {
+          text: "intrinsic load",
+          kind: "CLT",
+          detail:
+            "Cognitive Load Theory — intrinsic load refers to the inherent complexity of the material. Type conversion involves multiple interacting concepts (types, casts, I/O), driving load high for novices.",
+        },
+        {
+          text: "intended learning outcome",
+          kind: "ILO",
+          detail: "",
+          iloId: "ilo-1",
+        },
+      ],
+    },
+    {
+      id: "rec-2",
+      priority: 3,
+      theories: ["CLT", "TTI"],
+      paragraph:
+        "Pacing was reported as too fast across multiple feedbacks. CLT explains this as extraneous load from rapid delivery exceeding working memory capacity. From a Teaching Through Interactions lens, instructional support drops when there's no time for concept development. Slowing down key transitions and inserting brief comprehension checks is recommended.",
+      terms: [
+        {
+          text: "too fast",
+          kind: "issue",
+          detail:
+            "Identified issue: students explicitly flagged pacing as outpacing their ability to follow.",
+        },
+        {
+          text: "Pacing",
+          kind: "aspect",
+          detail: "Aspect: how time is allocated and transitions are managed during the session.",
+        },
+        {
+          text: "extraneous load",
+          kind: "CLT",
+          detail:
+            "Cognitive Load Theory — extraneous load is mental effort that does not contribute to learning. Rapid delivery without pauses inflates it.",
+        },
+        {
+          text: "instructional support",
+          kind: "TTI",
+          detail:
+            "Teaching Through Interactions — instructional support covers concept development, quality of feedback, and language modeling. It weakens when pacing prevents elaboration.",
+        },
+      ],
+    },
+    {
+      id: "rec-3",
+      priority: 2,
+      theories: ["RBT", "CLT"],
+      paragraph:
+        "Many students reported nested loops as confusing. RBT places nested-loop construction at the analyzing level, requiring decomposition skills students haven't yet built. CLT identifies high intrinsic load when multiple loop variables interact. Introducing structured trace tables reduces working memory demand and supports schema formation toward the intended learning outcome.",
+      terms: [
+        {
+          text: "confusing",
+          kind: "issue",
+          detail:
+            "Identified issue: students cannot mentally simulate nested iteration to predict outcomes.",
+        },
+        {
+          text: "nested loops",
+          kind: "aspect",
+          detail: "Aspect: control flow construct where one loop is contained inside another.",
+        },
+        {
+          text: "analyzing",
+          kind: "RBT",
+          detail:
+            "Revised Bloom's Taxonomy — Analyze level: breaking material into parts and detecting how parts relate. Required to reason about nested iteration.",
+        },
+        {
+          text: "intrinsic load",
+          kind: "CLT",
+          detail:
+            "Cognitive Load Theory — intrinsic load reflects inherent complexity. Tracking inner + outer loop variables simultaneously drives it up.",
+        },
+        {
+          text: "intended learning outcome",
+          kind: "ILO",
+          detail: "",
+          iloId: "ilo-3",
+        },
+      ],
+    },
+    {
+      id: "rec-4",
+      priority: 1,
+      theories: ["CLT"],
+      paragraph:
+        "Slide overload was raised in feedback. CLT recommends reducing extraneous load by replacing dense slides with paired worked examples that show problem and solution side-by-side, freeing working memory for schema construction.",
+      terms: [
+        {
+          text: "Slide overload",
+          kind: "issue",
+          detail:
+            "Identified issue: too much information per slide, making it hard to track key concepts.",
+        },
+        {
+          text: "extraneous load",
+          kind: "CLT",
+          detail:
+            "Cognitive Load Theory — extraneous load is mental effort unrelated to building understanding. Cluttered slides drive it up.",
+        },
+      ],
+    },
+  ],
+};
+
 /** Threshold for issue significance — issues at or above this count yield a recommendation. */
 export const ISSUE_THRESHOLD = 1;
 
-/** Simulated analysis call. */
+/** Simulated analysis call — returns unified rich result for all sessions. */
 export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
   await new Promise((resolve) => setTimeout(resolve, 2000));
-  const result = RESULTS[sessionId];
-  if (!result) {
-    // Synthesize a minimal result so newly-created sessions still produce output.
-    return {
-      sessionId,
-      totalFeedback: 0,
-      pedagogicalCount: 0,
-      aspectDist: [],
-      issueDist: [],
-      polarityDist: [],
-      gaps: [],
-      recommendations: [
-        {
-          id: `rec-default-${sessionId}`,
-          priority: 1,
-          theories: ["TTI"],
-          paragraph:
-            "No analyzed feedback yet for this session. Once students submit responses and the analysis is run, recommendations will surface here.",
-          terms: [],
-        },
-      ],
-    };
-  }
-  return result;
+  return { ...UNIFIED_RESULT, sessionId };
 }
