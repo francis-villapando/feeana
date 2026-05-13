@@ -5,6 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useClassStore } from "@/lib/classStore";
 
+import { ConfirmationDialog } from "@/components/dashboard/ConfirmationDialog";
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
+
 export const Route = createFileRoute("/_faculty/archived")({
   head: () => ({
     meta: [
@@ -19,16 +23,34 @@ export const Route = createFileRoute("/_faculty/archived")({
 });
 
 function ArchivedPage() {
-  const { archivedClasses, restoreClass } = useClassStore();
+  const { archivedClasses, restoreClass, deleteClass } = useClassStore();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+
+  const handleDelete = () => {
+    if (!deletingId) return;
+    deleteClass(deletingId);
+    setDeletingId(null);
+    toast.success("Class deleted");
+  };
+
+  const handleRestore = () => {
+    if (!restoringId) return;
+    restoreClass(restoringId);
+    setRestoringId(null);
+    toast.success("Class restored");
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Archive</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Archived classes</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Restore a class to bring it back into your active workspace.
-        </p>
+    <div className="mx-auto w-full max-w-7xl space-y-8 py-8">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Archive className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold">Archived classes</h1>
+          <p className="text-sm text-muted-foreground">Manage your inactive classes.</p>
+        </div>
       </div>
 
       {archivedClasses.length === 0 ? (
@@ -52,22 +74,47 @@ function ArchivedPage() {
                   <span className="text-muted-foreground">Code </span>
                   <span className="font-mono tracking-wider">{c.code}</span>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    restoreClass(c.id);
-                    toast.success("Class restored");
-                  }}
-                >
-                  <RotateCcw className="h-4 w-4" /> Restore
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setRestoringId(c.id)}
+                  >
+                    <RotateCcw className="h-4 w-4" /> Restore
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => setDeletingId(c.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <ConfirmationDialog
+        isOpen={!!restoringId}
+        onClose={() => setRestoringId(null)}
+        onConfirm={handleRestore}
+        title="Restore Class"
+        description={`Restore the "${archivedClasses.find(c => c.id === restoringId)?.name}" class? This will move it back to your active dashboard.`}
+        actionType="restore"
+      />
+
+      <ConfirmationDialog
+        isOpen={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirm={handleDelete}
+        title="Delete Class"
+        description={`Delete the "${archivedClasses.find(c => c.id === deletingId)?.name}" class? This will delete all sessions and feedback associated with this class. This action cannot be undone.`}
+        actionType="delete"
+      />
     </div>
   );
 }

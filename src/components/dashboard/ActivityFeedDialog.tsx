@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { ActivityEntry } from "@/lib/types";
+import type { ActivityEntry, Course, ILO, Topic } from "@/lib/types";
 import { ActivityRow } from "./ActivityFeed";
 
 export function ActivityFeedDialog({
@@ -14,11 +14,17 @@ export function ActivityFeedDialog({
   onOpenChange,
   entries,
   currentUserId,
+  courses,
+  topics,
+  ilos,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   entries: ActivityEntry[];
   currentUserId: string | null;
+  courses: Course[];
+  topics: Topic[];
+  ilos: ILO[];
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,7 +41,14 @@ export function ActivityFeedDialog({
               </p>
             )}
             {entries.map((e) => (
-              <ActivityRow key={e.id} entry={e} currentUserId={currentUserId} />
+              <ActivityRow 
+                key={e.id} 
+                entry={e} 
+                currentUserId={currentUserId} 
+                courses={courses}
+                topics={topics}
+                ilos={ilos}
+              />
             ))}
           </div>
         </ScrollArea>

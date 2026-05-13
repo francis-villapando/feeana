@@ -233,6 +233,21 @@ export async function restoreILO(id: string): Promise<void> {
   await logActivity("ILO", id, "restored", "ILO");
 }
 
+export async function deleteCourse(id: string): Promise<void> {
+  const { error } = await supabase.from("courses").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteTopic(id: string): Promise<void> {
+  const { error } = await supabase.from("topics").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteILO(id: string): Promise<void> {
+  const { error } = await supabase.from("ilos").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 async function logActivity(
   entity: EntityKind,
   entityId: string,

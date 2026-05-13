@@ -12,8 +12,8 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/dashboard/ConfirmationDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -267,7 +267,7 @@ function ClassLayout() {
               </button>
               <Button
                 type="button"
-                variant="destructive"
+                variant="default"
                 size="sm"
                 className="w-full"
                 onClick={() => setArchiveOpen(true)}
@@ -281,21 +281,14 @@ function ClassLayout() {
         </div>
       </div>
 
-      <AlertDialog open={archiveOpen} onOpenChange={setArchiveOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Archive {cls.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This class will be hidden from your dashboard. You can restore it later
-              from the archived classes page.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleArchive}>Archive</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationDialog
+        isOpen={archiveOpen}
+        onClose={() => setArchiveOpen(false)}
+        onConfirm={handleArchive}
+        title="Archive Class"
+        description={`Archive the "${cls.name}" class? This class will be hidden from your dashboard but can be restored later.`}
+        actionType="archive"
+      />
     </div>
   );
 }

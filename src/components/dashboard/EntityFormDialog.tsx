@@ -24,8 +24,8 @@ import { toast } from "sonner";
 
 type State =
   | { kind: "course"; entity?: Course }
-  | { kind: "topic"; entity?: Topic }
-  | { kind: "ILO"; entity?: ILO };
+  | { kind: "topic"; entity?: Topic; initialCourseId?: string }
+  | { kind: "ILO"; entity?: ILO; initialCourseId?: string; initialTopicId?: string };
 
 const BLOOMS: BloomLevel[] = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
 
@@ -43,27 +43,34 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
   // Course
   const [code, setCode] = useState(state.kind === "course" ? (state.entity?.code ?? "") : "");
   const [title, setTitle] = useState(state.kind === "course" ? (state.entity?.title ?? "") : "");
+  
   // Topic
   const [topicTitle, setTopicTitle] = useState(
     state.kind === "topic" ? (state.entity?.title ?? "") : "",
   );
-  const [topicCourseId, setTopicCourseId] = useState(
-    state.kind === "topic"
-      ? (state.entity?.courseId ?? courses[0]?.id ?? "")
-      : (courses[0]?.id ?? ""),
-  );
+  const [topicCourseId, setTopicCourseId] = useState(() => {
+    if (state.kind === "topic") {
+      return state.entity?.courseId ?? state.initialCourseId ?? courses[0]?.id ?? "";
+    }
+    return courses[0]?.id ?? "";
+  });
+
   // ILO
   const [iloStatement, setIloStatement] = useState(
     state.kind === "ILO" ? (state.entity?.statement ?? "") : "",
   );
-  const [iloCourseId, setIloCourseId] = useState(
-    state.kind === "ILO"
-      ? (state.entity?.courseId ?? courses[0]?.id ?? "")
-      : (courses[0]?.id ?? ""),
-  );
-  const [iloTopicId, setIloTopicId] = useState(
-    state.kind === "ILO" ? (state.entity?.topicId ?? "") : "",
-  );
+  const [iloCourseId, setIloCourseId] = useState(() => {
+    if (state.kind === "ILO") {
+      return state.entity?.courseId ?? state.initialCourseId ?? courses[0]?.id ?? "";
+    }
+    return courses[0]?.id ?? "";
+  });
+  const [iloTopicId, setIloTopicId] = useState(() => {
+    if (state.kind === "ILO") {
+      return state.entity?.topicId ?? state.initialTopicId ?? "";
+    }
+    return "";
+  });
   const [iloBloom, setIloBloom] = useState<BloomLevel>(
     state.kind === "ILO" ? (state.entity?.bloomLevel ?? "Remember") : "Remember",
   );
@@ -167,23 +174,25 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
 
         {state.kind === "topic" && (
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label>Course</Label>
-              <Select value={topicCourseId} onValueChange={setTopicCourseId}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses
-                    .filter((c) => !c.archived)
-                    .map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.code} — {c.title}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!state.initialCourseId && (
+              <div className="space-y-1.5">
+                <Label>Course</Label>
+                <Select value={topicCourseId} onValueChange={setTopicCourseId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses
+                      .filter((c) => !c.archived)
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.code} — {c.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="topic-title">Title</Label>
               <Input
@@ -198,62 +207,66 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
 
         {state.kind === "ILO" && (
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label>Course</Label>
-              <Select
-                value={iloCourseId}
-                onValueChange={(v) => {
-                  setIloCourseId(v);
-                  setIloTopicId("");
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses
-                    .filter((c) => !c.archived)
-                    .map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.code} — {c.title}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Topic</Label>
-              <Select
-                value={iloTopicId}
-                onValueChange={setIloTopicId}
-                disabled={!iloCourseId}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      !iloCourseId
-                        ? "Select a course first"
-                        : availableTopics.length === 0
-                        ? "No topics for this course"
-                        : "Select a topic"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTopics.length === 0 ? (
-                    <div className="px-3 py-2 text-xs text-muted-foreground">
-                      No topics for this course — add one first.
-                    </div>
-                  ) : (
-                    availableTopics.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.title}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            {!state.initialCourseId && (
+              <div className="space-y-1.5">
+                <Label>Course</Label>
+                <Select
+                  value={iloCourseId}
+                  onValueChange={(v) => {
+                    setIloCourseId(v);
+                    setIloTopicId("");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses
+                      .filter((c) => !c.archived)
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.code} — {c.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {!state.initialTopicId && (
+              <div className="space-y-1.5">
+                <Label>Topic</Label>
+                <Select
+                  value={iloTopicId}
+                  onValueChange={setIloTopicId}
+                  disabled={!iloCourseId}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        !iloCourseId
+                          ? "Select a course first"
+                          : availableTopics.length === 0
+                          ? "No topics for this course"
+                          : "Select a topic"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTopics.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">
+                        No topics for this course — add one first.
+                      </div>
+                    ) : (
+                      availableTopics.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.title}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Bloom level</Label>
               <Select value={iloBloom} onValueChange={(v) => setIloBloom(v as BloomLevel)}>

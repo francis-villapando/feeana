@@ -106,6 +106,11 @@ export async function restoreClass(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+export async function deleteClass(id: string): Promise<void> {
+  const { error } = await supabase.from("classes").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 export async function getSessions(classId: string): Promise<Session[]> {
   const { data, error } = await supabase
     .from("sessions")

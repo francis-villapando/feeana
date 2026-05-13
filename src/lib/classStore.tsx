@@ -27,6 +27,7 @@ interface ClassStoreValue {
   createClass: (input: { courseId: string; courseCode: string; courseTitle: string; section: string }) => Promise<Class>;
   archiveClass: (id: string) => Promise<void>;
   restoreClass: (id: string) => Promise<void>;
+  deleteClass: (id: string) => Promise<void>;
   createSession: (input: {
     classId: string;
     topic: string;
@@ -173,6 +174,11 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     setClasses((prev) => prev.map((c) => (c.id === id ? { ...c, archived: false } : c)));
   }, []);
 
+  const deleteClass = useCallback(async (id: string) => {
+    await classService.deleteClass(id);
+    setClasses((prev) => prev.filter((c) => c.id !== id));
+  }, []);
+
   const createSession = useCallback(
     async (input: {
       classId: string;
@@ -249,6 +255,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       createClass,
       archiveClass,
       restoreClass,
+      deleteClass,
       createSession,
       joinClassByCode,
       refreshClasses,
@@ -264,6 +271,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     createClass,
     archiveClass,
     restoreClass,
+    deleteClass,
     createSession,
     joinClassByCode,
     removeStudent,
