@@ -14,36 +14,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useClassStore } from "@/lib/classStore";
 
-export function JoinClassDialog({
+export function EnrollClassDialog({
   open,
   onOpenChange,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const { joinClassByCode } = useClassStore();
+  const { enrollClassByCode } = useClassStore();
   const [code, setCode] = useState("");
-  const [joining, setJoining] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
   const navigate = useNavigate();
 
-  const handleJoin = async () => {
+  const handleEnroll = async () => {
     if (code.trim().length !== 8) {
       toast.error("Enter the full 8-character class code.");
       return;
     }
-    setJoining(true);
+    setEnrolling(true);
     try {
-      const cls = await joinClassByCode(code);
+      const cls = await enrollClassByCode(code);
       if (!cls) {
         toast.error("No class found for that code.");
         return;
       }
-      toast.success(`Joined ${cls.course} · ${cls.section}`);
+      toast.success(`Enrolled in ${cls.course} · ${cls.section}`);
       setCode("");
       onOpenChange(false);
       navigate({ to: "/student/home" });
     } finally {
-      setJoining(false);
+      setEnrolling(false);
     }
   };
 
@@ -51,13 +51,13 @@ export function JoinClassDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Join a class</DialogTitle>
+          <DialogTitle>Enroll in a class</DialogTitle>
           <DialogDescription>Ask your faculty for the 8-character class code.</DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
-          <Label htmlFor="join-code">Class code</Label>
+          <Label htmlFor="enroll-code">Class code</Label>
           <Input
-            id="join-code"
+            id="enroll-code"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="87NUM8QU"
@@ -69,8 +69,8 @@ export function JoinClassDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleJoin} disabled={joining}>
-            {joining ? "Joining..." : "Join class"}
+          <Button onClick={handleEnroll} disabled={enrolling}>
+            {enrolling ? "Enrolling..." : "Enroll in class"}
           </Button>
         </DialogFooter>
       </DialogContent>

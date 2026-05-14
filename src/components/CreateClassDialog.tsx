@@ -47,7 +47,7 @@ export function CreateClassDialog({
         courseTitle: selectedCourse?.title ?? "",
         section: section.trim(),
       });
-      toast.success(`Class created. Join code: ${cls.code}`);
+      toast.success(`Class created. Enroll code: ${cls.code}`);
       setCourseId("");
       setSection("");
       onOpenChange(false);
@@ -61,7 +61,7 @@ export function CreateClassDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create a class</DialogTitle>
-          <DialogDescription>A 6-character join code is generated automatically.</DialogDescription>
+          <DialogDescription>A 6-character enroll code is generated automatically.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">

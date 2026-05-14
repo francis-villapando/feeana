@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ArrowRight, BookOpenCheck, Calendar, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { JoinClassDialog } from "@/components/JoinClassDialog";
+import { EnrollClassDialog } from "@/components/EnrollClassDialog";
 import { useClassStore } from "@/lib/classStore";
 
 export const Route = createFileRoute("/_student/student/home")({
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_student/student/home")({
       { title: "Student home — Feeana" },
       {
         name: "description",
-        content: "Active feedback collections from your joined classes.",
+        content: "Active feedback collections from your enrolled classes.",
       },
     ],
   }),
@@ -33,11 +33,11 @@ function formatDT(iso: string): string {
 }
 
 function StudentHome() {
-  const { joinedClassIds, classes, sessions } = useClassStore();
-  const [joinOpen, setJoinOpen] = useState(false);
+  const { enrolledClassIds, classes, sessions } = useClassStore();
+  const [enrollOpen, setEnrollOpen] = useState(false);
 
-  const joined = classes.filter((c) => joinedClassIds.includes(c.id));
-  const activeByClass = joined
+  const enrolled = classes.filter((c) => enrolledClassIds.includes(c.id));
+  const activeByClass = enrolled
     .map((c) => ({
       cls: c,
       sessions: sessions.filter((s) => s.classId === c.id && s.status === "active"),
@@ -57,17 +57,17 @@ function StudentHome() {
               Active feedback collections
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Pick an open session from any class you've joined. Taglish is welcome.
+              Pick an open session from any class you've enrolled in. Taglish is welcome.
             </p>
           </div>
-          <Button onClick={() => setJoinOpen(true)} size="lg">
-            <BookOpenCheck className="h-4 w-4" /> Join a class
+          <Button onClick={() => setEnrollOpen(true)} size="lg">
+            <BookOpenCheck className="h-4 w-4" /> Enroll in a class
           </Button>
         </div>
       </section>
 
-      {joined.length === 0 ? (
-        <EmptyJoin onJoin={() => setJoinOpen(true)} />
+      {enrolled.length === 0 ? (
+        <EmptyEnroll onEnroll={() => setEnrollOpen(true)} />
       ) : activeByClass.length === 0 ? (
         <Card className="border-dashed border-border/60 bg-card/40">
           <CardContent className="px-6 py-16 text-center">
@@ -118,22 +118,22 @@ function StudentHome() {
         </div>
       )}
 
-      <JoinClassDialog open={joinOpen} onOpenChange={setJoinOpen} />
+      <EnrollClassDialog open={enrollOpen} onOpenChange={setEnrollOpen} />
     </div>
   );
 }
 
-function EmptyJoin({ onJoin }: { onJoin: () => void }) {
+function EmptyEnroll({ onEnroll }: { onEnroll: () => void }) {
   return (
     <Card className="border-dashed border-border/60 bg-card/40">
       <CardContent className="px-6 py-16 text-center">
         <BookOpenCheck className="mx-auto h-8 w-8 text-muted-foreground" />
-        <h3 className="mt-3 text-base font-semibold">You haven't joined any classes yet</h3>
+        <h3 className="mt-3 text-base font-semibold">You haven't enrolled in any classes yet</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Ask your faculty for the 8-character class code.
         </p>
-        <Button className="mt-4" onClick={onJoin}>
-          <BookOpenCheck className="h-4 w-4" /> Join a class
+        <Button className="mt-4" onClick={onEnroll}>
+          <BookOpenCheck className="h-4 w-4" /> Enroll in a class
         </Button>
       </CardContent>
     </Card>

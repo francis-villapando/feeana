@@ -51,7 +51,7 @@ export interface Student {
   id: string;
   name: string;
   email: string;
-  joinedAt: string;
+  enrolledAt: string;
 }
 
 export interface Class {

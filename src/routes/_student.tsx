@@ -3,7 +3,7 @@ import { Activity, BookOpenCheck, LogOut, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Outlet } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { JoinClassDialog } from "@/components/JoinClassDialog";
+import { EnrollClassDialog } from "@/components/EnrollClassDialog";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_student")({
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_student")({
 function StudentLayout() {
   const { hasRole, user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [joinOpen, setJoinOpen] = useState(false);
+  const [enrollOpen, setEnrollOpen] = useState(false);
 
   if (isLoading) {
     return null;
@@ -35,8 +35,8 @@ function StudentLayout() {
             <span className="text-base font-semibold tracking-tight">Feeana</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => setJoinOpen(true)}>
-              <BookOpenCheck className="h-4 w-4" /> Join class
+            <Button variant="outline" size="sm" onClick={() => setEnrollOpen(true)}>
+              <BookOpenCheck className="h-4 w-4" /> Enroll in class
             </Button>
             <Link
               to="/privacy"
@@ -68,7 +68,7 @@ function StudentLayout() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Outlet />
       </main>
-      <JoinClassDialog open={joinOpen} onOpenChange={setJoinOpen} />
+      <EnrollClassDialog open={enrollOpen} onOpenChange={setEnrollOpen} />
     </div>
   );
 }

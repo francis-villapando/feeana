@@ -14,7 +14,7 @@ import * as classService from "./services/classService";
 interface ClassStoreValue {
   classes: Class[];
   sessions: Session[];
-  joinedClassIds: string[];
+  enrolledClassIds: string[];
   studentsByClass: Record<string, Student[]>;
   activeClasses: Class[];
   archivedClasses: Class[];
@@ -23,7 +23,7 @@ interface ClassStoreValue {
   getClass: (id: string) => Class | undefined;
   sessionsForClass: (classId: string) => Session[];
   studentsForClass: (classId: string) => Student[];
-  removeStudent: (classId: string, studentId: string) => void;
+  dismissStudent: (classId: string, studentId: string) => void;
   createClass: (input: { courseId: string; courseCode: string; courseTitle: string; section: string }) => Promise<Class>;
   archiveClass: (id: string) => Promise<void>;
   restoreClass: (id: string) => Promise<void>;
@@ -36,7 +36,7 @@ interface ClassStoreValue {
     startsAt: string;
     endsAt: string;
   }) => Promise<Session>;
-  joinClassByCode: (code: string) => Promise<Class | null>;
+  enrollClassByCode: (code: string) => Promise<Class | null>;
   activeSessions: Session[];
   refreshClasses: () => Promise<void>;
   refreshEnrolledClasses: () => Promise<void>;
@@ -50,7 +50,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [joinedClassIds, setJoinedClassIds] = useState<string[]>([]);
+  const [enrolledClassIds, setEnrolledClassIds] = useState<string[]>([]);
   const [studentsByClass, setStudentsByClass] = useState<Record<string, Student[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     try {
       const data = await classService.getEnrolledClasses(user.id);
       setClasses(data);
-      setJoinedClassIds(data.filter((c) => !c.archived).map((c) => c.id));
+      setEnrolledClassIds(data.filter((c) => !c.archived).map((c) => c.id));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load enrolled classes");
@@ -124,7 +124,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
         }
 
         setClasses(clsData);
-        setJoinedClassIds(clsData.filter((c) => !c.archived).map((c) => c.id));
+        setEnrolledClassIds(clsData.filter((c) => !c.archived).map((c) => c.id));
 
         if (clsData.length > 0) {
           const sessionResults = await Promise.all(
@@ -151,7 +151,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       if (!user) throw new Error("Not authenticated");
       const cls = await classService.createClass(user.id, input);
       setClasses((prev) => [cls, ...prev]);
-      if (!cls.archived) setJoinedClassIds((prev) => [cls.id, ...prev]);
+      if (!cls.archived) setEnrolledClassIds((prev) => [cls.id, ...prev]);
       return cls;
     },
     [user],
@@ -196,12 +196,12 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const joinClassByCode = useCallback(
+  const enrollClassByCode = useCallback(
     async (code: string) => {
       if (!user) return null;
-      const cls = await classService.joinClassByCode(code, user.id);
+      const cls = await classService.enrollClassByCode(code, user.id);
       if (cls) {
-        setJoinedClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
+        setEnrolledClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
         setClasses((prev) => (prev.find((c) => c.id === cls.id) ? prev : [...prev, cls]));
         const newSessions = await classService.getSessions(cls.id);
         setSessions((prev) => {
@@ -214,8 +214,8 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     [user],
   );
 
-  const removeStudent = useCallback(async (classId: string, studentId: string) => {
-    await classService.removeStudent(classId, studentId);
+  const dismissStudent = useCallback(async (classId: string, studentId: string) => {
+    await classService.dismissStudent(classId, studentId);
     setStudentsByClass((prev) => ({
       ...prev,
       [classId]: (prev[classId] ?? []).filter((s) => s.id !== studentId),
@@ -234,7 +234,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     return {
       classes,
       sessions,
-      joinedClassIds,
+      enrolledClassIds,
       studentsByClass,
       activeClasses,
       archivedClasses,
@@ -244,13 +244,13 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       getClass: (id) => classes.find((c) => c.id === id),
       sessionsForClass: (classId) => sessions.filter((s) => s.classId === classId),
       studentsForClass: (classId) => studentsByClass[classId] ?? [],
-      removeStudent,
+      dismissStudent,
       createClass,
       archiveClass,
       restoreClass,
       deleteClass,
       createSession,
-      joinClassByCode,
+      enrollClassByCode,
       refreshClasses,
       refreshEnrolledClasses,
       refreshSessions,
@@ -259,15 +259,15 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
   }, [
     classes,
     sessions,
-    joinedClassIds,
+    enrolledClassIds,
     studentsByClass,
     createClass,
     archiveClass,
     restoreClass,
     deleteClass,
     createSession,
-    joinClassByCode,
-    removeStudent,
+    enrollClassByCode,
+    dismissStudent,
     isLoading,
     error,
     refreshClasses,

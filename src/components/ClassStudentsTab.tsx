@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, Users } from "lucide-react";
+import { UserMinus, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -25,7 +25,7 @@ import { useFeedbackStore } from "@/lib/feedbackStore";
 import { classParticipation } from "@/lib/metrics";
 
 export function ClassStudentsTab({ classId }: { classId: string }) {
-  const { studentsForClass, removeStudent, getClass, sessionsForClass } = useClassStore();
+  const { studentsForClass, dismissStudent, getClass, sessionsForClass } = useClassStore();
   const { feedback } = useFeedbackStore();
   const students = studentsForClass(classId);
   const cls = getClass(classId);
@@ -49,7 +49,7 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden md:table-cell">Email</TableHead>
-                <TableHead className="hidden md:table-cell">Joined</TableHead>
+                <TableHead className="hidden md:table-cell">Enrolled</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -61,16 +61,16 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
                     {s.email}
                   </TableCell>
                   <TableCell className="hidden text-xs text-muted-foreground md:table-cell">
-                    {new Date(s.joinedAt).toLocaleDateString()}
+                    {new Date(s.enrolledAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
                       size="icon"
                       variant="ghost"
                       onClick={() => setPending({ id: s.id, name: s.name })}
-                      aria-label={`Remove ${s.name}`}
+                      aria-label={`Dismiss ${s.name}`}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <UserMinus className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -88,24 +88,25 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
       <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove {pending?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>Dismiss {pending?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              They will lose access to this class. Their previously submitted anonymous feedback
-              stays unaffected.
+              They will be removed from this class and lose access. Their previously submitted
+              anonymous feedback stays unaffected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 if (pending) {
-                  removeStudent(classId, pending.id);
-                  toast.success(`${pending.name} removed.`);
+                  dismissStudent(classId, pending.id);
+                  toast.success(`${pending.name} dismissed.`);
                   setPending(null);
                 }
               }}
             >
-              Remove
+              Dismiss
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
