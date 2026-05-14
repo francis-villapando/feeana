@@ -47,7 +47,7 @@ function FacultyLayout() {
               {user && (
                 <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card/40 px-3 py-1 text-xs sm:flex">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  <span className="text-muted-foreground">{user.role}</span>
+                  <span className="text-muted-foreground capitalize">{user.role}</span>
                   <span className="font-medium">{user.name}</span>
                 </div>
               )}

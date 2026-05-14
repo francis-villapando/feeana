@@ -20,12 +20,12 @@ function withinDays(iso: string, days: number) {
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
+  if (m < 1) return "Just Now";
+  if (m < 60) return `${m}m Ago`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return `${h}h Ago`;
   const d = Math.floor(h / 24);
-  return `${d}d ago`;
+  return `${d}d Ago`;
 }
 
 import { getIloPath, getTopicPath } from "@/lib/hierarchy";
@@ -52,10 +52,10 @@ export function ActivityFeed() {
           </p>
         ) : (
           top.map((a) => (
-            <ActivityRow 
-              key={a.id} 
-              entry={a} 
-              currentUserId={currentUserId} 
+            <ActivityRow
+              key={a.id}
+              entry={a}
+              currentUserId={currentUserId}
               courses={courses}
               topics={topics}
               ilos={ilos}
@@ -72,10 +72,10 @@ export function ActivityFeed() {
           View all
         </Button>
       </CardContent>
-      <ActivityFeedDialog 
-        open={open} 
-        onOpenChange={setOpen} 
-        entries={recent} 
+      <ActivityFeedDialog
+        open={open}
+        onOpenChange={setOpen}
+        entries={recent}
         currentUserId={currentUserId}
         courses={courses}
         topics={topics}
@@ -87,14 +87,14 @@ export function ActivityFeed() {
 
 import { useNavigate } from "@tanstack/react-router";
 
-export function ActivityRow({ 
-  entry, 
+export function ActivityRow({
+  entry,
   currentUserId,
   courses,
   topics,
   ilos
-}: { 
-  entry: ActivityEntry; 
+}: {
+  entry: ActivityEntry;
   currentUserId: string | null;
   courses: Course[];
   topics: Topic[];
@@ -111,7 +111,7 @@ export function ActivityRow({
   }, [entry, courses, topics, ilos]);
 
   return (
-    <div 
+    <div
       className="flex items-start gap-3 rounded-md border border-border/60 bg-background/30 px-3 py-2 cursor-pointer hover:bg-background/50 hover:border-primary/30 transition-colors group"
       onClick={() => navigate({ to: "/dashboard", search: { focus: entry.entityId } })}
     >

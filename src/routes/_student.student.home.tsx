@@ -37,12 +37,10 @@ function StudentHome() {
   const [enrollOpen, setEnrollOpen] = useState(false);
 
   const enrolled = classes.filter((c) => enrolledClassIds.includes(c.id));
-  const activeByClass = enrolled
-    .map((c) => ({
-      cls: c,
-      sessions: sessions.filter((s) => s.classId === c.id && s.status === "active"),
-    }))
-    .filter((g) => g.sessions.length > 0);
+  const classesWithSessions = enrolled.map((c) => ({
+    cls: c,
+    sessions: sessions.filter((s) => s.classId === c.id && s.status === "active"),
+  }));
 
   return (
     <div className="space-y-8">
@@ -68,51 +66,53 @@ function StudentHome() {
 
       {enrolled.length === 0 ? (
         <EmptyEnroll onEnroll={() => setEnrollOpen(true)} />
-      ) : activeByClass.length === 0 ? (
-        <Card className="border-dashed border-border/60 bg-card/40">
-          <CardContent className="px-6 py-16 text-center">
-            <h3 className="text-base font-semibold">No active collections right now</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Check back later — your faculty haven't opened a session yet.
-            </p>
-          </CardContent>
-        </Card>
       ) : (
         <div className="space-y-6">
-          {activeByClass.map((group) => (
+          {classesWithSessions.map((group) => (
             <section key={group.cls.id} className="space-y-2">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                <h2 className="text-sm font-semibold tracking-wider text-muted-foreground">
                   {group.cls.course} · {group.cls.section}
                 </h2>
                 <span className="text-xs text-muted-foreground">{group.cls.name}</span>
               </div>
-              <div className="space-y-2">
-                {group.sessions.map((s) => (
-                  <Card
-                    key={s.id}
-                    className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40"
-                  >
-                    <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <h3 className="font-medium">{s.topic}</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {group.cls.course} · {group.cls.section}
-                        </p>
-                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {formatDT(s.startsAt)} → {formatDT(s.endsAt)}
-                        </p>
-                      </div>
-                      <Button asChild className="w-full sm:w-auto">
-                        <Link to="/student/submit/$sessionId" params={{ sessionId: s.id }}>
-                          Submit feedback <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {group.sessions.length === 0 ? (
+                <Card className="border-dashed border-border/60 bg-card/40">
+                  <CardContent className="px-6 py-8 text-center">
+                    <h3 className="text-sm font-medium">No active collections</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Check back later — your faculty hasn't opened a session yet.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  {group.sessions.map((s) => (
+                    <Card
+                      key={s.id}
+                      className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40"
+                    >
+                      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <h3 className="font-medium">{s.topic}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {group.cls.course} · {group.cls.section}
+                          </p>
+                          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            {formatDT(s.startsAt)} → {formatDT(s.endsAt)}
+                          </p>
+                        </div>
+                        <Button asChild className="w-full sm:w-auto">
+                          <Link to="/student/submit/$sessionId" params={{ sessionId: s.id }}>
+                            Submit feedback <ArrowRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </section>
           ))}
         </div>
