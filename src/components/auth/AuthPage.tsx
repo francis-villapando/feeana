@@ -226,6 +226,13 @@ export function AuthPage({ role }: { role: UserRole }) {
               </Link>
               .
             </p>
+
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              Test credentials:{" "}
+              {role === "faculty"
+                ? "faculty@test.com / faculty123"
+                : "student@test.com / student123"}
+            </p>
           </CardContent>
         </Card>
       </div>
