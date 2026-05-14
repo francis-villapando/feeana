@@ -33,7 +33,7 @@ interface PerClass {
   endsAt: string;
 }
 
-export function CrossClassFeedbackCreator() {
+export function CrossClassSessionCreator() {
   const { activeClasses, createSession } = useClassStore();
   const { courses, topics } = useCourseStore();
   const [open, setOpen] = useState(false);
@@ -88,7 +88,7 @@ export function CrossClassFeedbackCreator() {
       });
       count++;
     }
-    toast.success(`Launched feedback collection in ${count} class(es).`);
+    toast.success(`Launched ${count} session(s).`);
     setRows([]);
   };
 
@@ -96,10 +96,10 @@ export function CrossClassFeedbackCreator() {
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <PlusCircle className="h-4 w-4 text-primary" /> Cross-class feedback creator
+          <PlusCircle className="h-4 w-4 text-primary" /> Cross-class session creator
         </CardTitle>
         <CardDescription>
-          Launch a feedback collection across multiple classes — each picks its own topic and
+          Launch a session across multiple classes — each picks its own topic and
           schedule.
         </CardDescription>
       </CardHeader>
@@ -222,7 +222,7 @@ export function CrossClassFeedbackCreator() {
         )}
 
         <Button onClick={handleLaunch} className="w-full">
-          Launch collection
+          Start session
         </Button>
       </CardContent>
     </Card>

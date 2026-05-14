@@ -299,9 +299,9 @@ function SessionsList({ classId }: { classId: string }) {
   if (sessions.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
-        <h3 className="text-base font-semibold">No collections yet</h3>
+        <h3 className="text-base font-semibold">No sessions yet</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Start your first feedback collection from the form on the right.
+          Start your first feedback session from the form on the right.
         </p>
       </div>
     );

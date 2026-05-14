@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_faculty/home")({
       {
         name: "description",
         content:
-          "Your Feeana workspace: create classes and run outcome-aligned feedback collections.",
+          "Your Feeana workspace: create classes and run outcome-aligned sessions.",
       },
     ],
   }),
@@ -40,7 +40,7 @@ function HomePage() {
               Your feedback intelligence workspace.
             </h1>
             <p className="mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-              Spin up classes, schedule anonymous feedback collections, and let Feeana surface
+              Spin up classes, schedule anonymous feedback sessions, and let Feeana surface
               ILO-aligned teaching cues from Taglish responses.
             </p>
           </div>
@@ -63,7 +63,7 @@ function HomePage() {
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Your classes</h2>
             <p className="text-sm text-muted-foreground">
-              Open a class to manage feedback sessions and view trends.
+              Open a class to manage sessions and view trends.
             </p>
           </div>
         </div>
@@ -71,7 +71,7 @@ function HomePage() {
           <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
             <h3 className="text-base font-semibold">No classes yet</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Create your first class to start collecting feedback.
+              Create your first class to start running sessions.
             </p>
             <Button className="mt-4" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> Create class

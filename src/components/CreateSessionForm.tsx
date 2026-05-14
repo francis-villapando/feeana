@@ -33,7 +33,7 @@ export function CreateSessionForm({ classId }: { classId: string }) {
   const handleStart = async () => {
     const topic = availableTopics.find((t) => t.id === topicId);
     if (!topic) {
-      toast.error("Pick a topic for this collection.");
+      toast.error("Pick a topic for this session.");
       return;
     }
     if (!startsAt || !endsAt) {
@@ -53,12 +53,12 @@ export function CreateSessionForm({ classId }: { classId: string }) {
         startsAt,
         endsAt,
       });
-      toast.success(`Collection started: ${s.topic}`);
+      toast.success(`Session started: ${s.topic}`);
       setTopicId("");
       setStartsAt("");
       setEndsAt("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to start collection");
+      toast.error(err instanceof Error ? err.message : "Failed to start session");
     }
   };
 
@@ -66,7 +66,7 @@ export function CreateSessionForm({ classId }: { classId: string }) {
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <PlusCircle className="h-4 w-4 text-primary" /> Start feedback collection
+          <PlusCircle className="h-4 w-4 text-primary" /> Start session
         </CardTitle>
         <CardDescription>
           Schedule a window for students to submit anonymous feedback.
@@ -107,7 +107,7 @@ export function CreateSessionForm({ classId }: { classId: string }) {
           <DateTimePicker value={endsAt} onChange={setEndsAt} />
         </div>
         <Button onClick={handleStart} className="w-full">
-          Start collection
+          Start session
         </Button>
       </CardContent>
     </Card>

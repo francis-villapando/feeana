@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_student/student/home")({
       { title: "Student home — Feeana" },
       {
         name: "description",
-        content: "Active feedback collections from your enrolled classes.",
+        content: "Active sessions from your enrolled classes.",
       },
     ],
   }),
@@ -52,7 +52,7 @@ function StudentHome() {
               <Sparkles className="h-3 w-3" /> Your voice, anonymized
             </span>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Active feedback collections
+              Active sessions
             </h1>
             <p className="mt-2 max-w-xl text-sm text-muted-foreground">
               Pick an open session from any class you've enrolled in. Taglish is welcome.
@@ -79,7 +79,7 @@ function StudentHome() {
               {group.sessions.length === 0 ? (
                 <Card className="border-dashed border-border/60 bg-card/40">
                   <CardContent className="px-6 py-8 text-center">
-                    <h3 className="text-sm font-medium">No active collections</h3>
+                    <h3 className="text-sm font-medium">No active sessions</h3>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Check back later — your faculty hasn't opened a session yet.
                     </p>

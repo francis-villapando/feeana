@@ -132,7 +132,7 @@ function SubmitPage() {
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center py-12 text-center text-sm text-muted-foreground">
-              This collection has ended.
+              This session has ended.
             </div>
           )}
         </CardContent>

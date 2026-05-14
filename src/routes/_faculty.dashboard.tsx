@@ -8,7 +8,7 @@ import { useClassStore } from "@/lib/classStore";
 import { averageRate, iloAchievementForSession, submissionRateForSession } from "@/lib/metrics";
 import { CourseManagementHub } from "@/components/dashboard/CourseManagementHub";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
-import { CrossClassFeedbackCreator } from "@/components/dashboard/CrossClassFeedbackCreator";
+import { CrossClassSessionCreator } from "@/components/dashboard/CrossClassSessionCreator";
 
 export const Route = createFileRoute("/_faculty/dashboard")({
   head: () => ({
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_faculty/dashboard")({
       { title: "Dashboard — Feeana" },
       {
         name: "description",
-        content: "Workspace KPIs, course management, and cross-class feedback launches.",
+        content: "Workspace KPIs, course management, and cross-class session launches.",
       },
     ],
   }),
@@ -48,7 +48,7 @@ function DashboardPage() {
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage your curriculum and launch coordinated feedback.
+            Manage your curriculum and launch coordinated sessions.
           </p>
         </div>
         <Badge variant="outline" className="gap-1.5 border-primary/30 text-primary">
@@ -87,7 +87,7 @@ function DashboardPage() {
       </div>
 
       {/* Cross-class creator */}
-      <CrossClassFeedbackCreator />
+      <CrossClassSessionCreator />
     </div>
   );
 }
