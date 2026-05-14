@@ -1,0 +1,43 @@
+import { Link } from "@tanstack/react-router";
+import { ArrowRight, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Session } from "@/lib/types";
+
+interface SessionCardProps {
+  session: Session;
+}
+
+function formatDT(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+export function SessionCard({ session }: SessionCardProps) {
+  return (
+    <Card className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40">
+      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex-1 space-y-1">
+          <h3 className="font-medium">{session.topic}</h3>
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            {formatDT(session.startsAt)} → {formatDT(session.endsAt)}
+          </p>
+        </div>
+        <Button asChild className="w-full sm:w-auto">
+          <Link to="/student/submit/$sessionId" params={{ sessionId: session.id }}>
+            Submit feedback <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}

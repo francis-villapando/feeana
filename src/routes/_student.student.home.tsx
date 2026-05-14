@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, BookOpenCheck, Calendar, Sparkles } from "lucide-react";
+import { BookOpenCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EnrollClassDialog } from "@/components/EnrollClassDialog";
 import { useClassStore } from "@/lib/classStore";
+import { SessionCard } from "@/components/dashboard/SessionCard";
 
 export const Route = createFileRoute("/_student/student/home")({
   head: () => ({
@@ -19,21 +21,52 @@ export const Route = createFileRoute("/_student/student/home")({
   component: StudentHome,
 });
 
-function formatDT(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-8">
+      {/* Hero Section Skeleton */}
+      <section className="relative overflow-hidden rounded-2xl border border-primary/10 bg-card/40 p-8 backdrop-blur-xl">
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-48 rounded-full" />
+            <Skeleton className="h-10 w-64 sm:h-12 sm:w-80" />
+            <Skeleton className="h-4 w-full max-w-xl" />
+          </div>
+          <Skeleton className="h-12 w-full sm:w-44" />
+        </div>
+      </section>
+
+      {/* Class Groups Skeletons */}
+      <div className="space-y-6">
+        {[1, 2].map((i) => (
+          <section key={i} className="space-y-3">
+            <div className="flex items-baseline justify-between">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <div className="space-y-2">
+              {[1, 2].map((j) => (
+                <Card key={j} className="border-border/40 bg-card/40">
+                  <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                      <Skeleton className="h-3 w-1/3" />
+                    </div>
+                    <Skeleton className="h-10 w-full sm:w-36" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function StudentHome() {
-  const { enrolledClassIds, classes, sessions } = useClassStore();
+  const { enrolledClassIds, classes, sessions, isLoading } = useClassStore();
   const [enrollOpen, setEnrollOpen] = useState(false);
 
   const enrolled = classes.filter((c) => enrolledClassIds.includes(c.id));
@@ -41,6 +74,10 @@ function StudentHome() {
     cls: c,
     sessions: sessions.filter((s) => s.classId === c.id && s.status === "active"),
   }));
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div className="space-y-8">
@@ -71,10 +108,7 @@ function StudentHome() {
           {classesWithSessions.map((group) => (
             <section key={group.cls.id} className="space-y-2">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-sm font-semibold tracking-wider text-muted-foreground">
-                  {group.cls.course} · {group.cls.section}
-                </h2>
-                <span className="text-xs text-muted-foreground">{group.cls.name}</span>
+                <h2 className="text-sm font-semibold tracking-wider text-primary">{group.cls.course}</h2>
               </div>
               {group.sessions.length === 0 ? (
                 <Card className="border-dashed border-border/60 bg-card/40">
@@ -88,28 +122,7 @@ function StudentHome() {
               ) : (
                 <div className="space-y-2">
                   {group.sessions.map((s) => (
-                    <Card
-                      key={s.id}
-                      className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40"
-                    >
-                      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <h3 className="font-medium">{s.topic}</h3>
-                          <p className="text-xs text-muted-foreground">
-                            {group.cls.course} · {group.cls.section}
-                          </p>
-                          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {formatDT(s.startsAt)} → {formatDT(s.endsAt)}
-                          </p>
-                        </div>
-                        <Button asChild className="w-full sm:w-auto">
-                          <Link to="/student/submit/$sessionId" params={{ sessionId: s.id }}>
-                            Submit feedback <ArrowRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    <SessionCard key={s.id} session={s} />
                   ))}
                 </div>
               )}
