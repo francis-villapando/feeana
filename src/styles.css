@@ -1,9 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-
 @custom-variant dark (&:is(.dark *));
-
 /*
  * Feeana design system — dark-first SaaS aesthetic.
  * Deep slate base + vibrant emerald accent. All colors use oklch.
@@ -97,6 +95,46 @@
   --sidebar-ring: oklch(0.78 0.18 156);
 }
 
+/* Light theme overrides — enables light mode via .light class on <html> */
+.light {
+  --background: oklch(0.98 0.01 250);
+  --foreground: oklch(0.21 0.04 256);
+  --card: oklch(1 0 0 / 40%);
+  --card-foreground: oklch(0.21 0.04 256);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.04 256);
+  --primary: oklch(0.6 0.18 156);
+  --primary-foreground: oklch(0.98 0.01 250);
+  --secondary: oklch(0.92 0.02 256);
+  --secondary-foreground: oklch(0.21 0.04 256);
+  --muted: oklch(0.95 0.02 256);
+  --muted-foreground: oklch(0.45 0.04 256);
+  --accent: oklch(0.6 0.18 156 / 10%);
+  --accent-foreground: oklch(0.5 0.18 156);
+  --destructive: oklch(0.6 0.2 25);
+  --destructive-foreground: oklch(0.98 0.01 250);
+  --success: oklch(0.6 0.18 156);
+  --success-foreground: oklch(0.98 0.01 250);
+  --warning: oklch(0.7 0.15 80);
+  --warning-foreground: oklch(0.21 0.04 256);
+  --border: oklch(0 0 0 / 10%);
+  --input: oklch(0 0 0 / 8%);
+  --ring: oklch(0.6 0.18 156);
+  --chart-1: oklch(0.6 0.18 156);
+  --chart-2: oklch(0.5 0.15 200);
+  --chart-3: oklch(0.55 0.15 80);
+  --chart-4: oklch(0.6 0.2 25);
+  --chart-5: oklch(0.5 0.18 290);
+  --sidebar: oklch(0.98 0.01 250);
+  --sidebar-foreground: oklch(0.21 0.04 256);
+  --sidebar-primary: oklch(0.6 0.18 156);
+  --sidebar-primary-foreground: oklch(0.98 0.01 250);
+  --sidebar-accent: oklch(0 0 0 / 5%);
+  --sidebar-accent-foreground: oklch(0.21 0.04 256);
+  --sidebar-border: oklch(0 0 0 / 10%);
+  --sidebar-ring: oklch(0.6 0.18 156);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -137,8 +175,16 @@
     inset: 0;
     z-index: -1;
     background:
-      radial-gradient(ellipse at top right, oklch(0.78 0.18 156 / 8%), transparent 60%),
+      radial-gradient(ellipse at top right, var(--color-primary, oklch(0.78 0.18 156 / 8%)), transparent 60%),
       linear-gradient(180deg, oklch(0.18 0.04 256 / 80%), oklch(0.21 0.04 256 / 95%));
     pointer-events: none;
+  }
+
+  /* Lighter background gradient for light mode */
+  .light body::after {
+    background:
+      radial-gradient(ellipse at top right, oklch(0.6 0.18 156 / 15%), transparent 70%),
+      linear-gradient(180deg, oklch(0.98 0.01 250 / 90%), oklch(0.95 0.02 256 / 95%));
+    opacity: 0.4;
   }
 }

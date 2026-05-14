@@ -157,7 +157,7 @@ function ClassLayout() {
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={trend}>
-                <CartesianGrid stroke="oklch(1 0 0 / 8%)" vertical={false} />
+                <CartesianGrid stroke="var(--color-border)" vertical={false} />
                 <XAxis dataKey="topic" stroke="var(--color-muted-foreground)" fontSize={11} />
                 <YAxis
                   yAxisId="recs"

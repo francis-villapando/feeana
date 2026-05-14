@@ -5,6 +5,7 @@ import { Outlet } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { EnrollClassDialog } from "@/components/EnrollClassDialog";
 import { useAuth } from "@/lib/auth";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export const Route = createFileRoute("/_student")({
   component: StudentLayout,
@@ -38,6 +39,7 @@ function StudentLayout() {
             <Button variant="outline" size="sm" onClick={() => setEnrollOpen(true)}>
               <BookOpenCheck className="h-4 w-4" /> Enroll in a class
             </Button>
+            <ThemeToggle />
             <Link
               to="/privacy"
               className="hidden items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground sm:flex"

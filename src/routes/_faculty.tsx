@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Button } from "@/components/ui/button";
 import { FacultySidebar } from "@/components/FacultySidebar";
 import { useAuth } from "@/lib/auth";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export const Route = createFileRoute("/_faculty")({
   component: FacultyLayout,
@@ -38,6 +39,7 @@ function FacultyLayout() {
               </Link>
             </div>
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <Link
                 to="/privacy"
                 className="hidden items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground sm:flex"

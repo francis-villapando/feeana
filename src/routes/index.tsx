@@ -9,6 +9,7 @@ import {
   Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,6 +36,7 @@ function LandingPage() {
           <span className="text-lg font-semibold tracking-tight">Feeana</span>
         </div>
         <nav className="flex items-center gap-2">
+          <ThemeToggle />
           <Link
             to="/privacy"
             className="hidden items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground sm:flex"

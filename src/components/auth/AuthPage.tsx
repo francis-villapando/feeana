@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 import type { UserRole } from "@/lib/types";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const ALLOWED_FACULTY_DOMAIN = import.meta.env.VITE_FACULTY_DOMAIN as string | undefined;
 
@@ -110,14 +111,17 @@ export function AuthPage({ role }: { role: UserRole }) {
         </Button>
         <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
           <CardHeader>
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
-                <Icon className="h-5 w-5" />
-              </span>
-              <div>
-                <CardTitle className="text-xl">{meta.title}</CardTitle>
-                <CardDescription>{meta.description}</CardDescription>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <CardTitle className="text-xl">{meta.title}</CardTitle>
+                  <CardDescription>{meta.description}</CardDescription>
+                </div>
               </div>
+              <ThemeToggle />
             </div>
           </CardHeader>
           <CardContent>

@@ -178,11 +178,11 @@ function Results({ result }: { result: AnalysisResult }) {
         <CardContent>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={result.aspectDist}>
-              <CartesianGrid stroke="oklch(1 0 0 / 8%)" vertical={false} />
+              <CartesianGrid stroke="var(--color-border)" vertical={false} />
               <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={11} />
               <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
               <Tooltip
-                cursor={{ fill: "oklch(1 0 0 / 5%)" }}
+                cursor={{ fill: "var(--color-border)" }}
                 contentStyle={{
                   background: "var(--color-popover)",
                   border: "1px solid var(--color-border)",
@@ -241,7 +241,7 @@ function Results({ result }: { result: AnalysisResult }) {
         <CardContent>
           <ResponsiveContainer width="100%" height={Math.max(220, result.issueDist.length * 32)}>
             <BarChart data={result.issueDist} layout="vertical">
-              <CartesianGrid stroke="oklch(1 0 0 / 8%)" horizontal={false} />
+              <CartesianGrid stroke="var(--color-border)" horizontal={false} />
               <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
               <YAxis
                 type="category"
@@ -251,7 +251,7 @@ function Results({ result }: { result: AnalysisResult }) {
                 width={170}
               />
               <Tooltip
-                cursor={{ fill: "oklch(1 0 0 / 5%)" }}
+                cursor={{ fill: "var(--color-border)" }}
                 contentStyle={{
                   background: "var(--color-popover)",
                   border: "1px solid var(--color-border)",

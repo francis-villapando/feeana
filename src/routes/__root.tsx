@@ -13,6 +13,7 @@ import { AuthProvider } from "@/lib/auth";
 import { ClassStoreProvider } from "@/lib/classStore";
 import { CourseStoreProvider } from "@/lib/courseStore";
 import { FeedbackStoreProvider } from "@/lib/feedbackStore";
+import { ThemeProvider, useTheme } from "@/lib/theme-provider";
 import bgImage from "../assets/bg-abstract.jpg";
 
 import appCss from "../styles.css?url";
@@ -77,6 +78,25 @@ function RootShell({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
         <style dangerouslySetInnerHTML={{ __html: bgStyle }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('feeana-ui-theme') || 'system';
+                  var root = document.documentElement;
+                  root.classList.remove('light', 'dark');
+                  if (theme === 'system') {
+                    var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    root.classList.add(dark ? 'dark' : 'light');
+                  } else {
+                    root.classList.add(theme);
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
         {children}
@@ -86,19 +106,26 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ToasterWithTheme() {
+  const { theme } = useTheme()
+  return <Toaster richColors position="top-right" theme={theme as 'light' | 'dark' | undefined} />
+}
+
 function RootComponent() {
   return (
-    <AuthProvider>
-      <ClassStoreProvider>
-        <CourseStoreProvider>
-          <FeedbackStoreProvider>
-            <AnalysisStoreProvider>
-              <Outlet />
-              <Toaster richColors position="top-right" />
-            </AnalysisStoreProvider>
-          </FeedbackStoreProvider>
-        </CourseStoreProvider>
-      </ClassStoreProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ClassStoreProvider>
+          <CourseStoreProvider>
+            <FeedbackStoreProvider>
+              <AnalysisStoreProvider>
+                <Outlet />
+                <ToasterWithTheme />
+              </AnalysisStoreProvider>
+            </FeedbackStoreProvider>
+          </CourseStoreProvider>
+        </ClassStoreProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
