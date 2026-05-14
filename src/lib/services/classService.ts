@@ -265,7 +265,7 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
 
   return (data ?? [])
     .map((row: Record<string, unknown>) => {
-      const cls = (row.classes as Record<string, unknown>[])?.[0];
+      const cls = row.classes as Record<string, unknown>;
       return fromDbClass(cls || {});
     })
     .filter((c) => c.id);

@@ -113,44 +113,37 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     setIsLoading(true);
-    classService
-      .getClasses(user.id)
-      .then(async (clsData) => {
+
+    const loadData = async () => {
+      try {
+        let clsData: Class[] = [];
+        if (user.role === "faculty") {
+          clsData = await classService.getClasses(user.id);
+        } else {
+          clsData = await classService.getEnrolledClasses(user.id);
+        }
+
         setClasses(clsData);
         setJoinedClassIds(clsData.filter((c) => !c.archived).map((c) => c.id));
-        try {
+
+        if (clsData.length > 0) {
           const sessionResults = await Promise.all(
             clsData.map((c) => classService.getSessions(c.id)),
           );
           setSessions(sessionResults.flat());
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Failed to load sessions");
+        } else {
+          setSessions([]);
         }
+
         setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to load class data");
+      } finally {
         setIsLoading(false);
-      })
-      .catch(() => {
-        classService
-          .getEnrolledClasses(user.id)
-          .then(async (enrolledData) => {
-            setClasses(enrolledData);
-            setJoinedClassIds(enrolledData.filter((c) => !c.archived).map((c) => c.id));
-            try {
-              const sessionResults = await Promise.all(
-                enrolledData.map((c) => classService.getSessions(c.id)),
-              );
-              setSessions(sessionResults.flat());
-            } catch (e) {
-              setError(e instanceof Error ? e.message : "Failed to load sessions");
-            }
-            setError(null);
-            setIsLoading(false);
-          })
-          .catch((e) => {
-            setError(e instanceof Error ? e.message : "Failed to load classes");
-            setIsLoading(false);
-          });
-      });
+      }
+    };
+
+    loadData();
   }, [user]);
 
   const createClass = useCallback(
