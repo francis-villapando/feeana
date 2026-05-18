@@ -12,7 +12,7 @@ export type CltCategory = "Intrinsic" | "Extraneous";
 export interface SessionContext {
   course: string;
   topic: string;
-  targetIloRbt: number; // corresponds to session.target_ILO_rbt in algorithm.pseudo
+  targetIloRbt: number;
   sessionId?: string;
 }
 
