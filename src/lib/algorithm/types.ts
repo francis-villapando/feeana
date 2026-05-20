@@ -14,6 +14,7 @@ export interface SessionContext {
   topic: string;
   targetIloRbt: number;
   sessionId?: string;
+  iloStatement: string;
 }
 
 export interface FeedbackInput {
@@ -49,8 +50,10 @@ export interface StrategyStats {
   totalFeedback: number;
   issueCounts: Record<string, number>;
   gapCount: number;
-  distributionByClt: Record<CltCategory, number>;
-  distributionByRbt: Record<number, number>;
+  distributionByClt?: never;
+  distributionByRbt?: never;
+  aspectCounts: Record<string, number>;
+  polarityCounts: Record<string, number>;
 }
 
 export interface RecommendationItem {

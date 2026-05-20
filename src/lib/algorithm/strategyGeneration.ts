@@ -9,6 +9,7 @@ import type {
   StrategyStats,
   RecommendationItem,
   WarningItem,
+  SessionContext,
 } from "./types";
 
 export function CalculateDistributions(
@@ -20,36 +21,49 @@ export function CalculateDistributions(
     diagnosticCount: buffer.length,
   });
 
-  return {
+  const stats: StrategyStats = {
     totalFeedback,
     issueCounts: {},
     gapCount: 0,
-    distributionByClt: {
-      Intrinsic: 0,
-      Extraneous: 0,
-    },
-    distributionByRbt: {},
+    aspectCounts: {},
+    polarityCounts: { pos: 0, neu: 0, neg: 0 },
   };
+
+  for (const diag of buffer) {
+    stats.issueCounts[diag.issue] = (stats.issueCounts[diag.issue] || 0) + 1;
+    if (diag.isGap) stats.gapCount++;
+    stats.aspectCounts[diag.tti] = (stats.aspectCounts[diag.tti] || 0) + 1;
+    
+    if (diag.polarity === "pos" || diag.polarity === "neu" || diag.polarity === "neg") {
+      stats.polarityCounts[diag.polarity]++;
+    }
+  }
+
+  return stats;
 }
 
 export function GeneratePedagogicalCue(
-  topic: string,
-  isGap: boolean,
+  sessionContext: SessionContext,
   uniqueIssue: BufferedDiagnostic,
+  totalFeedback: number
 ): RecommendationItem {
   console.debug("[strategyGeneration] Generating pedagogical cue", {
-    topic,
-    isGap,
+    topic: sessionContext.topic,
+    isGap: uniqueIssue.isGap,
     issue: uniqueIssue.issue,
   });
+
+  const percentage = Math.round((uniqueIssue.count / totalFeedback) * 100);
+  
+  const paragraph = `${percentage}% of the class is experiencing ${uniqueIssue.issue} with respect to ${sessionContext.topic}. According to RBT, students are not achieving the levels of ${uniqueIssue.rbt} and hence they are not able to achieve the goal: ${sessionContext.iloStatement}. The cause of CLT is high ${uniqueIssue.clt} Load. Thus, "recommendation cue for ${uniqueIssue.issue}."`;
 
   return {
     id: `rec-${Math.random().toString(36).slice(2, 10)}`,
     issue: uniqueIssue.issue,
-    paragraph: "Recommendation placeholder.",
-    priority: 1,
+    paragraph,
+    priority: uniqueIssue.count, // Can use raw count as priority sorting for UI
     theories: ["RBT", "CLT"],
-    isGap,
+    isGap: uniqueIssue.isGap,
   };
 }
 
@@ -63,7 +77,7 @@ export function GenerateDiagnosticWarning(
   return {
     id: `warn-${Math.random().toString(36).slice(2, 10)}`,
     issue: uniqueIssue.issue,
-    warning: "Warning placeholder.",
+    warning: `Minor issue detected: ${uniqueIssue.issue}`,
     count: uniqueIssue.count,
   };
 }

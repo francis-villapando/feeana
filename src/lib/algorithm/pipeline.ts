@@ -83,6 +83,10 @@ export async function runAlgorithmPipeline(
   }
 
   for (const uniqueIssue of uniqueIssueMap.values()) {
+    if (uniqueIssue.issue === "Uncategorized") {
+      continue; // Skip generating recommendations/warnings for uncategorized feedback
+    }
+
     const w_c = uniqueIssue.isGap ? 1.5 : 1.0;
     const P = (uniqueIssue.count / totalFeedback) * w_c;
 
@@ -96,9 +100,9 @@ export async function runAlgorithmPipeline(
 
     if (P >= PRIORITY_THRESHOLD) {
       const recommendation = GeneratePedagogicalCue(
-        sessionContext.topic,
-        uniqueIssue.isGap,
+        sessionContext,
         uniqueIssue,
+        totalFeedback
       );
       recommendationList.push(recommendation);
     } else {
