@@ -27,8 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RecommendationParagraph } from "@/components/analysis/RecommendationParagraph";
-import { runAnalysis } from "@/lib/analysis";
-import { useAnalysisStore } from "@/lib/analysisStore";
+import { runAnalysis, fetchAnalysisResult } from "@/lib/analysis";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { useClassStore } from "@/lib/classStore";
 import { useCourseStore } from "@/lib/courseStore";
@@ -69,22 +68,43 @@ function AnalysisPage() {
   const { classId, sessionId } = Route.useParams();
   const { sessions } = useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
-  const { get, set } = useAnalysisStore();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
   useEffect(() => {
-    const cached = get(sessionId);
-    if (cached) setResult(cached);
-  }, [get, sessionId]);
+    if (!sessionId) return;
+    let active = true;
+
+    async function loadInitial() {
+      setLoading(true);
+      try {
+        const data = await fetchAnalysisResult(sessionId);
+        if (active) {
+          setResult(data);
+        }
+      } catch (err) {
+        console.error("Failed to load initial analysis from database:", err);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitial();
+
+    return () => {
+      active = false;
+    };
+  }, [sessionId]);
 
   const handleTrigger = async () => {
+    if (!session) return;
     setLoading(true);
     setResult(null);
     try {
       const data = await runAnalysis(session.id);
       setResult(data);
-      set(session.id, data);
       toast.success("Analysis complete");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Analysis failed.");
@@ -92,6 +112,8 @@ function AnalysisPage() {
       setLoading(false);
     }
   };
+
+  if (!session) return null;
 
   return (
     <div className="space-y-8">

@@ -60,6 +60,7 @@ export async function runAlgorithmPipeline(
       issue: extraction.issue,
       polarity: extraction.polarity,
       isGap,
+      feedbackId: feedback.id,
     });
   }
 
@@ -110,5 +111,8 @@ export async function runAlgorithmPipeline(
   const output = formatDashboardOutput(recommendationList, warningList, stats);
   console.debug("[pipeline] Completed algorithm pipeline", { output });
 
-  return output;
+  return {
+    ...output,
+    diagnostics: buffer,
+  };
 }

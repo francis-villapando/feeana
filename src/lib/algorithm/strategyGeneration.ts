@@ -5,13 +5,14 @@
 
 import type {
   BufferedDiagnostic,
+  DiagnosticRecord,
   StrategyStats,
   RecommendationItem,
   WarningItem,
 } from "./types";
 
 export function CalculateDistributions(
-  buffer: BufferedDiagnostic[],
+  buffer: DiagnosticRecord[],
   totalFeedback: number,
 ): StrategyStats {
   console.debug("[strategyGeneration] Calculating distributions", {

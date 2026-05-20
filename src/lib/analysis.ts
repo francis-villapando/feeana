@@ -1,8 +1,10 @@
 /**
- * Analysis pipeline mock.
- * Replace with real backend calls when ready.
+ * Analysis pipeline.
+ * Persists results and individual feedback diagnostics to Supabase.
  */
 import type { AnalysisResult } from "./types";
+import { supabase } from "./supabase";
+import { runAlgorithmPipeline } from "./algorithm/pipeline";
 
 const RESULTS: Record<string, AnalysisResult> = {
   "session-vars": {
@@ -458,8 +460,216 @@ const UNIFIED_RESULT: AnalysisResult = {
 /** Threshold for issue significance — issues at or above this count yield a recommendation. */
 export const ISSUE_THRESHOLD = 1;
 
-/** Simulated analysis call — returns unified rich result for all sessions. */
+/** Retrieves existing analysis result from Supabase */
+export async function fetchAnalysisResult(sessionId: string): Promise<AnalysisResult | null> {
+  const { data, error } = await supabase
+    .from("analysis_results")
+    .select("*")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching analysis result:", error);
+    throw new Error(error.message);
+  }
+
+  if (!data || !data.result) return null;
+
+  return data.result as AnalysisResult;
+}
+
+/** Executes the algorithm pipeline and saves results to Supabase */
 export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  return { ...UNIFIED_RESULT, sessionId };
+  console.debug("[analysis] Triggering analysis for session", { sessionId });
+
+  // 1. Fetch class session data along with its class and course details
+  const { data: session, error: sessionErr } = await supabase
+    .from("sessions")
+    .select("*, classes(name, course, course_id)")
+    .eq("id", sessionId)
+    .single();
+
+  if (sessionErr || !session) {
+    console.error("Error fetching session details:", sessionErr);
+    throw new Error(sessionErr?.message || "Session not found.");
+  }
+
+  const courseId = session.course_id || (session.classes as any)?.course_id;
+  if (!courseId) {
+    throw new Error("Course context not found for this session.");
+  }
+
+  // 2. Fetch the target ILOs for this course to calculate the session's active RBT target level
+  const { data: ilosData, error: ilosErr } = await supabase
+    .from("ilos")
+    .select("*")
+    .eq("course_id", courseId)
+    .eq("archived", false);
+
+  if (ilosErr) {
+    console.error("Error fetching course ILOs:", ilosErr);
+    throw new Error(ilosErr.message);
+  }
+
+  // Calculate session's target RBT level from its active ILOs
+  const sessionIloIds = Array.isArray(session.ilo_ids) ? session.ilo_ids : [];
+  const activeIlos = (ilosData ?? []).filter(ilo => sessionIloIds.includes(ilo.id));
+
+  const bloomLevelMap: Record<string, number> = {
+    "Remember": 1,
+    "Understand": 2,
+    "Apply": 3,
+    "Analyze": 4,
+    "Evaluate": 5,
+    "Create": 6
+  };
+
+  let targetIloRbt = 1; // Default fallback level
+  if (activeIlos.length > 0) {
+    const rbtLevels = activeIlos.map(ilo => bloomLevelMap[ilo.bloom_level] ?? 1);
+    targetIloRbt = Math.max(...rbtLevels);
+  }
+
+  // 3. Fetch the actual raw student comments (feedback stream)
+  const { data: feedbackData, error: feedbackErr } = await supabase
+    .from("feedback")
+    .select("*")
+    .eq("session_id", sessionId);
+
+  if (feedbackErr) {
+    console.error("Error fetching session feedback comments:", feedbackErr);
+    throw new Error(feedbackErr.message);
+  }
+
+  const feedbackStream = (feedbackData ?? []).map(f => ({
+    id: f.id,
+    rawText: f.content,
+    createdAt: f.created_at
+  }));
+
+  // Fetch course name
+  const { data: courseData } = await supabase
+    .from("courses")
+    .select("title")
+    .eq("id", courseId)
+    .maybeSingle();
+  const courseName = courseData?.title || (session.classes as any)?.course || "Unknown Course";
+
+  // 4. Formulate the SessionContext and run the modular pipeline orchestrator
+  const sessionContext = {
+    course: courseName,
+    topic: session.topic || "Unknown Topic",
+    targetIloRbt: targetIloRbt,
+    sessionId: sessionId
+  };
+
+  const pipelineOutput = await runAlgorithmPipeline(sessionContext, feedbackStream);
+  const buffer = pipelineOutput.diagnostics ?? [];
+
+  // 5. Calculate distribution metrics to construct the final UI AnalysisResult payload
+  const aspectCounts: Record<string, number> = {};
+  const polarityCounts = { pos: 0, neu: 0, neg: 0 };
+
+  for (const diag of buffer) {
+    aspectCounts[diag.tti] = (aspectCounts[diag.tti] || 0) + 1;
+    if (diag.polarity === "pos" || diag.polarity === "neu" || diag.polarity === "neg") {
+      polarityCounts[diag.polarity]++;
+    }
+  }
+
+  const aspectDist = Object.entries(aspectCounts).map(([label, value]) => ({ label, value }));
+  const issueDist = Object.entries(pipelineOutput.stats.issueCounts).map(([label, value]) => ({ label, value }));
+  
+  const polarityDist = [
+    { label: "Positive", value: polarityCounts.pos },
+    { label: "Neutral", value: polarityCounts.neu },
+    { label: "Negative", value: polarityCounts.neg }
+  ];
+
+  // Construct Gap items corresponding to live active session ILO statements
+  const gaps: any[] = [];
+  const gapDiagnostics = buffer.filter(d => d.isGap);
+  for (const gapDiag of gapDiagnostics) {
+    const ilo = activeIlos[0]; // Associate gap with primary session ILO for now
+    if (ilo) {
+      gaps.push({
+        iloId: ilo.id,
+        expected: ilo.statement,
+        actual: `Issue: "${gapDiag.issue}" (CLT: ${gapDiag.clt}, RBT: Level ${gapDiag.rbt})`,
+        severity: "medium"
+      });
+    }
+  }
+
+  // Map recommendations
+  const recommendations = pipelineOutput.recommendationList.map(rec => ({
+    id: rec.id,
+    paragraph: rec.paragraph,
+    terms: [] as any[], // empty for now (safe rendering)
+    theories: rec.theories as any[],
+    priority: rec.priority
+  }));
+
+  const finalResult: AnalysisResult = {
+    sessionId,
+    totalFeedback: pipelineOutput.stats.totalFeedback,
+    pedagogicalCount: pipelineOutput.stats.totalFeedback, // assume all for tracer stub
+    aspectDist,
+    issueDist,
+    polarityDist,
+    gaps,
+    recommendations
+  };
+
+  // 6. DB Integration: Save aggregate result to analysis_results
+  // Delete first to avoid conflicts in case unique constraint is not present
+  await supabase
+    .from("analysis_results")
+    .delete()
+    .eq("session_id", sessionId);
+
+  const { error: insertErr } = await supabase
+    .from("analysis_results")
+    .insert({
+      session_id: sessionId,
+      result: finalResult,
+      is_mock: false,
+      model_version: "DistilXLM-R (Tracer Stub)"
+    });
+
+  if (insertErr) {
+    console.error("Error saving aggregate analysis results:", insertErr);
+    throw new Error(insertErr.message);
+  }
+
+  // 7. DB Integration: Save individual diagnostic records to feedback_diagnostics
+  await supabase
+    .from("feedback_diagnostics")
+    .delete()
+    .eq("session_id", sessionId);
+
+  if (buffer.length > 0) {
+    const diagnosticsInsert = buffer.map(diag => ({
+      feedback_id: diag.feedbackId,
+      session_id: sessionId,
+      tti: diag.tti,
+      rbt: diag.rbt,
+      clt: diag.clt,
+      issue: diag.issue,
+      polarity: diag.polarity,
+      is_gap: diag.isGap
+    }));
+
+    const { error: diagnosticsErr } = await supabase
+      .from("feedback_diagnostics")
+      .insert(diagnosticsInsert);
+
+    if (diagnosticsErr) {
+      console.error("Error saving feedback diagnostics:", diagnosticsErr);
+      // Non-blocking error for tracer, but log it
+    }
+  }
+
+  console.debug("[analysis] Successfully saved analysis results and diagnostics.", { sessionId });
+  return finalResult;
 }

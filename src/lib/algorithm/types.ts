@@ -38,6 +38,7 @@ export interface DiagnosticRecord {
   issue: string;
   polarity: Polarity;
   isGap: boolean;
+  feedbackId?: string;
 }
 
 export interface BufferedDiagnostic extends DiagnosticRecord {
@@ -72,6 +73,7 @@ export interface PipelineOutput {
   recommendationList: RecommendationItem[];
   warningList: WarningItem[];
   stats: StrategyStats;
+  diagnostics?: DiagnosticRecord[];
 }
 
 export interface AlgorithmPipeline {
