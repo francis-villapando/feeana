@@ -193,8 +193,7 @@ function Results({ result }: { result: AnalysisResult }) {
         <CardHeader>
           <CardTitle className="text-base">Aspect distribution</CardTitle>
           <CardDescription>
-            What students talked about across {result.totalFeedback} responses (
-            {result.pedagogicalCount} pedagogical).
+            What students talked about across {result.totalFeedback} responses.
           </CardDescription>
         </CardHeader>
         <CardContent>

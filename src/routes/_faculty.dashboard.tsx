@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Activity, Database, GraduationCap, Target, Users } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { useClassStore } from "@/lib/classStore";
-import { averageRate, iloAchievementForSession, submissionRateForSession } from "@/lib/metrics";
+import { useAnalysisStore } from "@/lib/analysisStore";
+import { averageRate, iloAchievementForClass, iloAchievementForSession, submissionRateForSession } from "@/lib/metrics";
 import { CourseManagementHub } from "@/components/dashboard/CourseManagementHub";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { CrossClassSessionCreator } from "@/components/dashboard/CrossClassSessionCreator";
@@ -26,6 +27,18 @@ export const Route = createFileRoute("/_faculty/dashboard")({
 function DashboardPage() {
   const { feedback } = useFeedbackStore();
   const { activeClasses, sessions, classes } = useClassStore();
+  const { results, fetchForSessions } = useAnalysisStore();
+
+  const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
+
+  useEffect(() => {
+    if (sessionIdsKey) {
+      const ids = sessionIdsKey.split(",").filter(Boolean);
+      if (ids.length > 0) {
+        fetchForSessions(ids);
+      }
+    }
+  }, [sessionIdsKey, fetchForSessions]);
 
   const stats = useMemo(() => {
     const active = sessions.filter((s) => s.status === "active").length;
@@ -35,9 +48,13 @@ function DashboardPage() {
         return submissionRateForSession(s, cls, feedback);
       }),
     );
-    const ilo = averageRate(sessions.map((s) => iloAchievementForSession(s, feedback)));
+    const classAchievements = activeClasses.map((c) => {
+      const classSessions = sessions.filter((s) => s.classId === c.id);
+      return iloAchievementForClass(classSessions, results);
+    });
+    const ilo = averageRate(classAchievements);
     return { active, submission, ilo };
-  }, [feedback, sessions, classes]);
+  }, [feedback, sessions, classes, activeClasses, results]);
 
   return (
     <div className="space-y-8">

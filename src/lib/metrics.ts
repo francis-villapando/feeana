@@ -11,12 +11,45 @@ export function submissionRateForSession(
   return Math.min(100, Math.round((responses / cls.studentCount) * 100));
 }
 
-/** Mock ILO achievement = % of pedagogical feedback in session. */
-export function iloAchievementForSession(session: Session, feedback: Feedback[]): number {
-  const items = feedback.filter((f) => f.sessionId === session.id);
-  if (items.length === 0) return 0;
-  const pedagogical = items.filter((f) => f.isPedagogical).length;
-  return Math.round((pedagogical / items.length) * 100);
+/** ILO achievement = % of active ILOs that have no flagged gaps in this session. */
+export function iloAchievementForSession(
+  session: Session,
+  analyses: Record<string, AnalysisResult>,
+): number {
+  const analysis = analyses[session.id];
+  if (!analysis) return 100; // Default to 100% (unflagged/achieved) if not yet analyzed
+
+  const totalSessionIlos = session.iloIds.length;
+  if (totalSessionIlos === 0) return 100;
+
+  const flaggedIloIds = new Set<string>((analysis.gaps ?? []).map((g) => g.iloId));
+  const achievedCount = totalSessionIlos - flaggedIloIds.size;
+
+  return Math.round((achievedCount / totalSessionIlos) * 100);
+}
+
+/** ILO achievement per class = % of unique session-level ILOs that have no flagged gaps in any analyzed session of this class. */
+export function iloAchievementForClass(
+  sessions: Session[],
+  analyses: Record<string, AnalysisResult>,
+): number {
+  const activeIloIds = Array.from(new Set(sessions.flatMap((s) => s.iloIds)));
+  if (activeIloIds.length === 0) return 100;
+
+  // Identify all gaps flagged across all analyzed sessions for this class
+  const flaggedIloIds = new Set<string>();
+  for (const session of sessions) {
+    const analysis = analyses[session.id];
+    if (analysis) {
+      const sessionGaps = analysis.gaps ?? [];
+      for (const gap of sessionGaps) {
+        flaggedIloIds.add(gap.iloId);
+      }
+    }
+  }
+
+  const achievedCount = activeIloIds.filter((id) => !flaggedIloIds.has(id)).length;
+  return Math.round((achievedCount / activeIloIds.length) * 100);
 }
 
 export function averageRate(values: number[]): number {

@@ -94,7 +94,6 @@ export interface Feedback {
   sessionId: string;
   rawText: string;
   cleanedText: string;
-  isPedagogical: boolean;
   aspects: AspectExtraction[];
   createdAt: string;
 }
@@ -135,7 +134,6 @@ export interface DistEntry {
 export interface AnalysisResult {
   sessionId: string;
   totalFeedback: number;
-  pedagogicalCount: number;
   aspectDist: DistEntry[];
   issueDist: DistEntry[];
   polarityDist: DistEntry[];

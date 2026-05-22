@@ -8,7 +8,6 @@ function fromDbFeedback(row: Record<string, unknown>): Feedback {
     sessionId: row.session_id as string,
     rawText: row.content as string,
     cleanedText: (meta.cleanedText as string) ?? (row.content as string),
-    isPedagogical: (meta.isPedagogical as boolean) ?? true,
     aspects: (meta.aspects as Feedback["aspects"]) ?? [],
     createdAt: row.created_at as string,
   };
@@ -28,7 +27,6 @@ export async function submitFeedback(sessionId: string, content: string): Promis
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const isPedagogical = content.trim().length > 8;
 
   const { data, error } = await supabase
     .from("feedback")
@@ -37,7 +35,6 @@ export async function submitFeedback(sessionId: string, content: string): Promis
       content,
       meta: {
         cleanedText: content.trim().toLowerCase(),
-        isPedagogical,
         submittedBy: user?.id,
       },
     })

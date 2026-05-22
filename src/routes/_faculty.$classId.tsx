@@ -25,6 +25,7 @@ import { useClassStore } from "@/lib/classStore";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import {
   averageRate,
+  iloAchievementForClass,
   iloAchievementForSession,
   recommendationTrendData,
   submissionRateForSession,
@@ -58,13 +59,15 @@ function ClassLayout() {
   const { classId } = Route.useParams();
   const { getClass, sessionsForClass, isLoading, archiveClass, refreshStudents } = useClassStore();
   const { feedback, fetchFeedback } = useFeedbackStore();
-  const { results } = useAnalysisStore();
+  const { results, fetchForSessions } = useAnalysisStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   const cls = getClass(classId);
   const sessions = sessionsForClass(classId);
+
+  const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
 
   useEffect(() => {
     if (classId) {
@@ -73,13 +76,22 @@ function ClassLayout() {
     }
   }, [classId, fetchFeedback, refreshStudents]);
 
+  useEffect(() => {
+    if (sessionIdsKey) {
+      const ids = sessionIdsKey.split(",").filter(Boolean);
+      if (ids.length > 0) {
+        fetchForSessions(ids);
+      }
+    }
+  }, [sessionIdsKey, fetchForSessions]);
+
   const submissionRate = useMemo(
     () => averageRate(sessions.map((s) => submissionRateForSession(s, cls, feedback))),
     [sessions, cls, feedback],
   );
   const iloRate = useMemo(
-    () => averageRate(sessions.map((s) => iloAchievementForSession(s, feedback))),
-    [sessions, feedback],
+    () => iloAchievementForClass(sessions, results),
+    [sessions, results],
   );
   const trend = useMemo(
     () => recommendationTrendData(sessions, results, feedback),
@@ -135,7 +147,7 @@ function ClassLayout() {
           icon={<Target className="h-4 w-4" />}
           label="ILO achievement"
           value={`${iloRate}%`}
-          hint="Average across sessions"
+          hint="Class achievement rate"
         />
       </div>
 

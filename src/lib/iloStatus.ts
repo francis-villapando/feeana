@@ -17,17 +17,12 @@ export function computeIloStatuses(
     scope = ilos.filter((i) => session.iloIds.includes(i.id));
   }
 
-  const sessionFeedback = feedback.filter((f) => f.sessionId === session.id);
+  const sessionScope = scope.filter((ilo) => session.iloIds.includes(ilo.id));
+  const targetScope = sessionScope.length > 0 ? sessionScope : scope;
   const flaggedIloIds = new Set<string>((result?.gaps ?? []).map((g) => g.iloId));
 
-  const hasAnyNegative = sessionFeedback.some(
-    (f) => f.isPedagogical && f.aspects.some((a) => a.polarity === "neg"),
-  );
-
-  return scope.map((ilo) => {
-    const flagged = flaggedIloIds.has(ilo.id);
-    const sessionOwnsIlo = session.iloIds.includes(ilo.id);
-    const achieved = !(flagged || (hasAnyNegative && sessionOwnsIlo));
+  return targetScope.map((ilo) => {
+    const achieved = !flaggedIloIds.has(ilo.id);
     return { ilo, achieved };
   });
 }

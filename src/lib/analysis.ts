@@ -155,7 +155,6 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
   const finalResult: AnalysisResult = {
     sessionId,
     totalFeedback: pipelineOutput.stats.totalFeedback,
-    pedagogicalCount: pipelineOutput.stats.totalFeedback, // assume all for tracer stub
     aspectDist,
     issueDist,
     polarityDist,
