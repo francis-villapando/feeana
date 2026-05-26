@@ -12,7 +12,9 @@ let lastProgressTime = 0;
 const THROTTLE_MS = 66; // ~15 FPS
 
 // Listen to transformers.js progress callbacks and throttle them to the main thread
-env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers/dist/'; // optional: configure if necessary
+if (env.backends.onnx.wasm) {
+  env.backends.onnx.wasm.wasmPaths = '/';
+}
 
 // We can intercept global fetch or hook into the pipeline creation if needed, 
 // but standard transformers.js pipeline() accepts a progress_callback parameter.

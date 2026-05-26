@@ -3,7 +3,7 @@ import { Activity, BookOpen, ListChecks, Target } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCourseStore } from "@/lib/courseStore";
-import type { ActivityEntry, EntityKind } from "@/lib/types";
+import type { ActivityEntry, EntityKind, Course, Topic, ILO } from "@/lib/types";
 import { ActivityFeedDialog } from "./ActivityFeedDialog";
 
 const ICONS: Record<EntityKind, typeof BookOpen> = {
