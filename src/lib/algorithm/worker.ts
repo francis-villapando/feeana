@@ -7,7 +7,7 @@ import type { SessionContext, FeedbackInput, PipelineOutput } from "./types";
 // Configure transformers.js environment for browser use
 env.allowLocalModels = false;
 
-// We will use native postMessage for progress events to avoid Comlink proxy jank
+// Use native postMessage for progress events to avoid Comlink proxy jank
 let lastProgressTime = 0;
 const THROTTLE_MS = 66; // ~15 FPS
 
@@ -16,17 +16,7 @@ if (env.backends.onnx.wasm) {
   env.backends.onnx.wasm.wasmPaths = '/';
 }
 
-// We can intercept global fetch or hook into the pipeline creation if needed, 
-// but standard transformers.js pipeline() accepts a progress_callback parameter.
-// We will hook into it inside getClassifier in informationExtraction if we need to.
-// Actually, it's cleaner to listen to the progress_callback where the pipeline is instantiated.
-// Since informationExtraction instantiates it, we can expose a setter here or pass the callback down.
-
-// Better yet, we can expose the algorithm pipeline and it handles it internally. Wait, the pipeline 
-// doesn't instantiate the model directly. To capture the progress callback cleanly across the worker,
-// we can set a global callback.
-
-// Let's implement the worker API
+// Implement the worker API
 const api = {
   async run(
     sessionContext: SessionContext,
@@ -37,13 +27,13 @@ const api = {
     const output = await runAlgorithmPipeline(sessionContext, feedbackStream);
     return output;
   },
-  
-  // A method to manually trigger initialization with a progress callback
+
+  // Method to trigger initialization with a progress callback
   async preloadModel(): Promise<void> {
-    // We import this dynamically so it only runs when called, avoiding top-level await issues
+    // Import dynamically so it only runs when called, avoiding top-level await issues
     const { pipeline } = await import("@huggingface/transformers");
-    
-    // We do a dummy pipeline initialization to trigger the download and progress events
+
+    // A dummy pipeline initialization to trigger the download and progress events
     console.debug("[worker] Preloading model...");
     await pipeline(
       "zero-shot-classification",
