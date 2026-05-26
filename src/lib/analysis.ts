@@ -4,7 +4,7 @@
  */
 import type { AnalysisResult } from "./types";
 import { supabase } from "./supabase";
-import { runAlgorithmPipeline } from "./algorithm/pipeline";
+import { getMLWorker } from "./mlWorkerStore";
 
 
 
@@ -115,7 +115,8 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
     iloStatement: activeIlos[0]?.statement || "Unknown Goal"
   };
 
-  const pipelineOutput = await runAlgorithmPipeline(sessionContext, feedbackStream);
+  const { api } = getMLWorker();
+  const pipelineOutput = await api.run(sessionContext, feedbackStream);
   const buffer = pipelineOutput.diagnostics ?? [];
 
   // 5. Calculate distribution metrics to construct the final UI AnalysisResult payload

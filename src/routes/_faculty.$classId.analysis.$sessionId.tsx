@@ -33,6 +33,7 @@ import { useClassStore } from "@/lib/classStore";
 import { useCourseStore } from "@/lib/courseStore";
 import { computeIloStatuses } from "@/lib/iloStatus";
 import type { AnalysisResult } from "@/lib/types";
+import { ModelLoaderOverlay } from "@/components/analysis/ModelLoaderOverlay";
 
 export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
   loader: async ({ params }) => {
@@ -140,6 +141,8 @@ function AnalysisPage() {
       {!result && !loading && <EmptyState onTrigger={handleTrigger} />}
       {loading && <LoadingState />}
       {result && <Results result={result} />}
+
+      <ModelLoaderOverlay isVisible={loading} />
     </div>
   );
 }

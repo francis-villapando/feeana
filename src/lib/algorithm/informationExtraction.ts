@@ -1,43 +1,80 @@
 /*
  * Module 3: Information Extraction.
- * This file will use the local DistilXLM-R model to extract issue and polarity
- * from cleaned feedback text.
+ * This file uses the local Transformers.js model to extract issue and polarity
+ * from cleaned feedback text using zero-shot classification.
+ * Note: This module is intended to run inside the Web Worker.
  */
 
+import { pipeline, type PipelineType } from "@huggingface/transformers";
 import type { IssueExtractionResult } from "./types";
 
-const KEYWORD_MAP: Record<string, string[]> = {
-  "relational coldness": ["snob", "aloof", "suplado", "suplada", "deadma", "interaction", "connection", "unfriendly", "mood"],
-  "classroom tension": ["scary", "takot", "terror", "galit", "strict", "intense", "pressure", "tension", "vibe"],
-  "evaluation unfairness": ["unfair", "bias", "partial", "grades", "score", "mataas", "mababa", "luge", "paborito"],
-  "perceived marginalization": ["ignore", "invisible", "extra", "quiet", "tahimik", "listen", "voices", "participation", "balewala"],
-  "subject alienation": ["boring", "irrelevant", "useless", "why", "real-life", "apply", "kailangan", "meaning", "purpose"],
-  "peer distraction": ["noisy", "classmates", "maingay", "chat", "gulo", "disturb", "focus", "group", "distraction"],
-  "instructional cadence": ["fast", "slow", "mabilis", "mabagal", "pacing", "speed", "time", "bilis", "cadence"],
-  "clarity deficit": ["confusing", "malabo", "explain", "slides", "materials", "examples", "clarify", "clear", "deficit"],
-  "abstract logic gap": ["logic", "theory", "math", "algorithm", "complex", "deep", "structure", "hard", "gap"],
-  "procedural bottleneck": ["steps", "process", "how", "execute", "implementation", "code", "run", "method", "bottleneck"],
-  "conceptual misalignment": ["basic", "fundamental", "confused", "wrong", "mistake", "foundation", "thought", "misaligned"],
-  "design synthesis failure": ["build", "project", "design", "combine", "whole", "structure", "create", "architect", "failure"],
-  "feedback latency": ["late", "delayed", "tagal", "results", "comments", "check", "wait", "feedback", "latency"],
-  "notation struggle": ["syntax", "symbols", "semicolon", "braces", "variables", "naming", "sign", "notation", "programming"]
-};
+// The 14 official taxonomy tags for zero-shot classification candidate labels.
+const CANDIDATE_LABELS = [
+  "relational coldness",
+  "classroom tension",
+  "evaluation unfairness",
+  "perceived marginalization",
+  "subject alienation",
+  "peer distraction",
+  "instructional cadence",
+  "clarity deficit",
+  "abstract logic gap",
+  "procedural bottleneck",
+  "conceptual misalignment",
+  "design synthesis failure",
+  "feedback latency",
+  "notation struggle",
+];
 
-export function ExtractPID(cleanText: string): IssueExtractionResult {
-  console.debug("[informationExtraction] Extracting PID deterministically", { cleanText });
-  
-  const textLower = cleanText.toLowerCase();
+// Singleton classifier instance inside the worker
+let classifierPromise: Promise<any> | null = null;
 
-  for (const [issueTag, keywords] of Object.entries(KEYWORD_MAP)) {
-    for (const keyword of keywords) {
-      if (textLower.includes(keyword)) {
-        return { issue: issueTag, polarity: "neg" };
-      }
-    }
+/**
+ * Initializes or returns the existing zero-shot classification pipeline.
+ */
+async function getClassifier() {
+  if (!classifierPromise) {
+    console.debug("[informationExtraction] Initializing zero-shot-classification pipeline...");
+    // Fallback model or explicit model selection can be made here.
+    classifierPromise = pipeline(
+      "zero-shot-classification" as PipelineType,
+      "Xenova/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7"
+    );
   }
+  return classifierPromise;
+}
 
-  return {
-    issue: "Uncategorized",
-    polarity: "neu",
-  };
+/**
+ * Asynchronously extracts the pedagogical issue from text.
+ * Mapped implicitly to negative polarity per system design.
+ */
+export async function ExtractPID(cleanText: string): Promise<IssueExtractionResult> {
+  console.debug("[informationExtraction] Extracting PID via Zero-Shot ML", {
+    cleanTextLength: cleanText.length,
+  });
+
+  try {
+    const classifier = await getClassifier();
+    
+    // We pass multi_label: false so the scores sum to 1.
+    const result = await classifier(cleanText, CANDIDATE_LABELS, {
+      multi_label: false,
+    });
+
+    console.debug("[informationExtraction] Zero-Shot ML Result", {
+      topLabel: result.labels[0],
+      topScore: result.scores[0],
+    });
+
+    return {
+      issue: result.labels[0],
+      polarity: "neg", // By design, all matched issues represent negative pedagogical gaps
+    };
+  } catch (error) {
+    console.error("[informationExtraction] Classification failed, falling back", error);
+    return {
+      issue: "Uncategorized",
+      polarity: "neu",
+    };
+  }
 }

@@ -45,7 +45,7 @@ export async function runAlgorithmPipeline(
     const cleanText = Preprocess(feedback);
     console.debug("[pipeline] Preprocess output", { cleanText });
 
-    const extraction = ExtractPID(cleanText);
+    const extraction = await ExtractPID(cleanText);
     console.debug("[pipeline] Extraction output", { extraction });
 
     const tti = map_tti(extraction.issue);
