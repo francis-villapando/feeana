@@ -12,19 +12,116 @@
 --     at https://supabase.com/dashboard/project/narsikmkqjoxlfbonsqs/sql/new
 --     and click "Run".
 --
---   Option B (Local supabase CLI):
---     supabase db reset   (loads supabase/seed.sql automatically)
+--   Option B (Local supabase CLI — auto-loads from config.toml):
+--     supabase db reset
 --
 --   Option C (Direct psql):
 --     psql "postgresql://..." -f supabase/seed.sql
+--
+-- Design:
+--   All prerequisite IDs (faculty, course, class, etc.) are resolved
+--   via subqueries using stable business keys (email, course code,
+--   section). No hardcoded UUIDs except the session ID which the 40
+--   feedback entries must reference. This makes the seed portable
+--   across environments without UUID collision risk.
 -- ============================================================
 
--- Re-run safety: clear any existing feedback for the target session
+----------------------------------------------------------------------
+-- RE-RUN SAFETY: Clear previously seeded feedback rows only.
+-- Prerequisite rows (profiles, courses, classes, etc.) are left alone
+-- because they use ON CONFLICT / WHERE NOT EXISTS to handle duplicates.
+----------------------------------------------------------------------
 DELETE FROM feedback
 WHERE session_id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e';
 
--- Insert 40 Taglish/code-switched classroom feedback entries
--- All submitted by one student (f728d46a-0c73-4c93-b2b6-85b16ba47533)
+----------------------------------------------------------------------
+-- 1. PROFILES (faculty + student)
+-- Uses ON CONFLICT (email) because email column has a UNIQUE constraint.
+-- In the hosted project these users likely already exist — the INSERT
+-- is silently skipped.
+----------------------------------------------------------------------
+INSERT INTO profiles (id, email, full_name, role)
+SELECT gen_random_uuid(), 'faculty@test.com', 'Test Faculty', 'faculty'
+WHERE NOT EXISTS (SELECT 1 FROM profiles WHERE email = 'faculty@test.com');
+
+INSERT INTO profiles (id, email, full_name, role)
+SELECT gen_random_uuid(), 'student@test.com', 'Test Student', 'student'
+WHERE NOT EXISTS (SELECT 1 FROM profiles WHERE email = 'student@test.com');
+
+----------------------------------------------------------------------
+-- 2. COURSE (CSEG2 — Game Programming 1)
+-- Uses WHERE NOT EXISTS because courses.code has no UNIQUE constraint
+-- (only a non-unique index for lookups).
+----------------------------------------------------------------------
+INSERT INTO courses (code, title)
+SELECT 'CSEG2', 'Game Programming 1'
+WHERE NOT EXISTS (SELECT 1 FROM courses WHERE code = 'CSEG2');
+
+----------------------------------------------------------------------
+-- 3. INTENDED LEARNING OUTCOMES (ILOs)
+-- Used by the analysis pipeline to compute target RBT levels.
+----------------------------------------------------------------------
+INSERT INTO ilos (course_id, code, statement, bloom_level)
+SELECT c.id, 'ILO1', 'Apply fundamental game programming concepts to build a simple interactive application', 'Apply'
+FROM courses c WHERE c.code = 'CSEG2'
+AND NOT EXISTS (SELECT 1 FROM ilos WHERE course_id = c.id AND code = 'ILO1');
+
+INSERT INTO ilos (course_id, code, statement, bloom_level)
+SELECT c.id, 'ILO2', 'Analyze game mechanics and implement gameplay systems using object-oriented design', 'Analyze'
+FROM courses c WHERE c.code = 'CSEG2'
+AND NOT EXISTS (SELECT 1 FROM ilos WHERE course_id = c.id AND code = 'ILO2');
+
+----------------------------------------------------------------------
+-- 4. CLASS (3CS-C section)
+-- join_code has a UNIQUE index so the seed uses a distinct value
+-- to avoid collision with any existing class that may already use
+-- the same section+course combination.
+----------------------------------------------------------------------
+INSERT INTO classes (faculty_id, course_id, course, section, name, join_code)
+SELECT
+  (SELECT id FROM profiles WHERE email = 'faculty@test.com'),
+  (SELECT id FROM courses WHERE code = 'CSEG2'),
+  'CSEG2',
+  '3CS-C',
+  'Game Programming 1 - 3CS-C',
+  'CSEG2-3CSC-SEED'
+WHERE NOT EXISTS (
+  SELECT 1 FROM classes WHERE section = '3CS-C' AND course = 'CSEG2'
+);
+
+----------------------------------------------------------------------
+-- 5. ENROLLMENT (student enrolled in the class)
+-- Uses ON CONFLICT on the (class_id, student_id) unique constraint.
+----------------------------------------------------------------------
+INSERT INTO enrollments (class_id, student_id)
+SELECT c.id, p.id
+FROM classes c, profiles p
+WHERE c.section = '3CS-C' AND c.course = 'CSEG2'
+  AND p.email = 'student@test.com'
+ON CONFLICT (class_id, student_id) DO NOTHING;
+
+----------------------------------------------------------------------
+-- 6. SESSION
+-- Uses the fixed UUID that the 40 feedback entries reference below.
+-- ON CONFLICT (id) DO NOTHING ensures it works whether the session
+-- already exists (hosted project) or not (local environment).
+----------------------------------------------------------------------
+INSERT INTO sessions (id, class_id, course_id, topic, status, ilo_ids)
+SELECT
+  '3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
+  c.id,
+  c.course_id,
+  'Introduction to Game Programming',
+  'active',
+  (SELECT jsonb_agg(i.id) FROM ilos i WHERE i.course_id = c.course_id)
+FROM classes c
+WHERE c.section = '3CS-C' AND c.course = 'CSEG2'
+ON CONFLICT (id) DO NOTHING;
+
+----------------------------------------------------------------------
+-- 7. FEEDBACK (40 Taglish/code-switched entries)
+-- Always inserted (DELETE at top handles re-run safety).
+----------------------------------------------------------------------
 INSERT INTO feedback (session_id, content, meta) VALUES
 
 -- ======== relational coldness ========
@@ -204,6 +301,10 @@ INSERT INTO feedback (session_id, content, meta) VALUES
 -- ============================================================
 -- Verify
 -- ============================================================
-SELECT COUNT(*) AS total_seeded_feedback
-FROM feedback
-WHERE session_id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e';
+SELECT
+  (SELECT COUNT(*) FROM feedback WHERE session_id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e') AS total_seeded_feedback,
+  (SELECT COUNT(*) FROM sessions WHERE id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e') AS session_exists,
+  (SELECT EXISTS (SELECT 1 FROM classes WHERE section = '3CS-C' AND course = 'CSEG2')) AS class_exists,
+  (SELECT EXISTS (SELECT 1 FROM courses WHERE code = 'CSEG2')) AS course_exists,
+  (SELECT EXISTS (SELECT 1 FROM profiles WHERE email = 'faculty@test.com')) AS faculty_exists,
+  (SELECT EXISTS (SELECT 1 FROM profiles WHERE email = 'student@test.com')) AS student_exists;
