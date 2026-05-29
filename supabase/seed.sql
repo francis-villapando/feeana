@@ -58,26 +58,49 @@ SELECT 'CSEG2', 'Game Programming 1'
 WHERE NOT EXISTS (SELECT 1 FROM courses WHERE code = 'CSEG2');
 
 ----------------------------------------------------------------------
--- 3. INTENDED LEARNING OUTCOMES (ILOs)
+-- 3. TOPIC (Introduction to Game Programming)
+-- ILOs require a topic_id FK, so ensure the topic exists first.
+----------------------------------------------------------------------
+INSERT INTO topics (course_id, title)
+SELECT c.id, 'Introduction to Game Programming'
+FROM courses c WHERE c.code = 'CSEG2'
+AND NOT EXISTS (
+  SELECT 1 FROM topics WHERE course_id = c.id AND title = 'Introduction to Game Programming'
+);
+
+----------------------------------------------------------------------
+-- 4. INTENDED LEARNING OUTCOMES (ILOs)
 -- Used by the analysis pipeline to compute target RBT levels.
+-- The `code` column was removed from the schema; uniqueness is
+-- enforced by (course_id, statement) in this seed.
 ----------------------------------------------------------------------
-INSERT INTO ilos (course_id, code, statement, bloom_level)
-SELECT c.id, 'ILO1', 'Apply fundamental game programming concepts to build a simple interactive application', 'Apply'
-FROM courses c WHERE c.code = 'CSEG2'
-AND NOT EXISTS (SELECT 1 FROM ilos WHERE course_id = c.id AND code = 'ILO1');
+INSERT INTO ilos (course_id, topic_id, statement, bloom_level)
+SELECT c.id, t.id, 'Apply fundamental game programming concepts to build a simple interactive application', 'Apply'
+FROM courses c
+JOIN topics t ON t.course_id = c.id AND t.title = 'Introduction to Game Programming'
+WHERE c.code = 'CSEG2'
+AND NOT EXISTS (
+  SELECT 1 FROM ilos
+  WHERE course_id = c.id AND statement = 'Apply fundamental game programming concepts to build a simple interactive application'
+);
 
-INSERT INTO ilos (course_id, code, statement, bloom_level)
-SELECT c.id, 'ILO2', 'Analyze game mechanics and implement gameplay systems using object-oriented design', 'Analyze'
-FROM courses c WHERE c.code = 'CSEG2'
-AND NOT EXISTS (SELECT 1 FROM ilos WHERE course_id = c.id AND code = 'ILO2');
+INSERT INTO ilos (course_id, topic_id, statement, bloom_level)
+SELECT c.id, t.id, 'Analyze game mechanics and implement gameplay systems using object-oriented design', 'Analyze'
+FROM courses c
+JOIN topics t ON t.course_id = c.id AND t.title = 'Introduction to Game Programming'
+WHERE c.code = 'CSEG2'
+AND NOT EXISTS (
+  SELECT 1 FROM ilos
+  WHERE course_id = c.id AND statement = 'Analyze game mechanics and implement gameplay systems using object-oriented design'
+);
 
 ----------------------------------------------------------------------
--- 4. CLASS (3CS-C section)
--- join_code has a UNIQUE index so the seed uses a distinct value
+-- 5. CLASS (3CS-C section)
+-- enroll_code has a UNIQUE index so the seed uses a distinct value
 -- to avoid collision with any existing class that may already use
 -- the same section+course combination.
 ----------------------------------------------------------------------
-INSERT INTO classes (faculty_id, course_id, course, section, name, join_code)
+INSERT INTO classes (faculty_id, course_id, course, section, name, enroll_code)
 SELECT
   (SELECT id FROM profiles WHERE email = 'faculty@test.com'),
   (SELECT id FROM courses WHERE code = 'CSEG2'),
@@ -90,7 +113,7 @@ WHERE NOT EXISTS (
 );
 
 ----------------------------------------------------------------------
--- 5. ENROLLMENT (student enrolled in the class)
+-- 6. ENROLLMENT (student enrolled in the class)
 -- Uses ON CONFLICT on the (class_id, student_id) unique constraint.
 ----------------------------------------------------------------------
 INSERT INTO enrollments (class_id, student_id)
@@ -101,10 +124,11 @@ WHERE c.section = '3CS-C' AND c.course = 'CSEG2'
 ON CONFLICT (class_id, student_id) DO NOTHING;
 
 ----------------------------------------------------------------------
--- 6. SESSION
+-- 7. SESSION
 -- Uses the fixed UUID that the 40 feedback entries reference below.
 -- ON CONFLICT (id) DO NOTHING ensures it works whether the session
 -- already exists (hosted project) or not (local environment).
+-- ilo_ids is uuid[] so we use array_agg() not jsonb_agg().
 ----------------------------------------------------------------------
 INSERT INTO sessions (id, class_id, course_id, topic, status, ilo_ids)
 SELECT
@@ -113,13 +137,25 @@ SELECT
   c.course_id,
   'Introduction to Game Programming',
   'active',
-  (SELECT jsonb_agg(i.id) FROM ilos i WHERE i.course_id = c.course_id)
+  (SELECT COALESCE(array_agg(i.id), '{}'::uuid[]) FROM ilos i WHERE i.course_id = c.course_id)
 FROM classes c
 WHERE c.section = '3CS-C' AND c.course = 'CSEG2'
 ON CONFLICT (id) DO NOTHING;
 
 ----------------------------------------------------------------------
--- 7. FEEDBACK (40 Taglish/code-switched entries)
+-- 8. BACKFILL: Fix existing session with null course_id
+-- The hosted project may already have this session from before the
+-- course_id column was added. Set it to the CSEG2 course.
+----------------------------------------------------------------------
+UPDATE sessions s
+SET course_id = c.course_id
+FROM classes c
+WHERE s.id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e'
+  AND c.id = s.class_id
+  AND s.course_id IS NULL;
+
+----------------------------------------------------------------------
+-- 9. FEEDBACK (40 Taglish/code-switched entries)
 -- Always inserted (DELETE at top handles re-run safety).
 ----------------------------------------------------------------------
 INSERT INTO feedback (session_id, content, meta) VALUES
