@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Activity, BookOpenCheck, LogOut, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { EnrollClassDialog } from "@/components/EnrollClassDialog";
@@ -12,16 +12,22 @@ export const Route = createFileRoute("/_student")({
 });
 
 function StudentLayout() {
-  const { hasRole, user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const [enrollOpen, setEnrollOpen] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user || user.role !== "student") {
+      navigate({ to: "/login/student" });
+    }
+  }, [isLoading, user, navigate]);
 
   if (isLoading) {
     return null;
   }
 
-  if (!hasRole("student")) {
-    navigate({ to: "/login/student" });
+  if (!user || user.role !== "student") {
     return null;
   }
 

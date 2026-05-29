@@ -13,9 +13,9 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// A simple plugin to bypass Vite's module-transform warning for ORT WASM .mjs files in development.
+// Simple plugin to bypass Vite's module-transform warning for ORT WASM .mjs files in development.
 // Vite dev-server intercepts all dynamic imports and appends ?import, failing if they are in /public.
-// We intercept these requests before Vite does and serve them directly as plain JavaScript modules.
+// Intercept these requests before Vite does and serve them directly as plain JavaScript modules.
 function onnxWasmDevPlugin() {
   return {
     name: "onnx-wasm-dev-server",
@@ -46,4 +46,3 @@ export default defineConfig({
   cloudflare: false,
   plugins: [nitro(), onnxWasmDevPlugin()],
 });
-

@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -54,6 +55,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
   const [studentsByClass, setStudentsByClass] = useState<Record<string, Student[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadedUserId = useRef<string | null>(null);
 
   const refreshClasses = useCallback(async () => {
     if (!user) return;
@@ -112,6 +114,8 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
+    if (loadedUserId.current === user.id) return;
+    loadedUserId.current = user.id;
     setIsLoading(true);
 
     const loadData = async () => {

@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { Activity, LogOut, ShieldCheck } from "lucide-react";
+import { useEffect } from "react";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { FacultySidebar } from "@/components/FacultySidebar";
@@ -12,15 +13,21 @@ export const Route = createFileRoute("/_faculty")({
 });
 
 function FacultyLayout() {
-  const { hasRole, user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user || user.role !== "faculty") {
+      navigate({ to: "/login/faculty" });
+    }
+  }, [isLoading, user, navigate]);
 
   if (isLoading) {
     return null;
   }
 
-  if (!hasRole("faculty")) {
-    navigate({ to: "/login/faculty" });
+  if (!user || user.role !== "faculty") {
     return null;
   }
 
