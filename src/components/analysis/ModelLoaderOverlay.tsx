@@ -54,7 +54,7 @@ export function ModelLoaderOverlay({
             </div>
             <Progress 
               value={(inferenceProgress.current / inferenceProgress.total) * 100} 
-              className="h-2 w-full bg-primary/20 [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-indigo-400" 
+              className="h-2 w-full bg-primary/20 [&>div]:bg-primary" 
             />
             <div className="rounded-md bg-muted/50 p-3 text-left text-xs italic text-muted-foreground line-clamp-2 border border-border/50 shadow-sm">
               "{inferenceProgress.text}..."

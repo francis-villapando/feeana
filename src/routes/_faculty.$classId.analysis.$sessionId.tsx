@@ -34,6 +34,7 @@ import { useCourseStore } from "@/lib/courseStore";
 import { computeIloStatuses } from "@/lib/iloStatus";
 import type { AnalysisResult } from "@/lib/types";
 import { ModelLoaderOverlay } from "@/components/analysis/ModelLoaderOverlay";
+import { AnalysisTriggerModal } from "@/components/analysis/AnalysisTriggerModal";
 import React from "react";
 
 export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
@@ -68,12 +69,15 @@ const POLARITY_COLORS: Record<string, string> = {
 
 function AnalysisPage() {
   const { classId, sessionId } = Route.useParams();
-  const { sessions } = useClassStore();
+  const { sessions, getClass, refreshStudents } = useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
+  const { feedback, fetchFeedback } = useFeedbackStore();
+
   const [loading, setLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [inferenceProgress, setInferenceProgress] = useState<{ current: number; total: number; text: string } | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Track cancellation to prevent error toasts when worker is terminated
   const isCancelledRef = React.useRef(false);
@@ -97,6 +101,12 @@ function AnalysisPage() {
         if (active) {
           setResult(data);
         }
+        // Fetch fresh feedback entries for count verification
+        await fetchFeedback(sessionId);
+        // Load student enrollment count
+        if (classId) {
+          await refreshStudents(classId);
+        }
       } catch (err) {
         console.error("Failed to load initial analysis from database:", err);
       } finally {
@@ -111,7 +121,7 @@ function AnalysisPage() {
     return () => {
       active = false;
     };
-  }, [sessionId]);
+  }, [sessionId, classId, fetchFeedback, refreshStudents]);
 
   const handleCancel = async () => {
     isCancelledRef.current = true;
@@ -146,6 +156,18 @@ function AnalysisPage() {
 
   if (!session) return null;
 
+  // State machine values
+  const sessionFeedback = feedback.filter((f) => f.sessionId === sessionId);
+  const feedbackCount = sessionFeedback.length;
+  const cls = getClass(classId);
+  const studentCount = cls?.studentCount ?? 0;
+  const lastAnalyzedAt = session?.last_analyzed_at ?? null;
+
+  // New feedback counts
+  const newFeedbackCount = lastAnalyzedAt
+    ? sessionFeedback.filter((f) => new Date(f.createdAt) > new Date(lastAnalyzedAt)).length
+    : feedbackCount;
+
   return (
     <div className="space-y-8">
       <div>
@@ -161,14 +183,14 @@ function AnalysisPage() {
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">{session.topic}</h1>
           </div>
-          <Button size="lg" onClick={handleTrigger} disabled={loading || isAnalyzing}>
+          <Button size="lg" onClick={() => setModalOpen(true)} disabled={loading || isAnalyzing}>
             <PlayCircle className="h-4 w-4" />
             {result ? "Re-run analysis" : "Trigger analysis"}
           </Button>
         </div>
       </div>
 
-      {!result && !loading && !isAnalyzing && <EmptyState onTrigger={handleTrigger} />}
+      {!result && !loading && !isAnalyzing && <EmptyState onTrigger={() => setModalOpen(true)} />}
       {loading && <LoadingState />}
       {result && <Results result={result} />}
 
@@ -178,6 +200,16 @@ function AnalysisPage() {
         inferenceProgress={inferenceProgress}
         statusText={inferenceProgress ? "Processing feedback entries..." : "Initializing Machine Learning Engine..."}
         onCancel={handleCancel}
+      />
+
+      <AnalysisTriggerModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={handleTrigger}
+        feedbackCount={feedbackCount}
+        studentCount={studentCount}
+        lastAnalyzedAt={lastAnalyzedAt}
+        newFeedbackCount={newFeedbackCount}
       />
     </div>
   );
