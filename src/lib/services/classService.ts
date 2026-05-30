@@ -58,11 +58,14 @@ function toDbSession(s: Session) {
 export async function getClasses(facultyId: string): Promise<Class[]> {
   const { data, error } = await supabase
     .from("classes")
-    .select("*")
+    .select("*, enrollments(count)")
     .eq("faculty_id", facultyId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []).map(fromDbClass);
+  return (data ?? []).map((row: Record<string, unknown>) => {
+    const enrollments = (row.enrollments as { count: number }[]) ?? [];
+    return fromDbClass({ ...row, student_count: enrollments[0]?.count ?? 0 });
+  });
 }
 
 export async function createClass(
@@ -219,10 +222,16 @@ export async function dismissStudent(classId: string, studentId: string): Promis
 }
 
 export async function getClassById(id: string): Promise<Class | null> {
-  const { data, error } = await supabase.from("classes").select("*").eq("id", id).single();
+  const { data, error } = await supabase
+    .from("classes")
+    .select("*, enrollments(count)")
+    .eq("id", id)
+    .single();
   if (error?.code === "PGRST116") return null;
   if (error) throw new Error(error.message);
-  return data ? fromDbClass(data) : null;
+  if (!data) return null;
+  const enrollments = (data.enrollments as { count: number }[]) ?? [];
+  return fromDbClass({ ...data, student_count: enrollments[0]?.count ?? 0 });
 }
 
 export async function getSessionById(id: string): Promise<Session | null> {
@@ -257,7 +266,8 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
         enroll_code,
         created_at,
         archived,
-        student_count
+        student_count,
+        enrollments(count)
       )
     `
     )
@@ -268,7 +278,8 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
   return (data ?? [])
     .map((row: Record<string, unknown>) => {
       const cls = row.classes as Record<string, unknown>;
-      return fromDbClass(cls || {});
+      const enrollments = (cls?.enrollments as { count: number }[]) ?? [];
+      return fromDbClass({ ...(cls || {}), student_count: enrollments[0]?.count ?? 0 });
     })
     .filter((c) => c.id);
 }

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowRight, LayoutDashboard, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ClassCard } from "@/components/ClassCard";
 import { CreateClassDialog } from "@/components/CreateClassDialog";
 import { useClassStore } from "@/lib/classStore";
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/_faculty/home")({
 });
 
 function HomePage() {
-  const { activeClasses } = useClassStore();
+  const { activeClasses, isLoading } = useClassStore();
   const { user } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -67,7 +68,13 @@ function HomePage() {
             </p>
           </div>
         </div>
-        {activeClasses.length === 0 ? (
+        {isLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : activeClasses.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
             <h3 className="text-base font-semibold">No classes yet</h3>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -88,6 +95,28 @@ function HomePage() {
       </section>
 
       <CreateClassDialog open={createOpen} onOpenChange={setCreateOpen} />
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="rounded-xl border border-border/60 bg-card/70 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-2 flex-1">
+          <Skeleton className="h-5 w-3/5" />
+          <Skeleton className="h-3.5 w-2/5" />
+        </div>
+        <Skeleton className="h-5 w-16 rounded-full" />
+      </div>
+      <div className="mt-5 space-y-3">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <Skeleton className="h-9 w-full rounded-md" />
+        <Skeleton className="h-9 w-full rounded-md" />
+      </div>
     </div>
   );
 }

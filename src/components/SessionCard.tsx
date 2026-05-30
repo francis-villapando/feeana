@@ -90,7 +90,7 @@ export function SessionCard({ session }: { session: Session }) {
             params={{ classId: session.classId, sessionId: session.id }}
           >
             <span className="inline-flex items-center gap-1.5">
-              Open analysis
+              Open Analysis
               {feedbackStatus.newCount > 0 && (
                 <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm">
                   {feedbackStatus.newCount}
