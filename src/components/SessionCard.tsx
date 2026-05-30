@@ -84,18 +84,22 @@ export function SessionCard({ session }: { session: Session }) {
           </Accordion>
         )}
 
-        <div className="relative">
-          <Button asChild variant="ghost" size="sm" className="w-full justify-between">
-            <Link
-              to="/$classId/analysis/$sessionId"
-              params={{ classId: session.classId, sessionId: session.id }}
-            >
+        <Button asChild variant="ghost" size="sm" className="w-full justify-between">
+          <Link
+            to="/$classId/analysis/$sessionId"
+            params={{ classId: session.classId, sessionId: session.id }}
+          >
+            <span className="inline-flex items-center gap-1.5">
               Open analysis
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-          <FeedbackStatusBadge count={feedbackStatus.newCount} />
-        </div>
+              {feedbackStatus.newCount > 0 && (
+                <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm">
+                  {feedbackStatus.newCount}
+                </span>
+              )}
+            </span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   );
