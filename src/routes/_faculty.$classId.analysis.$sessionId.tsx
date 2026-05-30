@@ -135,7 +135,6 @@ function AnalysisPage() {
     if (!session) return;
     setIsAnalyzing(true);
     isCancelledRef.current = false;
-    setResult(null);
     setInferenceProgress(null);
     try {
       const data = await runAnalysis(session.id);
