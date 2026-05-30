@@ -34,7 +34,9 @@ import { useCourseStore } from "@/lib/courseStore";
 import { computeIloStatuses } from "@/lib/iloStatus";
 import type { AnalysisResult } from "@/lib/types";
 import { ModelLoaderOverlay } from "@/components/analysis/ModelLoaderOverlay";
+import { FeedbackStatusBadge } from "@/components/analysis/FeedbackStatusBadge";
 import { AnalysisTriggerModal } from "@/components/analysis/AnalysisTriggerModal";
+import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
 import React from "react";
 
 export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
@@ -165,10 +167,9 @@ function AnalysisPage() {
   const studentCount = cls?.studentCount ?? 0;
   const lastAnalyzedAt = session?.last_analyzed_at ?? null;
 
-  // New feedback counts
-  const newFeedbackCount = lastAnalyzedAt
-    ? sessionFeedback.filter((f) => new Date(f.createdAt) > new Date(lastAnalyzedAt)).length
-    : feedbackCount;
+  // Feedback analysis status
+  const feedbackStatus = computeFeedbackStatus(session, feedback);
+  const newFeedbackCount = feedbackStatus.newCount;
 
   return (
     <div className="space-y-8">
@@ -185,10 +186,13 @@ function AnalysisPage() {
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">{session.topic}</h1>
           </div>
-          <Button size="lg" onClick={() => setModalOpen(true)} disabled={loading || isAnalyzing}>
+          <div className="relative">
+            <Button size="lg" onClick={() => setModalOpen(true)} disabled={loading || isAnalyzing}>
             <PlayCircle className="h-4 w-4" />
             {result ? "Re-run analysis" : "Trigger analysis"}
           </Button>
+          <FeedbackStatusBadge count={newFeedbackCount} />
+        </div>
         </div>
       </div>
 

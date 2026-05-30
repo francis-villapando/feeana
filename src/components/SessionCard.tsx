@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFeedbackStore } from "@/lib/feedbackStore";
+import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
+import { FeedbackStatusBadge } from "@/components/analysis/FeedbackStatusBadge";
 import type { Session } from "@/lib/types";
 
 function formatDT(iso: string): string {
@@ -28,6 +30,7 @@ function formatDT(iso: string): string {
 
 export function SessionCard({ session }: { session: Session }) {
   const { feedback } = useFeedbackStore();
+  const feedbackStatus = computeFeedbackStatus(session, feedback);
   const sessionFeedback = feedback.filter((f) => f.sessionId === session.id);
   const responses = sessionFeedback.length;
   const preview = sessionFeedback.slice(0, 3);
@@ -81,15 +84,18 @@ export function SessionCard({ session }: { session: Session }) {
           </Accordion>
         )}
 
-        <Button asChild variant="ghost" size="sm" className="w-full justify-between">
-          <Link
-            to="/$classId/analysis/$sessionId"
-            params={{ classId: session.classId, sessionId: session.id }}
-          >
-            Open analysis
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </Button>
+        <div className="relative">
+          <Button asChild variant="ghost" size="sm" className="w-full justify-between">
+            <Link
+              to="/$classId/analysis/$sessionId"
+              params={{ classId: session.classId, sessionId: session.id }}
+            >
+              Open analysis
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+          <FeedbackStatusBadge count={feedbackStatus.newCount} />
+        </div>
       </CardContent>
     </Card>
   );
