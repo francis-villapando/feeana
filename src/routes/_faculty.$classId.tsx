@@ -58,7 +58,7 @@ export const Route = createFileRoute("/_faculty/$classId")({
 function ClassLayout() {
   const { classId } = Route.useParams();
   const { getClass, sessionsForClass, isLoading, archiveClass, refreshStudents } = useClassStore();
-  const { feedback, fetchFeedback } = useFeedbackStore();
+  const { feedback, fetchFeedbackByClass } = useFeedbackStore();
   const { results, fetchForSessions } = useAnalysisStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -71,10 +71,10 @@ function ClassLayout() {
 
   useEffect(() => {
     if (classId) {
-      fetchFeedback(classId);
+      fetchFeedbackByClass(classId);
       refreshStudents(classId);
     }
-  }, [classId, fetchFeedback, refreshStudents]);
+  }, [classId, fetchFeedbackByClass, refreshStudents]);
 
   useEffect(() => {
     if (sessionIdsKey) {

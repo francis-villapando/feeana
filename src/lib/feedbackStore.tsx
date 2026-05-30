@@ -8,6 +8,7 @@ interface FeedbackStoreValue {
   error: string | null;
   addFeedback: (sessionId: string, rawText: string) => Promise<Feedback>;
   fetchFeedback: (sessionId: string) => Promise<Feedback[]>;
+  fetchFeedbackByClass: (classId: string) => Promise<Feedback[]>;
   feedbackForSession: (sessionId: string) => Feedback[];
 }
 
@@ -36,6 +37,21 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const fetchFeedbackByClass = useCallback(async (classId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await feedbackService.getFeedbackByClass(classId);
+      setFeedback(data);
+      return data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load feedback");
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const addFeedback = useCallback(async (sessionId: string, rawText: string) => {
     const entry = await feedbackService.submitFeedback(sessionId, rawText);
     setFeedback((prev) => [...prev, entry]);
@@ -48,8 +64,8 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<FeedbackStoreValue>(
-    () => ({ feedback, isLoading, error, addFeedback, fetchFeedback, feedbackForSession }),
-    [feedback, isLoading, error, addFeedback, fetchFeedback, feedbackForSession],
+    () => ({ feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, feedbackForSession }),
+    [feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, feedbackForSession],
   );
 
   return <FeedbackStoreContext.Provider value={value}>{children}</FeedbackStoreContext.Provider>;

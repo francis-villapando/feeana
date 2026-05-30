@@ -13,6 +13,16 @@ function fromDbFeedback(row: Record<string, unknown>): Feedback {
   };
 }
 
+export async function getFeedbackByClass(classId: string): Promise<Feedback[]> {
+  const { data, error } = await supabase
+    .from("feedback")
+    .select("*, sessions!inner(class_id)")
+    .eq("sessions.class_id", classId)
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(fromDbFeedback);
+}
+
 export async function getFeedback(sessionId: string): Promise<Feedback[]> {
   const { data, error } = await supabase
     .from("feedback")
