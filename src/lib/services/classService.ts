@@ -36,6 +36,7 @@ function fromDbSession(row: Record<string, unknown>): Session {
     createdAt: row.created_at as string,
     startsAt: row.starts_at as string,
     endsAt: row.ends_at as string,
+    last_analyzed_at: (row.last_analyzed_at as string) ?? null,
   };
 }
 
@@ -50,6 +51,7 @@ function toDbSession(s: Session) {
     status: s.status,
     starts_at: s.startsAt,
     ends_at: s.endsAt,
+    last_analyzed_at: s.last_analyzed_at,
   };
 }
 

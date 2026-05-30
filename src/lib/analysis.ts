@@ -212,6 +212,16 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
     }
   }
 
+  // 8. Update session's last_analyzed_at
+  const { error: sessionUpdateErr } = await supabase
+    .from("sessions")
+    .update({ last_analyzed_at: new Date().toISOString() })
+    .eq("id", sessionId);
+
+  if (sessionUpdateErr) {
+    console.error("Error updating session last_analyzed_at:", sessionUpdateErr);
+  }
+
   console.debug("[analysis] Successfully saved analysis results and diagnostics.", { sessionId });
   return finalResult;
 }

@@ -79,6 +79,7 @@ export interface Session {
   createdAt: string;
   startsAt: string;
   endsAt: string;
+  last_analyzed_at: string | null;
 }
 
 export type Polarity = "pos" | "neu" | "neg";
