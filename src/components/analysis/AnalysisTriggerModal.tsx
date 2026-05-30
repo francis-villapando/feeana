@@ -75,20 +75,20 @@ export function AnalysisTriggerModal({
             {!hasFeedback
               ? "No Feedback Received Yet"
               : isFirstTime
-              ? "Ready to Analyze Session"
-              : newFeedbackCount === 0
-              ? "Analysis Up to Date"
-              : "Re-run Analysis?"}
+                ? "Ready to Analyze Session"
+                : newFeedbackCount === 0
+                  ? "Analysis Up to Date"
+                  : "Re-run Analysis?"}
           </DialogTitle>
 
           <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
             {!hasFeedback
               ? "This class session currently has 0 feedback entries submitted by students. You cannot run the machine learning pipeline without any student feedback."
               : isFirstTime
-              ? "The ML pipeline will analyze and extract aspects, categories, and issues from all student feedback submissions."
-              : newFeedbackCount === 0
-              ? "There are no new student feedback entries since the last analysis run."
-              : `There are ${newFeedbackCount} new feedback entries submitted since the last run. A total of ${feedbackCount} responses will be re-analyzed.`}
+                ? "The ML pipeline will analyze and extract aspects, categories, and issues from all student feedback submissions."
+                : newFeedbackCount === 0
+                  ? "There are no new student feedback entries since the last analysis run."
+                  : `There are ${newFeedbackCount} new feedback entries submitted since the last run. A total of ${feedbackCount} responses will be re-analyzed.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -142,9 +142,6 @@ export function AnalysisTriggerModal({
                     You can force a re-run of the pipeline to recalculate aspect weights, polarity, and theory-grounded teaching recommendations across all {feedbackCount} submissions.
                   </p>
                 </div>
-                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-[11px] text-amber-600 dark:text-amber-400">
-                  <span className="font-semibold">Note:</span> The pipeline runs a full re-analysis from the beginning rather than incremental updates to guarantee statistical coherence.
-                </div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -181,8 +178,8 @@ export function AnalysisTriggerModal({
               {isFirstTime
                 ? "Start Analysis"
                 : newFeedbackCount === 0
-                ? "Force Re-run"
-                : "Proceed with Re-run"}
+                  ? "Force Re-run"
+                  : "Proceed with Re-run"}
             </Button>
           )}
         </DialogFooter>

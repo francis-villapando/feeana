@@ -69,7 +69,7 @@ const POLARITY_COLORS: Record<string, string> = {
 
 function AnalysisPage() {
   const { classId, sessionId } = Route.useParams();
-  const { sessions, getClass, refreshStudents } = useClassStore();
+  const { sessions, getClass, refreshStudents, refreshSessions } = useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
   const { feedback, fetchFeedback } = useFeedbackStore();
 
@@ -140,6 +140,9 @@ function AnalysisPage() {
       const data = await runAnalysis(session.id);
       if (!isCancelledRef.current) {
         setResult(data);
+        if (classId) {
+          await refreshSessions(classId);
+        }
         toast.success("Analysis complete");
       }
     } catch (err) {
