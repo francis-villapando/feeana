@@ -33,7 +33,9 @@ export function SessionCard({ session }: { session: Session }) {
   const feedbackStatus = computeFeedbackStatus(session, feedback);
   const sessionFeedback = feedback.filter((f) => f.sessionId === session.id);
   const responses = sessionFeedback.length;
-  const preview = sessionFeedback.slice(0, 3);
+  const preview = [...sessionFeedback]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
 
   return (
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40">

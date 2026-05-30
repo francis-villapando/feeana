@@ -56,7 +56,7 @@ function SubmitPage() {
   const { session } = Route.useLoaderData();
   const navigate = useNavigate();
   const { addFeedback } = useFeedbackStore();
-  const { classes } = useClassStore();
+  const { classes, refreshEnrolledClasses, refreshSessions } = useClassStore();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
@@ -68,7 +68,10 @@ function SubmitPage() {
     if (!isActive) setSessionEnded(true);
   }, [isActive]);
 
-  const goHome = () => navigate({ to: "/student/home" });
+  const goHome = async () => {
+    await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+    navigate({ to: "/student/home" });
+  };
 
   const handleSubmit = async () => {
     if (text.trim().length < 4) {
