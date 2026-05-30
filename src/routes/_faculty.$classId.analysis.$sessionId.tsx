@@ -34,6 +34,7 @@ import { useCourseStore } from "@/lib/courseStore";
 import { computeIloStatuses } from "@/lib/iloStatus";
 import type { AnalysisResult } from "@/lib/types";
 import { ModelLoaderOverlay } from "@/components/analysis/ModelLoaderOverlay";
+import React from "react";
 
 export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
   loader: async ({ params }) => {
@@ -74,6 +75,9 @@ function AnalysisPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [inferenceProgress, setInferenceProgress] = useState<{ current: number; total: number; text: string } | null>(null);
 
+  // Track cancellation to prevent error toasts when worker is terminated
+  const isCancelledRef = React.useRef(false);
+
   useEffect(() => {
     import("@/lib/mlWorkerStore").then(({ setInferenceProgressListener }) => {
       setInferenceProgressListener((payload) => {
@@ -109,19 +113,34 @@ function AnalysisPage() {
     };
   }, [sessionId]);
 
+  const handleCancel = async () => {
+    isCancelledRef.current = true;
+    const { terminateMLWorker } = await import("@/lib/mlWorkerStore");
+    terminateMLWorker();
+    setIsAnalyzing(false);
+    toast.success("Analysis cancelled.");
+  };
+
   const handleTrigger = async () => {
     if (!session) return;
     setIsAnalyzing(true);
+    isCancelledRef.current = false;
     setResult(null);
     setInferenceProgress(null);
     try {
       const data = await runAnalysis(session.id);
-      setResult(data);
-      toast.success("Analysis complete");
+      if (!isCancelledRef.current) {
+        setResult(data);
+        toast.success("Analysis complete");
+      }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Analysis failed.");
+      if (!isCancelledRef.current) {
+        toast.error(err instanceof Error ? err.message : "Analysis failed.");
+      }
     } finally {
-      setIsAnalyzing(false);
+      if (!isCancelledRef.current) {
+        setIsAnalyzing(false);
+      }
     }
   };
 
@@ -153,11 +172,12 @@ function AnalysisPage() {
       {loading && <LoadingState />}
       {result && <Results result={result} />}
 
-      <ModelLoaderOverlay 
-        isVisible={isAnalyzing} 
-        downloadProgress={100} 
-        inferenceProgress={inferenceProgress} 
+      <ModelLoaderOverlay
+        isVisible={isAnalyzing}
+        downloadProgress={100}
+        inferenceProgress={inferenceProgress}
         statusText={inferenceProgress ? "Processing feedback entries..." : "Initializing Machine Learning Engine..."}
+        onCancel={handleCancel}
       />
     </div>
   );

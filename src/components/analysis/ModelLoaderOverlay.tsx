@@ -1,11 +1,13 @@
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Download, Loader2, Sparkles } from "lucide-react";
+import { CheckCircle2, Download, Loader2, Sparkles, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ModelLoaderOverlayProps {
   isVisible: boolean;
   downloadProgress: number; // 0 to 100
   inferenceProgress: { current: number; total: number; text: string } | null;
   statusText: string;
+  onCancel?: () => void;
 }
 
 export function ModelLoaderOverlay({
@@ -13,6 +15,7 @@ export function ModelLoaderOverlay({
   downloadProgress,
   inferenceProgress,
   statusText,
+  onCancel,
 }: ModelLoaderOverlayProps) {
   if (!isVisible) return null;
 
@@ -56,6 +59,11 @@ export function ModelLoaderOverlay({
             <div className="rounded-md bg-muted/50 p-3 text-left text-xs italic text-muted-foreground line-clamp-2 border border-border/50 shadow-sm">
               "{inferenceProgress.text}..."
             </div>
+            {onCancel && (
+              <Button variant="ghost" size="sm" onClick={onCancel} className="mt-2 w-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                <X className="mr-2 h-4 w-4" /> Cancel Analysis
+              </Button>
+            )}
           </div>
         ) : !isCached ? (
           <div className="w-full space-y-2">
