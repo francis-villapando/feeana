@@ -3,6 +3,7 @@ import * as Comlink from "comlink";
 import { env } from "@huggingface/transformers";
 import { runAlgorithmPipeline } from "./pipeline";
 import type { SessionContext, FeedbackInput, PipelineOutput } from "./types";
+import { getClassifier } from "./informationExtraction";
 
 // Configure transformers.js environment for browser use
 env.allowLocalModels = false;
@@ -30,25 +31,15 @@ const api = {
 
   // Method to trigger initialization with a progress callback
   async preloadModel(): Promise<void> {
-    // Import dynamically so it only runs when called, avoiding top-level await issues
-    const { pipeline } = await import("@huggingface/transformers");
-
-    // A dummy pipeline initialization to trigger the download and progress events
-    console.debug("[worker] Preloading model...");
-    await pipeline(
-      "zero-shot-classification",
-      "Xenova/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
-      {
-        progress_callback: (info: any) => {
-          const now = performance.now();
-          // Throttle updates unless it's a completion event
-          if (info.status === 'done' || now - lastProgressTime > THROTTLE_MS) {
-            lastProgressTime = now;
-            self.postMessage({ type: 'progress', data: info });
-          }
-        }
+    console.log("[worker] Preloading model...");
+    await getClassifier((info: any) => {
+      const now = performance.now();
+      // Throttle updates unless it's a completion event
+      if (info.status === 'done' || now - lastProgressTime > THROTTLE_MS) {
+        lastProgressTime = now;
+        self.postMessage({ type: 'progress', data: info });
       }
-    );
+    });
   }
 };
 

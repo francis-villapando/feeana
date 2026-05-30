@@ -32,13 +32,14 @@ let classifierPromise: Promise<any> | null = null;
 /**
  * Initializes or returns the existing zero-shot classification pipeline.
  */
-async function getClassifier() {
+export async function getClassifier(progress_callback?: (info: any) => void) {
   if (!classifierPromise) {
-    console.debug("[informationExtraction] Initializing zero-shot-classification pipeline...");
+    console.log("[informationExtraction] Initializing zero-shot-classification pipeline...");
     // Fallback model or explicit model selection can be made here.
     classifierPromise = pipeline(
       "zero-shot-classification" as PipelineType,
-      "Xenova/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7"
+      "Xenova/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
+      progress_callback ? { progress_callback } : undefined
     );
   }
   return classifierPromise;
