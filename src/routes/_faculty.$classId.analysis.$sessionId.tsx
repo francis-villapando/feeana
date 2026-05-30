@@ -70,7 +70,17 @@ function AnalysisPage() {
   const { sessions } = useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
   const [loading, setLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [inferenceProgress, setInferenceProgress] = useState<{ current: number; total: number; text: string } | null>(null);
+
+  useEffect(() => {
+    import("@/lib/mlWorkerStore").then(({ setInferenceProgressListener }) => {
+      setInferenceProgressListener((payload) => {
+        setInferenceProgress(payload);
+      });
+    });
+  }, []);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -101,8 +111,9 @@ function AnalysisPage() {
 
   const handleTrigger = async () => {
     if (!session) return;
-    setLoading(true);
+    setIsAnalyzing(true);
     setResult(null);
+    setInferenceProgress(null);
     try {
       const data = await runAnalysis(session.id);
       setResult(data);
@@ -110,7 +121,7 @@ function AnalysisPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Analysis failed.");
     } finally {
-      setLoading(false);
+      setIsAnalyzing(false);
     }
   };
 
@@ -131,18 +142,23 @@ function AnalysisPage() {
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">{session.topic}</h1>
           </div>
-          <Button size="lg" onClick={handleTrigger} disabled={loading}>
+          <Button size="lg" onClick={handleTrigger} disabled={loading || isAnalyzing}>
             <PlayCircle className="h-4 w-4" />
             {result ? "Re-run analysis" : "Trigger analysis"}
           </Button>
         </div>
       </div>
 
-      {!result && !loading && <EmptyState onTrigger={handleTrigger} />}
+      {!result && !loading && !isAnalyzing && <EmptyState onTrigger={handleTrigger} />}
       {loading && <LoadingState />}
       {result && <Results result={result} />}
 
-      <ModelLoaderOverlay isVisible={loading} />
+      <ModelLoaderOverlay 
+        isVisible={isAnalyzing} 
+        downloadProgress={100} 
+        inferenceProgress={inferenceProgress} 
+        statusText={inferenceProgress ? "Processing feedback entries..." : "Initializing Machine Learning Engine..."}
+      />
     </div>
   );
 }

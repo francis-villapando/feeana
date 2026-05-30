@@ -3,6 +3,11 @@ import type { WorkerApi } from "./algorithm/worker";
 
 let workerInstance: Worker | null = null;
 let comlinkProxy: Comlink.Remote<WorkerApi> | null = null;
+let progressCallback: ((data: any) => void) | null = null;
+
+export const setInferenceProgressListener = (callback: typeof progressCallback) => {
+  progressCallback = callback;
+};
 
 /**
  * Returns a globally cached instance of the ML Worker and its Comlink proxy.
@@ -18,6 +23,13 @@ export function getMLWorker(): {
     workerInstance = new Worker(new URL("./algorithm/worker.ts", import.meta.url), {
       type: "module",
     });
+
+    workerInstance.addEventListener('message', (event) => {
+      if (event.data?.type === 'INFERENCE_PROGRESS') {
+        progressCallback?.(event.data.payload);
+      }
+    });
+
     comlinkProxy = Comlink.wrap<WorkerApi>(workerInstance);
   }
 

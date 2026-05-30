@@ -39,7 +39,20 @@ export async function runAlgorithmPipeline(
   const buffer: DiagnosticRecord[] = [];
 
   // Module 2, 3, & 4: Preprocess + ExtractPID + Pedagogical Diagnostic Mapping
-  for (const feedback of feedbackStream) {
+  for (let i = 0; i < feedbackStream.length; i++) {
+    const feedback = feedbackStream[i];
+    
+    if (typeof self !== 'undefined' && self.postMessage) {
+      self.postMessage({
+        type: 'INFERENCE_PROGRESS',
+        payload: {
+          current: i + 1,
+          total: feedbackStream.length,
+          text: feedback.rawText.slice(0, 60)
+        }
+      });
+    }
+
     console.debug("[pipeline] Processing feedback", { feedbackId: feedback.id });
 
     const cleanText = Preprocess(feedback);
