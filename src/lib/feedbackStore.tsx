@@ -10,6 +10,7 @@ interface FeedbackStoreValue {
   fetchFeedback: (sessionId: string) => Promise<Feedback[]>;
   fetchFeedbackByClass: (classId: string) => Promise<Feedback[]>;
   feedbackForSession: (sessionId: string) => Feedback[];
+  insertRealtimeFeedback: (fb: Feedback) => void;
 }
 
 const FeedbackStoreContext = createContext<FeedbackStoreValue | null>(null);
@@ -58,14 +59,21 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
     return entry;
   }, []);
 
+  const insertRealtimeFeedback = useCallback((fb: Feedback) => {
+    setFeedback((prev) => {
+      if (prev.some((f) => f.id === fb.id)) return prev;
+      return [...prev, fb];
+    });
+  }, []);
+
   const feedbackForSession = useCallback(
     (sessionId: string) => feedback.filter((f) => f.sessionId === sessionId),
     [feedback],
   );
 
   const value = useMemo<FeedbackStoreValue>(
-    () => ({ feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, feedbackForSession }),
-    [feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, feedbackForSession],
+    () => ({ feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, feedbackForSession, insertRealtimeFeedback }),
+    [feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, feedbackForSession, insertRealtimeFeedback],
   );
 
   return <FeedbackStoreContext.Provider value={value}>{children}</FeedbackStoreContext.Provider>;

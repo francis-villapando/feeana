@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type { Feedback } from "@/lib/types";
 
-function fromDbFeedback(row: Record<string, unknown>): Feedback {
+export function fromDbFeedback(row: Record<string, unknown>): Feedback {
   const meta = (row.meta as Record<string, unknown>) ?? {};
   return {
     id: row.id as string,

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Copy, Target, TrendingUp, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -23,6 +23,8 @@ import { SessionCard } from "@/components/SessionCard";
 import { useAnalysisStore } from "@/lib/analysisStore";
 import { useClassStore } from "@/lib/classStore";
 import { useFeedbackStore } from "@/lib/feedbackStore";
+import { supabase } from "@/lib/supabase";
+import { fromDbFeedback } from "@/lib/services/feedbackService";
 import {
   averageRate,
   iloAchievementForClass,
@@ -58,7 +60,7 @@ export const Route = createFileRoute("/_faculty/$classId")({
 function ClassLayout() {
   const { classId } = Route.useParams();
   const { getClass, sessionsForClass, isLoading, archiveClass, refreshStudents } = useClassStore();
-  const { feedback, fetchFeedbackByClass } = useFeedbackStore();
+  const { feedback, fetchFeedbackByClass, insertRealtimeFeedback } = useFeedbackStore();
   const { results, fetchForSessions } = useAnalysisStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -84,6 +86,32 @@ function ClassLayout() {
       }
     }
   }, [sessionIdsKey, fetchForSessions]);
+
+  const sessionsRef = useRef(sessions);
+  sessionsRef.current = sessions;
+
+  useEffect(() => {
+    if (!classId) return;
+
+    const channel = supabase
+      .channel(`feedback-class-${classId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "feedback" },
+        (payload) => {
+          const newFb = payload.new as Record<string, unknown>;
+          const fbSessionId = newFb.session_id as string;
+          if (sessionsRef.current.some((s) => s.id === fbSessionId)) {
+            insertRealtimeFeedback(fromDbFeedback(newFb));
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [classId, insertRealtimeFeedback]);
 
   const submissionRate = useMemo(
     () => averageRate(sessions.map((s) => submissionRateForSession(s, cls, feedback))),

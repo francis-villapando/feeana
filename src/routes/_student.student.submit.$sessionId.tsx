@@ -1,11 +1,12 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Calendar, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { InfoDialog } from "@/components/ui/InfoDialog";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { useClassStore } from "@/lib/classStore";
 import { getSessionById } from "@/lib/services/classService";
@@ -53,26 +54,44 @@ function formatDT(iso: string): string {
 
 function SubmitPage() {
   const { session } = Route.useLoaderData();
+  const navigate = useNavigate();
   const { addFeedback } = useFeedbackStore();
   const { classes } = useClassStore();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [sessionEnded, setSessionEnded] = useState(false);
   const isActive = session.status === "active";
 
   const cls = classes.find((c) => c.id === session.classId);
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    if (!isActive) setSessionEnded(true);
+  }, [isActive]);
+
+  const goHome = () => navigate({ to: "/student/home" });
+
+  const handleSubmit = async () => {
     if (text.trim().length < 4) {
       toast.error("Feedback must be at least a few characters.");
       return;
     }
+
+    const fresh = await getSessionById(session.id);
+    if (fresh && fresh.status !== "active") {
+      setSessionEnded(true);
+      return;
+    }
+
     setSubmitting(true);
-    addFeedback(session.id, text);
-    setTimeout(() => {
+    try {
+      await addFeedback(session.id, text);
       toast.success("Salamat! Your feedback was recorded.");
       setText("");
+    } catch {
+      toast.error("Failed to submit feedback. Please try again.");
+    } finally {
       setSubmitting(false);
-    }, 500);
+    }
   };
 
   return (
@@ -102,7 +121,7 @@ function SubmitPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col gap-5">
-          {isActive ? (
+          {isActive && !sessionEnded ? (
             <>
               <Badge variant="outline" className="w-fit border-primary/30 text-primary">
                 active · {session.topic}
@@ -137,6 +156,18 @@ function SubmitPage() {
           )}
         </CardContent>
       </Card>
+
+      <InfoDialog
+        isOpen={sessionEnded}
+        title="Session ended"
+        description={
+          isActive
+            ? `The "${session.topic}" session ended while you were typing. Feedback is no longer being accepted.`
+            : `The "${session.topic}" session has already ended. Feedback is no longer being accepted.`
+        }
+        actionLabel="Go back home"
+        onAction={goHome}
+      />
     </div>
   );
 }
