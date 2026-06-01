@@ -40,6 +40,8 @@ const api = {
         self.postMessage({ type: 'progress', data: info });
       }
     });
+    // Signal completion — covers cached models that fire no callbacks
+    self.postMessage({ type: 'progress', data: { status: 'done', progress: 100 } });
   }
 };
 

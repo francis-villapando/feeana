@@ -79,15 +79,19 @@ function AnalysisPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [inferenceProgress, setInferenceProgress] = useState<{ current: number; total: number; text: string } | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(100);
   const [modalOpen, setModalOpen] = useState(false);
 
   // Track cancellation to prevent error toasts when worker is terminated
   const isCancelledRef = React.useRef(false);
 
   useEffect(() => {
-    import("@/lib/mlWorkerStore").then(({ setInferenceProgressListener }) => {
+    import("@/lib/mlWorkerStore").then(({ setInferenceProgressListener, setDownloadProgressListener }) => {
       setInferenceProgressListener((payload) => {
         setInferenceProgress(payload);
+      });
+      setDownloadProgressListener((data) => {
+        setDownloadProgress(data.status === 'done' ? 100 : (data.progress ?? 0));
       });
     });
   }, []);
@@ -138,6 +142,7 @@ function AnalysisPage() {
     setIsAnalyzing(true);
     isCancelledRef.current = false;
     setInferenceProgress(null);
+    setDownloadProgress(0);
     try {
       const data = await runAnalysis(session.id);
       if (!isCancelledRef.current) {
@@ -202,7 +207,7 @@ function AnalysisPage() {
 
       <ModelLoaderOverlay
         isVisible={isAnalyzing}
-        downloadProgress={100}
+        downloadProgress={downloadProgress}
         inferenceProgress={inferenceProgress}
         statusText={inferenceProgress ? "Processing feedback entries..." : "Initializing Machine Learning Engine..."}
         onCancel={handleCancel}

@@ -116,6 +116,8 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
   };
 
   const { api } = getMLWorker();
+  // Preload the model with download progress before running inference
+  await api.preloadModel();
   const pipelineOutput = await api.run(sessionContext, feedbackStream);
   const buffer = pipelineOutput.diagnostics ?? [];
 

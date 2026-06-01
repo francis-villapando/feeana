@@ -4,9 +4,14 @@ import type { WorkerApi } from "./algorithm/worker";
 let workerInstance: Worker | null = null;
 let comlinkProxy: Comlink.Remote<WorkerApi> | null = null;
 let progressCallback: ((data: any) => void) | null = null;
+let downloadProgressCallback: ((data: any) => void) | null = null;
 
 export const setInferenceProgressListener = (callback: typeof progressCallback) => {
   progressCallback = callback;
+};
+
+export const setDownloadProgressListener = (callback: typeof downloadProgressCallback) => {
+  downloadProgressCallback = callback;
 };
 
 /**
@@ -27,6 +32,8 @@ export function getMLWorker(): {
     workerInstance.addEventListener('message', (event) => {
       if (event.data?.type === 'INFERENCE_PROGRESS') {
         progressCallback?.(event.data.payload);
+      } else if (event.data?.type === 'progress') {
+        downloadProgressCallback?.(event.data.data);
       }
     });
 
