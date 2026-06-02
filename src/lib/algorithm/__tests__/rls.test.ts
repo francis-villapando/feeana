@@ -2,10 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "./supabase-admin";
 
-/* ------------------------------------------------------------------ */
-/*  Constants                                                         */
-/* ------------------------------------------------------------------ */
-
+/* Constants */
 const KNOWN_SESSION_ID = "3da770a1-ca05-422c-9b6b-c85f2f92dc4e";
 
 const FACULTY_EMAIL = "faculty@test.com";
@@ -16,10 +13,7 @@ const STUDENT_PASSWORD = "student123";
 
 const TEST_TTI_PREFIX = "RLS-TEST-";
 
-/* ------------------------------------------------------------------ */
-/*  Mutable suite-level state                                         */
-/* ------------------------------------------------------------------ */
-
+/* Mutable suite-level state */
 let fixtureFeedbackId: string;
 let tempFacultyEmail: string;
 let tempFacultyId: string;
@@ -29,10 +23,7 @@ const supabaseAnon = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY as string,
 );
 
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
+/* Helpers */
 function makeTestTti(label: string): string {
   return `${TEST_TTI_PREFIX}${label}`;
 }
@@ -58,18 +49,15 @@ async function seedFixtureDiagnostic(): Promise<void> {
   });
 }
 
-/* ------------------------------------------------------------------ */
-/*  Suite                                                              */
-/* ------------------------------------------------------------------ */
-
+/* Suite */
 describe("RLS: feedback_diagnostics table", () => {
   beforeAll(async () => {
-    /* ---- verify env ---- */
+    /* verify env */
     if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
       throw new Error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env");
     }
 
-    /* ---- resolve a feedback_id from seed data ---- */
+    /* resolve a feedback_id from seed data */
     const { data: feedbackRow, error: fbErr } = await supabaseAdmin
       .from("feedback")
       .select("id")
@@ -85,7 +73,7 @@ describe("RLS: feedback_diagnostics table", () => {
     }
     fixtureFeedbackId = feedbackRow.id;
 
-    /* ---- create temp non-owning faculty user ---- */
+    /* create temp non-owning faculty user */
     const TS = Date.now();
     tempFacultyEmail = `test-nonowner-${TS}@test.com`;
 
@@ -101,7 +89,7 @@ describe("RLS: feedback_diagnostics table", () => {
     }
     tempFacultyId = createdUser.user.id;
 
-    /* ---- ensure a profile row exists for the temp user ---- */
+    /* ensure a profile row exists for the temp user */
     await supabaseAdmin.from("profiles").upsert(
       {
         id: tempFacultyId,
@@ -112,31 +100,28 @@ describe("RLS: feedback_diagnostics table", () => {
       { onConflict: "id" },
     );
 
-    /* ---- seed fixture diagnostics ---- */
+    /* seed fixture diagnostics */
     await clearTestDiagnostics();
     await seedFixtureDiagnostic();
   });
 
   afterAll(async () => {
-    /* ---- remove all test-inserted diagnostics ---- */
+    /* remove all test-inserted diagnostics */
     await clearTestDiagnostics();
 
-    /* ---- delete temp faculty user ---- */
+    /* delete temp faculty user */
     if (tempFacultyId) {
       await supabaseAdmin.auth.admin.deleteUser(tempFacultyId);
     }
   });
 
-  /* ---- after each test, reset fixture state ---- */
+  /* after each test, reset fixture state */
   afterEach(async () => {
     await clearTestDiagnostics();
     await seedFixtureDiagnostic();
   });
 
-  /* ================================================================ */
-  /*  Faculty owner                                                   */
-  /* ================================================================ */
-
+  /* Faculty owner */
   describe("Faculty owner (faculty@test.com)", () => {
     beforeAll(async () => {
       const { error } = await supabaseAnon.auth.signInWithPassword({
@@ -195,10 +180,7 @@ describe("RLS: feedback_diagnostics table", () => {
     });
   });
 
-  /* ================================================================ */
-  /*  Non-owning faculty                                              */
-  /* ================================================================ */
-
+  /* Non-owning faculty */
   describe("Non-owning faculty", () => {
     beforeAll(async () => {
       const { error } = await supabaseAnon.auth.signInWithPassword({
@@ -243,10 +225,7 @@ describe("RLS: feedback_diagnostics table", () => {
     });
   });
 
-  /* ================================================================ */
-  /*  Student                                                         */
-  /* ================================================================ */
-
+  /* Student */
   describe("Student (student@test.com)", () => {
     beforeAll(async () => {
       const { error } = await supabaseAnon.auth.signInWithPassword({

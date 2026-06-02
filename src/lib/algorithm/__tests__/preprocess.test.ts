@@ -2,14 +2,6 @@
  * Unit tests for Module 2: Preprocessing.
  * Validates that vowel normalization, noise removal, abbreviation expansion,
  * and whitespace normalization work correctly in isolation and in combination.
- *
- * NOTE: These tests use Vitest syntax. To run:
- * 1. Install vitest: npm install -D vitest
- * 2. Add to package.json: "test": "vitest"
- * 3. Run tests: npm run test
- *
- * Alternatively, manually test by importing Preprocess and calling it with
- * the test cases below.
  */
 
 import { describe, it, expect } from "vitest";
