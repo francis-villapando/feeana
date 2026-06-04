@@ -42,17 +42,18 @@ export function ConfirmationDialog({
   const isDestructive = actionType === "delete";
 
   const renderDescription = (text: string) => {
-    return text.split(/("(.*?)")/).map((part, i, arr) => {
-      if (part.startsWith('"') && part.endsWith('"')) {
-        const content = part.slice(1, -1);
-        return <span key={i} className="text-primary font-medium">{content}</span>;
-      }
-      // Skip the captured inner group from (.*?)
-      if (part === "" || (i > 0 && arr[i-1].startsWith('"'))) {
-         return null;
-      }
-      return part;
-    });
+    const first = text.indexOf('"');
+    const last = text.lastIndexOf('"');
+    if (first !== -1 && last > first) {
+      return (
+        <>
+          {text.slice(0, first)}
+          <span className="text-primary font-medium">{text.slice(first + 1, last)}</span>
+          {text.slice(last + 1)}
+        </>
+      );
+    }
+    return text;
   };
 
   return (
