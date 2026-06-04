@@ -32,7 +32,7 @@ interface CourseStoreValue {
   archiveCourse: (id: string) => Promise<void>;
   restoreCourse: (id: string) => Promise<void>;
   createTopic: (input: { courseId: string; title: string }) => Promise<Topic>;
-  updateTopic: (id: string, input: { courseId: string; title: string }) => Promise<void>;
+  updateTopic: (id: string, input: { title: string }) => Promise<void>;
   archiveTopic: (id: string) => Promise<void>;
   restoreTopic: (id: string) => Promise<void>;
   createILO: (input: {
@@ -44,8 +44,6 @@ interface CourseStoreValue {
   updateILO: (
     id: string,
     input: {
-      courseId: string;
-      topicId: string;
       statement: string;
       bloomLevel: BloomLevel;
     },
@@ -134,11 +132,11 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateTopic = useCallback(
-    async (id: string, input: { courseId: string; title: string }) => {
+    async (id: string, input: { title: string }) => {
       await courseService.updateTopic(id, input);
       setTopics((prev) =>
         prev.map((t) =>
-          t.id === id ? { ...t, courseId: input.courseId, title: input.title.trim() } : t,
+          t.id === id ? { ...t, title: input.title.trim() } : t,
         ),
       );
       await refreshActivity();
@@ -177,8 +175,6 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     async (
       id: string,
       input: {
-        courseId: string;
-        topicId: string;
         statement: string;
         bloomLevel: BloomLevel;
       },
@@ -189,8 +185,6 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
           i.id === id
             ? {
                 ...i,
-                courseId: input.courseId,
-                topicId: input.topicId,
                 statement: input.statement.trim(),
                 bloomLevel: input.bloomLevel,
               }

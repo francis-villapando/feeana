@@ -150,7 +150,7 @@ export async function createTopic(input: { courseId: string; title: string }): P
 
 export async function updateTopic(
   id: string,
-  input: { courseId: string; title: string },
+  input: { title: string },
 ): Promise<void> {
   const { data: old, error: fetchError } = await supabase
     .from("topics")
@@ -160,7 +160,7 @@ export async function updateTopic(
   if (fetchError) throw new Error(fetchError.message);
   const { error } = await supabase
     .from("topics")
-    .update({ course_id: input.courseId, title: input.title.trim() })
+    .update({ title: input.title.trim() })
     .eq("id", id);
   if (error) throw new Error(error.message);
   await logActivity("topic", id, "updated", old.title, input.title.trim());
@@ -219,7 +219,7 @@ export async function createILO(input: {
 
 export async function updateILO(
   id: string,
-  input: { courseId: string; topicId: string; statement: string; bloomLevel: BloomLevel },
+  input: { statement: string; bloomLevel: BloomLevel },
 ): Promise<void> {
   const { data: old, error: fetchError } = await supabase
     .from("ilos")
@@ -230,8 +230,6 @@ export async function updateILO(
   const { error } = await supabase
     .from("ilos")
     .update({
-      course_id: input.courseId,
-      topic_id: input.topicId,
       statement: input.statement.trim(),
       bloom_level: input.bloomLevel,
     })

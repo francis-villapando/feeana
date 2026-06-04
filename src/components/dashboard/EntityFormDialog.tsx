@@ -94,13 +94,16 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           toast.success("Course created.");
         }
       } else if (state.kind === "topic") {
-        if (!topicTitle.trim() || !topicCourseId) {
-          toast.error("Title and course required.");
+        if (!topicTitle.trim()) {
+          toast.error("Title required.");
+          return;
+        }
+        if (!state.entity && !topicCourseId) {
+          toast.error("Course required.");
           return;
         }
         if (state.entity) {
           updateTopic(state.entity.id, {
-            courseId: topicCourseId,
             title: topicTitle,
           });
           toast.success("Topic updated.");
@@ -109,14 +112,16 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           toast.success("Topic created.");
         }
       } else {
-        if (!iloStatement.trim() || !iloCourseId || !iloTopicId) {
+        if (!iloStatement.trim()) {
+          toast.error("Statement required.");
+          return;
+        }
+        if (!state.entity && (!iloCourseId || !iloTopicId)) {
           toast.error("Course, topic, and statement required.");
           return;
         }
         if (state.entity) {
           updateILO(state.entity.id, {
-            courseId: iloCourseId,
-            topicId: iloTopicId,
             statement: iloStatement,
             bloomLevel: iloBloom,
           });
@@ -174,7 +179,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
 
         {state.kind === "topic" && (
           <div className="space-y-3">
-            {!state.initialCourseId && (
+            {!state.entity && !state.initialCourseId && (
               <div className="space-y-1.5">
                 <Label>Course</Label>
                 <Select value={topicCourseId} onValueChange={setTopicCourseId}>
@@ -207,7 +212,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
 
         {state.kind === "ILO" && (
           <div className="space-y-3">
-            {!state.initialCourseId && (
+            {!state.entity && !state.initialCourseId && (
               <div className="space-y-1.5">
                 <Label>Course</Label>
                 <Select
@@ -232,7 +237,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                 </Select>
               </div>
             )}
-            {!state.initialTopicId && (
+            {!state.entity && !state.initialTopicId && (
               <div className="space-y-1.5">
                 <Label>Topic</Label>
                 <Select
