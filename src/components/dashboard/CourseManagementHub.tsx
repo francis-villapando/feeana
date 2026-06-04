@@ -182,9 +182,9 @@ export function CourseManagementHub() {
                 className={`border border-border/60 rounded-lg bg-background/40 px-1 overflow-hidden transition-all ${course.archived ? 'opacity-60' : ''
                   } ${search.focus === course.id ? 'ring-2 ring-primary ring-inset' : ''}`}
               >
-                <AccordionTrigger className="hover:no-underline py-3 px-3 flex-1">
-                  <div className="flex items-center justify-between w-full pr-2">
-                    <div className="flex items-center gap-3 text-left overflow-hidden">
+                <div className="relative group/course flex items-center w-full">
+                  <AccordionTrigger className="hover:no-underline py-3 pl-3 pr-4 flex-1 min-w-0">
+                    <div className="flex items-center gap-3 text-left overflow-hidden w-full pr-28">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30">
                         <BookOpen className="h-4 w-4" />
                       </div>
@@ -196,69 +196,68 @@ export function CourseManagementHub() {
                         <span className="text-xs text-muted-foreground truncate block">{course.title}</span>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-1 shrink-0 ml-4">
-                      {course.archived ? (
-                        <>
-                          <Button
-                            variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAction(
-                                "Delete Course",
-                                `Delete the "${course.code}" course? This will also delete its topics and ILOs. This action is irreversible.`,
-                                () => {
-                                  deleteCourse(course.id);
-                                  toast.success("Course deleted");
-                                },
-                                "delete"
-                              );
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAction(
-                                "Restore Course",
-                                `Restore the "${course.code}" course?`,
-                                () => restoreCourse(course.id),
-                                "restore"
-                              );
-                            }}
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button
-                            variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={(e) => { e.stopPropagation(); setEdit({ kind: "course", entity: course }); }}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAction(
-                                "Archive Course",
-                                `Archive the "${course.code}" course?`,
-                                () => archiveCourse(course.id),
-                                "archive"
-                              );
-                            }}
-                          >
-                            <Archive className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                  </AccordionTrigger>
+                  <div className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
+                    {course.archived ? (
+                      <>
+                        <Button
+                          variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(
+                              "Delete Course",
+                              `Delete the "${course.code}" course? This will also delete its topics and ILOs. This action is irreversible.`,
+                              () => {
+                                deleteCourse(course.id);
+                                toast.success("Course deleted");
+                              },
+                              "delete"
+                            );
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon" className="h-7 w-7"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(
+                              "Restore Course",
+                              `Restore the "${course.code}" course?`,
+                              () => restoreCourse(course.id),
+                              "restore"
+                            );
+                          }}
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="ghost" size="icon" className="h-7 w-7"
+                          onClick={(e) => { e.stopPropagation(); setEdit({ kind: "course", entity: course }); }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon" className="h-7 w-7"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(
+                              "Archive Course",
+                              `Archive the "${course.code}" course?`,
+                              () => archiveCourse(course.id),
+                              "archive"
+                            );
+                          }}
+                        >
+                          <Archive className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
                   </div>
-                </AccordionTrigger>
+                </div>
                 <AccordionContent className="pt-0 px-3 pb-3 border-t border-border/20 pt-3">
                   <div className="flex items-center justify-between pb-2 border-b border-border/40 mb-3">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Topics</span>

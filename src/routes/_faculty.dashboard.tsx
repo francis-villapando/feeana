@@ -3,6 +3,7 @@ import { Activity, Database, GraduationCap, Target, Users } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { useClassStore } from "@/lib/classStore";
 import { useAnalysisStore } from "@/lib/analysisStore";
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/_faculty/dashboard")({
 
 function DashboardPage() {
   const { feedback } = useFeedbackStore();
-  const { activeClasses, sessions, classes } = useClassStore();
+  const { activeClasses, sessions, classes, isLoading } = useClassStore();
   const { results, fetchForSessions } = useAnalysisStore();
 
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
@@ -55,6 +56,8 @@ function DashboardPage() {
     const ilo = averageRate(classAchievements);
     return { active, submission, ilo };
   }, [feedback, sessions, classes, activeClasses, results]);
+
+  if (isLoading) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-8">
@@ -105,6 +108,77 @@ function DashboardPage() {
 
       {/* Cross-class creator */}
       <CrossClassSessionCreator />
+    </div>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-3">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="border-border/60 bg-card/70 backdrop-blur-xl">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-8 w-8 rounded-lg" />
+              </div>
+              <Skeleton className="mt-3 h-8 w-16" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+          <CardContent className="p-6">
+            <Skeleton className="mb-2 h-5 w-44" />
+            <Skeleton className="mb-6 h-3 w-56" />
+            <Skeleton className="mb-4 h-4 w-32" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="mb-3 space-y-2">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+          <CardContent className="p-6">
+            <Skeleton className="mb-2 h-5 w-32" />
+            <Skeleton className="mb-6 h-3 w-40" />
+            <div className="space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Skeleton className="mt-0.5 h-7 w-7 shrink-0 rounded-md" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-3 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+        <CardContent className="p-6">
+          <Skeleton className="mb-2 h-5 w-48" />
+          <Skeleton className="mb-6 h-3 w-64" />
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
     </div>
   );
 }
