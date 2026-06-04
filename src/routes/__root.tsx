@@ -69,10 +69,10 @@ export const Route = createRootRouteWithContext()({
 function RootShell({ children }: { children: React.ReactNode }) {
   const bgStyle = `:root { --feeana-bg-image: url(${bgImage}); }`;
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
@@ -98,7 +98,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
           }}
         />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
