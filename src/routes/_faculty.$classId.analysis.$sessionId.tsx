@@ -34,6 +34,7 @@ import { useCourseStore } from "@/lib/courseStore";
 import { computeIloStatuses } from "@/lib/iloStatus";
 import type { AnalysisResult } from "@/lib/types";
 import { ModelLoaderOverlay } from "@/components/analysis/ModelLoaderOverlay";
+import { chartTooltipProps } from "@/components/analysis/ChartTooltip";
 import { FeedbackStatusBadge } from "@/components/analysis/FeedbackStatusBadge";
 import { AnalysisTriggerModal } from "@/components/analysis/AnalysisTriggerModal";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
@@ -290,16 +291,7 @@ function Results({ result }: { result: AnalysisResult }) {
                 fontSize={11}
                 width={170}
               />
-              <Tooltip
-                cursor={{ fill: "var(--color-border)" }}
-                formatter={(value: number) => [value, "Value"]}
-                contentStyle={{
-                  background: "var(--color-popover)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
+              <Tooltip {...chartTooltipProps} formatter={(value: number) => [value, "Value"]} />
               <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -336,15 +328,7 @@ function Results({ result }: { result: AnalysisResult }) {
                   const label = entry.name as string;
                   const color = POLARITY_COLORS[label] ?? "var(--color-chart-2)";
                   return (
-                    <div
-                      style={{
-                        background: "var(--color-popover)",
-                        border: "1px solid var(--color-border)",
-                        borderRadius: 8,
-                        fontSize: 12,
-                        padding: "8px 12px",
-                      }}
-                    >
+                    <div style={chartTooltipProps.contentStyle}>
                       <p style={{ color: "var(--color-foreground)", margin: 0, fontWeight: 500 }}>{label}</p>
                       <p style={{ color, margin: 0 }}>Value : {entry.value}</p>
                     </div>
@@ -374,16 +358,7 @@ function Results({ result }: { result: AnalysisResult }) {
                 fontSize={11}
                 width={170}
               />
-              <Tooltip
-                cursor={{ fill: "var(--color-border)" }}
-                formatter={(value: number) => [value, "Value"]}
-                contentStyle={{
-                  background: "var(--color-popover)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
+              <Tooltip {...chartTooltipProps} formatter={(value: number) => [value, "Value"]} />
               <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
