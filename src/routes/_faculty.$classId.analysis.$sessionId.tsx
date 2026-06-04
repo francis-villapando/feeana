@@ -282,7 +282,7 @@ function Results({ result }: { result: AnalysisResult }) {
           <ResponsiveContainer width="100%" height={Math.max(220, result.aspectDist.length * 32)}>
             <BarChart data={result.aspectDist} layout="vertical">
               <CartesianGrid stroke="var(--color-border)" horizontal={false} />
-              <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
+              <XAxis type="number" domain={[0, 'dataMax']} allowDecimals={false} stroke="var(--color-muted-foreground)" fontSize={11} />
               <YAxis
                 type="category"
                 dataKey="label"
@@ -351,7 +351,7 @@ function Results({ result }: { result: AnalysisResult }) {
           <ResponsiveContainer width="100%" height={Math.max(220, result.issueDist.length * 32)}>
             <BarChart data={result.issueDist} layout="vertical">
               <CartesianGrid stroke="var(--color-border)" horizontal={false} />
-              <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
+              <XAxis type="number" domain={[0, 'dataMax']} allowDecimals={false} stroke="var(--color-muted-foreground)" fontSize={11} />
               <YAxis
                 type="category"
                 dataKey="label"
