@@ -66,6 +66,7 @@ function buildMockOutput(feedbackIds: string[]): PipelineOutput {
         issue: "clarity deficit",
         paragraph:
           "Students report difficulty following the lesson. Consider using more structured examples and checking for understanding frequently.",
+        terms: [],
         priority: 0.67,
         theories: ["Cognitive Load Theory"],
         isGap: true,

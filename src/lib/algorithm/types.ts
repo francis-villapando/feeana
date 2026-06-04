@@ -60,6 +60,11 @@ export interface RecommendationItem {
   id: string;
   issue: string;
   paragraph: string;
+  terms: Array<{
+    text: string;
+    kind: string;
+    detail: string;
+  }>;
   priority: number;
   theories: string[];
   isGap: boolean;

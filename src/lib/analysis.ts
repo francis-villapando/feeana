@@ -151,7 +151,7 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
   const recommendations = pipelineOutput.recommendationList.map(rec => ({
     id: rec.id,
     paragraph: rec.paragraph,
-    terms: [] as any[], // empty for now (safe rendering)
+    terms: rec.terms as any[],
     theories: rec.theories as any[],
     priority: rec.priority
   }));

@@ -126,16 +126,16 @@ function ClassLayout() {
     [sessions, results, feedback],
   );
 
+  if (location.pathname.includes("/analysis/")) {
+    return <Outlet />;
+  }
+
   if (isLoading) {
     return <ClassLoadingSkeleton />;
   }
 
   if (!cls) {
     throw notFound();
-  }
-
-  if (location.pathname.includes("/analysis/")) {
-    return <Outlet />;
   }
 
   const copy = () => {

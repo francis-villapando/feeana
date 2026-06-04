@@ -56,6 +56,8 @@ export const ISSUE_RULES: Record<string, string> = {
   "notation struggle": "Notation Struggle",
 };
 
+export const RBT_LEVEL_NAMES = ["", "Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"] as const;
+
 export const CLT_RULES: Record<string, CltCategory> = {
   "relational coldness": "Extraneous",
   "classroom tension": "Extraneous",

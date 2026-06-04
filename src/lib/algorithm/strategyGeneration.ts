@@ -3,6 +3,7 @@
  * This file will compute distributions and generate recommendations or warnings.
  */
 
+import { RBT_LEVEL_NAMES } from "./rules";
 import type {
   BufferedDiagnostic,
   DiagnosticRecord,
@@ -54,14 +55,52 @@ export function GeneratePedagogicalCue(
   });
 
   const percentage = Math.round((uniqueIssue.count / totalFeedback) * 100);
+  const percentageStr = `${percentage}%`;
+  const rbtName = RBT_LEVEL_NAMES[uniqueIssue.rbt] ?? String(uniqueIssue.rbt);
   
-  const paragraph = `${percentage}% of the class is experiencing ${uniqueIssue.issue} with respect to ${sessionContext.topic}. According to RBT, students are not achieving the levels of ${uniqueIssue.rbt} and hence they are not able to achieve the goal: ${sessionContext.iloStatement}. The cause of CLT is high ${uniqueIssue.clt} Load. Thus, "recommendation cue for ${uniqueIssue.issue}."`;
+  const paragraph = `${percentageStr} of the class is experiencing ${uniqueIssue.issue} with respect to ${sessionContext.topic}. According to RBT, students are not achieving the levels of ${rbtName} and hence they are not able to achieve the goal: ${sessionContext.iloStatement}. The cause of CLT is high ${uniqueIssue.clt} Load. Thus, "recommendation cue for ${uniqueIssue.issue}."`;
+
+  const terms = [
+    {
+      text: percentageStr,
+      kind: "metric",
+      detail: `${percentageStr} of the class (${uniqueIssue.count} out of ${totalFeedback} responses)`,
+    },
+    {
+      text: uniqueIssue.issue,
+      kind: "issue",
+      detail: `Detected issue in student feedback`,
+    },
+    {
+      text: sessionContext.topic,
+      kind: "aspect",
+      detail: `The session topic`,
+    },
+    {
+      text: rbtName,
+      kind: "RBT",
+      detail: `Level ${uniqueIssue.rbt} (${rbtName}) on Bloom's Taxonomy`,
+    },
+    {
+      text: sessionContext.iloStatement,
+      kind: "ILO",
+      detail: sessionContext.iloStatement,
+    },
+    {
+      text: uniqueIssue.clt,
+      kind: "CLT",
+      detail: uniqueIssue.clt === "Intrinsic"
+        ? "Intrinsic Load — complexity inherent to the learning material"
+        : "Extraneous Load — unnecessary cognitive burden from instruction design",
+    },
+  ];
 
   return {
     id: `rec-${Math.random().toString(36).slice(2, 10)}`,
     issue: uniqueIssue.issue,
     paragraph,
-    priority: uniqueIssue.count, // Can use raw count as priority sorting for UI
+    terms,
+    priority: uniqueIssue.count,
     theories: ["RBT", "CLT"],
     isGap: uniqueIssue.isGap,
   };
