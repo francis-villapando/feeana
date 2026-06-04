@@ -5,6 +5,7 @@
 import type { AnalysisResult } from "./types";
 import { supabase } from "./supabase";
 import { getMLWorker } from "./mlWorkerStore";
+import { ISSUE_RULES } from "./algorithm/rules";
 
 
 
@@ -123,7 +124,7 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
 
   // 5. Calculate distribution metrics to construct the final UI AnalysisResult payload
   const aspectDist = Object.entries(pipelineOutput.stats.aspectCounts).map(([label, value]) => ({ label, value }));
-  const issueDist = Object.entries(pipelineOutput.stats.issueCounts).map(([label, value]) => ({ label, value }));
+  const issueDist = Object.entries(pipelineOutput.stats.issueCounts).map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }));
   
   const polarityDist = [
     { label: "Positive", value: pipelineOutput.stats.polarityCounts.pos || 0 },

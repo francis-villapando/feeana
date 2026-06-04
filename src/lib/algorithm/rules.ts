@@ -39,6 +39,23 @@ export const RBT_RULES: Record<string, number> = {
   "notation struggle": 1,
 };
 
+export const ISSUE_RULES: Record<string, string> = {
+  "relational coldness": "Relational Coldness",
+  "classroom tension": "Classroom Tension",
+  "evaluation unfairness": "Evaluation Unfairness",
+  "perceived marginalization": "Perceived Marginalization",
+  "subject alienation": "Subject Alienation",
+  "peer distraction": "Peer Distraction",
+  "instructional cadence": "Instructional Cadence",
+  "clarity deficit": "Clarity Deficit",
+  "abstract logic gap": "Abstract Logic Gap",
+  "procedural bottleneck": "Procedural Bottleneck",
+  "conceptual misalignment": "Conceptual Misalignment",
+  "design synthesis failure": "Design Synthesis Failure",
+  "feedback latency": "Feedback Latency",
+  "notation struggle": "Notation Struggle",
+};
+
 export const CLT_RULES: Record<string, CltCategory> = {
   "relational coldness": "Extraneous",
   "classroom tension": "Extraneous",

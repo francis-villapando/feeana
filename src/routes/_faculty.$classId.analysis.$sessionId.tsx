@@ -193,11 +193,11 @@ function AnalysisPage() {
           </div>
           <div className="relative">
             <Button size="lg" onClick={() => setModalOpen(true)} disabled={loading || isAnalyzing}>
-            <PlayCircle className="h-4 w-4" />
-            {result ? "Re-run analysis" : "Trigger analysis"}
-          </Button>
-          <FeedbackStatusBadge count={newFeedbackCount} />
-        </div>
+              <PlayCircle className="h-4 w-4" />
+              {result ? "Re-run analysis" : "Trigger analysis"}
+            </Button>
+            <FeedbackStatusBadge count={newFeedbackCount} />
+          </div>
         </div>
       </div>
 
@@ -273,17 +273,23 @@ function Results({ result }: { result: AnalysisResult }) {
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-2">
         <CardHeader>
-          <CardTitle className="text-base">Aspect distribution</CardTitle>
+          <CardTitle className="text-base">Aspect Distribution</CardTitle>
           <CardDescription>
             What students talked about across {result.totalFeedback} responses.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={result.aspectDist}>
-              <CartesianGrid stroke="var(--color-border)" vertical={false} />
-              <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={11} />
-              <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
+          <ResponsiveContainer width="100%" height={Math.max(220, result.aspectDist.length * 32)}>
+            <BarChart data={result.aspectDist} layout="vertical">
+              <CartesianGrid stroke="var(--color-border)" horizontal={false} />
+              <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
+              <YAxis
+                type="category"
+                dataKey="label"
+                stroke="var(--color-muted-foreground)"
+                fontSize={11}
+                width={170}
+              />
               <Tooltip
                 cursor={{ fill: "var(--color-border)" }}
                 contentStyle={{
@@ -293,7 +299,7 @@ function Results({ result }: { result: AnalysisResult }) {
                   fontSize: 12,
                 }}
               />
-              <Bar dataKey="value" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -302,7 +308,7 @@ function Results({ result }: { result: AnalysisResult }) {
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
         <CardHeader>
           <CardTitle className="text-base">Polarity</CardTitle>
-          <CardDescription>Sentiment split.</CardDescription>
+          <CardDescription>Sentiment Split</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={260}>
@@ -338,8 +344,8 @@ function Results({ result }: { result: AnalysisResult }) {
 
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
         <CardHeader>
-          <CardTitle className="text-base">Issue distribution</CardTitle>
-          <CardDescription>Specific concerns extracted via ABSA.</CardDescription>
+          <CardTitle className="text-base">Issue Distribution</CardTitle>
+          <CardDescription>Specific concerns extracted via PID-ABSA.</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={Math.max(220, result.issueDist.length * 32)}>
@@ -368,7 +374,7 @@ function Results({ result }: { result: AnalysisResult }) {
         </CardContent>
       </Card>
 
-      <Card className="border-primary/30 bg-card/70 backdrop-blur-xl lg:col-span-3">
+      <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Target className="h-4 w-4 text-primary" /> ILO Gap Analysis
@@ -403,7 +409,7 @@ function Results({ result }: { result: AnalysisResult }) {
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Lightbulb className="h-4 w-4 text-primary" /> Recommendation cues
+            <Lightbulb className="h-4 w-4 text-primary" /> Recommendation Cues
           </CardTitle>
           <CardDescription>
             Hover the highlighted terms to see how each maps across pedagogical frameworks.
