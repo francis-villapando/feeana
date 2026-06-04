@@ -292,6 +292,7 @@ function Results({ result }: { result: AnalysisResult }) {
               />
               <Tooltip
                 cursor={{ fill: "var(--color-border)" }}
+                formatter={(value: number) => [value, "Value"]}
                 contentStyle={{
                   background: "var(--color-popover)",
                   border: "1px solid var(--color-border)",
@@ -329,11 +330,25 @@ function Results({ result }: { result: AnalysisResult }) {
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{
-                  background: "var(--color-popover)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 8,
-                  fontSize: 12,
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null;
+                  const entry = payload[0];
+                  const label = entry.name as string;
+                  const color = POLARITY_COLORS[label] ?? "var(--color-chart-2)";
+                  return (
+                    <div
+                      style={{
+                        background: "var(--color-popover)",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        padding: "8px 12px",
+                      }}
+                    >
+                      <p style={{ color: "var(--color-foreground)", margin: 0, fontWeight: 500 }}>{label}</p>
+                      <p style={{ color, margin: 0 }}>Value : {entry.value}</p>
+                    </div>
+                  );
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -361,6 +376,7 @@ function Results({ result }: { result: AnalysisResult }) {
               />
               <Tooltip
                 cursor={{ fill: "var(--color-border)" }}
+                formatter={(value: number) => [value, "Value"]}
                 contentStyle={{
                   background: "var(--color-popover)",
                   border: "1px solid var(--color-border)",
