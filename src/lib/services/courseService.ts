@@ -46,6 +46,7 @@ function fromDbActivity(row: Record<string, unknown>): ActivityEntry {
     entityId: row.entity_id as string,
     action: row.action as ActivityAction,
     label: row.label as string,
+    newLabel: row.new_label as string | undefined,
     timestamp: row.timestamp as string,
     userId: row.user_id as string,
     userName: row.full_name as string,
@@ -76,12 +77,24 @@ export async function updateCourse(
   id: string,
   input: { code: string; title: string },
 ): Promise<void> {
+  const { data: old, error: fetchError } = await supabase
+    .from("courses")
+    .select("code, title")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
   const { error } = await supabase
     .from("courses")
     .update({ code: input.code.trim(), title: input.title.trim() })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  await logActivity("course", id, "updated", `${input.code} — ${input.title}`);
+  await logActivity(
+    "course",
+    id,
+    "updated",
+    `${old.code} — ${old.title}`,
+    `${input.code.trim()} — ${input.title.trim()}`,
+  );
 }
 
 export async function archiveCourse(id: string): Promise<void> {
@@ -139,12 +152,18 @@ export async function updateTopic(
   id: string,
   input: { courseId: string; title: string },
 ): Promise<void> {
+  const { data: old, error: fetchError } = await supabase
+    .from("topics")
+    .select("title")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
   const { error } = await supabase
     .from("topics")
     .update({ course_id: input.courseId, title: input.title.trim() })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  await logActivity("topic", id, "updated", input.title);
+  await logActivity("topic", id, "updated", old.title, input.title.trim());
 }
 
 export async function archiveTopic(id: string): Promise<void> {
@@ -202,6 +221,12 @@ export async function updateILO(
   id: string,
   input: { courseId: string; topicId: string; statement: string; bloomLevel: BloomLevel },
 ): Promise<void> {
+  const { data: old, error: fetchError } = await supabase
+    .from("ilos")
+    .select("statement")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
   const { error } = await supabase
     .from("ilos")
     .update({
@@ -212,40 +237,79 @@ export async function updateILO(
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  await logActivity("ILO", id, "updated", `${input.statement.slice(0, 40)}`);
+  await logActivity(
+    "ILO",
+    id,
+    "updated",
+    `${old.statement.slice(0, 40)}`,
+    `${input.statement.trim().slice(0, 40)}`,
+  );
 }
 
 export async function archiveILO(id: string): Promise<void> {
+  const { data, error: fetchError } = await supabase
+    .from("ilos")
+    .select("statement")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
   const { error } = await supabase
     .from("ilos")
     .update({ archived: true })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  await logActivity("ILO", id, "archived", "ILO");
+  await logActivity("ILO", id, "archived", `${data.statement.slice(0, 40)}`);
 }
 
 export async function restoreILO(id: string): Promise<void> {
+  const { data, error: fetchError } = await supabase
+    .from("ilos")
+    .select("statement")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
   const { error } = await supabase
     .from("ilos")
     .update({ archived: false })
     .eq("id", id);
   if (error) throw new Error(error.message);
-  await logActivity("ILO", id, "restored", "ILO");
+  await logActivity("ILO", id, "restored", `${data.statement.slice(0, 40)}`);
 }
 
 export async function deleteCourse(id: string): Promise<void> {
+  const { data, error: fetchError } = await supabase
+    .from("courses")
+    .select("code, title")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
   const { error } = await supabase.from("courses").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  await logActivity("course", id, "deleted", `${data.code} — ${data.title}`);
 }
 
 export async function deleteTopic(id: string): Promise<void> {
+  const { data, error: fetchError } = await supabase
+    .from("topics")
+    .select("title")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
   const { error } = await supabase.from("topics").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  await logActivity("topic", id, "deleted", data.title);
 }
 
 export async function deleteILO(id: string): Promise<void> {
+  const { data, error: fetchError } = await supabase
+    .from("ilos")
+    .select("statement")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
   const { error } = await supabase.from("ilos").delete().eq("id", id);
   if (error) throw new Error(error.message);
+  await logActivity("ILO", id, "deleted", `${data.statement.slice(0, 40)}`);
 }
 
 async function logActivity(
@@ -253,6 +317,7 @@ async function logActivity(
   entityId: string,
   action: ActivityAction,
   label: string,
+  newLabel?: string,
 ): Promise<void> {
   const {
     data: { user },
@@ -266,6 +331,7 @@ async function logActivity(
         entity_id: entityId,
         action,
         label,
+        new_label: newLabel,
         user_id: user.id,
       });
   } catch {

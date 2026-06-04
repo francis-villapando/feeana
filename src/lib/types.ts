@@ -34,7 +34,7 @@ export interface Topic {
 }
 
 export type EntityKind = "course" | "topic" | "ILO";
-export type ActivityAction = "created" | "updated" | "archived" | "restored";
+export type ActivityAction = "created" | "updated" | "archived" | "restored" | "deleted";
 
 export interface ActivityEntry {
   id: string;
@@ -42,6 +42,7 @@ export interface ActivityEntry {
   entityId: string;
   action: ActivityAction;
   label: string;
+  newLabel?: string;
   timestamp: string;
   userId?: string;
   userName?: string;

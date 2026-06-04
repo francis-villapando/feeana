@@ -126,9 +126,21 @@ export function ActivityRow({
             </span>
           )}
           <p className="text-xs">
-            <span className="font-medium capitalize">{entry.entity}</span>{" "}
-            <span className="text-muted-foreground">{entry.action}</span>{" "}
-            <span className="font-medium">— {entry.label}</span>
+            {entry.action === "updated" && entry.newLabel ? (
+              <>
+                <span className="font-medium capitalize">{entry.entity}</span>{" "}
+                <span className="text-muted-foreground">updated:</span>{" "}
+                <span className="font-medium">{entry.label}</span>{" "}
+                <span className="text-muted-foreground">to</span>{" "}
+                <span className="font-medium">{entry.newLabel}</span>
+              </>
+            ) : (
+              <>
+                <span className="font-medium capitalize">{entry.entity}</span>{" "}
+                <span className="text-muted-foreground">{entry.action}:</span>{" "}
+                <span className="font-medium">{entry.label}</span>
+              </>
+            )}
           </p>
         </div>
         <p className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
