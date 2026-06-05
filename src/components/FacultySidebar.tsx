@@ -27,7 +27,8 @@ export function FacultySidebar() {
   const location = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
 
-  const inClass = location.pathname.match(/^\/\$classId/) !== null;
+  const inClass = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.test(location.pathname);
+  const currentClassId = location.pathname.match(/^\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/)?.[1];
   const [classesOpen, setClassesOpen] = useState(inClass);
 
   return (
@@ -93,7 +94,7 @@ export function FacultySidebar() {
                           <SidebarMenuSubItem key={c.id}>
                             <SidebarMenuSubButton
                               asChild
-                              isActive={location.pathname.match(/^\/\$classId/) !== null}
+                              isActive={currentClassId === c.id}
                             >
                               <Link to="/$classId" params={{ classId: c.id }}>
                                 <span className="truncate">
