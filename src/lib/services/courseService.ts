@@ -40,6 +40,7 @@ function fromDbIlo(row: Record<string, unknown>): ILO {
 }
 
 function fromDbActivity(row: Record<string, unknown>): ActivityEntry {
+  const profile = row.profiles as Record<string, unknown> | null;
   return {
     id: row.id as string,
     entity: row.entity as EntityKind,
@@ -49,7 +50,7 @@ function fromDbActivity(row: Record<string, unknown>): ActivityEntry {
     newLabel: row.new_label as string | undefined,
     timestamp: row.timestamp as string,
     userId: row.user_id as string,
-    userName: row.full_name as string,
+    userName: (profile?.full_name as string) ?? undefined,
   };
 }
 

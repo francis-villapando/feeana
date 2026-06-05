@@ -41,9 +41,9 @@ export function ActivityFeed() {
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Activity className="h-4 w-4 text-primary" /> Activity feed
+          <Activity className="h-4 w-4 text-primary" /> Activity Feed
         </CardTitle>
-        <CardDescription>Course / topic / ILO changes from the last 30 days.</CardDescription>
+        <CardDescription>Course / Topic / ILO changes from the last 30 days.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         {top.length === 0 ? (
