@@ -34,7 +34,7 @@ import { useCourseStore } from "@/lib/courseStore";
 import { computeIloStatuses } from "@/lib/iloStatus";
 import type { AnalysisResult } from "@/lib/types";
 import { ModelLoaderOverlay } from "@/components/analysis/ModelLoaderOverlay";
-import { chartTooltipProps } from "@/components/analysis/ChartTooltip";
+import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis/ChartTooltip";
 import { FeedbackStatusBadge } from "@/components/analysis/FeedbackStatusBadge";
 import { AnalysisTriggerModal } from "@/components/analysis/AnalysisTriggerModal";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
@@ -291,7 +291,7 @@ function Results({ result }: { result: AnalysisResult }) {
                 fontSize={11}
                 width={170}
               />
-              <Tooltip {...chartTooltipProps} formatter={(value: number) => [value, "Value"]} />
+              <Tooltip cursor={chartTooltipProps.cursor} content={<ChartTooltipContent />} />
               <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -321,20 +321,7 @@ function Results({ result }: { result: AnalysisResult }) {
                   />
                 ))}
               </Pie>
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
-                  const entry = payload[0];
-                  const label = entry.name as string;
-                  const color = POLARITY_COLORS[label] ?? "var(--color-chart-2)";
-                  return (
-                    <div style={chartTooltipProps.contentStyle}>
-                      <p style={{ color: "var(--color-foreground)", margin: 0, fontWeight: 500 }}>{label}</p>
-                      <p style={{ color, margin: 0 }}>Value : {entry.value}</p>
-                    </div>
-                  );
-                }}
-              />
+              <Tooltip content={<ChartTooltipContent colorMap={POLARITY_COLORS} />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
           </ResponsiveContainer>
@@ -358,7 +345,7 @@ function Results({ result }: { result: AnalysisResult }) {
                 fontSize={11}
                 width={170}
               />
-              <Tooltip {...chartTooltipProps} formatter={(value: number) => [value, "Value"]} />
+              <Tooltip cursor={chartTooltipProps.cursor} content={<ChartTooltipContent />} />
               <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>

@@ -129,8 +129,42 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
   const polarityDist = [
     { label: "Positive", value: pipelineOutput.stats.polarityCounts.pos || 0 },
     { label: "Neutral", value: pipelineOutput.stats.polarityCounts.neu || 0 },
-    { label: "Negative", value: pipelineOutput.stats.polarityCounts.neg || 0 }
+    { label: "Negative", value: pipelineOutput.stats.polarityCounts.neg || 0 },
   ];
+
+  // Enrich distribution entries with contributing feedback texts
+  const feedbackMap = new Map<string, string>();
+  for (const fb of feedbackStream) {
+    feedbackMap.set(fb.id, fb.rawText);
+  }
+
+  const aspectToTexts = new Map<string, string[]>();
+  const issueToTexts = new Map<string, string[]>();
+  const polarityToTexts: Record<string, string[]> = { pos: [], neu: [], neg: [] };
+  for (const diag of buffer) {
+    const text = feedbackMap.get(diag.feedbackId ?? "");
+    if (!text) continue;
+    const aspectList = aspectToTexts.get(diag.tti) ?? [];
+    aspectList.push(text);
+    aspectToTexts.set(diag.tti, aspectList);
+    const issueLabel = ISSUE_RULES[diag.issue.toLowerCase()] ?? diag.issue;
+    const issueList = issueToTexts.get(issueLabel) ?? [];
+    issueList.push(text);
+    issueToTexts.set(issueLabel, issueList);
+    if (diag.polarity in polarityToTexts) {
+      polarityToTexts[diag.polarity].push(text);
+    }
+  }
+  for (const entry of aspectDist) {
+    entry.feedbackTexts = aspectToTexts.get(entry.label);
+  }
+  for (const entry of issueDist) {
+    entry.feedbackTexts = issueToTexts.get(entry.label);
+  }
+  const polarityLabelKey: Record<string, string> = { Positive: "pos", Neutral: "neu", Negative: "neg" };
+  for (const entry of polarityDist) {
+    entry.feedbackTexts = polarityToTexts[polarityLabelKey[entry.label]];
+  }
 
   // Construct Gap items corresponding to live active session ILO statements
   const gaps: any[] = [];

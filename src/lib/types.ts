@@ -131,6 +131,7 @@ export interface GapItem {
 export interface DistEntry {
   label: string;
   value: number;
+  feedbackTexts?: string[];
 }
 
 export interface AnalysisResult {
