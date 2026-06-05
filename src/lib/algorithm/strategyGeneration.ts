@@ -34,7 +34,7 @@ export function CalculateDistributions(
     stats.issueCounts[diag.issue] = (stats.issueCounts[diag.issue] || 0) + 1;
     if (diag.isGap) stats.gapCount++;
     stats.aspectCounts[diag.tti] = (stats.aspectCounts[diag.tti] || 0) + 1;
-    
+
     if (diag.polarity === "pos" || diag.polarity === "neu" || diag.polarity === "neg") {
       stats.polarityCounts[diag.polarity]++;
     }
@@ -57,8 +57,10 @@ export function GeneratePedagogicalCue(
   const percentage = Math.round((uniqueIssue.count / totalFeedback) * 100);
   const percentageStr = `${percentage}%`;
   const rbtName = RBT_LEVEL_NAMES[uniqueIssue.rbt] ?? String(uniqueIssue.rbt);
-  
-  const paragraph = `${percentageStr} of the class is experiencing ${uniqueIssue.issue} with respect to ${sessionContext.topic}. According to RBT, students are not achieving the levels of ${rbtName} and hence they are not able to achieve the goal: ${sessionContext.iloStatement}. The cause of CLT is high ${uniqueIssue.clt} Load. Thus, "recommendation cue for ${uniqueIssue.issue}."`;
+
+  const paragraph = uniqueIssue.isGap
+    ? `${percentageStr} of the class is experiencing ${uniqueIssue.issue} with respect to ${sessionContext.topic}. According to RBT, students are not achieving the levels of ${rbtName} and hence they are not able to achieve the goal: ${sessionContext.iloStatement}. The cause of CLT is high ${uniqueIssue.clt} Load. Thus, "recommendation cue for ${uniqueIssue.issue}."`
+    : `${percentageStr} of the class is experiencing ${uniqueIssue.issue} with respect to ${sessionContext.topic}. According to RBT, students are not achieving the levels of ${rbtName}. The cause of CLT is high ${uniqueIssue.clt} Load. Thus, "recommendation cue for ${uniqueIssue.issue}."`;
 
   const terms = [
     {
@@ -81,11 +83,15 @@ export function GeneratePedagogicalCue(
       kind: "RBT",
       detail: `Level ${uniqueIssue.rbt} (${rbtName}) on Bloom's Taxonomy`,
     },
-    {
-      text: sessionContext.iloStatement,
-      kind: "ILO",
-      detail: sessionContext.iloStatement,
-    },
+    ...(uniqueIssue.isGap
+      ? [
+        {
+          text: sessionContext.iloStatement,
+          kind: "ILO" as const,
+          detail: sessionContext.iloStatement,
+        },
+      ]
+      : []),
     {
       text: uniqueIssue.clt,
       kind: "CLT",
