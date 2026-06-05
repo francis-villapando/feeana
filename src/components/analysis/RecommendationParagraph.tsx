@@ -16,7 +16,6 @@ interface Segment {
   term?: RecommendationTerm;
 }
 
-/** Tokenize the paragraph by walking each term in declaration order. */
 function tokenize(paragraph: string, terms: RecommendationTerm[]): Segment[] {
   let segments: Segment[] = [{ text: paragraph }];
   for (const term of terms) {
@@ -72,7 +71,7 @@ export function RecommendationParagraph({ rec, index, ilos }: RecommendationPara
         <span className="font-mono text-xs font-semibold text-primary">
           {String(index + 1).padStart(2, "0")}
         </span>
-        <p className="flex-1 text-sm leading-relaxed">
+        <div className="flex-1 text-sm leading-relaxed">
           {segments.map((seg, i) => {
             if (!seg.term) return <span key={i}>{seg.text}</span>;
             const { heading, body } = resolveDetail(seg.term, ilos);
@@ -92,7 +91,7 @@ export function RecommendationParagraph({ rec, index, ilos }: RecommendationPara
               </HoverCard>
             );
           })}
-        </p>
+        </div>
       </div>
     </li>
   );
