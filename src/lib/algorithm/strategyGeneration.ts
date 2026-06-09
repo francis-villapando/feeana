@@ -60,11 +60,12 @@ export function GeneratePedagogicalCue(
 
   const rbtLower = rbtName.toLowerCase();
   const cltLower = uniqueIssue.clt.toLowerCase();
+  const ttiLower = uniqueIssue.tti.toLowerCase();
   const recommendationSentence = ISSUE_RECOMMENDATIONS[uniqueIssue.issue] ?? `Thus, "recommendation cue for ${uniqueIssue.issue}."`;
 
   const paragraph = uniqueIssue.isGap
-    ? `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the goal: ${sessionContext.iloStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
-    : `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
+    ? `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under ${ttiLower} in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the goal: ${sessionContext.iloStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
+    : `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under ${ttiLower} in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
 
   const terms = [
     {
