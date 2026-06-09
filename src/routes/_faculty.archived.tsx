@@ -27,18 +27,26 @@ function ArchivedPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingId) return;
-    deleteClass(deletingId);
-    setDeletingId(null);
-    toast.success("Class deleted");
+    try {
+      await deleteClass(deletingId);
+      setDeletingId(null);
+      toast.success("Class deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete class");
+    }
   };
 
-  const handleRestore = () => {
+  const handleRestore = async () => {
     if (!restoringId) return;
-    restoreClass(restoringId);
-    setRestoringId(null);
-    toast.success("Class restored");
+    try {
+      await restoreClass(restoringId);
+      setRestoringId(null);
+      toast.success("Class restored");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to restore class");
+    }
   };
 
   return (
