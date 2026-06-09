@@ -190,6 +190,13 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
     priority: rec.priority
   }));
 
+  // Map warnings
+  const warnings = pipelineOutput.warningList.map(w => ({
+    id: w.id,
+    issue: w.issue,
+    count: w.count,
+  }));
+
   const finalResult: AnalysisResult = {
     sessionId,
     totalFeedback: pipelineOutput.stats.totalFeedback,
@@ -197,7 +204,8 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
     issueDist,
     polarityDist,
     gaps,
-    recommendations
+    recommendations,
+    warnings,
   };
 
   // 6. DB Integration: Save aggregate result to analysis_results

@@ -73,7 +73,6 @@ export interface RecommendationItem {
 export interface WarningItem {
   id: string;
   issue: string;
-  warning: string;
   count: number;
 }
 

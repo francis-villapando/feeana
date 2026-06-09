@@ -119,6 +119,12 @@ export interface Recommendation {
   priority: number;
 }
 
+export interface Warning {
+  id: string;
+  issue: string;
+  count: number;
+}
+
 export type Severity = "low" | "medium" | "high";
 
 export interface GapItem {
@@ -142,4 +148,5 @@ export interface AnalysisResult {
   polarityDist: DistEntry[];
   gaps: GapItem[];
   recommendations: Recommendation[];
+  warnings: Warning[];
 }
