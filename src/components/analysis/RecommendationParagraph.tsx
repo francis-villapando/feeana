@@ -3,12 +3,13 @@ import type { ILO, Recommendation, RecommendationTerm, TermKind } from "@/lib/ty
 
 const KIND_LABEL: Record<TermKind, string> = {
   issue: "Issue",
-  aspect: "Aspect",
   RBT: "Revised Bloom's Taxonomy",
   CLT: "Cognitive Load Theory",
   TTI: "Teaching Through Interactions",
   ILO: "Intended Learning Outcome",
   metric: "Metric",
+  topic: "Topic",
+  recommendation: "Recommendation",
 };
 
 interface Segment {
@@ -75,6 +76,7 @@ export function RecommendationParagraph({ rec, index, ilos }: RecommendationPara
           {segments.map((seg, i) => {
             if (!seg.term) return <span key={i}>{seg.text}</span>;
             const { heading, body } = resolveDetail(seg.term, ilos);
+            const isRbt = seg.term.kind === "RBT";
             return (
               <HoverCard key={i} openDelay={120} closeDelay={80}>
                 <HoverCardTrigger asChild>
@@ -86,7 +88,15 @@ export function RecommendationParagraph({ rec, index, ilos }: RecommendationPara
                   <p className="text-xs font-semibold uppercase tracking-wider text-primary">
                     {heading}
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed">{body}</p>
+                  {isRbt ? (
+                    <ul className="mt-2 list-disc space-y-1 pl-4 text-sm leading-relaxed">
+                      {body.split(" --- ").map((item, j) => (
+                        <li key={j}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-sm leading-relaxed">{body}</p>
+                  )}
                 </HoverCardContent>
               </HoverCard>
             );

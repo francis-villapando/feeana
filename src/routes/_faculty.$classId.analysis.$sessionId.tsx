@@ -23,6 +23,7 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -373,11 +374,17 @@ function Results({ result }: { result: AnalysisResult }) {
                 className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-3"
               >
                 {achieved ? (
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
+                  <CheckCircle2 className="self-center h-5 w-5 shrink-0 text-emerald-500" />
                 ) : (
-                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                  <AlertCircle className="self-center h-5 w-5 shrink-0 text-destructive" />
                 )}
-                <p className="text-sm leading-relaxed">{ilo.statement}</p>
+                <p className="flex-1 text-sm leading-relaxed">{ilo.statement}</p>
+                <Badge
+                  variant="default"
+                  className="self-center shrink-0 text-[9px] px-1 h-3.5 font-normal uppercase tracking-tighter"
+                >
+                  {ilo.bloomLevel}
+                </Badge>
               </div>
             ))
           )}

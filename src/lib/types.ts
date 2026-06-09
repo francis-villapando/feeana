@@ -102,7 +102,7 @@ export interface Feedback {
 
 export type Theory = "RBT" | "CLT" | "TTI";
 
-export type TermKind = "issue" | "aspect" | "RBT" | "CLT" | "TTI" | "ILO" | "metric";
+export type TermKind = "issue" | "RBT" | "CLT" | "TTI" | "ILO" | "metric" | "topic" | "recommendation";
 
 export interface RecommendationTerm {
   text: string;
