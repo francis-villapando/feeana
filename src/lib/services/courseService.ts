@@ -23,6 +23,18 @@ export class ConflictError extends Error {
   }
 }
 
+async function isConflictingRecordArchived(
+  table: "courses" | "topics" | "ilos",
+  filters: Record<string, unknown>,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from(table)
+    .select("archived")
+    .match(filters)
+    .maybeSingle();
+  return data?.archived === true;
+}
+
 function fromDbCourse(row: Record<string, unknown>): Course {
   return {
     id: row.id as string,
@@ -87,7 +99,10 @@ export async function createCourse(input: { code: string; title: string }): Prom
     .select()
     .single();
   if (error) {
-    if (error.code === "23505") throw new DuplicateError("A course with this code already exists.");
+    if (error.code === "23505") {
+      const archived = await isConflictingRecordArchived("courses", { code: input.code.trim() });
+      throw new DuplicateError(`A course with this code already exists.${archived ? " (archived)" : ""}`);
+    }
     throw new Error(error.message);
   }
   await logActivity("course", data.id, "created", `${data.code} — ${data.title}`);
@@ -111,10 +126,12 @@ export async function updateCourse(
     .eq("version", input.version)
     .select();
   if (error) {
-    if (error.code === "23505") throw new DuplicateError("A course with this code already exists.");
+    if (error.code === "23505") {
+      const archived = await isConflictingRecordArchived("courses", { code: input.code.trim() });
+      throw new DuplicateError(`A course with this code already exists.${archived ? " (archived)" : ""}`);
+    }
     throw new Error(error.message);
   }
-  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
   await logActivity(
     "course",
     id,
@@ -171,7 +188,13 @@ export async function createTopic(input: { courseId: string; title: string }): P
     .select()
     .single();
   if (error) {
-    if (error.code === "23505") throw new DuplicateError("A topic with this title already exists in this course.");
+    if (error.code === "23505") {
+      const archived = await isConflictingRecordArchived("topics", {
+        course_id: input.courseId,
+        title: input.title.trim(),
+      });
+      throw new DuplicateError(`A topic with this title already exists in this course.${archived ? " (archived)" : ""}`);
+    }
     throw new Error(error.message);
   }
   await logActivity("topic", data.id, "created", data.title);
@@ -184,7 +207,7 @@ export async function updateTopic(
 ): Promise<void> {
   const { data: old, error: fetchError } = await supabase
     .from("topics")
-    .select("title")
+    .select("title, course_id")
     .eq("id", id)
     .single();
   if (fetchError) throw new Error(fetchError.message);
@@ -195,7 +218,13 @@ export async function updateTopic(
     .eq("version", input.version)
     .select();
   if (error) {
-    if (error.code === "23505") throw new DuplicateError("A topic with this title already exists in this course.");
+    if (error.code === "23505") {
+      const archived = await isConflictingRecordArchived("topics", {
+        course_id: old.course_id,
+        title: input.title.trim(),
+      });
+      throw new DuplicateError(`A topic with this title already exists in this course.${archived ? " (archived)" : ""}`);
+    }
     throw new Error(error.message);
   }
   if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
@@ -249,7 +278,13 @@ export async function createILO(input: {
     .select()
     .single();
   if (error) {
-    if (error.code === "23505") throw new DuplicateError("An ILO with this statement already exists in this topic.");
+    if (error.code === "23505") {
+      const archived = await isConflictingRecordArchived("ilos", {
+        topic_id: input.topicId,
+        statement: input.statement.trim(),
+      });
+      throw new DuplicateError(`An ILO with this statement already exists in this topic.${archived ? " (archived)" : ""}`);
+    }
     throw new Error(error.message);
   }
   await logActivity("ILO", data.id, "created", `${data.statement.slice(0, 40)}`);
@@ -262,7 +297,7 @@ export async function updateILO(
 ): Promise<void> {
   const { data: old, error: fetchError } = await supabase
     .from("ilos")
-    .select("statement")
+    .select("statement, topic_id")
     .eq("id", id)
     .single();
   if (fetchError) throw new Error(fetchError.message);
@@ -277,7 +312,13 @@ export async function updateILO(
     .eq("version", input.version)
     .select();
   if (error) {
-    if (error.code === "23505") throw new DuplicateError("An ILO with this statement already exists in this topic.");
+    if (error.code === "23505") {
+      const archived = await isConflictingRecordArchived("ilos", {
+        topic_id: old.topic_id,
+        statement: input.statement.trim(),
+      });
+      throw new DuplicateError(`An ILO with this statement already exists in this topic.${archived ? " (archived)" : ""}`);
+    }
     throw new Error(error.message);
   }
   if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
