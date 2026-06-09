@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+﻿import { supabase } from "@/lib/supabase";
 import type {
   ActivityEntry,
   BloomLevel,
@@ -9,12 +9,27 @@ import type {
   Topic,
 } from "@/lib/types";
 
+export class DuplicateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DuplicateError";
+  }
+}
+
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
 function fromDbCourse(row: Record<string, unknown>): Course {
   return {
     id: row.id as string,
     code: row.code as string,
     title: row.title as string,
     archived: row.archived as boolean,
+    version: (row.version as number) ?? 1,
   };
 }
 
@@ -25,6 +40,7 @@ function fromDbTopic(row: Record<string, unknown>): Topic {
     title: row.title as string,
     archived: row.archived as boolean,
     createdAt: row.created_at as string,
+    version: (row.version as number) ?? 1,
   };
 }
 
@@ -36,6 +52,7 @@ function fromDbIlo(row: Record<string, unknown>): ILO {
     statement: row.statement as string,
     bloomLevel: row.bloom_level as BloomLevel,
     archived: row.archived as boolean,
+    version: (row.version as number) ?? 1,
   };
 }
 
@@ -69,14 +86,17 @@ export async function createCourse(input: { code: string; title: string }): Prom
     .insert({ code: input.code.trim(), title: input.title.trim() })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505") throw new DuplicateError("A course with this code already exists.");
+    throw new Error(error.message);
+  }
   await logActivity("course", data.id, "created", `${data.code} — ${data.title}`);
   return fromDbCourse(data);
 }
 
 export async function updateCourse(
   id: string,
-  input: { code: string; title: string },
+  input: { code: string; title: string; version: number },
 ): Promise<void> {
   const { data: old, error: fetchError } = await supabase
     .from("courses")
@@ -84,11 +104,17 @@ export async function updateCourse(
     .eq("id", id)
     .single();
   if (fetchError) throw new Error(fetchError.message);
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("courses")
-    .update({ code: input.code.trim(), title: input.title.trim() })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+    .update({ code: input.code.trim(), title: input.title.trim(), version: input.version + 1 })
+    .eq("id", id)
+    .eq("version", input.version)
+    .select();
+  if (error) {
+    if (error.code === "23505") throw new DuplicateError("A course with this code already exists.");
+    throw new Error(error.message);
+  }
+  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
   await logActivity(
     "course",
     id,
@@ -144,14 +170,17 @@ export async function createTopic(input: { courseId: string; title: string }): P
     .insert({ course_id: input.courseId, title: input.title.trim() })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505") throw new DuplicateError("A topic with this title already exists in this course.");
+    throw new Error(error.message);
+  }
   await logActivity("topic", data.id, "created", data.title);
   return fromDbTopic(data);
 }
 
 export async function updateTopic(
   id: string,
-  input: { title: string },
+  input: { title: string; version: number },
 ): Promise<void> {
   const { data: old, error: fetchError } = await supabase
     .from("topics")
@@ -159,11 +188,17 @@ export async function updateTopic(
     .eq("id", id)
     .single();
   if (fetchError) throw new Error(fetchError.message);
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("topics")
-    .update({ title: input.title.trim() })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+    .update({ title: input.title.trim(), version: input.version + 1 })
+    .eq("id", id)
+    .eq("version", input.version)
+    .select();
+  if (error) {
+    if (error.code === "23505") throw new DuplicateError("A topic with this title already exists in this course.");
+    throw new Error(error.message);
+  }
+  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
   await logActivity("topic", id, "updated", old.title, input.title.trim());
 }
 
@@ -213,14 +248,17 @@ export async function createILO(input: {
     })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505") throw new DuplicateError("An ILO with this statement already exists in this topic.");
+    throw new Error(error.message);
+  }
   await logActivity("ILO", data.id, "created", `${data.statement.slice(0, 40)}`);
   return fromDbIlo(data);
 }
 
 export async function updateILO(
   id: string,
-  input: { statement: string; bloomLevel: BloomLevel },
+  input: { statement: string; bloomLevel: BloomLevel; version: number },
 ): Promise<void> {
   const { data: old, error: fetchError } = await supabase
     .from("ilos")
@@ -228,14 +266,21 @@ export async function updateILO(
     .eq("id", id)
     .single();
   if (fetchError) throw new Error(fetchError.message);
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("ilos")
     .update({
       statement: input.statement.trim(),
       bloom_level: input.bloomLevel,
+      version: input.version + 1,
     })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+    .eq("id", id)
+    .eq("version", input.version)
+    .select();
+  if (error) {
+    if (error.code === "23505") throw new DuplicateError("An ILO with this statement already exists in this topic.");
+    throw new Error(error.message);
+  }
+  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
   await logActivity(
     "ILO",
     id,

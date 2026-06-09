@@ -28,11 +28,11 @@ interface CourseStoreValue {
   error: string | null;
   currentUserId: string | null;
   createCourse: (input: { code: string; title: string }) => Promise<Course>;
-  updateCourse: (id: string, input: { code: string; title: string }) => Promise<void>;
+  updateCourse: (id: string, input: { code: string; title: string; version: number }) => Promise<void>;
   archiveCourse: (id: string) => Promise<void>;
   restoreCourse: (id: string) => Promise<void>;
   createTopic: (input: { courseId: string; title: string }) => Promise<Topic>;
-  updateTopic: (id: string, input: { title: string }) => Promise<void>;
+  updateTopic: (id: string, input: { title: string; version: number }) => Promise<void>;
   archiveTopic: (id: string) => Promise<void>;
   restoreTopic: (id: string) => Promise<void>;
   createILO: (input: {
@@ -46,6 +46,7 @@ interface CourseStoreValue {
     input: {
       statement: string;
       bloomLevel: BloomLevel;
+      version: number;
     },
   ) => Promise<void>;
   archiveILO: (id: string) => Promise<void>;
@@ -54,6 +55,7 @@ interface CourseStoreValue {
   deleteTopic: (id: string) => Promise<void>;
   deleteILO: (id: string) => Promise<void>;
   refreshActivity: () => Promise<void>;
+  refreshAll: () => Promise<void>;
 }
 
 const CourseStoreContext = createContext<CourseStoreValue | null>(null);
@@ -95,6 +97,23 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshAll = useCallback(async () => {
+    try {
+      const [c, t, i, a] = await Promise.all([
+        courseService.getCourses(),
+        courseService.getTopics(),
+        courseService.getILOs(),
+        courseService.getActivity(),
+      ]);
+      setCourses(c);
+      setTopics(t);
+      setIlos(i);
+      setActivity(a);
+    } catch {
+      // silent
+    }
+  }, []);
+
   const createCourse = useCallback(async (input: { code: string; title: string }) => {
     const c = await courseService.createCourse(input);
     setCourses((prev) => [c, ...prev]);
@@ -102,11 +121,11 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     return c;
   }, []);
 
-  const updateCourse = useCallback(async (id: string, input: { code: string; title: string }) => {
+  const updateCourse = useCallback(async (id: string, input: { code: string; title: string; version: number }) => {
     await courseService.updateCourse(id, input);
     setCourses((prev) =>
       prev.map((c) =>
-        c.id === id ? { ...c, code: input.code.trim(), title: input.title.trim() } : c,
+        c.id === id ? { ...c, code: input.code.trim(), title: input.title.trim(), version: input.version + 1 } : c,
       ),
     );
     await refreshActivity();
@@ -132,11 +151,11 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateTopic = useCallback(
-    async (id: string, input: { title: string }) => {
+    async (id: string, input: { title: string; version: number }) => {
       await courseService.updateTopic(id, input);
       setTopics((prev) =>
         prev.map((t) =>
-          t.id === id ? { ...t, title: input.title.trim() } : t,
+          t.id === id ? { ...t, title: input.title.trim(), version: input.version + 1 } : t,
         ),
       );
       await refreshActivity();
@@ -177,6 +196,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       input: {
         statement: string;
         bloomLevel: BloomLevel;
+        version: number;
       },
     ) => {
       await courseService.updateILO(id, input);
@@ -187,6 +207,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
                 ...i,
                 statement: input.statement.trim(),
                 bloomLevel: input.bloomLevel,
+                version: input.version + 1,
               }
             : i,
         ),
@@ -251,6 +272,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       deleteTopic,
       deleteILO,
       refreshActivity,
+      refreshAll,
     }),
     [
       courses,
@@ -275,6 +297,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       isLoading,
       error,
       refreshActivity,
+      refreshAll,
       user,
     ],
   );

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCourseStore } from "@/lib/courseStore";
+import { ConflictError, DuplicateError } from "@/lib/services/courseService";
 import type { BloomLevel, Course, EntityKind, ILO, Topic } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +31,7 @@ type State =
 const BLOOMS: BloomLevel[] = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
 
 export function EntityFormDialog({ state, onClose }: { state: State; onClose: () => void }) {
-  const { courses, topics, createCourse, updateCourse, createTopic, updateTopic, createILO, updateILO } =
+  const { courses, topics, createCourse, updateCourse, createTopic, updateTopic, createILO, updateILO, refreshAll } =
     useCourseStore();
 
   const isEdit = !!state.entity;
@@ -43,7 +44,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
   // Course
   const [code, setCode] = useState(state.kind === "course" ? (state.entity?.code ?? "") : "");
   const [title, setTitle] = useState(state.kind === "course" ? (state.entity?.title ?? "") : "");
-  
+
   // Topic
   const [topicTitle, setTopicTitle] = useState(
     state.kind === "topic" ? (state.entity?.title ?? "") : "",
@@ -79,7 +80,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
     (t) => t.courseId === iloCourseId && !t.archived,
   );
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
       if (state.kind === "course") {
         if (!code.trim() || !title.trim()) {
@@ -87,10 +88,10 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           return;
         }
         if (state.entity) {
-          updateCourse(state.entity.id, { code, title });
+          await updateCourse(state.entity.id, { code, title, version: state.entity.version });
           toast.success("Course updated.");
         } else {
-          createCourse({ code, title });
+          await createCourse({ code, title });
           toast.success("Course created.");
         }
       } else if (state.kind === "topic") {
@@ -103,12 +104,10 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           return;
         }
         if (state.entity) {
-          updateTopic(state.entity.id, {
-            title: topicTitle,
-          });
+          await updateTopic(state.entity.id, { title: topicTitle, version: state.entity.version });
           toast.success("Topic updated.");
         } else {
-          createTopic({ courseId: topicCourseId, title: topicTitle });
+          await createTopic({ courseId: topicCourseId, title: topicTitle });
           toast.success("Topic created.");
         }
       } else {
@@ -121,13 +120,10 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           return;
         }
         if (state.entity) {
-          updateILO(state.entity.id, {
-            statement: iloStatement,
-            bloomLevel: iloBloom,
-          });
+          await updateILO(state.entity.id, { statement: iloStatement, bloomLevel: iloBloom, version: state.entity.version });
           toast.success("ILO updated.");
         } else {
-          createILO({
+          await createILO({
             courseId: iloCourseId,
             topicId: iloTopicId,
             statement: iloStatement,
@@ -137,8 +133,16 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
         }
       }
       onClose();
-    } catch {
-      toast.error("Could not save.");
+    } catch (err) {
+      if (err instanceof DuplicateError) {
+        toast.error(err.message);
+      } else if (err instanceof ConflictError) {
+        toast.error(err.message);
+        refreshAll();
+        onClose();
+      } else {
+        toast.error("Could not save.");
+      }
     }
   };
 

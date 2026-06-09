@@ -12,6 +12,7 @@ export interface Course {
   code: string;
   title: string;
   archived: boolean;
+  version: number;
 }
 
 export type BloomLevel = "Remember" | "Understand" | "Apply" | "Analyze" | "Evaluate" | "Create";
@@ -23,6 +24,7 @@ export interface ILO {
   statement: string;
   bloomLevel: BloomLevel;
   archived: boolean;
+  version: number;
 }
 
 export interface Topic {
@@ -31,6 +33,7 @@ export interface Topic {
   title: string;
   archived: boolean;
   createdAt: string;
+  version: number;
 }
 
 export type EntityKind = "course" | "topic" | "ILO";
