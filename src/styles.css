@@ -187,4 +187,22 @@
       linear-gradient(180deg, oklch(0.98 0.01 250 / 90%), oklch(0.95 0.02 256 / 95%));
     opacity: 0.4;
   }
+
+  .chart-tooltip-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .chart-tooltip-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .chart-tooltip-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+  .chart-tooltip-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted-foreground);
+  }
+  .chart-tooltip-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
 }

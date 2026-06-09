@@ -1,14 +1,17 @@
+import { useRef } from "react";
 import { type TooltipProps } from "recharts";
 import type { DistEntry } from "@/lib/types";
 
 export const chartTooltipProps = {
   cursor: { fill: "var(--color-border)" } as const,
+  wrapperStyle: { pointerEvents: "auto" } as const,
   contentStyle: {
     background: "var(--color-popover)",
     border: "1px solid var(--color-border)",
     borderRadius: 8,
     fontSize: 12,
     padding: "8px 12px",
+    pointerEvents: "auto",
   } as const,
 };
 
@@ -17,14 +20,30 @@ export interface ChartTooltipContentProps extends TooltipProps<number, string> {
 }
 
 export function ChartTooltipContent({ active, payload, colorMap }: ChartTooltipContentProps) {
-  if (!active || !payload?.length) return null;
-  const entry = payload[0].payload as DistEntry;
+  const frozenRef = useRef(false);
+  const snapshotRef = useRef(payload ?? null);
+
+  if (active && payload?.length) {
+    snapshotRef.current = payload;
+  }
+
+  const visible = active || frozenRef.current;
+  const data = frozenRef.current ? snapshotRef.current : payload;
+  if (!visible || !data?.length) return null;
+
+  const entry = data[0].payload as DistEntry;
   const color =
     (colorMap && entry.label && colorMap[entry.label]) ??
-    payload[0].color ??
+    data[0].color ??
     "var(--color-foreground)";
+
   return (
-    <div style={chartTooltipProps.contentStyle}>
+    <div
+      onMouseEnter={() => { frozenRef.current = true; }}
+      onMouseLeave={() => { frozenRef.current = false; }}
+      onMouseMove={(e) => { if (frozenRef.current) e.stopPropagation(); }}
+      style={chartTooltipProps.contentStyle}
+    >
       <p style={{ fontWeight: 500, color, margin: 0 }}>
         {entry.label}
       </p>
@@ -33,6 +52,8 @@ export function ChartTooltipContent({ active, payload, colorMap }: ChartTooltipC
       </p>
       {entry.feedbackTexts && entry.feedbackTexts.length > 0 && (
         <div
+          className="chart-tooltip-scrollbar"
+          onWheel={(e) => e.stopPropagation()}
           style={{
             marginTop: 6,
             maxHeight: 220,

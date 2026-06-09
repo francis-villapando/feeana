@@ -292,7 +292,7 @@ function Results({ result }: { result: AnalysisResult }) {
                 fontSize={11}
                 width={170}
               />
-              <Tooltip cursor={chartTooltipProps.cursor} content={<ChartTooltipContent />} />
+              <Tooltip {...chartTooltipProps} content={<ChartTooltipContent />} />
               <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -322,7 +322,7 @@ function Results({ result }: { result: AnalysisResult }) {
                   />
                 ))}
               </Pie>
-              <Tooltip content={<ChartTooltipContent colorMap={POLARITY_COLORS} />} />
+              <Tooltip {...chartTooltipProps} content={<ChartTooltipContent colorMap={POLARITY_COLORS} />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
           </ResponsiveContainer>
@@ -346,7 +346,7 @@ function Results({ result }: { result: AnalysisResult }) {
                 fontSize={11}
                 width={170}
               />
-              <Tooltip cursor={chartTooltipProps.cursor} content={<ChartTooltipContent />} />
+              <Tooltip {...chartTooltipProps} content={<ChartTooltipContent />} />
               <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
