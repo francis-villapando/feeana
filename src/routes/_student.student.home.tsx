@@ -7,10 +7,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ClassInfoDialog } from "@/components/ClassInfoDialog";
 import { EnrollClassDialog } from "@/components/EnrollClassDialog";
 import { WelcomeHero } from "@/components/WelcomeHero";
+import { ActiveSessionAccordion } from "@/components/student/ActiveSessionAccordion";
 import { useAuth } from "@/lib/auth";
 import { useClassStore } from "@/lib/classStore";
 import type { Class } from "@/lib/types";
-import { SessionCard } from "@/components/dashboard/SessionCard";
 
 export const Route = createFileRoute("/_student/student/home")({
   head: () => ({
@@ -76,10 +76,6 @@ function StudentHome() {
   const [classInfo, setClassInfo] = useState<Class | null>(null);
 
   const enrolled = classes.filter((c) => enrolledClassIds.includes(c.id));
-  const classesWithSessions = enrolled.map((c) => ({
-    cls: c,
-    sessions: sessions.filter((s) => s.classId === c.id && s.status === "active" && !submittedSessionIds.has(s.id)),
-  }));
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -104,37 +100,12 @@ function StudentHome() {
       {enrolled.length === 0 ? (
         <EmptyEnroll onEnroll={() => setEnrollOpen(true)} />
       ) : (
-        <div className="space-y-6">
-          {classesWithSessions.map((group) => (
-            <section key={group.cls.id} className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <button
-                  type="button"
-                  onClick={() => setClassInfo(group.cls)}
-                  className="text-sm font-semibold tracking-wider text-primary hover:underline cursor-pointer"
-                >
-                  {group.cls.course}
-                </button>
-              </div>
-              {group.sessions.length === 0 ? (
-                <Card className="border-dashed border-border/60 bg-card/40">
-                  <CardContent className="px-6 py-8 text-center">
-                    <h3 className="text-sm font-medium">No active sessions</h3>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Check back later — your faculty hasn't opened a session yet.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-2">
-                  {group.sessions.map((s) => (
-                    <SessionCard key={s.id} session={s} />
-                  ))}
-                </div>
-              )}
-            </section>
-          ))}
-        </div>
+        <ActiveSessionAccordion
+          classes={enrolled}
+          sessions={sessions}
+          submittedSessionIds={submittedSessionIds}
+          onClassInfoClick={(cls) => setClassInfo(cls)}
+        />
       )}
 
       <EnrollClassDialog open={enrollOpen} onOpenChange={setEnrollOpen} />
