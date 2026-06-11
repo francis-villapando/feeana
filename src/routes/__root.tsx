@@ -16,7 +16,7 @@ import { FeedbackStoreProvider } from "@/lib/feedbackStore";
 import { ThemeProvider, useTheme } from "@/lib/themeProvider";
 import bgImage from "../assets/bg-abstract.jpg";
 
-import appCss from "../styles.css?url";
+import "../styles.css";
 
 function NotFoundComponent() {
   return (
@@ -59,7 +59,6 @@ export const Route = createRootRouteWithContext()({
       },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
   }),
   shellComponent: RootShell,
   component: RootComponent,

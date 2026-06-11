@@ -2,7 +2,7 @@
  * Analysis pipeline.
  * Persists results and individual feedback diagnostics to Supabase.
  */
-import type { AnalysisResult } from "./types";
+import type { AnalysisResult, DistEntry } from "./types";
 import { supabase } from "./supabase";
 import { getMLWorker } from "./mlWorkerStore";
 import { ISSUE_RULES } from "./algorithm/rules";
@@ -123,10 +123,10 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
   const buffer = pipelineOutput.diagnostics ?? [];
 
   // 5. Calculate distribution metrics to construct the final UI AnalysisResult payload
-  const aspectDist = Object.entries(pipelineOutput.stats.aspectCounts).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
-  const issueDist = Object.entries(pipelineOutput.stats.issueCounts).map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value })).sort((a, b) => b.value - a.value);
+  const aspectDist = Object.entries(pipelineOutput.stats.aspectCounts).map(([label, value]) => ({ label, value } as DistEntry)).sort((a, b) => b.value - a.value);
+  const issueDist = Object.entries(pipelineOutput.stats.issueCounts).map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value } as DistEntry)).sort((a, b) => b.value - a.value);
   
-  const polarityDist = [
+  const polarityDist: DistEntry[] = [
     { label: "Positive", value: pipelineOutput.stats.polarityCounts.pos || 0 },
     { label: "Neutral", value: pipelineOutput.stats.polarityCounts.neu || 0 },
     { label: "Negative", value: pipelineOutput.stats.polarityCounts.neg || 0 },

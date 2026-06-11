@@ -45,7 +45,7 @@ export function AppShell({ navItems, children }: { navItems: NavItem[]; children
           </div>
           <div className="flex items-center gap-3">
             <Link
-              to="/privacy"
+              to="/privacy-policy"
               className="hidden items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground sm:flex"
             >
               <ShieldCheck className="h-3.5 w-3.5" /> Privacy

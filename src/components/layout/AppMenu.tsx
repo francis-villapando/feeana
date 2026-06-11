@@ -55,7 +55,7 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
           <Separator className="my-1.5" />
 
           <div className="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Appearance
+            Theme
           </div>
           <div className="grid grid-cols-3 gap-1 px-1 pb-1.5">
             <button
