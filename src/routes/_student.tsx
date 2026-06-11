@@ -5,7 +5,7 @@ import { Outlet } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { EnrollClassDialog } from "@/components/EnrollClassDialog";
 import { useAuth } from "@/lib/auth";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/_student")({
   component: StudentLayout,

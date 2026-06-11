@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { InfoDialog } from "@/components/ui/InfoDialog";
+import { InfoDialog } from "@/components/InfoDialog";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { useClassStore } from "@/lib/classStore";
 import { getSessionById } from "@/lib/services/classService";

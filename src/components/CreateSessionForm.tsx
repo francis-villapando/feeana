@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DateTimePicker } from "@/components/ui/DateTimePicker";
+import { DateTimePicker } from "@/components/DateTimePicker";
 import { useClassStore } from "@/lib/classStore";
 import { useCourseStore } from "@/lib/courseStore";
 import { topicsForClass } from "@/lib/courseLookup";
