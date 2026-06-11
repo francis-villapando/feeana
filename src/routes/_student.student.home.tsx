@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { BookOpenCheck, Sparkles } from "lucide-react";
+import { BookOpenCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EnrollClassDialog } from "@/components/EnrollClassDialog";
+import { WelcomeHero } from "@/components/WelcomeHero";
+import { useAuth } from "@/lib/auth";
 import { useClassStore } from "@/lib/classStore";
 import { SessionCard } from "@/components/dashboard/SessionCard";
 
@@ -67,6 +69,7 @@ function LoadingSkeleton() {
 
 function StudentHome() {
   const { enrolledClassIds, classes, sessions, isLoading } = useClassStore();
+  const { user } = useAuth();
   const [enrollOpen, setEnrollOpen] = useState(false);
 
   const enrolled = classes.filter((c) => enrolledClassIds.includes(c.id));
@@ -81,25 +84,19 @@ function StudentHome() {
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/70 to-card/40 p-8 backdrop-blur-xl">
-        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3 w-3" /> Your voice, anonymized
-            </span>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Active sessions
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-              Pick an open session from any class you've enrolled in. Taglish is welcome.
-            </p>
-          </div>
-          <Button onClick={() => setEnrollOpen(true)} size="lg">
-            <BookOpenCheck className="h-4 w-4" /> Enroll in a class
-          </Button>
-        </div>
-      </section>
+      <WelcomeHero
+        badge={`Welcome${user ? `, ${user.name}` : ""}`}
+        title="Active sessions"
+        description="Pick an open session from any class you've enrolled in. Taglish is welcome."
+        actions={[
+          {
+            label: "Enroll in a class",
+            icon: <BookOpenCheck className="h-4 w-4" />,
+            onClick: () => setEnrollOpen(true),
+          },
+        ]}
+        inline
+      />
 
       {enrolled.length === 0 ? (
         <EmptyEnroll onEnroll={() => setEnrollOpen(true)} />

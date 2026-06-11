@@ -42,9 +42,6 @@ function StudentLayout() {
             <span className="text-base font-semibold tracking-tight">Feeana</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => setEnrollOpen(true)}>
-              <BookOpenCheck className="h-4 w-4" /> Enroll in a class
-            </Button>
             <ThemeToggle />
             <a
               href="/privacy-policy"
