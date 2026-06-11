@@ -4,10 +4,12 @@ import { BookOpenCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ClassInfoDialog } from "@/components/ClassInfoDialog";
 import { EnrollClassDialog } from "@/components/EnrollClassDialog";
 import { WelcomeHero } from "@/components/WelcomeHero";
 import { useAuth } from "@/lib/auth";
 import { useClassStore } from "@/lib/classStore";
+import type { Class } from "@/lib/types";
 import { SessionCard } from "@/components/dashboard/SessionCard";
 
 export const Route = createFileRoute("/_student/student/home")({
@@ -71,6 +73,7 @@ function StudentHome() {
   const { enrolledClassIds, classes, sessions, isLoading } = useClassStore();
   const { user } = useAuth();
   const [enrollOpen, setEnrollOpen] = useState(false);
+  const [classInfo, setClassInfo] = useState<Class | null>(null);
 
   const enrolled = classes.filter((c) => enrolledClassIds.includes(c.id));
   const classesWithSessions = enrolled.map((c) => ({
@@ -105,7 +108,13 @@ function StudentHome() {
           {classesWithSessions.map((group) => (
             <section key={group.cls.id} className="space-y-2">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-sm font-semibold tracking-wider text-primary">{group.cls.course}</h2>
+                <button
+                  type="button"
+                  onClick={() => setClassInfo(group.cls)}
+                  className="text-sm font-semibold tracking-wider text-primary hover:underline cursor-pointer"
+                >
+                  {group.cls.course}
+                </button>
               </div>
               {group.sessions.length === 0 ? (
                 <Card className="border-dashed border-border/60 bg-card/40">
@@ -129,6 +138,15 @@ function StudentHome() {
       )}
 
       <EnrollClassDialog open={enrollOpen} onOpenChange={setEnrollOpen} />
+
+      {classInfo && user && (
+        <ClassInfoDialog
+          open={classInfo !== null}
+          onOpenChange={(open) => { if (!open) setClassInfo(null); }}
+          cls={classInfo}
+          studentId={user.id}
+        />
+      )}
     </div>
   );
 }

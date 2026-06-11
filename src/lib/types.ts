@@ -100,6 +100,7 @@ export interface Feedback {
   rawText: string;
   cleanedText: string;
   aspects: AspectExtraction[];
+  submittedBy?: string;
   createdAt: string;
 }
 

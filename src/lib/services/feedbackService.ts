@@ -9,6 +9,7 @@ export function fromDbFeedback(row: Record<string, unknown>): Feedback {
     rawText: row.content as string,
     cleanedText: (meta.cleanedText as string) ?? (row.content as string),
     aspects: (meta.aspects as Feedback["aspects"]) ?? [],
+    submittedBy: meta.submittedBy as string | undefined,
     createdAt: row.created_at as string,
   };
 }
