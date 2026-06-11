@@ -11,6 +11,7 @@ import {
 import { useAuth } from "./auth";
 import type { Class, Session, Student } from "./types";
 import * as classService from "./services/classService";
+import * as feedbackService from "./services/feedbackService";
 
 interface ClassStoreValue {
   classes: Class[];
@@ -39,10 +40,12 @@ interface ClassStoreValue {
   }) => Promise<Session>;
   enrollClassByCode: (code: string) => Promise<Class | null>;
   activeSessions: Session[];
+  submittedSessionIds: Set<string>;
   refreshClasses: () => Promise<void>;
   refreshEnrolledClasses: () => Promise<void>;
   refreshSessions: (classId: string) => Promise<void>;
   refreshStudents: (classId: string) => Promise<void>;
+  addSubmittedSession: (sessionId: string) => void;
 }
 
 const ClassStoreContext = createContext<ClassStoreValue | null>(null);
@@ -53,6 +56,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [enrolledClassIds, setEnrolledClassIds] = useState<string[]>([]);
   const [studentsByClass, setStudentsByClass] = useState<Record<string, Student[]>>({});
+  const [submittedSessionIds, setSubmittedSessionIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadedUserId = useRef<string | null>(null);
@@ -112,6 +116,23 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshSubmissions = useCallback(async (studentId: string) => {
+    try {
+      const ids = await feedbackService.getStudentSubmissions(studentId);
+      setSubmittedSessionIds(new Set(ids));
+    } catch {
+      console.error("Failed to load submitted sessions");
+    }
+  }, []);
+
+  const addSubmittedSession = useCallback((sessionId: string) => {
+    setSubmittedSessionIds((prev) => {
+      const next = new Set(prev);
+      next.add(sessionId);
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     if (loadedUserId.current === user.id) return;
@@ -139,6 +160,10 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
           setSessions([]);
         }
 
+        if (user.role === "student") {
+          await refreshSubmissions(user.id);
+        }
+
         setError(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load class data");
@@ -148,7 +173,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     };
 
     loadData();
-  }, [user]);
+  }, [user, refreshSubmissions]);
 
   const createClass = useCallback(
     async (input: { courseId: string; courseCode: string; courseTitle: string; section: string }) => {
@@ -243,6 +268,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       activeClasses,
       archivedClasses,
       activeSessions,
+      submittedSessionIds,
       isLoading,
       error,
       getClass: (id) => classes.find((c) => c.id === id),
@@ -259,12 +285,14 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       refreshEnrolledClasses,
       refreshSessions,
       refreshStudents,
+      addSubmittedSession,
     };
   }, [
     classes,
     sessions,
     enrolledClassIds,
     studentsByClass,
+    submittedSessionIds,
     createClass,
     archiveClass,
     restoreClass,
@@ -278,6 +306,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     refreshEnrolledClasses,
     refreshSessions,
     refreshStudents,
+    addSubmittedSession,
   ]);
 
   return <ClassStoreContext.Provider value={value}>{children}</ClassStoreContext.Provider>;

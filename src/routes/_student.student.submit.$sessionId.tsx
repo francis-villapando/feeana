@@ -56,7 +56,7 @@ function SubmitPage() {
   const { session } = Route.useLoaderData();
   const navigate = useNavigate();
   const { addFeedback } = useFeedbackStore();
-  const { classes, refreshEnrolledClasses, refreshSessions } = useClassStore();
+  const { classes, refreshEnrolledClasses, refreshSessions, addSubmittedSession } = useClassStore();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
@@ -88,10 +88,19 @@ function SubmitPage() {
     setSubmitting(true);
     try {
       await addFeedback(session.id, text);
+      addSubmittedSession(session.id);
       toast.success("Salamat! Your feedback was recorded.");
-      setText("");
-    } catch {
-      toast.error("Failed to submit feedback. Please try again.");
+      await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+      navigate({ to: "/student/home" });
+    } catch (e) {
+      if (e instanceof Error && e.message === "duplicate_submission") {
+        addSubmittedSession(session.id);
+        toast.error("You've already submitted feedback for this session.");
+        await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+        navigate({ to: "/student/home" });
+      } else {
+        toast.error("Failed to submit feedback. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }

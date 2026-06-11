@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Calendar, Check, Copy, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -20,6 +20,19 @@ interface ClassInfoDialogProps {
   studentId: string;
 }
 
+function formatDT(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 export function ClassInfoDialog({
   open,
   onOpenChange,
@@ -31,8 +44,8 @@ export function ClassInfoDialog({
   const [isLoading, setIsLoading] = useState(false);
 
   const sessions = useMemo(
-    () => allSessions.filter((s) => s.classId === cls.id && s.status === "closed"),
-    [allSessions, cls.id],
+    () => allSessions.filter((s) => s.classId === cls.id && (s.status === "closed" || submittedIds.has(s.id))),
+    [allSessions, cls.id, submittedIds],
   );
 
   useEffect(() => {
@@ -115,13 +128,23 @@ export function ClassInfoDialog({
                       key={session.id}
                       className="flex items-center justify-between rounded-md px-2 py-2 transition hover:bg-muted/50"
                     >
-                      <span className="text-sm">{session.topic}</span>
+                      <div>
+                        <span className="text-sm">{session.topic}</span>
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {formatDT(session.startsAt)}
+                          <span className="text-muted-foreground/50">→</span>
+                          {formatDT(session.endsAt)}
+                        </p>
+                      </div>
                       {submitted ? (
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
                           <Check className="h-3.5 w-3.5" /> Submitted
                         </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">Missed</span>
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-red-500">
+                          <X className="h-3.5 w-3.5" /> Missed
+                        </span>
                       )}
                     </div>
                   );

@@ -70,7 +70,7 @@ function LoadingSkeleton() {
 }
 
 function StudentHome() {
-  const { enrolledClassIds, classes, sessions, isLoading } = useClassStore();
+  const { enrolledClassIds, classes, sessions, isLoading, submittedSessionIds } = useClassStore();
   const { user } = useAuth();
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [classInfo, setClassInfo] = useState<Class | null>(null);
@@ -78,7 +78,7 @@ function StudentHome() {
   const enrolled = classes.filter((c) => enrolledClassIds.includes(c.id));
   const classesWithSessions = enrolled.map((c) => ({
     cls: c,
-    sessions: sessions.filter((s) => s.classId === c.id && s.status === "active"),
+    sessions: sessions.filter((s) => s.classId === c.id && s.status === "active" && !submittedSessionIds.has(s.id)),
   }));
 
   if (isLoading) {

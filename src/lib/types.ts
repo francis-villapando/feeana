@@ -102,6 +102,7 @@ export interface Feedback {
   cleanedText: string;
   aspects: AspectExtraction[];
   submittedBy?: string;
+  studentId?: string;
   createdAt: string;
 }
 

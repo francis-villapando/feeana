@@ -10,6 +10,7 @@ export function fromDbFeedback(row: Record<string, unknown>): Feedback {
     cleanedText: (meta.cleanedText as string) ?? (row.content as string),
     aspects: (meta.aspects as Feedback["aspects"]) ?? [],
     submittedBy: meta.submittedBy as string | undefined,
+    studentId: row.student_id as string | undefined,
     createdAt: row.created_at as string,
   };
 }
@@ -44,6 +45,7 @@ export async function submitFeedback(sessionId: string, content: string): Promis
     .insert({
       session_id: sessionId,
       content,
+      student_id: user?.id,
       meta: {
         cleanedText: content.trim().toLowerCase(),
         submittedBy: user?.id,
@@ -52,6 +54,21 @@ export async function submitFeedback(sessionId: string, content: string): Promis
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("duplicate_submission");
+    }
+    throw new Error(error.message);
+  }
   return fromDbFeedback(data);
+}
+
+export async function getStudentSubmissions(studentId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("feedback")
+    .select("session_id")
+    .eq("student_id", studentId);
+
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => row.session_id as string);
 }
