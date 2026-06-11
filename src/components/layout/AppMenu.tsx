@@ -18,7 +18,7 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
     <>
       {/* Desktop: inline horizontal layout */}
       <div className="hidden md:flex items-center gap-3">
-        <ThemeToggle size="sm" />
+        <ThemeToggle size="icon" />
         <a
           href="/privacy-policy"
           target="_blank"
