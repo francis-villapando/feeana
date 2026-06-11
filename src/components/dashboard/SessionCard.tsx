@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { ArrowRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +5,7 @@ import type { Session } from "@/lib/types";
 
 interface SessionCardProps {
   session: Session;
+  onSubmit?: (session: Session) => void;
 }
 
 function formatDT(iso: string): string {
@@ -21,7 +21,7 @@ function formatDT(iso: string): string {
   }
 }
 
-export function SessionCard({ session }: SessionCardProps) {
+export function SessionCard({ session, onSubmit }: SessionCardProps) {
   return (
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40">
       <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -32,10 +32,8 @@ export function SessionCard({ session }: SessionCardProps) {
             {formatDT(session.startsAt)} → {formatDT(session.endsAt)}
           </p>
         </div>
-        <Button asChild className="w-full sm:w-auto">
-          <Link to="/student/submit/$sessionId" params={{ sessionId: session.id }}>
-            Draft feedback <ArrowRight className="h-4 w-4" />
-          </Link>
+        <Button onClick={() => onSubmit?.(session)} className="w-full sm:w-auto">
+          Draft feedback <ArrowRight className="h-4 w-4" />
         </Button>
       </CardContent>
     </Card>

@@ -8,9 +8,10 @@ import { ClassInfoDialog } from "@/components/ClassInfoDialog";
 import { EnrollClassDialog } from "@/components/EnrollClassDialog";
 import { WelcomeHero } from "@/components/WelcomeHero";
 import { ActiveSessionAccordion } from "@/components/student/ActiveSessionAccordion";
+import { SubmitFeedbackDialog } from "@/components/student/SubmitFeedbackDialog";
 import { useAuth } from "@/lib/auth";
 import { useClassStore } from "@/lib/classStore";
-import type { Class } from "@/lib/types";
+import type { Class, Session } from "@/lib/types";
 
 export const Route = createFileRoute("/_student/student/home")({
   head: () => ({
@@ -67,6 +68,7 @@ function StudentHome() {
   const { user } = useAuth();
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [classInfo, setClassInfo] = useState<Class | null>(null);
+  const [submitSession, setSubmitSession] = useState<Session | null>(null);
 
   const enrolled = classes.filter((c) => enrolledClassIds.includes(c.id));
 
@@ -98,6 +100,7 @@ function StudentHome() {
           sessions={sessions}
           submittedSessionIds={submittedSessionIds}
           onClassInfoClick={(cls) => setClassInfo(cls)}
+          onSubmitSession={(s) => setSubmitSession(s)}
         />
       )}
 
@@ -111,6 +114,12 @@ function StudentHome() {
           studentId={user.id}
         />
       )}
+
+      <SubmitFeedbackDialog
+        session={submitSession}
+        open={submitSession !== null}
+        onOpenChange={(open) => { if (!open) setSubmitSession(null); }}
+      />
     </div>
   );
 }

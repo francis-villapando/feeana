@@ -20,7 +20,6 @@ import { Route as FacultyDashboardRouteImport } from './routes/_faculty.dashboar
 import { Route as FacultyArchivedRouteImport } from './routes/_faculty.archived'
 import { Route as FacultyClassIdRouteImport } from './routes/_faculty.$classId'
 import { Route as StudentStudentHomeRouteImport } from './routes/_student.student.home'
-import { Route as StudentStudentSubmitSessionIdRouteImport } from './routes/_student.student.submit.$sessionId'
 import { Route as FacultyClassIdAnalysisSessionIdRouteImport } from './routes/_faculty.$classId.analysis.$sessionId'
 
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
@@ -76,12 +75,6 @@ const StudentStudentHomeRoute = StudentStudentHomeRouteImport.update({
   path: '/student/home',
   getParentRoute: () => StudentRoute,
 } as any)
-const StudentStudentSubmitSessionIdRoute =
-  StudentStudentSubmitSessionIdRouteImport.update({
-    id: '/student/submit/$sessionId',
-    path: '/student/submit/$sessionId',
-    getParentRoute: () => StudentRoute,
-  } as any)
 const FacultyClassIdAnalysisSessionIdRoute =
   FacultyClassIdAnalysisSessionIdRouteImport.update({
     id: '/analysis/$sessionId',
@@ -100,7 +93,6 @@ export interface FileRoutesByFullPath {
   '/login/student': typeof LoginStudentRoute
   '/student/home': typeof StudentStudentHomeRoute
   '/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
-  '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -113,7 +105,6 @@ export interface FileRoutesByTo {
   '/login/student': typeof LoginStudentRoute
   '/student/home': typeof StudentStudentHomeRoute
   '/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
-  '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -129,7 +120,6 @@ export interface FileRoutesById {
   '/login/student': typeof LoginStudentRoute
   '/_student/student/home': typeof StudentStudentHomeRoute
   '/_faculty/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
-  '/_student/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -144,7 +134,6 @@ export interface FileRouteTypes {
     | '/login/student'
     | '/student/home'
     | '/$classId/analysis/$sessionId'
-    | '/student/submit/$sessionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -157,7 +146,6 @@ export interface FileRouteTypes {
     | '/login/student'
     | '/student/home'
     | '/$classId/analysis/$sessionId'
-    | '/student/submit/$sessionId'
   id:
     | '__root__'
     | '/'
@@ -172,7 +160,6 @@ export interface FileRouteTypes {
     | '/login/student'
     | '/_student/student/home'
     | '/_faculty/$classId/analysis/$sessionId'
-    | '/_student/student/submit/$sessionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -263,13 +250,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentStudentHomeRouteImport
       parentRoute: typeof StudentRoute
     }
-    '/_student/student/submit/$sessionId': {
-      id: '/_student/student/submit/$sessionId'
-      path: '/student/submit/$sessionId'
-      fullPath: '/student/submit/$sessionId'
-      preLoaderRoute: typeof StudentStudentSubmitSessionIdRouteImport
-      parentRoute: typeof StudentRoute
-    }
     '/_faculty/$classId/analysis/$sessionId': {
       id: '/_faculty/$classId/analysis/$sessionId'
       path: '/analysis/$sessionId'
@@ -311,12 +291,10 @@ const FacultyRouteWithChildren =
 
 interface StudentRouteChildren {
   StudentStudentHomeRoute: typeof StudentStudentHomeRoute
-  StudentStudentSubmitSessionIdRoute: typeof StudentStudentSubmitSessionIdRoute
 }
 
 const StudentRouteChildren: StudentRouteChildren = {
   StudentStudentHomeRoute: StudentStudentHomeRoute,
-  StudentStudentSubmitSessionIdRoute: StudentStudentSubmitSessionIdRoute,
 }
 
 const StudentRouteWithChildren =
