@@ -11,6 +11,11 @@ function generateCode(len = 6): string {
 }
 
 function fromDbClass(row: Record<string, unknown>): Class {
+  const faculty = row.profiles
+    ? (row.profiles as Record<string, unknown>)
+    : row.faculty
+      ? (row.faculty as Record<string, unknown>)
+      : null;
   return {
     id: row.id as string,
     name: (row.name as string) ?? "",
@@ -21,6 +26,7 @@ function fromDbClass(row: Record<string, unknown>): Class {
     createdAt: row.created_at as string,
     archived: row.archived as boolean,
     studentCount: (row.student_count as number) ?? 0,
+    facultyName: (faculty?.full_name as string) ?? (row.faculty_name as string) ?? undefined,
   };
 }
 
@@ -267,7 +273,8 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
         created_at,
         archived,
         student_count,
-        enrollments(count)
+        enrollments(count),
+        profiles!faculty_id (full_name)
       )
     `
     )

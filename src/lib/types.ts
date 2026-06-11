@@ -68,6 +68,7 @@ export interface Class {
   createdAt: string;
   archived: boolean;
   studentCount: number;
+  facultyName?: string;
 }
 
 export type SessionStatus = "active" | "archived" | "closed";

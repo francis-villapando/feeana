@@ -68,7 +68,9 @@ export function ClassInfoDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{cls.course}</DialogTitle>
-          <DialogDescription>Section {cls.section}</DialogDescription>
+          <DialogDescription>
+            {cls.facultyName && <>{cls.facultyName} · </>}Section {cls.section}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
