@@ -144,12 +144,14 @@ function SubmitPage() {
                   <Send className="h-4 w-4" />
                   {submitting ? "Submitting…" : "Submit feedback"}
                 </Button>
-                <Link
-                  to="/privacy"
+                <a
+                  href="/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                 >
                   <ShieldCheck className="h-3.5 w-3.5" /> Read the Privacy Policy
-                </Link>
+                </a>
               </div>
             </>
           ) : (

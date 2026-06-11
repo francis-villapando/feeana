@@ -37,12 +37,14 @@ function LandingPage() {
         </div>
         <nav className="flex items-center gap-2">
           <ThemeToggle />
-          <Link
-            to="/privacy"
+          <a
+            href="/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
             className="hidden items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground sm:flex"
           >
             <ShieldCheck className="h-4 w-4" /> Privacy
-          </Link>
+          </a>
         </nav>
       </header>
 

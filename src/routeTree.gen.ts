@@ -9,7 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as StudentRouteImport } from './routes/_student'
 import { Route as FacultyRouteImport } from './routes/_faculty'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,9 +23,9 @@ import { Route as StudentStudentHomeRouteImport } from './routes/_student.studen
 import { Route as StudentStudentSubmitSessionIdRouteImport } from './routes/_student.student.submit.$sessionId'
 import { Route as FacultyClassIdAnalysisSessionIdRouteImport } from './routes/_faculty.$classId.analysis.$sessionId'
 
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudentRoute = StudentRouteImport.update({
@@ -91,7 +91,7 @@ const FacultyClassIdAnalysisSessionIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/privacy': typeof PrivacyRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/$classId': typeof FacultyClassIdRouteWithChildren
   '/archived': typeof FacultyArchivedRoute
   '/dashboard': typeof FacultyDashboardRoute
@@ -104,7 +104,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/privacy': typeof PrivacyRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/$classId': typeof FacultyClassIdRouteWithChildren
   '/archived': typeof FacultyArchivedRoute
   '/dashboard': typeof FacultyDashboardRoute
@@ -120,7 +120,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_faculty': typeof FacultyRouteWithChildren
   '/_student': typeof StudentRouteWithChildren
-  '/privacy': typeof PrivacyRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/_faculty/$classId': typeof FacultyClassIdRouteWithChildren
   '/_faculty/archived': typeof FacultyArchivedRoute
   '/_faculty/dashboard': typeof FacultyDashboardRoute
@@ -135,7 +135,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/privacy'
+    | '/privacy-policy'
     | '/$classId'
     | '/archived'
     | '/dashboard'
@@ -148,7 +148,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/privacy'
+    | '/privacy-policy'
     | '/$classId'
     | '/archived'
     | '/dashboard'
@@ -163,7 +163,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_faculty'
     | '/_student'
-    | '/privacy'
+    | '/privacy-policy'
     | '/_faculty/$classId'
     | '/_faculty/archived'
     | '/_faculty/dashboard'
@@ -179,18 +179,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FacultyRoute: typeof FacultyRouteWithChildren
   StudentRoute: typeof StudentRouteWithChildren
-  PrivacyRoute: typeof PrivacyRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   LoginFacultyRoute: typeof LoginFacultyRoute
   LoginStudentRoute: typeof LoginStudentRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_student': {
@@ -326,7 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FacultyRoute: FacultyRouteWithChildren,
   StudentRoute: StudentRouteWithChildren,
-  PrivacyRoute: PrivacyRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   LoginFacultyRoute: LoginFacultyRoute,
   LoginStudentRoute: LoginStudentRoute,
 }

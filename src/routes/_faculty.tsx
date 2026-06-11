@@ -47,12 +47,14 @@ function FacultyLayout() {
             </div>
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              <Link
-                to="/privacy"
+              <a
+                href="/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="hidden items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground sm:flex"
               >
                 <ShieldCheck className="h-3.5 w-3.5" /> Privacy
-              </Link>
+              </a>
               {user && (
                 <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card/40 px-3 py-1 text-xs sm:flex">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
