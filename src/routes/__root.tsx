@@ -13,7 +13,7 @@ import { AuthProvider } from "@/lib/auth";
 import { ClassStoreProvider } from "@/lib/classStore";
 import { CourseStoreProvider } from "@/lib/courseStore";
 import { FeedbackStoreProvider } from "@/lib/feedbackStore";
-import { ThemeProvider, useTheme } from "@/lib/theme-provider";
+import { ThemeProvider, useTheme } from "@/lib/themeProvider";
 import bgImage from "../assets/bg-abstract.jpg";
 
 import appCss from "../styles.css?url";
