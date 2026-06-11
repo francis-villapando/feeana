@@ -16,6 +16,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useClassStore } from "@/lib/classStore";
@@ -24,6 +25,7 @@ import { Button } from "@/components/ui/button";
 
 export function FacultySidebar() {
   const { activeClasses } = useClassStore();
+  const { setOpenMobile } = useSidebar();
   const location = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -36,7 +38,7 @@ export function FacultySidebar() {
       <Sidebar side="left" collapsible="icon" variant="floating">
         <SidebarHeader className="px-3 py-3 group-data-[collapsible=icon]:px-1.5">
           <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-            <SidebarTrigger className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary ring-1 ring-primary/30" />
+            <SidebarTrigger className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30" />
             <span className="text-sm font-semibold group-data-[collapsible=icon]:hidden">
               Workspace
             </span>
@@ -54,7 +56,7 @@ export function FacultySidebar() {
                     tooltip="Home"
                     isActive={location.pathname === "/home"}
                   >
-                    <Link to="/home">
+                    <Link to="/home" onClick={() => setOpenMobile(false)}>
                       <Home />
                       <span>Home</span>
                     </Link>
@@ -67,7 +69,7 @@ export function FacultySidebar() {
                     tooltip="Dashboard"
                     isActive={location.pathname === "/dashboard"}
                   >
-                    <Link to="/dashboard">
+                    <Link to="/dashboard" onClick={() => setOpenMobile(false)}>
                       <LayoutDashboard />
                       <span>Dashboard</span>
                     </Link>
@@ -96,7 +98,11 @@ export function FacultySidebar() {
                               asChild
                               isActive={currentClassId === c.id}
                             >
-                              <Link to="/$classId" params={{ classId: c.id }}>
+                              <Link
+                                to="/$classId"
+                                params={{ classId: c.id }}
+                                onClick={() => setOpenMobile(false)}
+                              >
                                 <span className="truncate">
                                   {c.course} · {c.section}
                                 </span>
@@ -124,7 +130,7 @@ export function FacultySidebar() {
                     tooltip="Archived"
                     isActive={location.pathname === "/archived"}
                   >
-                    <Link to="/archived">
+                    <Link to="/archived" onClick={() => setOpenMobile(false)}>
                       <Archive />
                       <span>Archived classes</span>
                     </Link>
