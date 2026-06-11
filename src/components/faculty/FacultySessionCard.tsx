@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
-import { CountBadge } from "@/components/analysis/CountBadge";
+import { CountBadge } from "@/components/common";
 import type { Session } from "@/lib/types";
 
 function formatDT(iso: string): string {

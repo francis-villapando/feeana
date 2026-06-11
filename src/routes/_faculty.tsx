@@ -4,9 +4,9 @@ import { Activity, LogOut, ShieldCheck } from "lucide-react";
 import { useEffect } from "react";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { FacultySidebar } from "@/components/FacultySidebar";
+import { FacultySidebar } from "@/components/layout";
 import { useAuth } from "@/lib/auth";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "@/components/common";
 
 export const Route = createFileRoute("/_faculty")({
   component: FacultyLayout,

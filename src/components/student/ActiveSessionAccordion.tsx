@@ -8,8 +8,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { CountBadge } from "@/components/analysis/CountBadge";
-import { SessionCard } from "@/components/dashboard/SessionCard";
+import { CountBadge } from "@/components/common";
+import { SessionCard } from "@/components/student";
 import type { Class, Session } from "@/lib/types";
 
 interface ActiveSessionAccordionProps {

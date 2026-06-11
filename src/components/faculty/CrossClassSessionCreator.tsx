@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DateTimePicker } from "@/components/DateTimePicker";
+import { DateTimePicker } from "@/components/faculty";
 import { useClassStore } from "@/lib/classStore";
 import { useCourseStore } from "@/lib/courseStore";
 import { topicsForClass } from "@/lib/courseLookup";

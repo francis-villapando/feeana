@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useClassStore } from "@/lib/classStore";
-import { CreateClassDialog } from "./CreateClassDialog";
+import { CreateClassDialog } from "@/components/faculty";
 import { Button } from "@/components/ui/button";
 
 export function FacultySidebar() {

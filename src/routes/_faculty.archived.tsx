@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useClassStore } from "@/lib/classStore";
 
-import { ConfirmationDialog } from "@/components/dashboard/ConfirmationDialog";
+import { ConfirmationDialog } from "@/components/faculty";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 

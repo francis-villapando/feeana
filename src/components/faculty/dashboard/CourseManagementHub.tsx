@@ -17,7 +17,7 @@ import type { Course, ILO, Topic } from "@/lib/types";
 import { EntityFormDialog } from "./EntityFormDialog";
 import { useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ConfirmationDialog, ActionType } from "./ConfirmationDialog";
+import { ConfirmationDialog, type ActionType } from "@/components/faculty";
 
 type EditState =
   | { kind: "course"; entity?: Course }

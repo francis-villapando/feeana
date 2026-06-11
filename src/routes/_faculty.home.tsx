@@ -3,9 +3,8 @@ import { useState } from "react";
 import { ArrowRight, LayoutDashboard, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ClassCard } from "@/components/ClassCard";
-import { CreateClassDialog } from "@/components/CreateClassDialog";
-import { WelcomeHero } from "@/components/WelcomeHero";
+import { WelcomeHero } from "@/components/common";
+import { ClassCard, CreateClassDialog } from "@/components/faculty";
 import { useClassStore } from "@/lib/classStore";
 import { useAuth } from "@/lib/auth";
 

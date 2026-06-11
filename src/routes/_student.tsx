@@ -3,9 +3,9 @@ import { Activity, BookOpenCheck, LogOut, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Outlet } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { EnrollClassDialog } from "@/components/EnrollClassDialog";
+import { EnrollClassDialog } from "@/components/student";
 import { useAuth } from "@/lib/auth";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "@/components/common";
 
 export const Route = createFileRoute("/_student")({
   component: StudentLayout,

@@ -13,13 +13,11 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ConfirmationDialog } from "@/components/dashboard/ConfirmationDialog";
+import { ConfirmationDialog, ClassStudentsTab, CreateSessionForm, SessionCard as FacultySessionCard } from "@/components/faculty";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClassStudentsTab } from "@/components/ClassStudentsTab";
-import { CreateSessionForm } from "@/components/CreateSessionForm";
-import { SessionCard } from "@/components/SessionCard";
+
 import { useAnalysisStore } from "@/lib/analysisStore";
 import { useClassStore } from "@/lib/classStore";
 import { useFeedbackStore } from "@/lib/feedbackStore";
@@ -349,7 +347,7 @@ function SessionsList({ classId }: { classId: string }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {sessions.map((s) => (
-        <SessionCard key={s.id} session={s} />
+        <FacultySessionCard key={s.id} session={s} />
       ))}
     </div>
   );
