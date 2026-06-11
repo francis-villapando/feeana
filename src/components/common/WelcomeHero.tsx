@@ -50,7 +50,7 @@ export function WelcomeHero({
           </p>
         </div>
         {actions.length > 0 && (
-          <div className={`flex gap-2 ${actions.length > 1 ? "flex-col" : "flex-wrap"}`}>
+          <div className="flex flex-col gap-2 sm:max-w-60">
             {actions.map((action) =>
               action.href ? (
                 <Button
