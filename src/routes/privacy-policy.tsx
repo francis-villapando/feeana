@@ -37,38 +37,107 @@ function PrivacyPage() {
           <h1 className="text-3xl font-semibold tracking-tight">Privacy Policy</h1>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">Consent Module — Feeana Research Build</p>
+        <p className="text-xs text-muted-foreground/60">Last Updated: June 11, 2026</p>
 
         <div className="mt-8 space-y-6 text-sm leading-relaxed text-muted-foreground">
           <section>
-            <h2 className="text-base font-semibold text-foreground">What we collect</h2>
+            <h2 className="text-base font-semibold text-foreground">1. What We Collect</h2>
             <p className="mt-2">
-              Feeana collects short, free-text feedback you submit during a class session. Submissions
-              are tied to the session you select, not to your personal identity. Faculty see
-              aggregated analyses, not your name.
+              Feeana collects short, free-text feedback that you voluntarily submit during a class session.
             </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                <strong>Tied to session, not your name:</strong> Submissions are associated with the class
+                session you select and your authenticated user account (required for enrollment). Faculty
+                dashboards display only aggregated analyses — they do not show which student submitted
+                what.
+              </li>
+              <li>
+                <strong>Faculty Visibility:</strong> Faculty members see aggregated trend reports, issue
+                distributions, and sentiment analyses. Individual submissions are not displayed to
+                faculty.
+              </li>
+            </ul>
           </section>
           <section>
-            <h2 className="text-base font-semibold text-foreground">How it is used</h2>
+            <h2 className="text-base font-semibold text-foreground">2. How Your Data Is Processed</h2>
             <p className="mt-2">
-              Your text is preprocessed (noise removal, vowel normalization, abbreviation expansion),
-              classified as pedagogical or non-pedagogical, and analyzed for aspects and sentiment.
-              Results are mapped to Intended Learning Outcomes and educational theories (Revised
-              Bloom, Cognitive Load Theory, Teaching Through Interactions).
+              Your text feedback undergoes the following automated processing steps for research purposes:
             </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                <strong>Preprocessing:</strong> Text is cleaned using noise removal, vowel normalization,
+                and abbreviation expansion.
+              </li>
+              <li>
+                <strong>Classification:</strong> Text is filtered into pedagogical or non-pedagogical
+                categories.
+              </li>
+              <li>
+                <strong>Analysis:</strong> Submissions are analyzed for aspect-based sentiment and mapped
+                to Intended Learning Outcomes (ILOs) and educational theories (Revised Bloom&#39;s
+                Taxonomy, Cognitive Load Theory, and Teaching Through Interactions).
+              </li>
+              <li>
+                <strong>AI/Third-Party Disclosure:</strong> All analysis models run entirely inside your
+                browser via a Web Worker. On your first visit, a pre-trained ML model (DistilXLM-R)
+                is downloaded from HuggingFace Hub into your browser cache. No raw text leaves your
+                device for inference.
+              </li>
+            </ul>
           </section>
           <section>
-            <h2 className="text-base font-semibold text-foreground">Your consent</h2>
-            <p className="mt-2">
-              By submitting feedback you confirm voluntary participation. You can withhold any session
-              — there is no penalty for not submitting. No personally identifying content should be
-              included in your text.
-            </p>
+            <h2 className="text-base font-semibold text-foreground">3. Data Storage and Third-Party Services</h2>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                <strong>Cloud Database:</strong> Feedback submissions, account information, and analysis
+                results are stored in a Supabase (PostgreSQL) cloud database. Supabase acts as a data
+                processor.
+              </li>
+              <li>
+                <strong>No local-only storage:</strong> Data is not limited to browser memory. Clearing
+                your browser cache will not delete stored data.
+              </li>
+              <li>
+                <strong>Retention:</strong> Data is retained for the duration of this research build.
+                There is currently no automated deletion mechanism. Contact the researcher below to
+                request removal of your data.
+              </li>
+            </ul>
           </section>
           <section>
-            <h2 className="text-base font-semibold text-foreground">Storage</h2>
+            <h2 className="text-base font-semibold text-foreground">4. Your Consent &amp; Rights</h2>
             <p className="mt-2">
-              This MVP stores all data in browser memory only. No external server persists your input.
+              By proceeding to submit feedback through this application, you confirm your voluntary
+              participation in this research build.
             </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                <strong>No Penalty:</strong> You can withhold feedback for any session. There is no
+                academic penalty for choosing not to submit.
+              </li>
+              <li>
+                <strong>Self-Anonymization:</strong> Please do not include personally identifying
+                information (such as your name or student number) in your free-text responses.
+              </li>
+              <li>
+                <strong>Data Access &amp; Deletion:</strong> You may request access to or deletion of
+                your data by contacting the researcher below.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h2 className="text-base font-semibold text-foreground">5. Contact Information</h2>
+            <p className="mt-2">
+              If you have any questions, concerns, or requests regarding this research project and how
+              data is handled, please contact:
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>Lead Researcher: Lexin Andrei G. Artillero</li>
+              <li>Email: andreiartillero24@gmail.com</li>
+              <li>Department: College of Computing Studies</li>
+              <li>Course: Bachelor of Science in Computer Science</li>
+            </ul>
           </section>
         </div>
       </div>
