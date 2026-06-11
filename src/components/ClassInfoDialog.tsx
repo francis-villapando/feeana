@@ -65,7 +65,7 @@ export function ClassInfoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg flex flex-col max-h-[85dvh]">
         <DialogHeader>
           <DialogTitle>{cls.course}</DialogTitle>
           <DialogDescription>
@@ -73,7 +73,7 @@ export function ClassInfoDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto">
           <button
             type="button"
             onClick={copyCode}
