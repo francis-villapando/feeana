@@ -46,7 +46,7 @@ export function ActiveSessionAccordion({
           <AccordionItem
             key={cls.id}
             value={cls.id}
-            className="border border-border/60 rounded-lg bg-background/40 px-1 overflow-hidden transition-all"
+            className="border border-border/60 rounded-lg bg-background/40 px-1 transition-all"
           >
             <div className="relative flex items-center w-full">
               <AccordionTrigger className="hover:no-underline py-3 pl-3 pr-4 flex-1 min-w-0 relative">
@@ -59,7 +59,7 @@ export function ActiveSessionAccordion({
                       {cls.course}
                     </span>
                     <span className="text-xs text-muted-foreground truncate block">
-                      {cls.section}
+                      {cls.facultyName}
                     </span>
                   </div>
                 </div>

@@ -82,7 +82,7 @@ export function ClassInfoDialog({
         <DialogHeader>
           <DialogTitle>{cls.course}</DialogTitle>
           <DialogDescription>
-            {cls.facultyName && <>{cls.facultyName} · </>}Section {cls.section}
+            {cls.facultyName && <>{cls.facultyName} · </>}{cls.section}
           </DialogDescription>
         </DialogHeader>
 

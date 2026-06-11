@@ -34,7 +34,7 @@ export function SessionCard({ session }: SessionCardProps) {
         </div>
         <Button asChild className="w-full sm:w-auto">
           <Link to="/student/submit/$sessionId" params={{ sessionId: session.id }}>
-            Submit feedback <ArrowRight className="h-4 w-4" />
+            Draft feedback <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
       </CardContent>
