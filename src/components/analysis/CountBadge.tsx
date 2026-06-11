@@ -1,8 +1,8 @@
-interface FeedbackStatusBadgeProps {
+interface CountBadgeProps {
   count: number;
 }
 
-export function FeedbackStatusBadge({ count }: FeedbackStatusBadgeProps) {
+export function CountBadge({ count }: CountBadgeProps) {
   if (count <= 0) return null;
 
   return (

@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFeedbackStore } from "@/lib/feedbackStore";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
-import { FeedbackStatusBadge } from "@/components/analysis/FeedbackStatusBadge";
+import { CountBadge } from "@/components/analysis/CountBadge";
 import type { Session } from "@/lib/types";
 
 function formatDT(iso: string): string {
@@ -93,13 +93,11 @@ export function SessionCard({ session }: { session: Session }) {
           >
             <span className="inline-flex items-center gap-1.5">
               Open Analysis
-              {feedbackStatus.newCount > 0 && (
-                <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold leading-none text-white shadow-sm">
-                  {feedbackStatus.newCount}
-                </span>
-              )}
             </span>
-            <ArrowRight className="h-4 w-4" />
+            <span className="relative">
+              <ArrowRight className="h-4 w-4" />
+              <CountBadge count={feedbackStatus.newCount} />
+            </span>
           </Link>
         </Button>
       </CardContent>

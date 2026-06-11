@@ -37,7 +37,7 @@ import { computeIloStatuses } from "@/lib/iloStatus";
 import type { AnalysisResult } from "@/lib/types";
 import { ModelLoaderOverlay } from "@/components/analysis/ModelLoaderOverlay";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis/ChartTooltip";
-import { FeedbackStatusBadge } from "@/components/analysis/FeedbackStatusBadge";
+import { CountBadge } from "@/components/analysis/CountBadge";
 import { AnalysisTriggerModal } from "@/components/analysis/AnalysisTriggerModal";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
 import React from "react";
@@ -199,7 +199,7 @@ function AnalysisPage() {
               <PlayCircle className="h-4 w-4" />
               {result ? "Re-run analysis" : "Trigger analysis"}
             </Button>
-            <FeedbackStatusBadge count={newFeedbackCount} />
+            <CountBadge count={newFeedbackCount} />
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { CountBadge } from "@/components/analysis/CountBadge";
 import { SessionCard } from "@/components/dashboard/SessionCard";
 import type { Class, Session } from "@/lib/types";
 
@@ -24,18 +25,7 @@ export function ActiveSessionAccordion({
   submittedSessionIds,
   onClassInfoClick,
 }: ActiveSessionAccordionProps) {
-  const [expandedItems, setExpandedItems] = useState<string[]>(() =>
-    classes
-      .filter((cls) =>
-        sessions.some(
-          (s) =>
-            s.classId === cls.id &&
-            s.status === "active" &&
-            !submittedSessionIds.has(s.id),
-        ),
-      )
-      .map((c) => c.id),
-  );
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   return (
     <Accordion
@@ -59,7 +49,7 @@ export function ActiveSessionAccordion({
             className="border border-border/60 rounded-lg bg-background/40 px-1 overflow-hidden transition-all"
           >
             <div className="relative flex items-center w-full">
-              <AccordionTrigger className="hover:no-underline py-3 pl-3 pr-4 flex-1 min-w-0">
+              <AccordionTrigger className="hover:no-underline py-3 pl-3 pr-4 flex-1 min-w-0 relative">
                 <div className="flex items-center gap-3 text-left overflow-hidden w-full pr-28">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30">
                     <BookOpen className="h-4 w-4" />
@@ -69,10 +59,11 @@ export function ActiveSessionAccordion({
                       {cls.course}
                     </span>
                     <span className="text-xs text-muted-foreground truncate block">
-                      Section {cls.section}
+                      {cls.section}
                     </span>
                   </div>
                 </div>
+                <CountBadge count={activeSessions.length} />
               </AccordionTrigger>
               <div className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center gap-1 shrink-0">
                 <Button
