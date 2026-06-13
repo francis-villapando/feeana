@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useClassStore } from "@/lib/classStore";
+import {useCourseStore} from "@/lib/courseStore";
 import type { Class } from "@/lib/types";
 
 export function ClassCard({ cls }: { cls: Class }) {
@@ -12,12 +13,13 @@ export function ClassCard({ cls }: { cls: Class }) {
   const sessions = sessionsForClass(cls.id);
   const activeCount = sessions.filter((s) => s.status === "active").length;
   const studentCount = studentCountForClass(cls.id);
+  const course = useCourseStore().courses.find((crs) => crs.id === cls.courseId);
 
   const copyCode = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(cls.code);
-    toast.success("Class code copied");
+    navigator.clipboard.writeText(cls.enrollCode);
+    toast.success("Enroll code copied");
   };
 
   return (
@@ -26,9 +28,9 @@ export function ClassCard({ cls }: { cls: Class }) {
       <CardHeader className="relative">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <CardTitle className="text-base">{cls.name}</CardTitle>
+            <CardTitle className="text-base">{cls.courseCode} · {cls.section}</CardTitle>
             <CardDescription>
-              {cls.course} · Section {cls.section}
+              {course?.title ?? cls.courseDisplay}
             </CardDescription>
           </div>
           {!cls.archived && (
@@ -54,7 +56,7 @@ export function ClassCard({ cls }: { cls: Class }) {
         >
           <span className="text-muted-foreground">Code</span>
           <span className="flex items-center gap-2 font-mono text-sm tracking-wider">
-            {cls.code}
+            {cls.enrollCode}
             <Copy className="h-3 w-3 text-muted-foreground" />
           </span>
         </button>

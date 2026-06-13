@@ -78,8 +78,8 @@ function HomePage() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {activeClasses.map((c) => (
-              <ClassCard key={c.id} cls={c} />
+            {activeClasses.map((cls) => (
+              <ClassCard key={cls.id} cls={cls} />
             ))}
           </div>
         )}

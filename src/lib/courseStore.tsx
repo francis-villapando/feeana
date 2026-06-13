@@ -77,8 +77,8 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       courseService.getILOs(),
       courseService.getActivity(),
     ])
-      .then(([c, t, i, a]) => {
-        setCourses(c);
+      .then(([crs, t, i, a]) => {
+        setCourses(crs);
         setTopics(t);
         setIlos(i);
         setActivity(a);
@@ -99,13 +99,13 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
 
   const refreshAll = useCallback(async () => {
     try {
-      const [c, t, i, a] = await Promise.all([
+      const [crs, t, i, a] = await Promise.all([
         courseService.getCourses(),
         courseService.getTopics(),
         courseService.getILOs(),
         courseService.getActivity(),
       ]);
-      setCourses(c);
+      setCourses(crs);
       setTopics(t);
       setIlos(i);
       setActivity(a);
@@ -115,17 +115,17 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createCourse = useCallback(async (input: { code: string; title: string }) => {
-    const c = await courseService.createCourse(input);
-    setCourses((prev) => [c, ...prev]);
+    const crs = await courseService.createCourse(input);
+    setCourses((prev) => [crs, ...prev]);
     await refreshActivity();
-    return c;
+    return crs;
   }, []);
 
   const updateCourse = useCallback(async (id: string, input: { code: string; title: string; version: number }) => {
     await courseService.updateCourse(id, input);
     setCourses((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, code: input.code.trim(), title: input.title.trim(), version: input.version + 1 } : c,
+      prev.map((crs) =>
+        crs.id === id ? { ...crs, code: input.code.trim(), title: input.title.trim(), version: input.version + 1 } : crs,
       ),
     );
     await refreshActivity();

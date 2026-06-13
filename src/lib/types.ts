@@ -60,11 +60,11 @@ export interface Student {
 
 export interface Class {
   id: string;
-  name: string;
+  courseCode: string;
   courseId: string;
-  course: string;
+  courseDisplay: string;
   section: string;
-  code: string;
+  enrollCode: string;
   createdAt: string;
   archived: boolean;
   studentCount: number;

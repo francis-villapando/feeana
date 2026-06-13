@@ -10,7 +10,7 @@ export function getIloPath(
   if (!ilo) return "";
 
   const topic = topics.find((t) => t.id === ilo.topicId);
-  const course = courses.find((c) => c.id === ilo.courseId);
+  const course = courses.find((crs) => crs.id === ilo.courseId);
 
   if (course && topic) {
     return `${course.code} > ${topic.title}`;
@@ -27,7 +27,7 @@ export function getTopicPath(
   const topic = topics.find((t) => t.id === topicId);
   if (!topic) return "";
 
-  const course = courses.find((c) => c.id === topic.courseId);
+  const course = courses.find((crs) => crs.id === topic.courseId);
   if (course) return course.code;
   return "";
 }

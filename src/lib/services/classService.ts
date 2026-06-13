@@ -24,11 +24,11 @@ function fromDbClass(row: Record<string, unknown>): Class {
 
   return {
     id: row.id as string,
-    name: (row.name as string) ?? "",
+    courseCode: (row.name as string) ?? "",
     courseId: (row.course_id as string) ?? "",
-    course: row.course as string,
+    courseDisplay: row.course as string,
     section: row.section as string,
-    code: row.enroll_code as string,
+    enrollCode: row.enroll_code as string,
     createdAt: row.created_at as string,
     archived: row.archived as boolean,
     studentCount:
@@ -315,5 +315,5 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
       const cls = row.classes as Record<string, unknown>;
       return fromDbClass(cls || {});
     })
-    .filter((c) => c.id);
+    .filter((cls) => cls.id);
 }

@@ -137,8 +137,8 @@ function ClassLayout() {
   }
 
   const copy = () => {
-    navigator.clipboard.writeText(cls?.code ?? "");
-    toast.success("Class code copied");
+    navigator.clipboard.writeText(cls?.enrollCode ?? "");
+    toast.success("Enroll code copied");
   };
 
   const handleArchive = async () => {
@@ -292,7 +292,7 @@ function ClassLayout() {
         onClose={() => setArchiveOpen(false)}
         onConfirm={handleArchive}
         title="Archive class"
-        description={`Archive the "${cls.name}" class? This class will be hidden from your dashboard but can be restored later.`}
+        description={`Archive the "${cls.courseCode}" class? This class will be hidden from your dashboard but can be restored later.`}
         actionType="archive"
       />
     </div>

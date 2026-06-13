@@ -77,7 +77,7 @@ export function CourseManagementHub() {
         if (topic) {
           courseId = topic.courseId;
         } else {
-          const course = courses.find(c => c.id === search.focus);
+          const course = courses.find((crs) => crs.id === search.focus);
           if (course) courseId = course.id;
         }
       }
@@ -109,9 +109,9 @@ export function CourseManagementHub() {
       return matches || hasVisibleIlo;
     });
 
-    const visibleCourses = filterFn(courses).filter(c => {
-      const matches = c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q);
-      const hasVisibleTopic = visibleTopics.some(t => t.courseId === c.id);
+    const visibleCourses = filterFn(courses).filter((crs) => {
+      const matches = crs.code.toLowerCase().includes(q) || crs.title.toLowerCase().includes(q);
+      const hasVisibleTopic = visibleTopics.some((t) => t.courseId === crs.id);
       return matches || hasVisibleTopic;
     });
 

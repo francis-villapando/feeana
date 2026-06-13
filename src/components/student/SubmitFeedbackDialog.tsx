@@ -44,7 +44,7 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
 
   if (!session) return null;
 
-  const cls = classes.find((c) => c.id === session.classId);
+  const cls = classes.find((cls) => cls.id === session.classId);
   const isActive = session.status === "active";
 
   const handleClose = () => {
@@ -99,7 +99,7 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
 
         <div className="space-y-1">
           <p className="text-xs tracking-widest text-muted-foreground">
-            {cls ? `${cls.course}` : "Session"}
+            {cls ? `${cls.courseDisplay}` : "Session"}
           </p>
           <h3 className="text-sm font-semibold tracking-tight">{session.topic}</h3>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">

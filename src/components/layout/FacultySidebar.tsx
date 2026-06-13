@@ -92,19 +92,19 @@ export function FacultySidebar() {
                             No classes yet
                           </li>
                         )}
-                        {activeClasses.map((c) => (
-                          <SidebarMenuSubItem key={c.id}>
+                        {activeClasses.map((cls) => (
+                          <SidebarMenuSubItem key={cls.id}>
                             <SidebarMenuSubButton
                               asChild
-                              isActive={currentClassId === c.id}
+                              isActive={currentClassId === cls.id}
                             >
                               <Link
                                 to="/$classId"
-                                params={{ classId: c.id }}
+                                params={{ classId: cls.id }}
                                 onClick={() => setOpenMobile(false)}
                               >
                                 <span className="truncate">
-                                  {c.course} · {c.section}
+                                  {cls.courseDisplay} · {cls.section}
                                 </span>
                               </Link>
                             </SidebarMenuSubButton>

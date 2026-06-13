@@ -170,7 +170,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="course-title">Description</Label>
+              <Label htmlFor="course-title">Title</Label>
               <Input
                 id="course-title"
                 value={title}
@@ -192,10 +192,10 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                   </SelectTrigger>
                   <SelectContent>
                     {courses
-                      .filter((c) => !c.archived)
-                      .map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.code} — {c.title}
+                      .filter((crs) => !crs.archived)
+                      .map((crs) => (
+                        <SelectItem key={crs.id} value={crs.id}>
+                          {crs.code} — {crs.title}
                         </SelectItem>
                       ))}
                   </SelectContent>
@@ -231,10 +231,10 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                   </SelectTrigger>
                   <SelectContent>
                     {courses
-                      .filter((c) => !c.archived)
-                      .map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.code} — {c.title}
+                      .filter((crs) => !crs.archived)
+                      .map((crs) => (
+                        <SelectItem key={crs.id} value={crs.id}>
+                          {crs.code} — {crs.title}
                         </SelectItem>
                       ))}
                   </SelectContent>

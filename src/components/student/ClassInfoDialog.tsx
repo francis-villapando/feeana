@@ -86,7 +86,7 @@ export function ClassInfoDialog({
   }, [open, cls.id, studentId, refreshSessions]);
 
   const copyCode = () => {
-    navigator.clipboard.writeText(cls.code);
+    navigator.clipboard.writeText(cls.enrollCode);
     toast.success("Enrollment code copied");
   };
 
@@ -102,7 +102,7 @@ export function ClassInfoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg flex flex-col max-h-[85dvh]">
         <DialogHeader>
-          <DialogTitle>{cls.course}</DialogTitle>
+          <DialogTitle>{cls.courseDisplay}</DialogTitle>
           <DialogDescription>
             {cls.facultyName && <>{cls.facultyName} \u00b7 </>}{cls.section}
           </DialogDescription>
@@ -116,7 +116,7 @@ export function ClassInfoDialog({
           >
             <span className="text-muted-foreground">Enrollment code</span>
             <span className="flex items-center gap-2 font-mono tracking-wider">
-              {cls.code}
+              {cls.enrollCode}
               <Copy className="h-3.5 w-3.5 text-muted-foreground" />
             </span>
           </button>
@@ -190,7 +190,7 @@ export function ClassInfoDialog({
       <AlertDialog open={confirmUnenroll} onOpenChange={setConfirmUnenroll}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unenroll from {cls.course}?</AlertDialogTitle>
+            <AlertDialogTitle>Unenroll from {cls.courseDisplay}?</AlertDialogTitle>
             <AlertDialogDescription>
               You lose access to this class. Your submitted feedback stays. You can rejoin anytime with the class code.
             </AlertDialogDescription>

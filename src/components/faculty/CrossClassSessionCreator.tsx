@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, PlusCircle, Trash2 } from "lucide-react";
+import { Check, ChevronsUpDown, Circle, CircleCheck, PlusCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,11 +57,11 @@ export function CrossClassSessionCreator() {
       return;
     }
     for (const r of rows) {
-      const cls = activeClasses.find((c) => c.id === r.classId);
-      const cTopics = topicsForClass(cls, courses, topics);
-      const topic = cTopics.find((t) => t.id === r.topicId);
+      const cls = activeClasses.find((cls) => cls.id === r.classId);
+      const crsTopics = topicsForClass(cls, courses, topics);
+      const topic = crsTopics.find((t) => t.id === r.topicId);
       if (!topic) {
-        toast.error(`Pick a topic for ${cls?.course} · ${cls?.section}.`);
+        toast.error(`Pick a topic for ${cls?.courseDisplay} · ${cls?.section}.`);
         return;
       }
       if (!r.startsAt || !r.endsAt) {
@@ -75,9 +75,9 @@ export function CrossClassSessionCreator() {
     }
     let count = 0;
     for (const r of rows) {
-      const cls = activeClasses.find((c) => c.id === r.classId);
-      const cTopics = topicsForClass(cls, courses, topics);
-      const topic = cTopics.find((t) => t.id === r.topicId);
+      const cls = activeClasses.find((cls) => cls.id === r.classId);
+      const crsTopics = topicsForClass(cls, courses, topics);
+      const topic = crsTopics.find((t) => t.id === r.topicId);
       if (!topic) continue;
       createSession({
         classId: r.classId,
@@ -125,19 +125,20 @@ export function CrossClassSessionCreator() {
                 <CommandList>
                   <CommandEmpty>No classes.</CommandEmpty>
                   <CommandGroup>
-                    {activeClasses.map((c) => {
-                      const selected = rows.some((r) => r.classId === c.id);
+                    {activeClasses.map((cls) => {
+                      const selected = rows.some((r) => r.classId === cls.id);
                       return (
                         <CommandItem
-                          key={c.id}
-                          value={`${c.course} ${c.section} ${c.name}`}
-                          onSelect={() => toggleClass(c.id)}
+                          key={cls.id}
+                          value={`${cls.courseDisplay} ${cls.section} ${cls.courseCode}`}
+                          onSelect={() => toggleClass(cls.id)}
                         >
-                          <Check
-                            className={cn("mr-2 h-4 w-4", selected ? "opacity-100" : "opacity-0")}
-                          />
-                          {c.course} · {c.section}{" "}
-                          <span className="ml-2 text-xs text-muted-foreground">{c.name}</span>
+                          {selected ? (
+                            <CircleCheck className="mr-2 h-4 w-4" />
+                          ) : (
+                            <Circle className="mr-2 h-4 w-4 text-muted-foreground/40" />
+                          )}
+                          {cls.courseCode} · {cls.section}
                         </CommandItem>
                       );
                     })}
@@ -154,8 +155,8 @@ export function CrossClassSessionCreator() {
               Per-class topic & schedule
             </Label>
             {rows.map((r) => {
-              const cls = activeClasses.find((c) => c.id === r.classId);
-              const cTopics = topicsForClass(cls, courses, topics);
+              const cls = activeClasses.find((cls) => cls.id === r.classId);
+              const crsTopics = topicsForClass(cls, courses, topics);
               return (
                 <div
                   key={r.classId}
@@ -163,9 +164,9 @@ export function CrossClassSessionCreator() {
                 >
                   <div className="text-sm">
                     <p className="font-medium">
-                      {cls?.course} · {cls?.section}
+                      {cls?.courseCode} · {cls?.section}
                     </p>
-                    <p className="text-xs text-muted-foreground">{cls?.name}</p>
+                    <p className="text-xs text-muted-foreground">{courses.find((crs) => crs.code === cls?.courseCode)?.title}</p>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-[10px] uppercase tracking-wider">Topic</Label>
@@ -175,16 +176,16 @@ export function CrossClassSessionCreator() {
                     >
                       <SelectTrigger>
                         <SelectValue
-                          placeholder={cTopics.length === 0 ? "No topics" : "Select topic"}
+                          placeholder={crsTopics.length === 0 ? "No topics" : "Select topic"}
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {cTopics.length === 0 ? (
+                        {crsTopics.length === 0 ? (
                           <div className="px-3 py-2 text-xs text-muted-foreground">
                             No topics for this course.
                           </div>
                         ) : (
-                          cTopics.map((t) => (
+                          crsTopics.map((t) => (
                             <SelectItem key={t.id} value={t.id}>
                               {t.title}
                             </SelectItem>
@@ -209,9 +210,10 @@ export function CrossClassSessionCreator() {
                   </div>
                   <Button
                     size="icon"
-                    variant="ghost"
+                    variant="destructive"
                     onClick={() => toggleClass(r.classId)}
                     aria-label="Remove"
+                    className="justify-self-end"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

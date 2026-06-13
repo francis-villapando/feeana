@@ -20,7 +20,7 @@ export function ClassDetailsCard({
         <CardTitle className="text-base">Class details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        <DetailRow label="Course" value={<span className="ml-1">{cls.course}</span>} />
+        <DetailRow label="Course" value={<span className="ml-1">{cls.courseDisplay}</span>} />
         <DetailRow label="Section" value={cls.section} />
         <DetailRow
           label="Students"
@@ -38,7 +38,7 @@ export function ClassDetailsCard({
         >
           <span className="text-muted-foreground">Code</span>
           <span className="flex items-center gap-2 font-mono text-sm tracking-wider">
-            {cls.code}
+            {cls.enrollCode}
             <Copy className="h-3 w-3 text-muted-foreground" />
           </span>
         </button>

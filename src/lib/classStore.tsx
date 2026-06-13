@@ -79,7 +79,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     try {
       const data = await classService.getEnrolledClasses(user.id);
       setClasses(data);
-      setEnrolledClassIds(data.filter((c) => !c.archived).map((c) => c.id));
+      setEnrolledClassIds(data.filter((cls) => !cls.archived).map((cls) => cls.id));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load enrolled classes");
@@ -97,7 +97,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
           });
         } else {
           const allClasses = classes.length > 0 ? classes : [];
-          const results = await Promise.all(allClasses.map((c) => classService.getSessions(c.id)));
+          const results = await Promise.all(allClasses.map((cls) => classService.getSessions(cls.id)));
           setSessions(results.flat());
         }
         setError(null);
@@ -122,7 +122,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     (classId: string) => {
       const students = studentsByClass[classId];
       if (students && students.length > 0) return students.length;
-      return classes.find((c) => c.id === classId)?.studentCount ?? 0;
+      return classes.find((cls) => cls.id === classId)?.studentCount ?? 0;
     },
     [classes, studentsByClass],
   );
@@ -160,16 +160,16 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
         }
 
         setClasses(clsData);
-        setEnrolledClassIds(clsData.filter((c) => !c.archived).map((c) => c.id));
+        setEnrolledClassIds(clsData.filter((cls) => !cls.archived).map((cls) => cls.id));
 
         if (clsData.length > 0) {
           const sessionResults = await Promise.all(
-            clsData.map((c) => classService.getSessions(c.id)),
+            clsData.map((cls) => classService.getSessions(cls.id)),
           );
           setSessions(sessionResults.flat());
 
           const studentResults = await Promise.all(
-            clsData.map((c) => classService.getStudents(c.id)),
+            clsData.map((cls) => classService.getStudents(cls.id)),
           );
           setStudentsByClass(
             clsData.reduce((acc, cls, index) => {
@@ -209,17 +209,17 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
 
   const archiveClass = useCallback(async (id: string) => {
     await classService.archiveClass(id);
-    setClasses((prev) => prev.map((c) => (c.id === id ? { ...c, archived: true } : c)));
+    setClasses((prev) => prev.map((cls) => (cls.id === id ? { ...cls, archived: true } : cls)));
   }, []);
 
   const restoreClass = useCallback(async (id: string) => {
     await classService.restoreClass(id);
-    setClasses((prev) => prev.map((c) => (c.id === id ? { ...c, archived: false } : c)));
+    setClasses((prev) => prev.map((cls) => (cls.id === id ? { ...cls, archived: false } : cls)));
   }, []);
 
   const deleteClass = useCallback(async (id: string) => {
     await classService.deleteClass(id);
-    setClasses((prev) => prev.filter((c) => c.id !== id));
+    setClasses((prev) => prev.filter((cls) => cls.id !== id));
   }, []);
 
   const createSession = useCallback(
@@ -252,7 +252,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       const cls = await classService.enrollClassByCode(code, user.id);
       if (cls) {
         setEnrolledClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
-        setClasses((prev) => (prev.find((c) => c.id === cls.id) ? prev : [...prev, cls]));
+        setClasses((prev) => (prev.find((cls) => cls.id === cls.id) ? prev : [...prev, cls]));
         const newSessions = await classService.getSessions(cls.id);
         setSessions((prev) => {
           const existing = prev.filter((s) => s.classId === cls.id);
@@ -271,8 +271,8 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       [classId]: (prev[classId] ?? []).filter((s) => s.id !== studentId),
     }));
     setClasses((prev) =>
-      prev.map((c) =>
-        c.id === classId ? { ...c, studentCount: Math.max(0, c.studentCount - 1) } : c,
+      prev.map((cls) =>
+        cls.id === classId ? { ...cls, studentCount: Math.max(0, cls.studentCount - 1) } : cls,
       ),
     );
   }, []);
@@ -280,13 +280,13 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     await classService.unenrollSelf(classId, user.id);
     setEnrolledClassIds((prev) => prev.filter((id) => id !== classId));
-    setClasses((prev) => prev.filter((c) => c.id !== classId));
+    setClasses((prev) => prev.filter((cls) => cls.id !== classId));
   }, [user]);
 
 
   const value = useMemo<ClassStoreValue>(() => {
-    const activeClasses = classes.filter((c) => !c.archived);
-    const archivedClasses = classes.filter((c) => c.archived);
+    const activeClasses = classes.filter((cls) => !cls.archived);
+    const archivedClasses = classes.filter((cls) => cls.archived);
     const activeSessions = sessions.filter((s) => s.status === "active");
     return {
       classes,
@@ -299,7 +299,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       submittedSessionIds,
       isLoading,
       error,
-      getClass: (id) => classes.find((c) => c.id === id),
+      getClass: (id) => classes.find((cls) => cls.id === id),
       sessionsForClass: (classId) => sessions.filter((s) => s.classId === classId),
       studentsForClass: (classId) => studentsByClass[classId] ?? [],
       dismissStudent,

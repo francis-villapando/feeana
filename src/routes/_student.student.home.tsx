@@ -67,7 +67,7 @@ function StudentHome() {
   const [classInfo, setClassInfo] = useState<Class | null>(null);
   const [submitSession, setSubmitSession] = useState<Session | null>(null);
 
-  const enrolled = classes.filter((c) => enrolledClassIds.includes(c.id));
+  const enrolled = classes.filter((cls) => enrolledClassIds.includes(cls.id));
 
   if (isLoading) {
     return <LoadingSkeleton />;

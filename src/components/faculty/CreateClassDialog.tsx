@@ -33,7 +33,7 @@ export function CreateClassDialog({
   const [courseId, setCourseId] = useState("");
   const [section, setSection] = useState("");
 
-  const selectedCourse = courses.find((c) => c.id === courseId);
+  const selectedCourse = courses.find((crs) => crs.id === courseId);
 
   const handleCreate = async () => {
     if (!courseId || !section.trim()) {
@@ -47,7 +47,7 @@ export function CreateClassDialog({
         courseTitle: selectedCourse?.title ?? "",
         section: section.trim(),
       });
-      toast.success(`Class created. Enroll code: ${cls.code}`);
+      toast.success(`Class created. Enroll code: ${cls.enrollCode}`);
       setCourseId("");
       setSection("");
       onOpenChange(false);
@@ -71,16 +71,16 @@ export function CreateClassDialog({
                 <SelectValue placeholder="Select a course" />
               </SelectTrigger>
               <SelectContent>
-                {courses.filter((c) => !c.archived).length === 0 ? (
+                {courses.filter((crs) => !crs.archived).length === 0 ? (
                   <div className="px-3 py-2 text-xs text-muted-foreground">
                     No courses yet — add one in Dashboard → Course Management Hub.
                   </div>
                 ) : (
                   courses
-                    .filter((c) => !c.archived)
-                    .map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.code} — {c.title}
+                    .filter((crs) => !crs.archived)
+                    .map((crs) => (
+                      <SelectItem key={crs.id} value={crs.id}>
+                        {crs.code} — {crs.title}
                       </SelectItem>
                     ))
                 )}

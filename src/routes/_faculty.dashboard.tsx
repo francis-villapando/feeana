@@ -44,12 +44,12 @@ function DashboardPage() {
     const active = sessions.filter((s) => s.status === "active").length;
     const submission = averageRate(
       sessions.map((s) => {
-        const cls = classes.find((c) => c.id === s.classId);
+        const cls = classes.find((cls) => cls.id === s.classId);
         return submissionRateForSession(s, cls, feedback);
       }),
     );
-    const classAchievements = activeClasses.map((c) => {
-      const classSessions = sessions.filter((s) => s.classId === c.id);
+    const classAchievements = activeClasses.map((cls) => {
+      const classSessions = sessions.filter((s) => s.classId === cls.id);
       return iloAchievementForClass(classSessions, results);
     });
     const ilo = averageRate(classAchievements);

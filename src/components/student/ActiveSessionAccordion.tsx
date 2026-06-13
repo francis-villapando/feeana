@@ -58,7 +58,7 @@ export function ActiveSessionAccordion({
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="font-semibold text-sm truncate block">
-                      {cls.course}
+                      {cls.courseDisplay}
                     </span>
                     <span className="text-xs text-muted-foreground truncate block">
                       {cls.facultyName}
