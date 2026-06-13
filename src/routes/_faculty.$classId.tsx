@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ClassDetailsCard, ConfirmationDialog, ClassStudentsTab, CreateSessionForm, SessionCard as FacultySessionCard } from "@/components/faculty";
+import { ClassDetailsCard, ConfirmationDialog, ClassStudentsTab, SessionCreator, SessionCard as FacultySessionCard } from "@/components/faculty";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -262,7 +262,18 @@ function ClassLayout() {
 
       {/* Two-column: tabs left, details + creator right */}
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <Tabs defaultValue="sessions" className="space-y-4">
+        <div className="space-y-4 lg:col-start-2 lg:row-start-1">
+          <ClassDetailsCard
+            cls={cls}
+            studentCount={studentCountForClass(classId)}
+            onCopy={copy}
+            onArchive={() => setArchiveOpen(true)}
+          />
+
+          <SessionCreator classId={cls.id} />
+        </div>
+
+        <Tabs defaultValue="sessions" className="space-y-4 lg:col-start-1 lg:row-start-1">
           <TabsList>
             <TabsTrigger value="sessions">Sessions</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
@@ -274,17 +285,6 @@ function ClassLayout() {
             <ClassStudentsTab classId={classId} />
           </TabsContent>
         </Tabs>
-
-        <div className="space-y-4">
-          <ClassDetailsCard
-            cls={cls}
-            studentCount={studentCountForClass(classId)}
-            onCopy={copy}
-            onArchive={() => setArchiveOpen(true)}
-          />
-
-          <CreateSessionForm classId={cls.id} />
-        </div>
       </div>
 
       <ConfirmationDialog

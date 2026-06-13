@@ -2,7 +2,7 @@ export { ClassCard } from "./ClassCard";
 export { ClassStudentsTab } from "./ClassStudentsTab";
 export { ConfirmationDialog, type ActionType } from "./ConfirmationDialog";
 export { CreateClassDialog } from "./CreateClassDialog";
-export { CreateSessionForm } from "./CreateSessionForm";
+export { SessionCreator } from "./SessionCreator";
 export { CrossClassSessionCreator } from "./CrossClassSessionCreator";
 export { DateTimePicker } from "./DateTimePicker";
 export { ClassDetailsCard } from "./ClassDetailsCard";
