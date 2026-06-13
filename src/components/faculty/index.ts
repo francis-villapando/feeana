@@ -1,4 +1,5 @@
 export { ClassCard } from "./ClassCard";
+export { KpiCard } from "./KpiCard";
 export { ClassStudentsTab } from "./ClassStudentsTab";
 export { ConfirmationDialog, type ActionType } from "./ConfirmationDialog";
 export { CreateClassDialog } from "./CreateClassDialog";

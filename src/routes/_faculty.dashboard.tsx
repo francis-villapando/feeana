@@ -9,7 +9,7 @@ import { useClassStore } from "@/lib/classStore";
 import { useAnalysisStore } from "@/lib/analysisStore";
 import { averageRate, iloAchievementForClass, iloAchievementForSession, submissionRateForSession } from "@/lib/metrics";
 import { CourseManagementHub, ActivityFeed } from "@/components/faculty/dashboard";
-import { CrossClassSessionCreator } from "@/components/faculty";
+import { CrossClassSessionCreator, KpiCard } from "@/components/faculty";
 
 export const Route = createFileRoute("/_faculty/dashboard")({
   head: () => ({
@@ -77,22 +77,22 @@ function DashboardPage() {
 
       {/* KPI row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiTile
+        <KpiCard
           icon={<Users className="h-4 w-4" />}
           label="Avg submission rate"
           value={`${stats.submission}%`}
         />
-        <KpiTile
+        <KpiCard
           icon={<Target className="h-4 w-4" />}
           label="Avg ILO achievement"
           value={`${stats.ilo}%`}
         />
-        <KpiTile
+        <KpiCard
           icon={<GraduationCap className="h-4 w-4" />}
           label="Active classes"
           value={activeClasses.length.toString()}
         />
-        <KpiTile
+        <KpiCard
           icon={<Database className="h-4 w-4" />}
           label="Active sessions"
           value={stats.active.toString()}
@@ -182,31 +182,4 @@ function DashboardSkeleton() {
   );
 }
 
-function KpiTile({
-  icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {label}
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
-            {icon}
-          </span>
-        </div>
-        <div className="mt-3 text-3xl font-semibold tracking-tight">{value}</div>
-        {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
-      </CardContent>
-    </Card>
-  );
-}
+

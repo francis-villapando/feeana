@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ClassDetailsCard, ConfirmationDialog, ClassStudentsTab, SessionCreator, SessionCard as FacultySessionCard } from "@/components/faculty";
+import { ClassDetailsCard, ConfirmationDialog, ClassStudentsTab, SessionCreator, SessionCard as FacultySessionCard, KpiCard } from "@/components/faculty";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -163,13 +163,13 @@ function ClassLayout() {
 
       {/* KPI cards */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <KpiTile
+        <KpiCard
           icon={<Users className="h-4 w-4" />}
           label="Submission rate"
           value={`${submissionRate}%`}
           hint="Average across sessions"
         />
-        <KpiTile
+        <KpiCard
           icon={<Target className="h-4 w-4" />}
           label="ILO achievement"
           value={`${iloRate}%`}
@@ -341,31 +341,4 @@ function ClassLoadingSkeleton() {
   );
 }
 
-function KpiTile({
-  icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {label}
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
-            {icon}
-          </span>
-        </div>
-        <div className="mt-3 text-3xl font-semibold tracking-tight">{value}</div>
-        {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
-      </CardContent>
-    </Card>
-  );
-}
+
