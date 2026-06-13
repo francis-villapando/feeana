@@ -127,7 +127,7 @@ export function CourseManagementHub() {
   };
 
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl flex flex-col h-full w-full max-w-full" ref={containerRef}>
+    <Card className="border-border/60 bg-card/70 backdrop-blur-xl flex flex-col h-full w-full max-w-full min-w-0" ref={containerRef}>
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -183,8 +183,8 @@ export function CourseManagementHub() {
                   } ${search.focus === course.id ? 'ring-2 ring-primary ring-inset' : ''}`}
               >
                 <div className="group/course flex items-center w-full">
-                  <AccordionTrigger className="hover:no-underline py-3 pl-3 pr-2 flex-1 min-w-0">
-                    <div className="flex items-center gap-3 text-left overflow-hidden flex-1">
+                    <AccordionTrigger className="hover:no-underline py-3 pl-3 pr-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-3 text-left overflow-hidden flex-1 min-w-0">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30">
                         <BookOpen className="h-4 w-4" />
                       </div>

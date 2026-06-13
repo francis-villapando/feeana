@@ -38,7 +38,7 @@ export function ActivityFeed() {
   const top = recent.slice(0, 6);
 
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl flex flex-col h-full w-full max-w-full">
+    <Card className="border-border/60 bg-card/70 backdrop-blur-xl flex flex-col h-full w-full max-w-full min-w-0">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Activity className="h-4 w-4 text-primary" /> Activity feed

@@ -34,7 +34,7 @@ function FacultyLayout() {
         <header className="sticky top-0 z-30 border-b border-border/60 bg-background/70 backdrop-blur-xl">
           <AppHeader role="faculty" userName={user.name} onSignOut={async () => { await logout(); navigate({ to: "/" }); }} sidebarTrigger />
         </header>
-        <main className="w-full flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <main className="w-full flex-1 overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8">
           <Outlet />
         </main>
       </SidebarInset>
