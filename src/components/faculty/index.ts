@@ -5,4 +5,5 @@ export { CreateClassDialog } from "./CreateClassDialog";
 export { CreateSessionForm } from "./CreateSessionForm";
 export { CrossClassSessionCreator } from "./CrossClassSessionCreator";
 export { DateTimePicker } from "./DateTimePicker";
+export { ClassDetailsCard } from "./ClassDetailsCard";
 export { SessionCard, SessionCard as FacultySessionCard } from "./FacultySessionCard";

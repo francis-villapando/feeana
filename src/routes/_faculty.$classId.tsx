@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Copy, Target, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Target, TrendingUp, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ConfirmationDialog, ClassStudentsTab, CreateSessionForm, SessionCard as FacultySessionCard } from "@/components/faculty";
+import { ClassDetailsCard, ConfirmationDialog, ClassStudentsTab, CreateSessionForm, SessionCard as FacultySessionCard } from "@/components/faculty";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -276,44 +276,12 @@ function ClassLayout() {
         </Tabs>
 
         <div className="space-y-4">
-          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle className="text-base">Class Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <DetailRow label="Course" value={<span className="ml-1">{cls.course}</span>} />
-              <DetailRow label="Section" value={cls.section} />
-              <DetailRow
-                label="Students"
-                value={
-                  <span className="inline-flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                    {studentCountForClass(classId)}
-                  </span>
-                }
-              />
-              <button
-                type="button"
-                onClick={copy}
-                className="flex w-full items-center justify-between rounded-md border border-border/60 bg-background/40 px-3 py-2 text-xs hover:border-primary/40"
-              >
-                <span className="text-muted-foreground">Code</span>
-                <span className="flex items-center gap-2 font-mono text-sm tracking-wider">
-                  {cls.code}
-                  <Copy className="h-3 w-3 text-muted-foreground" />
-                </span>
-              </button>
-              <Button
-                type="button"
-                variant="default"
-                size="sm"
-                className="w-full"
-                onClick={() => setArchiveOpen(true)}
-              >
-                Archive class
-              </Button>
-            </CardContent>
-          </Card>
+          <ClassDetailsCard
+            cls={cls}
+            studentCount={studentCountForClass(classId)}
+            onCopy={copy}
+            onArchive={() => setArchiveOpen(true)}
+          />
 
           <CreateSessionForm classId={cls.id} />
         </div>
@@ -349,15 +317,6 @@ function SessionsList({ classId }: { classId: string }) {
       {sessions.map((s) => (
         <FacultySessionCard key={s.id} session={s} />
       ))}
-    </div>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between border-b border-border/40 pb-2 last:border-0 last:pb-0">
-      <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="font-medium text-right">{value}</span>
     </div>
   );
 }
