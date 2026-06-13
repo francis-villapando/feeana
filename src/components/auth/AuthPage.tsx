@@ -222,7 +222,7 @@ export function AuthPage({ role }: { role: UserRole }) {
             <p className="mt-6 text-center text-xs text-muted-foreground">
               By continuing you accept the{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">
-                Privacy Policy
+                Privacy policy
               </Link>
               .
             </p>

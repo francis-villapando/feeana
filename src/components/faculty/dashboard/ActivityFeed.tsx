@@ -20,7 +20,7 @@ function withinDays(iso: string, days: number) {
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return "Just Now";
+  if (m < 1) return "Just now";
   if (m < 60) return `${m}m Ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h Ago`;
@@ -41,7 +41,7 @@ export function ActivityFeed() {
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Activity className="h-4 w-4 text-primary" /> Activity Feed
+          <Activity className="h-4 w-4 text-primary" /> Activity feed
         </CardTitle>
         <CardDescription>Course / Topic / ILO changes from the last 30 days.</CardDescription>
       </CardHeader>

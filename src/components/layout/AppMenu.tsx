@@ -90,7 +90,7 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
             className="flex items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-accent"
           >
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-            Privacy Policy
+            Privacy policy
           </a>
 
           <Separator className="my-1.5" />

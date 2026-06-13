@@ -55,7 +55,7 @@ export function EnrollClassDialog({
           <DialogDescription>Ask your faculty for the 8-character class code.</DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
-          <Label htmlFor="enroll-code">Class Code</Label>
+          <Label htmlFor="enroll-code">Class code</Label>
           <Input
             id="enroll-code"
             value={code}

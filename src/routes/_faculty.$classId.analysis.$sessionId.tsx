@@ -273,7 +273,7 @@ function Results({ result }: { result: AnalysisResult }) {
     <div className="grid gap-4 lg:grid-cols-3">
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-2">
         <CardHeader>
-          <CardTitle className="text-base">Aspect Distribution</CardTitle>
+          <CardTitle className="text-base">Aspect distribution</CardTitle>
           <CardDescription>
             What students talked about across {result.totalFeedback} responses.
           </CardDescription>
@@ -300,7 +300,7 @@ function Results({ result }: { result: AnalysisResult }) {
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
         <CardHeader>
           <CardTitle className="text-base">Polarity</CardTitle>
-          <CardDescription>Sentiment Split</CardDescription>
+          <CardDescription>Sentiment split</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={260}>
@@ -329,7 +329,7 @@ function Results({ result }: { result: AnalysisResult }) {
 
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
         <CardHeader>
-          <CardTitle className="text-base">Issue Distribution</CardTitle>
+          <CardTitle className="text-base">Issue distribution</CardTitle>
           <CardDescription>Specific concerns extracted via PID-ABSA.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -354,7 +354,7 @@ function Results({ result }: { result: AnalysisResult }) {
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Target className="h-4 w-4 text-primary" /> ILO Gap Analysis
+            <Target className="h-4 w-4 text-primary" /> ILO gap analysis
           </CardTitle>
           <CardDescription>
             Status of every intended learning outcome for this course.
@@ -392,7 +392,7 @@ function Results({ result }: { result: AnalysisResult }) {
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Lightbulb className="h-4 w-4 text-primary" /> Recommendation Cues
+            <Lightbulb className="h-4 w-4 text-primary" /> Recommendation cues
           </CardTitle>
           <CardDescription>
             Hover the highlighted terms to see how each maps across pedagogical frameworks.

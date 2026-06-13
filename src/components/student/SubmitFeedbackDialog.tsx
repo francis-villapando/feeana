@@ -131,7 +131,7 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
               >
-                <ShieldCheck className="h-3.5 w-3.5" /> Read the Privacy Policy
+                <ShieldCheck className="h-3.5 w-3.5" /> Read the privacy policy
               </a>
             </div>
           </div>

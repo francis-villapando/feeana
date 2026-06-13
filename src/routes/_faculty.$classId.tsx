@@ -246,7 +246,7 @@ function ClassLayout() {
       {/* Trend interpretation */}
       <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
         <CardHeader>
-          <CardTitle className="text-base">Trend Interpretation</CardTitle>
+          <CardTitle className="text-base">Trend interpretation</CardTitle>
           <CardDescription>AI-generated insights from class performance data.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -291,7 +291,7 @@ function ClassLayout() {
         isOpen={archiveOpen}
         onClose={() => setArchiveOpen(false)}
         onConfirm={handleArchive}
-        title="Archive Class"
+        title="Archive class"
         description={`Archive the "${cls.name}" class? This class will be hidden from your dashboard but can be restored later.`}
         actionType="archive"
       />

@@ -131,7 +131,7 @@ export function CourseManagementHub() {
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <CardTitle className="text-base">Course Management Hub</CardTitle>
+            <CardTitle className="text-base">Course management hub</CardTitle>
             <CardDescription>
               Manage curriculum hierarchy: Course &gt; Topic &gt; ILO.
             </CardDescription>
@@ -205,7 +205,7 @@ export function CourseManagementHub() {
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAction(
-                              "Restore Course",
+                              "Restore course",
                               `Restore the "${course.code}" course?`,
                               () => restoreCourse(course.id),
                               "restore"
@@ -219,7 +219,7 @@ export function CourseManagementHub() {
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAction(
-                              "Delete Course",
+                              "Delete course",
                               `Delete the "${course.code}" course? This will also delete its topics and ILOs. This action is irreversible.`,
                               () => {
                                 deleteCourse(course.id);
@@ -245,7 +245,7 @@ export function CourseManagementHub() {
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAction(
-                              "Archive Course",
+                              "Archive course",
                               `Archive the "${course.code}" course?`,
                               () => archiveCourse(course.id),
                               "archive"
@@ -265,7 +265,7 @@ export function CourseManagementHub() {
                       variant="outline" size="sm" className="h-7 px-2 text-[10px]"
                       onClick={(e) => { e.stopPropagation(); setEdit({ kind: "topic", initialCourseId: course.id }); }}
                     >
-                      <Plus className="h-3 w-3 mr-1" /> Add Topic
+                      <Plus className="h-3 w-3 mr-1" /> Add topic
                     </Button>
                   </div>
 
@@ -296,14 +296,14 @@ export function CourseManagementHub() {
                                 onClick={() => {
                                   if (topic.archived) {
                                     handleAction(
-                                      "Restore Topic",
+                                      "Restore topic",
                                       `Restore the "${topic.title}" topic?`,
                                       () => restoreTopic(topic.id),
                                       "restore"
                                     );
                                   } else {
                                     handleAction(
-                                      "Archive Topic",
+                                      "Archive topic",
                                       `Archive the "${topic.title}" topic?`,
                                       () => archiveTopic(topic.id),
                                       "archive"
@@ -317,7 +317,7 @@ export function CourseManagementHub() {
                                 <Button
                                   variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   onClick={() => handleAction(
-                                    "Delete Topic",
+                                    "Delete topic",
                                     `Delete the "${topic.title}" topic? This action is irreversible.`,
                                     () => {
                                       deleteTopic(topic.id);

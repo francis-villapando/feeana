@@ -96,7 +96,7 @@ export function CrossClassSessionCreator() {
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <PlusCircle className="h-4 w-4 text-primary" /> Cross-Class Session Creator
+          <PlusCircle className="h-4 w-4 text-primary" /> Cross-class session creator
         </CardTitle>
         <CardDescription>
           Launch a session across multiple classes — each picks its own topic and
@@ -222,7 +222,7 @@ export function CrossClassSessionCreator() {
         )}
 
         <Button onClick={handleLaunch} className="w-full">
-          Start Session
+          Start session
         </Button>
       </CardContent>
     </Card>

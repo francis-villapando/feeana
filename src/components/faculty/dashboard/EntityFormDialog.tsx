@@ -36,8 +36,8 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
 
   const isEdit = !!state.entity;
   const labels: Record<EntityKind, string> = {
-    course: "Course",
-    topic: "Topic",
+    course: "course",
+    topic: "topic",
     ILO: "ILO",
   };
 

@@ -87,13 +87,13 @@ function LandingPage() {
           <div className="grid grid-cols-2 gap-3">
             <FeatureTile
               icon={<Target className="h-4 w-4" />}
-              title="ILO Alignment Analysis"
+              title="ILO alignment analysis"
               body="Compare expected outcomes to what students actually experience."
               span="row-span-2"
             />
             <FeatureTile
               icon={<LineChart className="h-4 w-4" />}
-              title="Aspect, Issue, & Polarity"
+              title="Aspect, issue, & polarity"
               body="ABSA distributions across every collected feedback batch."
             />
             <FeatureTile
@@ -103,7 +103,7 @@ function LandingPage() {
             />
             <FeatureTile
               icon={<BookOpenCheck className="h-4 w-4" />}
-              title="Longitudinal Trends"
+              title="Longitudinal trends"
               body="Track sentiment and issue persistence across sessions."
               span="col-span-2"
             />

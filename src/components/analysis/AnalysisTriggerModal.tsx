@@ -73,12 +73,12 @@ export function AnalysisTriggerModal({
 
           <DialogTitle className="text-xl font-bold tracking-tight">
             {!hasFeedback
-              ? "No Feedback Received Yet"
+              ? "No feedback received yet"
               : isFirstTime
-                ? "Ready to Analyze Session"
+                ? "Ready to analyze session"
                 : newFeedbackCount === 0
-                  ? "Analysis Up to Date"
-                  : "Re-run Analysis?"}
+                  ? "Analysis up to date"
+                  : "Re-run analysis?"}
           </DialogTitle>
 
           <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
@@ -124,7 +124,7 @@ export function AnalysisTriggerModal({
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Participation Rate
+                    Participation rate
                   </h4>
                   <p className="text-sm font-medium text-foreground">
                     {feedbackCount} submissions received
@@ -176,10 +176,10 @@ export function AnalysisTriggerModal({
             >
               <PlayCircle className="h-4 w-4" />
               {isFirstTime
-                ? "Start Analysis"
+                ? "Start analysis"
                 : newFeedbackCount === 0
-                  ? "Force Re-run"
-                  : "Proceed with Re-run"}
+                  ? "Force re-run"
+                  : "Proceed with re-run"}
             </Button>
           )}
         </DialogFooter>

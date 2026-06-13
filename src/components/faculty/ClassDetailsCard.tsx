@@ -17,7 +17,7 @@ export function ClassDetailsCard({
   return (
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
       <CardHeader>
-        <CardTitle className="text-base">Class Details</CardTitle>
+        <CardTitle className="text-base">Class details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <DetailRow label="Course" value={<span className="ml-1">{cls.course}</span>} />

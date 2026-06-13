@@ -66,7 +66,7 @@ export function SessionCreator({ classId }: { classId: string }) {
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <PlusCircle className="h-4 w-4 text-primary" /> Start Session
+          <PlusCircle className="h-4 w-4 text-primary" /> Start session
         </CardTitle>
         <CardDescription>
           Schedule a window for students to submit anonymous feedback.
@@ -86,7 +86,7 @@ export function SessionCreator({ classId }: { classId: string }) {
             <SelectContent>
               {availableTopics.length === 0 ? (
                 <div className="px-3 py-2 text-xs text-muted-foreground">
-                  No topics for this course — add one in Dashboard → Course Management Hub.
+                  No topics for this course — add one in Dashboard → course management hub.
                 </div>
               ) : (
                 availableTopics.map((t) => (
@@ -107,7 +107,7 @@ export function SessionCreator({ classId }: { classId: string }) {
           <DateTimePicker value={endsAt} onChange={setEndsAt} />
         </div>
         <Button onClick={handleStart} className="w-full">
-          Start Session
+          Start session
         </Button>
       </CardContent>
     </Card>

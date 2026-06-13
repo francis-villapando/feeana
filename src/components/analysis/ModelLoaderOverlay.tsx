@@ -39,7 +39,7 @@ export function ModelLoaderOverlay({
         </div>
         
         <h3 className="mb-2 text-lg font-semibold tracking-tight text-card-foreground">
-          {isClassifying ? "Classifying Feedback" : isCached ? "Engine Ready" : "Loading NLP Model"}
+          {isClassifying ? "Classifying feedback" : isCached ? "Engine ready" : "Loading NLP model"}
         </h3>
         
         <p className="mb-6 text-sm text-muted-foreground min-h-10 max-w-xs">
@@ -61,7 +61,7 @@ export function ModelLoaderOverlay({
             </div>
             {onCancel && (
               <Button variant="ghost" size="sm" onClick={onCancel} className="mt-2 w-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-                <X className="mr-2 h-4 w-4" /> Cancel Analysis
+                <X className="mr-2 h-4 w-4" /> Cancel analysis
               </Button>
             )}
           </div>

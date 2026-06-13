@@ -93,7 +93,7 @@ export function SessionCard({ session }: { session: Session }) {
               params={{ classId: session.classId, sessionId: session.id }}
             >
               <span className="inline-flex items-center">
-                Open Analysis
+                Open analysis
               </span>
             </Link>
           </Button>

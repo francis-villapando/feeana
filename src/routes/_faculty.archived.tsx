@@ -110,7 +110,7 @@ function ArchivedPage() {
         isOpen={!!restoringId}
         onClose={() => setRestoringId(null)}
         onConfirm={handleRestore}
-        title="Restore Class"
+        title="Restore class"
         description={`Restore the "${archivedClasses.find(c => c.id === restoringId)?.name}" class? This will move it back to your active dashboard.`}
         actionType="restore"
       />
@@ -119,7 +119,7 @@ function ArchivedPage() {
         isOpen={!!deletingId}
         onClose={() => setDeletingId(null)}
         onConfirm={handleDelete}
-        title="Delete Class"
+        title="Delete class"
         description={`Delete the "${archivedClasses.find(c => c.id === deletingId)?.name}" class? This will delete all sessions and feedback associated with this class. This action cannot be undone.`}
         actionType="delete"
       />
