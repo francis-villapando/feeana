@@ -59,7 +59,7 @@ function DashboardPage() {
   if (isLoading) return <DashboardSkeleton />;
 
   return (
-    <div className="space-y-8">
+    <div className="flex h-full min-h-0 flex-col space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -100,7 +100,7 @@ function DashboardPage() {
       </div>
 
       {/* Hub + activity feed */}
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <CourseManagementHub />
         <ActivityFeed />
       </div>

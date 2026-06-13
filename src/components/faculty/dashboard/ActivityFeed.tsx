@@ -38,39 +38,43 @@ export function ActivityFeed() {
   const top = recent.slice(0, 6);
 
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+    <Card className="border-border/60 bg-card/70 backdrop-blur-xl flex flex-col h-full w-full max-w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Activity className="h-4 w-4 text-primary" /> Activity feed
         </CardTitle>
         <CardDescription>Course / Topic / ILO changes from the last 30 days.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {top.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
-            No activity yet. Make an edit to see it here.
-          </p>
-        ) : (
-          top.map((a) => (
-            <ActivityRow
-              key={a.id}
-              entry={a}
-              currentUserId={currentUserId}
-              courses={courses}
-              topics={topics}
-              ilos={ilos}
-            />
-          ))
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => setOpen(true)}
-          disabled={recent.length === 0}
-        >
-          View all
-        </Button>
+      <CardContent className="flex flex-1 flex-col min-h-0 p-0">
+        <div className="flex-1 overflow-auto space-y-2 px-6 pt-6">
+          {top.length === 0 ? (
+            <p className="rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
+              No activity yet. Make an edit to see it here.
+            </p>
+          ) : (
+            top.map((a) => (
+              <ActivityRow
+                key={a.id}
+                entry={a}
+                currentUserId={currentUserId}
+                courses={courses}
+                topics={topics}
+                ilos={ilos}
+              />
+            ))
+          )}
+        </div>
+        <div className="px-6 pb-6 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => setOpen(true)}
+            disabled={recent.length === 0}
+          >
+            View all
+          </Button>
+        </div>
       </CardContent>
       <ActivityFeedDialog
         open={open}
@@ -121,7 +125,7 @@ export function ActivityRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-col">
           {path && (
-            <span className="text-[9px] uppercase tracking-wider text-muted-foreground/80 font-semibold mb-0.5">
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground/80 font-semibold mb-0.5 truncate block">
               {path}
             </span>
           )}
