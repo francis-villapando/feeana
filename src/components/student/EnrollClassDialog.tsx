@@ -38,7 +38,7 @@ export function EnrollClassDialog({
         toast.error("No class found for that code.");
         return;
       }
-      toast.success(`Enrolled in ${cls.course} · ${cls.section}`);
+      toast.success(`Enrolled in ${cls.course}`);
       setCode("");
       onOpenChange(false);
       navigate({ to: "/student/home" });

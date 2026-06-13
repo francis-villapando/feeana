@@ -71,7 +71,7 @@ const POLARITY_COLORS: Record<string, string> = {
 
 function AnalysisPage() {
   const { classId, sessionId } = Route.useParams();
-  const { sessions, getClass, refreshStudents, refreshSessions } = useClassStore();
+  const { sessions, getClass, studentCountForClass, refreshStudents, refreshSessions } = useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
   const { feedback, fetchFeedback } = useFeedbackStore();
 
@@ -169,7 +169,7 @@ function AnalysisPage() {
   const sessionFeedback = feedback.filter((f) => f.sessionId === sessionId);
   const feedbackCount = sessionFeedback.length;
   const cls = getClass(classId);
-  const studentCount = cls?.studentCount ?? 0;
+  const studentCount = classId ? studentCountForClass(classId) : 0;
   const lastAnalyzedAt = session?.last_analyzed_at ?? null;
 
   // Feedback analysis status

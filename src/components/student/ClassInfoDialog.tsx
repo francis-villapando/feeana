@@ -1,6 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
-import { Calendar, Check, Copy, X } from "lucide-react";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Calendar, Check, Copy, LogOut, X } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -39,9 +51,11 @@ export function ClassInfoDialog({
   cls,
   studentId,
 }: ClassInfoDialogProps) {
-  const { sessions: allSessions, refreshSessions } = useClassStore();
+  const { sessions: allSessions, refreshSessions, unenrollStudent } = useClassStore();
   const [submittedIds, setSubmittedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmUnenroll, setConfirmUnenroll] = useState(false);
+  const navigate = useNavigate();
 
   const sessions = useMemo(
     () => allSessions.filter((s) => s.classId === cls.id && (s.status === "closed" || submittedIds.has(s.id))),
@@ -76,13 +90,21 @@ export function ClassInfoDialog({
     toast.success("Enrollment code copied");
   };
 
+  const handleUnenroll = async () => {
+    await unenrollStudent(cls.id);
+    setConfirmUnenroll(false);
+    onOpenChange(false);
+    toast.success("You have left the class");
+    navigate({ to: "/student/home" });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg flex flex-col max-h-[85dvh]">
         <DialogHeader>
           <DialogTitle>{cls.course}</DialogTitle>
           <DialogDescription>
-            {cls.facultyName && <>{cls.facultyName} · </>}{cls.section}
+            {cls.facultyName && <>{cls.facultyName} \u00b7 </>}{cls.section}
           </DialogDescription>
         </DialogHeader>
 
@@ -98,6 +120,16 @@ export function ClassInfoDialog({
               <Copy className="h-3.5 w-3.5 text-muted-foreground" />
             </span>
           </button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 text-red-500 hover:text-red-600 hover:border-red-300/50"
+            onClick={() => setConfirmUnenroll(true)}
+          >
+            <LogOut className="h-4 w-4" />
+            Unenroll
+          </Button>
 
           <div className="border-t border-border/60" />
 
@@ -133,7 +165,7 @@ export function ClassInfoDialog({
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           {formatDT(session.startsAt)}
-                          <span className="text-muted-foreground/50">→</span>
+                          <span className="text-muted-foreground/50">\u2192</span>
                           {formatDT(session.endsAt)}
                         </p>
                       </div>
@@ -154,6 +186,26 @@ export function ClassInfoDialog({
           </div>
         </div>
       </DialogContent>
+
+      <AlertDialog open={confirmUnenroll} onOpenChange={setConfirmUnenroll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unenroll from {cls.course}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You lose access to this class. Your submitted feedback stays. You can rejoin anytime with the class code.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleUnenroll}
+            >
+              Unenroll
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

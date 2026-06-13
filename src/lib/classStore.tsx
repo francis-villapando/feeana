@@ -1,4 +1,4 @@
-import {
+﻿import {
   createContext,
   useCallback,
   useContext,
@@ -45,7 +45,9 @@ interface ClassStoreValue {
   refreshEnrolledClasses: () => Promise<void>;
   refreshSessions: (classId: string) => Promise<void>;
   refreshStudents: (classId: string) => Promise<void>;
+  studentCountForClass: (classId: string) => number;
   addSubmittedSession: (sessionId: string) => void;
+  unenrollStudent: (classId: string) => Promise<void>;
 }
 
 const ClassStoreContext = createContext<ClassStoreValue | null>(null);
@@ -116,6 +118,15 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const studentCountForClass = useCallback(
+    (classId: string) => {
+      const students = studentsByClass[classId];
+      if (students && students.length > 0) return students.length;
+      return classes.find((c) => c.id === classId)?.studentCount ?? 0;
+    },
+    [classes, studentsByClass],
+  );
+
   const refreshSubmissions = useCallback(async (studentId: string) => {
     try {
       const ids = await feedbackService.getStudentSubmissions(studentId);
@@ -156,6 +167,16 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
             clsData.map((c) => classService.getSessions(c.id)),
           );
           setSessions(sessionResults.flat());
+
+          const studentResults = await Promise.all(
+            clsData.map((c) => classService.getStudents(c.id)),
+          );
+          setStudentsByClass(
+            clsData.reduce((acc, cls, index) => {
+              acc[cls.id] = studentResults[index];
+              return acc;
+            }, {} as Record<string, Student[]>),
+          );
         } else {
           setSessions([]);
         }
@@ -255,6 +276,13 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       ),
     );
   }, []);
+  const unenrollStudent = useCallback(async (classId: string) => {
+    if (!user) return;
+    await classService.unenrollSelf(classId, user.id);
+    setEnrolledClassIds((prev) => prev.filter((id) => id !== classId));
+    setClasses((prev) => prev.filter((c) => c.id !== classId));
+  }, [user]);
+
 
   const value = useMemo<ClassStoreValue>(() => {
     const activeClasses = classes.filter((c) => !c.archived);
@@ -275,6 +303,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       sessionsForClass: (classId) => sessions.filter((s) => s.classId === classId),
       studentsForClass: (classId) => studentsByClass[classId] ?? [],
       dismissStudent,
+      unenrollStudent,
       createClass,
       archiveClass,
       restoreClass,
@@ -285,6 +314,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       refreshEnrolledClasses,
       refreshSessions,
       refreshStudents,
+      studentCountForClass,
       addSubmittedSession,
     };
   }, [
@@ -317,3 +347,6 @@ export function useClassStore() {
   if (!ctx) throw new Error("useClassStore must be used within ClassStoreProvider");
   return ctx;
 }
+
+
+

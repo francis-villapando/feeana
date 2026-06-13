@@ -8,9 +8,10 @@ import { useClassStore } from "@/lib/classStore";
 import type { Class } from "@/lib/types";
 
 export function ClassCard({ cls }: { cls: Class }) {
-  const { sessionsForClass } = useClassStore();
+  const { sessionsForClass, studentCountForClass } = useClassStore();
   const sessions = sessionsForClass(cls.id);
   const activeCount = sessions.filter((s) => s.status === "active").length;
+  const studentCount = studentCountForClass(cls.id);
 
   const copyCode = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -40,7 +41,7 @@ export function ClassCard({ cls }: { cls: Class }) {
       <CardContent className="relative space-y-4">
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5" /> {cls.studentCount}
+            <Users className="h-3.5 w-3.5" /> {studentCount}
           </span>
           <span className="flex items-center gap-1">
             <MessageSquare className="h-3.5 w-3.5" /> {sessions.length} sessions

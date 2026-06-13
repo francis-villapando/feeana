@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { UserMinus, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -81,7 +81,7 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">Participation: {participation}%</span> —
+        <span className="font-semibold text-foreground">Participation: {participation}%</span> â€”
         anonymous; never tied to individual names.
       </p>
 
@@ -90,8 +90,7 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Dismiss {pending?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              They will be removed from this class and lose access. Their previously submitted
-              anonymous feedback stays unaffected.
+              They lose access to this class. Their submitted feedback stays. They can rejoin anytime.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -114,3 +113,5 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
     </div>
   );
 }
+
+

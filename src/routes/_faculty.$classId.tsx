@@ -57,7 +57,7 @@ export const Route = createFileRoute("/_faculty/$classId")({
 
 function ClassLayout() {
   const { classId } = Route.useParams();
-  const { getClass, sessionsForClass, isLoading, archiveClass, refreshStudents } = useClassStore();
+  const { getClass, sessionsForClass, studentCountForClass, isLoading, archiveClass, refreshStudents } = useClassStore();
   const { feedback, fetchFeedbackByClass, insertRealtimeFeedback } = useFeedbackStore();
   const { results, fetchForSessions } = useAnalysisStore();
   const location = useLocation();
@@ -288,7 +288,7 @@ function ClassLayout() {
                 value={
                   <span className="inline-flex items-center gap-1">
                     <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                    {cls.studentCount}
+                    {studentCountForClass(classId)}
                   </span>
                 }
               />

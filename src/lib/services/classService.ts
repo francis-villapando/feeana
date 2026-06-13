@@ -16,6 +16,12 @@ function fromDbClass(row: Record<string, unknown>): Class {
     : row.faculty
       ? (row.faculty as Record<string, unknown>)
       : null;
+  const enrollments = Array.isArray(row.enrollments)
+    ? (row.enrollments as Record<string, unknown>[]) : [];
+  const activeEnrollmentCount = enrollments.filter(
+    (item) => item.removed_at === null || item.removed_at === undefined,
+  ).length;
+
   return {
     id: row.id as string,
     name: (row.name as string) ?? "",
@@ -25,7 +31,8 @@ function fromDbClass(row: Record<string, unknown>): Class {
     code: row.enroll_code as string,
     createdAt: row.created_at as string,
     archived: row.archived as boolean,
-    studentCount: (row.student_count as number) ?? 0,
+    studentCount:
+      enrollments.length > 0 ? activeEnrollmentCount : ((row.student_count as number) ?? 0),
     facultyName: (faculty?.full_name as string) ?? (row.faculty_name as string) ?? undefined,
   };
 }
@@ -64,14 +71,11 @@ function toDbSession(s: Session) {
 export async function getClasses(facultyId: string): Promise<Class[]> {
   const { data, error } = await supabase
     .from("classes")
-    .select("*, enrollments(count)")
+    .select("*")
     .eq("faculty_id", facultyId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row: Record<string, unknown>) => {
-    const enrollments = (row.enrollments as { count: number }[]) ?? [];
-    return fromDbClass({ ...row, student_count: enrollments[0]?.count ?? 0 });
-  });
+  return (data ?? []).map((row: Record<string, unknown>) => fromDbClass(row));
 }
 
 export async function createClass(
@@ -93,7 +97,7 @@ export async function createClass(
     .insert({
       faculty_id: facultyId,
       course_id: input.courseId,
-      course: `${input.courseCode} — ${input.courseTitle}`,
+      course: `${input.courseCode} \u2014 ${input.courseTitle}`,
       name: input.courseCode,
       section: input.section.trim(),
       enroll_code: enrollCode,
@@ -184,7 +188,8 @@ export async function getStudents(classId: string): Promise<Student[]> {
       )
     `,
     )
-    .eq("class_id", classId);
+    .eq("class_id", classId)
+    .is("removed_at", null);
   if (error) throw new Error(error.message);
 
   return (data ?? []).map((row: Record<string, unknown>) => {
@@ -208,12 +213,25 @@ export async function enrollClassByCode(code: string, studentId: string): Promis
   if (!cls || cls.length === 0) return null;
   const classData = cls[0];
 
-  await supabase.from("enrollments").delete().eq("class_id", classData.id).eq("student_id", studentId);
-
-  const { error } = await supabase
+  const { data: existing } = await supabase
     .from("enrollments")
-    .insert({ class_id: classData.id, student_id: studentId });
-  if (error && error.code !== "23505") throw new Error(error.message);
+    .select("id")
+    .eq("class_id", classData.id)
+    .eq("student_id", studentId)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("enrollments")
+      .update({ removed_at: null })
+      .eq("id", existing.id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase
+      .from("enrollments")
+      .insert({ class_id: classData.id, student_id: studentId });
+    if (error && error.code !== "23505") throw new Error(error.message);
+  }
 
   return fromDbClass(classData);
 }
@@ -221,23 +239,33 @@ export async function enrollClassByCode(code: string, studentId: string): Promis
 export async function dismissStudent(classId: string, studentId: string): Promise<void> {
   const { error } = await supabase
     .from("enrollments")
-    .delete()
+    .update({ removed_at: new Date().toISOString() })
     .eq("class_id", classId)
-    .eq("student_id", studentId);
+    .eq("student_id", studentId)
+    .is("removed_at", null);
+  if (error) throw new Error(error.message);
+}
+
+export async function unenrollSelf(classId: string, studentId: string): Promise<void> {
+  const { error } = await supabase
+    .from("enrollments")
+    .update({ removed_at: new Date().toISOString() })
+    .eq("class_id", classId)
+    .eq("student_id", studentId)
+    .is("removed_at", null);
   if (error) throw new Error(error.message);
 }
 
 export async function getClassById(id: string): Promise<Class | null> {
   const { data, error } = await supabase
     .from("classes")
-    .select("*, enrollments(count)")
+    .select("*")
     .eq("id", id)
     .single();
   if (error?.code === "PGRST116") return null;
   if (error) throw new Error(error.message);
   if (!data) return null;
-  const enrollments = (data.enrollments as { count: number }[]) ?? [];
-  return fromDbClass({ ...data, student_count: enrollments[0]?.count ?? 0 });
+  return fromDbClass(data);
 }
 
 export async function getSessionById(id: string): Promise<Session | null> {
@@ -273,20 +301,19 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
         created_at,
         archived,
         student_count,
-        enrollments(count),
         profiles!faculty_id (full_name)
       )
     `
     )
-    .eq("student_id", studentId);
+    .eq("student_id", studentId)
+    .is("removed_at", null);
 
   if (error) throw new Error(error.message);
 
   return (data ?? [])
     .map((row: Record<string, unknown>) => {
       const cls = row.classes as Record<string, unknown>;
-      const enrollments = (cls?.enrollments as { count: number }[]) ?? [];
-      return fromDbClass({ ...(cls || {}), student_count: enrollments[0]?.count ?? 0 });
+      return fromDbClass(cls || {});
     })
     .filter((c) => c.id);
 }
