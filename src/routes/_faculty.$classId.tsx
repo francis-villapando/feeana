@@ -162,7 +162,7 @@ function ClassLayout() {
       </Button>
 
       {/* KPI cards */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <KpiCard
           icon={<Users className="h-4 w-4" />}
           label="Submission rate"
@@ -313,7 +313,7 @@ function SessionsList({ classId }: { classId: string }) {
     );
   }
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
       {sessions.map((s) => (
         <FacultySessionCard key={s.id} session={s} />
       ))}
@@ -325,9 +325,11 @@ function ClassLoadingSkeleton() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-6 w-24" />
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Skeleton className="h-28" />
         <Skeleton className="h-28" />
+        <Skeleton className="h-28 hidden lg:block" />
+        <Skeleton className="h-28 hidden lg:block" />
       </div>
       <Skeleton className="h-80" />
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">

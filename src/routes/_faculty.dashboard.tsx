@@ -76,7 +76,7 @@ function DashboardPage() {
       </div>
 
       {/* KPI row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <KpiCard
           icon={<Users className="h-4 w-4" />}
           label="Avg submission rate"
@@ -123,7 +123,7 @@ function DashboardSkeleton() {
         <Skeleton className="h-6 w-16 rounded-full" />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="border-border/60 bg-card/70 backdrop-blur-xl">
             <CardContent className="p-5">
