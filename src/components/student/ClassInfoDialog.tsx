@@ -122,9 +122,9 @@ export function ClassInfoDialog({
           </button>
 
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
-            className="w-full gap-2 text-red-500 hover:text-red-600 hover:border-red-300/50"
+            className="w-full gap-2"
             onClick={() => setConfirmUnenroll(true)}
           >
             <LogOut className="h-4 w-4" />

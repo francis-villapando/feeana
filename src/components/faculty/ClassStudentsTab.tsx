@@ -70,7 +70,7 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
                       onClick={() => setPending({ id: s.id, name: s.name })}
                       aria-label={`Dismiss ${s.name}`}
                     >
-                      <UserMinus className="h-4 w-4" />
+                      <UserMinus className="h-4 w-4 text-destructive" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -79,11 +79,6 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
           </Table>
         )}
       </div>
-
-      <p className="text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">Participation: {participation}%</span> â€”
-        anonymous; never tied to individual names.
-      </p>
 
       <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
