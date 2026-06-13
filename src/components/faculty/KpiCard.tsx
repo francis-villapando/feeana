@@ -18,7 +18,7 @@ export function KpiCard({
           <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {label}
           </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
             {icon}
           </span>
         </div>

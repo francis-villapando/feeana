@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Activity, Database, GraduationCap, Target, Users } from "lucide-react";
+import { Database, GraduationCap, Target, Users } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedbackStore } from "@/lib/feedbackStore";
@@ -60,32 +60,29 @@ function DashboardPage() {
 
   return (
     <div className="flex h-full min-h-0 min-w-0 max-w-full flex-col space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">
-            Workspace overview
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your curriculum and launch coordinated sessions.
-          </p>
-        </div>
-        <Badge variant="outline" className="gap-1.5 border-primary/30 text-primary">
-          <Activity className="h-3 w-3" /> Live
-        </Badge>
+      <div>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">
+          Workspace overview
+        </p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage your curriculum and launch coordinated sessions.
+        </p>
       </div>
 
       {/* KPI row */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <KpiCard
           icon={<Users className="h-4 w-4" />}
-          label="Avg submission rate"
+          label="Submission rate"
           value={`${stats.submission}%`}
+          hint="Average across sessions"
         />
         <KpiCard
           icon={<Target className="h-4 w-4" />}
-          label="Avg ILO achievement"
+          label="ILO achievement"
           value={`${stats.ilo}%`}
+          hint="Overall achievement rate"
         />
         <KpiCard
           icon={<GraduationCap className="h-4 w-4" />}
@@ -114,13 +111,10 @@ function DashboardPage() {
 function DashboardSkeleton() {
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-3">
-          <Skeleton className="h-3 w-32" />
-          <Skeleton className="h-9 w-48" />
-          <Skeleton className="h-4 w-72" />
-        </div>
-        <Skeleton className="h-6 w-16 rounded-full" />
+      <div className="space-y-3">
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="h-4 w-72" />
       </div>
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
