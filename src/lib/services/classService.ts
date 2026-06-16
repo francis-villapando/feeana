@@ -306,7 +306,8 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
     `
     )
     .eq("student_id", studentId)
-    .is("removed_at", null);
+    .is("removed_at", null)
+    .order("classes(name)");
 
   if (error) throw new Error(error.message);
 

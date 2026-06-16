@@ -21,7 +21,7 @@ export function EnrollClassDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const { enrollClassByCode } = useClassStore();
+  const { enrollClassByCode, refreshEnrolledClasses } = useClassStore();
   const [code, setCode] = useState("");
   const [enrolling, setEnrolling] = useState(false);
   const navigate = useNavigate();
@@ -41,6 +41,7 @@ export function EnrollClassDialog({
       toast.success(`Enrolled in ${cls.courseDisplay}`);
       setCode("");
       onOpenChange(false);
+      await refreshEnrolledClasses();
       navigate({ to: "/student/home" });
     } finally {
       setEnrolling(false);
@@ -70,7 +71,7 @@ export function EnrollClassDialog({
             Cancel
           </Button>
           <Button onClick={handleEnroll} disabled={enrolling}>
-            {enrolling ? "Enrolling..." : "Enroll in a class"}
+            {enrolling ? "Enrolling..." : "Enroll"}
           </Button>
         </DialogFooter>
       </DialogContent>

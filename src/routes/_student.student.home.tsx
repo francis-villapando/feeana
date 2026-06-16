@@ -40,7 +40,7 @@ function LoadingSkeleton() {
 
       {/* Accordion Skeletons */}
       <div className="space-y-2">
-        {[1, 2].map((i) => (
+        {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
             className="border border-border/60 rounded-lg bg-background/40 px-1"

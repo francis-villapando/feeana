@@ -252,7 +252,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       const cls = await classService.enrollClassByCode(code, user.id);
       if (cls) {
         setEnrolledClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
-        setClasses((prev) => (prev.find((cls) => cls.id === cls.id) ? prev : [...prev, cls]));
+        setClasses((prev) => (prev.find((enrolledClass) => enrolledClass.id === cls.id) ? prev : [...prev, cls]));
         const newSessions = await classService.getSessions(cls.id);
         setSessions((prev) => {
           const existing = prev.filter((s) => s.classId === cls.id);
