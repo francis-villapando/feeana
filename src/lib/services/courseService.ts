@@ -132,6 +132,7 @@ export async function updateCourse(
     }
     throw new Error(error.message);
   }
+  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
   await logActivity(
     "course",
     id,
