@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
 import { supabaseAdmin } from "./supabase-admin";
-import type { PipelineOutput } from "../types";
+import type { PipelineOutput } from "../lib/algorithm/types";
 
 /* Constants */
 const TEST_SESSION_ID = "f1234567-1234-4321-abcd-000000000001";
@@ -21,8 +21,8 @@ vi.mock("../../mlWorkerStore", () => ({
 }));
 
 // above mock must be hoisted above the subject import
-import { runAnalysis, fetchAnalysisResult } from "../../analysis";
-import { supabase } from "../../supabase";
+import { runAnalysis, fetchAnalysisResult } from "../lib/orchestration/analysis";
+import { supabase } from "../lib/db/supabase";
 
 /* Suite-level state */
 let testFeedbackIds: string[] = [];
