@@ -136,6 +136,8 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
     } catch (err) {
       if (err instanceof DuplicateError) {
         toast.error(err.message);
+        refreshAll();
+        onClose();
       } else if (err instanceof ConflictError) {
         toast.error(err.message);
         refreshAll();

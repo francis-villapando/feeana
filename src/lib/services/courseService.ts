@@ -52,14 +52,33 @@ async function toggleEntityArchived(
   id: string,
   action: "archived" | "restored",
   makeLabel: (row: Record<string, unknown>) => string,
+  onRestoreError?: (row: Record<string, unknown>, code: string) => Promise<void>,
 ): Promise<void> {
+  let row: Record<string, unknown> | null = null;
+  if (action === "restored" && onRestoreError) {
+    const { data, error } = await supabase
+      .from(table)
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) throw new Error(error.message);
+    row = data;
+  }
+
   const { data, error } = await supabase
     .from(table)
     .update({ archived: action === "archived" })
     .eq("id", id)
     .select()
     .single();
-  if (error) throw new Error(error.message);
+
+  if (error) {
+    if (action === "restored" && onRestoreError && row) {
+      await onRestoreError(row, error.code);
+    }
+    throw new Error(error.message);
+  }
+
   await logActivity(entityKind, id, action, makeLabel(data as Record<string, unknown>));
 }
 
@@ -166,6 +185,7 @@ export async function updateCourse(
     .update({ code: input.code.trim(), title: input.title.trim(), version: input.version + 1 })
     .eq("id", id)
     .eq("version", input.version)
+    .eq("archived", false)
     .select();
   if (error) {
     await handleDuplicateError("courses", { code: input.code.trim() }, "A course with this code already exists.", error.code);
@@ -186,7 +206,9 @@ export async function archiveCourse(id: string): Promise<void> {
 }
 
 export async function restoreCourse(id: string): Promise<void> {
-  await toggleEntityArchived("courses", "course", id, "restored", (r) => `${r.code} — ${r.title}`);
+  await toggleEntityArchived("courses", "course", id, "restored", (r) => `${r.code} — ${r.title}`, async (row, code) => {
+    await handleDuplicateError("courses", { code: row.code as string }, "A course with this code already exists.", code);
+  });
 }
 
 export async function getTopics(courseId?: string): Promise<Topic[]> {
@@ -226,6 +248,7 @@ export async function updateTopic(
     .update({ title: input.title.trim(), version: input.version + 1 })
     .eq("id", id)
     .eq("version", input.version)
+    .eq("archived", false)
     .select();
   if (error) {
     await handleDuplicateError("topics", { course_id: old.course_id, title: input.title.trim() }, "A topic with this title already exists in this course.", error.code);
@@ -240,7 +263,9 @@ export async function archiveTopic(id: string): Promise<void> {
 }
 
 export async function restoreTopic(id: string): Promise<void> {
-  await toggleEntityArchived("topics", "topic", id, "restored", (r) => r.title as string);
+  await toggleEntityArchived("topics", "topic", id, "restored", (r) => r.title as string, async (row, code) => {
+    await handleDuplicateError("topics", { course_id: row.course_id as string, title: (row.title as string).trim() }, "A topic with this title already exists in this course.", code);
+  });
 }
 
 export async function getILOs(courseId?: string): Promise<ILO[]> {
@@ -294,6 +319,7 @@ export async function updateILO(
     })
     .eq("id", id)
     .eq("version", input.version)
+    .eq("archived", false)
     .select();
   if (error) {
     await handleDuplicateError("ilos", { topic_id: old.topic_id, statement: input.statement.trim() }, "An ILO with this statement already exists in this topic.", error.code);
@@ -314,7 +340,9 @@ export async function archiveILO(id: string): Promise<void> {
 }
 
 export async function restoreILO(id: string): Promise<void> {
-  await toggleEntityArchived("ilos", "ILO", id, "restored", (r) => `${(r.statement as string).slice(0, 40)}`);
+  await toggleEntityArchived("ilos", "ILO", id, "restored", (r) => `${(r.statement as string).slice(0, 40)}`, async (row, code) => {
+    await handleDuplicateError("ilos", { topic_id: row.topic_id as string, statement: (row.statement as string).trim() }, "An ILO with this statement already exists in this topic.", code);
+  });
 }
 
 export async function deleteCourse(id: string): Promise<void> {

@@ -13,6 +13,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useCourseStore } from "@/lib/stores/courseStore";
+import { DuplicateError, ConflictError } from "@/lib/services/courseService";
 import type { Course, ILO, Topic } from "@/lib/types/types";
 import { EntityFormDialog } from "./EntityFormDialog";
 import { useSearch } from "@tanstack/react-router";
@@ -47,7 +48,7 @@ export function CourseManagementHub() {
     archiveILO,
     restoreILO,
     deleteILO,
-  } = useCourseStore();
+    refreshAll } = useCourseStore();
 
   const [showArchived, setShowArchived] = useState(() => {
     const saved = localStorage.getItem("feeana_show_archived");
@@ -221,10 +222,7 @@ export function CourseManagementHub() {
                             handleAction(
                               "Delete course",
                               `Delete the "${course.code}" course? This will also delete its topics and ILOs. This action is irreversible.`,
-                              () => {
-                                deleteCourse(course.id);
-                                toast.success("Course deleted");
-                              },
+                              () => deleteCourse(course.id).then(() => toast.success("Course deleted")),
                               "delete"
                             );
                           }}
@@ -317,14 +315,11 @@ export function CourseManagementHub() {
                                 <Button
                                   variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   onClick={() => handleAction(
-                                    "Delete topic",
-                                    `Delete the "${topic.title}" topic? This action is irreversible.`,
-                                    () => {
-                                      deleteTopic(topic.id);
-                                      toast.success("Topic deleted");
-                                    },
-                                    "delete"
-                                  )}
+                                      "Delete topic",
+                                      `Delete the "${topic.title}" topic? This action is irreversible.`,
+                                      () => deleteTopic(topic.id).then(() => toast.success("Topic deleted")),
+                                      "delete"
+                                    )}
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
@@ -400,10 +395,7 @@ export function CourseManagementHub() {
                                         handleAction(
                                           "Delete ILO",
                                           `Delete the "${label}" ILO? This is action irreversible.`,
-                                          () => {
-                                            deleteILO(ilo.id);
-                                            toast.success("ILO deleted");
-                                          },
+                                          () => deleteILO(ilo.id).then(() => toast.success("ILO deleted")),
                                           "delete"
                                         );
                                       }}
@@ -432,9 +424,22 @@ export function CourseManagementHub() {
         <ConfirmationDialog
           isOpen={!!confirm}
           onClose={() => setConfirm(null)}
-          onConfirm={() => {
-            confirm.onConfirm();
-            setConfirm(null);
+          onConfirm={async () => {
+            try {
+              await confirm.onConfirm();
+            } catch (e) {
+              if (e instanceof DuplicateError) {
+                toast.error(e.message);
+                await refreshAll();
+              } else if (e instanceof ConflictError) {
+                toast.error(e.message);
+                await refreshAll();
+              } else {
+                toast.error(e instanceof Error ? e.message : "Action failed");
+              }
+            } finally {
+              setConfirm(null);
+            }
           }}
           title={confirm.title}
           description={confirm.description}
