@@ -162,7 +162,7 @@ function ClassLayout() {
       </Button>
 
       {/* KPI cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-2">
         <KpiCard
           icon={<Users className="h-4 w-4" />}
           label="Submission rate"
