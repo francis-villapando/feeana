@@ -1,13 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Calendar, MessageSquare } from "lucide-react";
+import { Calendar, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
@@ -33,9 +27,6 @@ export function SessionCard({ session }: { session: Session }) {
   const feedbackStatus = computeFeedbackStatus(session, feedback);
   const sessionFeedback = feedback.filter((f) => f.sessionId === session.id);
   const responses = sessionFeedback.length;
-  const preview = [...sessionFeedback]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 3);
 
   return (
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40">
@@ -63,28 +54,6 @@ export function SessionCard({ session }: { session: Session }) {
           <MessageSquare className="h-3.5 w-3.5" />
           <span>{responses} anonymous responses</span>
         </div>
-
-        {preview.length > 0 && (
-          <Accordion type="single" collapsible>
-            <AccordionItem value="preview" className="border-border/60">
-              <AccordionTrigger className="py-2 text-xs">
-                Latest anonymous feedback
-              </AccordionTrigger>
-              <AccordionContent>
-                <ul className="space-y-2">
-                  {preview.map((f) => (
-                    <li
-                      key={f.id}
-                      className="rounded-md border border-border/40 bg-background/40 px-2.5 py-2 text-xs italic text-muted-foreground"
-                    >
-                      “{f.rawText}”
-                    </li>
-                  ))}
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
 
         <div className="relative">
           <Button asChild variant="secondary" size="sm" className="w-full">
