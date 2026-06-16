@@ -35,6 +35,51 @@ async function isConflictingRecordArchived(
   return data?.archived === true;
 }
 
+async function handleDuplicateError(
+  table: "courses" | "topics" | "ilos",
+  filters: Record<string, unknown>,
+  message: string,
+  code: string,
+): Promise<void> {
+  if (code !== "23505") return;
+  const archived = await isConflictingRecordArchived(table, filters);
+  throw new DuplicateError(`${message}${archived ? " (archived)" : ""}`);
+}
+
+async function toggleEntityArchived(
+  table: "courses" | "topics" | "ilos",
+  entityKind: EntityKind,
+  id: string,
+  action: "archived" | "restored",
+  makeLabel: (row: Record<string, unknown>) => string,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from(table)
+    .update({ archived: action === "archived" })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  await logActivity(entityKind, id, action, makeLabel(data as Record<string, unknown>));
+}
+
+async function deleteEntity(
+  table: "courses" | "topics" | "ilos",
+  entityKind: EntityKind,
+  id: string,
+  makeLabel: (row: Record<string, unknown>) => string,
+): Promise<void> {
+  const { data, error: fetchError } = await supabase
+    .from(table)
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+  const { error } = await supabase.from(table).delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  await logActivity(entityKind, id, "deleted", makeLabel(data as Record<string, unknown>));
+}
+
 function fromDbCourse(row: Record<string, unknown>): Course {
   return {
     id: row.id as string,
@@ -99,10 +144,7 @@ export async function createCourse(input: { code: string; title: string }): Prom
     .select()
     .single();
   if (error) {
-    if (error.code === "23505") {
-      const archived = await isConflictingRecordArchived("courses", { code: input.code.trim() });
-      throw new DuplicateError(`A course with this code already exists.${archived ? " (archived)" : ""}`);
-    }
+    await handleDuplicateError("courses", { code: input.code.trim() }, "A course with this code already exists.", error.code);
     throw new Error(error.message);
   }
   await logActivity("course", data.id, "created", `${data.code} — ${data.title}`);
@@ -126,10 +168,7 @@ export async function updateCourse(
     .eq("version", input.version)
     .select();
   if (error) {
-    if (error.code === "23505") {
-      const archived = await isConflictingRecordArchived("courses", { code: input.code.trim() });
-      throw new DuplicateError(`A course with this code already exists.${archived ? " (archived)" : ""}`);
-    }
+    await handleDuplicateError("courses", { code: input.code.trim() }, "A course with this code already exists.", error.code);
     throw new Error(error.message);
   }
   if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
@@ -143,35 +182,11 @@ export async function updateCourse(
 }
 
 export async function archiveCourse(id: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("courses")
-    .update({ archived: true })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  await logActivity(
-    "course",
-    id,
-    "archived",
-    `${(data as Record<string, unknown>).code} — ${(data as Record<string, unknown>).title}`,
-  );
+  await toggleEntityArchived("courses", "course", id, "archived", (r) => `${r.code} — ${r.title}`);
 }
 
 export async function restoreCourse(id: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("courses")
-    .update({ archived: false })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  await logActivity(
-    "course",
-    id,
-    "restored",
-    `${(data as Record<string, unknown>).code} — ${(data as Record<string, unknown>).title}`,
-  );
+  await toggleEntityArchived("courses", "course", id, "restored", (r) => `${r.code} — ${r.title}`);
 }
 
 export async function getTopics(courseId?: string): Promise<Topic[]> {
@@ -189,13 +204,7 @@ export async function createTopic(input: { courseId: string; title: string }): P
     .select()
     .single();
   if (error) {
-    if (error.code === "23505") {
-      const archived = await isConflictingRecordArchived("topics", {
-        course_id: input.courseId,
-        title: input.title.trim(),
-      });
-      throw new DuplicateError(`A topic with this title already exists in this course.${archived ? " (archived)" : ""}`);
-    }
+    await handleDuplicateError("topics", { course_id: input.courseId, title: input.title.trim() }, "A topic with this title already exists in this course.", error.code);
     throw new Error(error.message);
   }
   await logActivity("topic", data.id, "created", data.title);
@@ -219,13 +228,7 @@ export async function updateTopic(
     .eq("version", input.version)
     .select();
   if (error) {
-    if (error.code === "23505") {
-      const archived = await isConflictingRecordArchived("topics", {
-        course_id: old.course_id,
-        title: input.title.trim(),
-      });
-      throw new DuplicateError(`A topic with this title already exists in this course.${archived ? " (archived)" : ""}`);
-    }
+    await handleDuplicateError("topics", { course_id: old.course_id, title: input.title.trim() }, "A topic with this title already exists in this course.", error.code);
     throw new Error(error.message);
   }
   if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
@@ -233,25 +236,11 @@ export async function updateTopic(
 }
 
 export async function archiveTopic(id: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("topics")
-    .update({ archived: true })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  await logActivity("topic", id, "archived", (data as Record<string, unknown>).title as string);
+  await toggleEntityArchived("topics", "topic", id, "archived", (r) => r.title as string);
 }
 
 export async function restoreTopic(id: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("topics")
-    .update({ archived: false })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  await logActivity("topic", id, "restored", (data as Record<string, unknown>).title as string);
+  await toggleEntityArchived("topics", "topic", id, "restored", (r) => r.title as string);
 }
 
 export async function getILOs(courseId?: string): Promise<ILO[]> {
@@ -279,13 +268,7 @@ export async function createILO(input: {
     .select()
     .single();
   if (error) {
-    if (error.code === "23505") {
-      const archived = await isConflictingRecordArchived("ilos", {
-        topic_id: input.topicId,
-        statement: input.statement.trim(),
-      });
-      throw new DuplicateError(`An ILO with this statement already exists in this topic.${archived ? " (archived)" : ""}`);
-    }
+    await handleDuplicateError("ilos", { topic_id: input.topicId, statement: input.statement.trim() }, "An ILO with this statement already exists in this topic.", error.code);
     throw new Error(error.message);
   }
   await logActivity("ILO", data.id, "created", `${data.statement.slice(0, 40)}`);
@@ -313,13 +296,7 @@ export async function updateILO(
     .eq("version", input.version)
     .select();
   if (error) {
-    if (error.code === "23505") {
-      const archived = await isConflictingRecordArchived("ilos", {
-        topic_id: old.topic_id,
-        statement: input.statement.trim(),
-      });
-      throw new DuplicateError(`An ILO with this statement already exists in this topic.${archived ? " (archived)" : ""}`);
-    }
+    await handleDuplicateError("ilos", { topic_id: old.topic_id, statement: input.statement.trim() }, "An ILO with this statement already exists in this topic.", error.code);
     throw new Error(error.message);
   }
   if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
@@ -333,69 +310,23 @@ export async function updateILO(
 }
 
 export async function archiveILO(id: string): Promise<void> {
-  const { data, error: fetchError } = await supabase
-    .from("ilos")
-    .select("statement")
-    .eq("id", id)
-    .single();
-  if (fetchError) throw new Error(fetchError.message);
-  const { error } = await supabase
-    .from("ilos")
-    .update({ archived: true })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("ILO", id, "archived", `${data.statement.slice(0, 40)}`);
+  await toggleEntityArchived("ilos", "ILO", id, "archived", (r) => `${(r.statement as string).slice(0, 40)}`);
 }
 
 export async function restoreILO(id: string): Promise<void> {
-  const { data, error: fetchError } = await supabase
-    .from("ilos")
-    .select("statement")
-    .eq("id", id)
-    .single();
-  if (fetchError) throw new Error(fetchError.message);
-  const { error } = await supabase
-    .from("ilos")
-    .update({ archived: false })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("ILO", id, "restored", `${data.statement.slice(0, 40)}`);
+  await toggleEntityArchived("ilos", "ILO", id, "restored", (r) => `${(r.statement as string).slice(0, 40)}`);
 }
 
 export async function deleteCourse(id: string): Promise<void> {
-  const { data, error: fetchError } = await supabase
-    .from("courses")
-    .select("code, title")
-    .eq("id", id)
-    .single();
-  if (fetchError) throw new Error(fetchError.message);
-  const { error } = await supabase.from("courses").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("course", id, "deleted", `${data.code} — ${data.title}`);
+  await deleteEntity("courses", "course", id, (r) => `${r.code} — ${r.title}`);
 }
 
 export async function deleteTopic(id: string): Promise<void> {
-  const { data, error: fetchError } = await supabase
-    .from("topics")
-    .select("title")
-    .eq("id", id)
-    .single();
-  if (fetchError) throw new Error(fetchError.message);
-  const { error } = await supabase.from("topics").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("topic", id, "deleted", data.title);
+  await deleteEntity("topics", "topic", id, (r) => r.title as string);
 }
 
 export async function deleteILO(id: string): Promise<void> {
-  const { data, error: fetchError } = await supabase
-    .from("ilos")
-    .select("statement")
-    .eq("id", id)
-    .single();
-  if (fetchError) throw new Error(fetchError.message);
-  const { error } = await supabase.from("ilos").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("ILO", id, "deleted", `${data.statement.slice(0, 40)}`);
+  await deleteEntity("ilos", "ILO", id, (r) => `${(r.statement as string).slice(0, 40)}`);
 }
 
 async function logActivity(
