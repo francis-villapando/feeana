@@ -1,7 +1,7 @@
 import { Copy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Class } from "@/lib/types";
+import type { Class } from "@/lib/types/types";
 
 export function ClassDetailsCard({
   cls,

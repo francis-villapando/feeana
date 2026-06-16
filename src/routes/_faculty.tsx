@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader, FacultySidebar } from "@/components/layout";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/stores/auth";
 
 export const Route = createFileRoute("/_faculty")({
   component: FacultyLayout,

@@ -8,12 +8,12 @@ import {
 import { Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
-import { AnalysisStoreProvider } from "@/lib/analysisStore";
-import { AuthProvider } from "@/lib/auth";
-import { ClassStoreProvider } from "@/lib/classStore";
-import { CourseStoreProvider } from "@/lib/courseStore";
-import { FeedbackStoreProvider } from "@/lib/feedbackStore";
-import { ThemeProvider, useTheme } from "@/lib/themeProvider";
+import { AnalysisStoreProvider } from "@/lib/stores/analysisStore";
+import { AuthProvider } from "@/lib/stores/auth";
+import { ClassStoreProvider } from "@/lib/stores/classStore";
+import { CourseStoreProvider } from "@/lib/stores/courseStore";
+import { FeedbackStoreProvider } from "@/lib/stores/feedbackStore";
+import { ThemeProvider, useTheme } from "@/lib/providers/themeProvider";
 import bgImage from "../assets/bg-abstract.jpg";
 
 import "../styles.css";

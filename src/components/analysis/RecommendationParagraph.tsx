@@ -1,5 +1,5 @@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import type { ILO, Recommendation, RecommendationTerm, TermKind } from "@/lib/types";
+import type { ILO, Recommendation, RecommendationTerm, TermKind } from "@/lib/types/types";
 
 const KIND_LABEL: Record<TermKind, string> = {
   issue: "Issue",

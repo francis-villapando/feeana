@@ -29,12 +29,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RecommendationParagraph, ModelLoaderOverlay, chartTooltipProps, ChartTooltipContent, AnalysisTriggerModal } from "@/components/analysis";
-import { runAnalysis, fetchAnalysisResult } from "@/lib/analysis";
-import { useFeedbackStore } from "@/lib/feedbackStore";
-import { useClassStore } from "@/lib/classStore";
-import { useCourseStore } from "@/lib/courseStore";
-import { computeIloStatuses } from "@/lib/iloStatus";
-import type { AnalysisResult } from "@/lib/types";
+import { runAnalysis, fetchAnalysisResult } from "@/lib/orchestration/analysis";
+import { useFeedbackStore } from "@/lib/stores/feedbackStore";
+import { useClassStore } from "@/lib/stores/classStore";
+import { useCourseStore } from "@/lib/stores/courseStore";
+import { computeIloStatuses } from "@/lib/hooks/iloStatus";
+import type { AnalysisResult } from "@/lib/types/types";
 import { CountBadge } from "@/components/common";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
 import React from "react";
@@ -86,7 +86,7 @@ function AnalysisPage() {
   const isCancelledRef = React.useRef(false);
 
   useEffect(() => {
-    import("@/lib/mlWorkerStore").then(({ setInferenceProgressListener, setDownloadProgressListener }) => {
+    import("@/lib/ml/mlWorkerStore").then(({ setInferenceProgressListener, setDownloadProgressListener }) => {
       setInferenceProgressListener((payload) => {
         setInferenceProgress(payload);
       });
@@ -131,7 +131,7 @@ function AnalysisPage() {
 
   const handleCancel = async () => {
     isCancelledRef.current = true;
-    const { terminateMLWorker } = await import("@/lib/mlWorkerStore");
+    const { terminateMLWorker } = await import("@/lib/ml/mlWorkerStore");
     terminateMLWorker();
     setIsAnalyzing(false);
     toast.success("Analysis cancelled.");

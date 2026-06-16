@@ -1,5 +1,4 @@
-import { useCourseStore } from "./courseStore";
-import type { AnalysisResult, Feedback, ILO, Session } from "./types";
+import type { AnalysisResult, Feedback, ILO, Session } from "../types/types";
 
 export interface IloStatus {
   ilo: ILO;

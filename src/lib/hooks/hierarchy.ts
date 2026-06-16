@@ -1,4 +1,4 @@
-import type { Course, ILO, Topic } from "./types";
+import type { Course, ILO, Topic } from "../types/types";
 
 export function getIloPath(
   iloId: string,

@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { UserMinus, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -20,9 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useClassStore } from "@/lib/classStore";
-import { useFeedbackStore } from "@/lib/feedbackStore";
-import { classParticipation } from "@/lib/metrics";
+import { useClassStore } from "@/lib/stores/classStore";
+import { useFeedbackStore } from "@/lib/stores/feedbackStore";
+import { classParticipation } from "@/lib/hooks/metrics";
 
 export function ClassStudentsTab({ classId }: { classId: string }) {
   const { studentsForClass, dismissStudent, getClass, sessionsForClass } = useClassStore();

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/common";
-import { useTheme } from "@/lib/themeProvider";
+import { useTheme } from "@/lib/providers/themeProvider";
 
 interface AppMenuProps {
   role: "faculty" | "student";

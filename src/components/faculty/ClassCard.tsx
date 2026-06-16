@@ -4,9 +4,9 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useClassStore } from "@/lib/classStore";
-import {useCourseStore} from "@/lib/courseStore";
-import type { Class } from "@/lib/types";
+import { useClassStore } from "@/lib/stores/classStore";
+import {useCourseStore} from "@/lib/stores/courseStore";
+import type { Class } from "@/lib/types/types";
 
 export function ClassCard({ cls }: { cls: Class }) {
   const { sessionsForClass, studentCountForClass } = useClassStore();

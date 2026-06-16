@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useCourseStore } from "@/lib/courseStore";
+import { useCourseStore } from "@/lib/stores/courseStore";
 import { ConflictError, DuplicateError } from "@/lib/services/courseService";
-import type { BloomLevel, Course, EntityKind, ILO, Topic } from "@/lib/types";
+import type { BloomLevel, Course, EntityKind, ILO, Topic } from "@/lib/types/types";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

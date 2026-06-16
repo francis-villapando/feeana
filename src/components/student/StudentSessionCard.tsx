@@ -1,7 +1,7 @@
 import { ArrowRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Session } from "@/lib/types";
+import type { Session } from "@/lib/types/types";
 
 interface SessionCardProps {
   session: Session;

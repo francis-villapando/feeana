@@ -2,10 +2,10 @@
  * Analysis pipeline.
  * Persists results and individual feedback diagnostics to Supabase.
  */
-import type { AnalysisResult, DistEntry } from "./types";
-import { supabase } from "./supabase";
-import { getMLWorker } from "./mlWorkerStore";
-import { ISSUE_RULES } from "./algorithm/rules";
+import type { AnalysisResult, DistEntry } from "../types/types";
+import { supabase } from "../db/supabase";
+import { getMLWorker } from "../ml/mlWorkerStore";
+import { ISSUE_RULES } from "../algorithm/rules";
 
 
 

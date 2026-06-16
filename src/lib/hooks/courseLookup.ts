@@ -1,4 +1,4 @@
-import type { Class, Course, Topic } from "./types";
+import type { Class, Course, Topic } from "../types/types";
 
 /** Find a course by its display code (e.g. "CS 101"). */
 export function findCourseByCode(code: string, courses: Course[]): Course | undefined {

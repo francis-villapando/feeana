@@ -9,10 +9,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useFeedbackStore } from "@/lib/feedbackStore";
+import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
 import { CountBadge } from "@/components/common";
-import type { Session } from "@/lib/types";
+import type { Session } from "@/lib/types/types";
 
 function formatDT(iso: string): string {
   try {

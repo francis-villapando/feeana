@@ -11,10 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useFeedbackStore } from "@/lib/feedbackStore";
-import { useClassStore } from "@/lib/classStore";
+import { useFeedbackStore } from "@/lib/stores/feedbackStore";
+import { useClassStore } from "@/lib/stores/classStore";
 import { getSessionById } from "@/lib/services/classService";
-import type { Session } from "@/lib/types";
+import type { Session } from "@/lib/types/types";
 
 interface SubmitFeedbackDialogProps {
   session: Session | null;

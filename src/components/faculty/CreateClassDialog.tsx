@@ -18,8 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useClassStore } from "@/lib/classStore";
-import { useCourseStore } from "@/lib/courseStore";
+import { useClassStore } from "@/lib/stores/classStore";
+import { useCourseStore } from "@/lib/stores/courseStore";
 
 export function CreateClassDialog({
   open,

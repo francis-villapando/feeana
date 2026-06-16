@@ -7,9 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { supabase } from "./supabase";
-import type { UserRole } from "./types";
-import type { AuthUser } from "./types";
+import { supabase } from "../db/supabase";
+import type { UserRole } from "../types/types";
+import type { AuthUser } from "../types/types";
 import type { User } from "@supabase/supabase-js";
 
 interface AuthContextValue {

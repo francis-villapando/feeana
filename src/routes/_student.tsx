@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Outlet } from "@tanstack/react-router";
 import { AppHeader } from "@/components/layout";
 import { EnrollClassDialog } from "@/components/student";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/stores/auth";
 
 export const Route = createFileRoute("/_student")({
   component: StudentLayout,

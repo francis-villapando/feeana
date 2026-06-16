@@ -12,9 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DateTimePicker } from "@/components/faculty";
-import { useClassStore } from "@/lib/classStore";
-import { useCourseStore } from "@/lib/courseStore";
-import { topicsForClass } from "@/lib/courseLookup";
+import { useClassStore } from "@/lib/stores/classStore";
+import { useCourseStore } from "@/lib/stores/courseStore";
+import { topicsForClass } from "@/lib/hooks/courseLookup";
 
 export function SessionCreator({ classId }: { classId: string }) {
   const { createSession, getClass } = useClassStore();

@@ -6,8 +6,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { AnalysisResult } from "./types";
-import { supabase } from "./supabase";
+import type { AnalysisResult } from "../types/types";
+import { supabase } from "../db/supabase";
 
 interface AnalysisStoreValue {
   results: Record<string, AnalysisResult>;

@@ -1,5 +1,5 @@
 import * as Comlink from "comlink";
-import type { WorkerApi } from "./algorithm/worker";
+import type { WorkerApi } from "../algorithm/worker";
 
 let workerInstance: Worker | null = null;
 let comlinkProxy: Comlink.Remote<WorkerApi> | null = null;
@@ -25,7 +25,7 @@ export function getMLWorker(): {
   if (!workerInstance || !comlinkProxy) {
     console.debug("[mlWorkerStore] Initializing new Web Worker instance.");
     // Instantiate the worker using Vite's native worker import syntax
-    workerInstance = new Worker(new URL("./algorithm/worker.ts", import.meta.url), {
+    workerInstance = new Worker(new URL("../algorithm/worker.ts", import.meta.url), {
       type: "module",
     });
 

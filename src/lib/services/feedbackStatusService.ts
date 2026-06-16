@@ -1,4 +1,4 @@
-import type { Feedback, Session } from "@/lib/types";
+import type { Feedback, Session } from "@/lib/types/types";
 
 export interface FeedbackStatus {
   total: number;

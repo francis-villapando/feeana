@@ -12,8 +12,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useCourseStore } from "@/lib/courseStore";
-import type { Course, ILO, Topic } from "@/lib/types";
+import { useCourseStore } from "@/lib/stores/courseStore";
+import type { Course, ILO, Topic } from "@/lib/types/types";
 import { EntityFormDialog } from "./EntityFormDialog";
 import { useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";

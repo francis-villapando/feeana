@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WelcomeHero } from "@/components/common";
 import { ClassCard, CreateClassDialog } from "@/components/faculty";
-import { useClassStore } from "@/lib/classStore";
-import { useAuth } from "@/lib/auth";
+import { useClassStore } from "@/lib/stores/classStore";
+import { useAuth } from "@/lib/stores/auth";
 
 export const Route = createFileRoute("/_faculty/home")({
   head: () => ({

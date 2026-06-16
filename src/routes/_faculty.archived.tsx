@@ -3,7 +3,7 @@ import { Archive, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useClassStore } from "@/lib/classStore";
+import { useClassStore } from "@/lib/stores/classStore";
 
 import { ConfirmationDialog } from "@/components/faculty";
 import { useState } from "react";

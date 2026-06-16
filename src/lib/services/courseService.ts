@@ -1,4 +1,4 @@
-﻿import { supabase } from "@/lib/supabase";
+﻿import { supabase } from "@/lib/db/supabase";
 import type {
   ActivityEntry,
   BloomLevel,
@@ -7,7 +7,7 @@ import type {
   ActivityAction,
   ILO,
   Topic,
-} from "@/lib/types";
+} from "@/lib/types/types";
 
 export class DuplicateError extends Error {
   constructor(message: string) {

@@ -6,9 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WelcomeHero } from "@/components/common";
 import { ClassInfoDialog, EnrollClassDialog, ActiveSessionAccordion, SubmitFeedbackDialog } from "@/components/student";
-import { useAuth } from "@/lib/auth";
-import { useClassStore } from "@/lib/classStore";
-import type { Class, Session } from "@/lib/types";
+import { useAuth } from "@/lib/stores/auth";
+import { useClassStore } from "@/lib/stores/classStore";
+import type { Class, Session } from "@/lib/types/types";
 
 export const Route = createFileRoute("/_student/student/home")({
   head: () => ({

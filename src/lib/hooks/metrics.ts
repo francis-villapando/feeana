@@ -1,4 +1,4 @@
-import type { AnalysisResult, Class, Feedback, Session } from "./types";
+import type { AnalysisResult, Class, Feedback, Session } from "../types/types";
 
 /** % of students who submitted at least one feedback per session. */
 export function submissionRateForSession(

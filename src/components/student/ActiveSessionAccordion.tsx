@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { CountBadge } from "@/components/common";
 import { SessionCard } from "@/components/student";
-import type { Class, Session } from "@/lib/types";
+import type { Class, Session } from "@/lib/types/types";
 
 interface ActiveSessionAccordionProps {
   classes: Class[];

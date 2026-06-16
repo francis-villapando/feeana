@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { ActivityEntry, Course, ILO, Topic } from "@/lib/types";
+import type { ActivityEntry, Course, ILO, Topic } from "@/lib/types/types";
 import { ActivityRow } from "./ActivityFeed";
 
 export function ActivityFeedDialog({

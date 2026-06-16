@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { type TooltipProps } from "recharts";
-import type { DistEntry } from "@/lib/types";
+import type { DistEntry } from "@/lib/types/types";
 
 export const chartTooltipProps = {
   cursor: { fill: "var(--color-border)" } as const,

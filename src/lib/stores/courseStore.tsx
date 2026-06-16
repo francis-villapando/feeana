@@ -16,8 +16,8 @@ import type {
   EntityKind,
   ILO,
   Topic,
-} from "./types";
-import * as courseService from "./services/courseService";
+} from "../types/types";
+import * as courseService from "../services/courseService";
 
 interface CourseStoreValue {
   courses: Course[];

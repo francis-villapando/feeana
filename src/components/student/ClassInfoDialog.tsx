@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Calendar, Check, Copy, LogOut, X } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -21,9 +21,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useClassStore } from "@/lib/classStore";
+import { useClassStore } from "@/lib/stores/classStore";
 import * as feedbackService from "@/lib/services/feedbackService";
-import type { Class } from "@/lib/types";
+import type { Class } from "@/lib/types/types";
 
 interface ClassInfoDialogProps {
   open: boolean;

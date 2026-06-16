@@ -4,10 +4,10 @@ import { useEffect, useMemo } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFeedbackStore } from "@/lib/feedbackStore";
-import { useClassStore } from "@/lib/classStore";
-import { useAnalysisStore } from "@/lib/analysisStore";
-import { averageRate, iloAchievementForClass, iloAchievementForSession, submissionRateForSession } from "@/lib/metrics";
+import { useFeedbackStore } from "@/lib/stores/feedbackStore";
+import { useClassStore } from "@/lib/stores/classStore";
+import { useAnalysisStore } from "@/lib/stores/analysisStore";
+import { averageRate, iloAchievementForClass, iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
 import { CourseManagementHub, ActivityFeed } from "@/components/faculty/dashboard";
 import { CrossClassSessionCreator, KpiCard } from "@/components/faculty";
 

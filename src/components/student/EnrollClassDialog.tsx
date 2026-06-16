@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useClassStore } from "@/lib/classStore";
+import { useClassStore } from "@/lib/stores/classStore";
 
 export function EnrollClassDialog({
   open,

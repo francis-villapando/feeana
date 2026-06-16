@@ -9,9 +9,9 @@
   type ReactNode,
 } from "react";
 import { useAuth } from "./auth";
-import type { Class, Session, Student } from "./types";
-import * as classService from "./services/classService";
-import * as feedbackService from "./services/feedbackService";
+import type { Class, Session, Student } from "../types/types";
+import * as classService from "../services/classService";
+import * as feedbackService from "../services/feedbackService";
 
 interface ClassStoreValue {
   classes: Class[];

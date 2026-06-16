@@ -18,10 +18,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { useAnalysisStore } from "@/lib/analysisStore";
-import { useClassStore } from "@/lib/classStore";
-import { useFeedbackStore } from "@/lib/feedbackStore";
-import { supabase } from "@/lib/supabase";
+import { useAnalysisStore } from "@/lib/stores/analysisStore";
+import { useClassStore } from "@/lib/stores/classStore";
+import { useFeedbackStore } from "@/lib/stores/feedbackStore";
+import { supabase } from "@/lib/db/supabase";
 import { fromDbFeedback } from "@/lib/services/feedbackService";
 import {
   averageRate,
@@ -29,7 +29,7 @@ import {
   iloAchievementForSession,
   recommendationTrendData,
   submissionRateForSession,
-} from "@/lib/metrics";
+} from "@/lib/hooks/metrics";
 
 export const Route = createFileRoute("/_faculty/$classId")({
   loader: async ({ params }) => {

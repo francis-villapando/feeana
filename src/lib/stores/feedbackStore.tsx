@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import type { Feedback } from "./types";
-import * as feedbackService from "./services/feedbackService";
+import type { Feedback } from "../types/types";
+import * as feedbackService from "../services/feedbackService";
 
 interface FeedbackStoreValue {
   feedback: Feedback[];

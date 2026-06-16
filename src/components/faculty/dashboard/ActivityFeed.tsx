@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { Activity, BookOpen, ListChecks, Target } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useCourseStore } from "@/lib/courseStore";
-import type { ActivityEntry, EntityKind, Course, Topic, ILO } from "@/lib/types";
+import { useCourseStore } from "@/lib/stores/courseStore";
+import type { ActivityEntry, EntityKind, Course, Topic, ILO } from "@/lib/types/types";
 import { ActivityFeedDialog } from "./ActivityFeedDialog";
 
 const ICONS: Record<EntityKind, typeof BookOpen> = {
@@ -28,7 +28,7 @@ function relativeTime(iso: string): string {
   return `${d}d Ago`;
 }
 
-import { getIloPath, getTopicPath } from "@/lib/hierarchy";
+import { getIloPath, getTopicPath } from "@/lib/hooks/hierarchy";
 
 export function ActivityFeed() {
   const { activity, currentUserId, courses, topics, ilos } = useCourseStore();

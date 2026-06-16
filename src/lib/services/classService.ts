@@ -1,5 +1,5 @@
-import { supabase } from "@/lib/supabase";
-import type { Class, Session, Student } from "@/lib/types";
+import { supabase } from "@/lib/db/supabase";
+import type { Class, Session, Student } from "@/lib/types/types";
 
 const SAFE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function generateCode(len = 6): string {
