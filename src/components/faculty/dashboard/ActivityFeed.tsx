@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Activity, BookOpen, ListChecks, Target } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import type { ActivityEntry, EntityKind, Course, Topic, ILO } from "@/lib/types/types";
+import { getIloPath, getTopicPath } from "@/lib/hooks/hierarchy";
 import { ActivityFeedDialog } from "./ActivityFeedDialog";
 
 const ICONS: Record<EntityKind, typeof BookOpen> = {
@@ -13,22 +15,20 @@ const ICONS: Record<EntityKind, typeof BookOpen> = {
 };
 
 function withinDays(iso: string, days: number) {
-  const t = new Date(iso).getTime();
-  return Date.now() - t < days * 24 * 60 * 60 * 1000;
+  const ts = new Date(iso).getTime();
+  return Date.now() - ts < days * 24 * 60 * 60 * 1000;
 }
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "Just now";
-  if (m < 60) return `${m}m Ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h Ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d Ago`;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m Ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h Ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d Ago`;
 }
-
-import { getIloPath, getTopicPath } from "@/lib/hooks/hierarchy";
 
 export function ActivityFeed() {
   const { activity, currentUserId, courses, topics, ilos } = useCourseStore();
@@ -88,8 +88,6 @@ export function ActivityFeed() {
     </Card>
   );
 }
-
-import { useNavigate } from "@tanstack/react-router";
 
 export function ActivityRow({
   entry,
