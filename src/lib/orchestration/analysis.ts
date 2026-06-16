@@ -5,6 +5,7 @@
 import type { AnalysisResult, DistEntry } from "../types/types";
 import { supabase } from "../db/supabase";
 import { getMLWorker } from "../ml/mlWorkerStore";
+import { collectPipelineData } from "../algorithm/dataCollection";
 import { ISSUE_RULES } from "../algorithm/rules";
 
 
@@ -93,12 +94,6 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
     throw new Error(feedbackErr.message);
   }
 
-  const feedbackStream = (feedbackData ?? []).map(f => ({
-    id: f.id,
-    rawText: f.content,
-    createdAt: f.created_at
-  }));
-
   // Fetch course name
   const { data: courseData } = await supabase
     .from("courses")
@@ -107,14 +102,15 @@ export async function runAnalysis(sessionId: string): Promise<AnalysisResult> {
     .maybeSingle();
   const courseName = courseData?.title || (session.classes as any)?.course || "Unknown Course";
 
-  // 4. Formulate the SessionContext and run the modular pipeline orchestrator
-  const sessionContext = {
-    course: courseName,
-    topic: session.topic || "Unknown Topic",
-    targetIloRbt: targetIloRbt,
-    sessionId: sessionId,
-    iloStatement: activeIlos[0]?.statement || "Unknown Goal"
-  };
+  // Module 1: Data Collection — assemble all pipeline inputs
+  const { sessionContext, feedbackStream } = collectPipelineData(
+    courseName,
+    session.topic || "Unknown Topic",
+    targetIloRbt,
+    sessionId,
+    activeIlos[0]?.statement || "Unknown Goal",
+    feedbackData ?? [],
+  );
 
   const { api } = getMLWorker();
   // Preload the model with download progress before running inference

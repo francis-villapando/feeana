@@ -1,3 +1,4 @@
+export * from "./dataCollection";
 export * from "./types";
 export * from "./rules";
 export * from "./preprocess";

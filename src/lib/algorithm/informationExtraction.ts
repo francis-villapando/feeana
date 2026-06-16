@@ -1,8 +1,6 @@
 /*
- * Module 3: Information Extraction.
- * This file uses the local Transformers.js model to extract issue and polarity
- * from cleaned feedback text using zero-shot classification.
- * Note: This module is intended to run inside the Web Worker.
+ * Zero-shot classification for pedagogical issue extraction.
+ * Intended to run inside the Web Worker.
  */
 
 import { pipeline, type PipelineType } from "@huggingface/transformers";

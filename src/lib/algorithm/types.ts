@@ -1,8 +1,5 @@
 /*
- * Module 1 / Module 2 shared type definitions.
- * This file defines the exact input/output contracts used by the algorithm pipeline.
- * It maps directly to the pseudocode variables in algorithm.pseudo and supports
- * downstream modules with strongly typed data transfer objects.
+ * Type definitions for all algorithm modules (Modules 1–6).
  */
 
 export type Polarity = "pos" | "neu" | "neg";

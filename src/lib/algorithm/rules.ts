@@ -1,7 +1,3 @@
-/*
- * Static pedagogical taxonomy rules stored as TypeScript constants.
- */
-
 import type { CltCategory } from "./types";
 
 export const TTI_RULES: Record<string, string> = {

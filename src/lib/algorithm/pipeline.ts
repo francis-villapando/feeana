@@ -1,7 +1,6 @@
 /*
- * Module 1: Data Collection and end-to-end orchestration.
- * This file implements the exact loop and logic in algorithm.pseudo.
- * It delegates preprocessing, extraction, mapping, strategy, and output formatting
+ * Pipeline orchestrator: runs Modules 2–6 in sequence.
+ * Delegates preprocessing, extraction, mapping, strategy, and output formatting
  * to specialized modules while providing console boundary logging for visibility.
  */
 
@@ -24,6 +23,11 @@ import { formatDashboardOutput } from "./dashboardOutput";
 
 const PRIORITY_THRESHOLD = 0.3;
 
+/**
+ * Runs the core algorithm (Modules 2–6).
+ * @param sessionContext - Module 1 output: faculty metadata and session context
+ * @param feedbackStream - Module 1 output: student feedback items (Module 2 input)
+ */
 export async function runAlgorithmPipeline(
   sessionContext: SessionContext,
   feedbackStream: FeedbackInput[],
@@ -33,15 +37,15 @@ export async function runAlgorithmPipeline(
     feedbackCount: feedbackStream.length,
   });
 
-  // Module 1: Data Collection
+  // Accumulator initialization
   const recommendationList: ReturnType<typeof GeneratePedagogicalCue>[] = [];
   const warningList: ReturnType<typeof GenerateDiagnosticWarning>[] = [];
   const buffer: DiagnosticRecord[] = [];
 
-  // Module 2, 3, & 4: Preprocess + ExtractPID + Pedagogical Diagnostic Mapping
+  // Modules 2–4: feedback processing loop
   for (let i = 0; i < feedbackStream.length; i++) {
     const feedback = feedbackStream[i];
-    
+
     if (typeof self !== 'undefined' && self.postMessage) {
       self.postMessage({
         type: 'INFERENCE_PROGRESS',

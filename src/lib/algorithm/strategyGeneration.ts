@@ -1,6 +1,5 @@
 /*
- * Module 5: Strategy Generation.
- * This file will compute distributions and generate recommendations or warnings.
+ * Computes distributions and generates recommendations or warnings.
  */
 
 import { ISSUE_DESCRIPTIONS, ISSUE_RECOMMENDATIONS, RBT_DESCRIPTIONS, RBT_LEVELS, TTI_DESCRIPTIONS } from "./rules";
