@@ -104,7 +104,7 @@ export function FacultySidebar() {
                                 onClick={() => setOpenMobile(false)}
                               >
                                 <span className="truncate">
-                                  {cls.courseDisplay} · {cls.section}
+                                  {cls.courseCode} · {cls.section}
                                 </span>
                               </Link>
                             </SidebarMenuSubButton>
