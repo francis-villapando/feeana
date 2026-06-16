@@ -63,36 +63,45 @@ export function CourseManagementHub() {
   const [edit, setEdit] = useState<EditState>(null);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
+  const [focusedId, setFocusedId] = useState<string | undefined>(undefined);
 
-  const search = useSearch({ strict: false }) as { focus?: string };
+  const search = useSearch({ strict: false }) as { focus?: string; t?: number };
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (search.focus) {
-      let courseId = "";
-      const ilo = ilos.find(i => i.id === search.focus);
-      if (ilo) {
-        courseId = ilo.courseId;
+    if (!search.focus) return;
+    setFocusedId(search.focus);
+
+    let courseId = "";
+    const ilo = ilos.find(i => i.id === search.focus);
+    if (ilo) {
+      courseId = ilo.courseId;
+    } else {
+      const topic = topics.find(t => t.id === search.focus);
+      if (topic) {
+        courseId = topic.courseId;
       } else {
-        const topic = topics.find(t => t.id === search.focus);
-        if (topic) {
-          courseId = topic.courseId;
-        } else {
-          const course = courses.find((crs) => crs.id === search.focus);
-          if (course) courseId = course.id;
-        }
+        const course = courses.find((crs) => crs.id === search.focus);
+        if (course) courseId = course.id;
       }
-
-      if (courseId && !expandedItems.includes(courseId)) {
-        setExpandedItems(prev => [...prev, courseId]);
-      }
-
-      setTimeout(() => {
-        const el = document.getElementById(`entity-${search.focus}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 300);
     }
-  }, [search.focus, ilos, topics, courses]);
+
+    if (!courseId) {
+      toast.error("This item has been deleted.");
+      window.history.replaceState(null, "", "/dashboard");
+      return;
+    }
+
+    if (!expandedItems.includes(courseId)) {
+      setExpandedItems(prev => [...prev, courseId]);
+    }
+
+    setTimeout(() => {
+      const el = document.getElementById(`entity-${search.focus}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
+    setTimeout(() => setFocusedId(undefined), 2000);
+  }, [search.focus, search.t]);
 
   const filterFn = <T extends { archived: boolean }>(arr: T[]) =>
     arr.filter((x) => (showArchived ? true : !x.archived));
@@ -180,12 +189,12 @@ export function CourseManagementHub() {
                 key={course.id}
                 value={course.id}
                 id={`entity-${course.id}`}
-                className={`border border-border/60 rounded-lg bg-background/40 px-1 overflow-hidden transition-all ${course.archived ? 'opacity-60' : ''
-                  } ${search.focus === course.id ? 'ring-2 ring-primary ring-inset' : ''}`}
+                className={`border border-border/60 rounded-lg bg-background/40 px-1 overflow-hidden transition-all duration-1000 ${course.archived ? 'opacity-60' : ''
+                  } ${focusedId === course.id ? 'ring-2 ring-primary ring-inset' : ''}`}
               >
                 <div className="group/course flex items-center w-full">
-                    <AccordionTrigger className="hover:no-underline py-3 pl-3 pr-2 flex-1 min-w-0">
-                      <div className="flex items-center gap-3 text-left overflow-hidden flex-1 min-w-0">
+                  <AccordionTrigger className="hover:no-underline py-3 pl-3 pr-2 flex-1 min-w-0">
+                    <div className="flex items-center gap-3 text-left overflow-hidden flex-1 min-w-0">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30">
                         <BookOpen className="h-4 w-4" />
                       </div>
@@ -273,8 +282,8 @@ export function CourseManagementHub() {
                     ) : (
                       filteredHierarchy.topics.filter(t => t.courseId === course.id).map(topic => (
                         <div key={topic.id} className="space-y-2" id={`entity-${topic.id}`}>
-                          <div className={`flex items-center justify-between gap-3 p-2 rounded-md bg-background/60 border border-border/40 group transition-all ${topic.archived ? 'opacity-60' : ''
-                            } ${search.focus === topic.id ? 'ring-2 ring-primary ring-inset' : ''}`}>
+                          <div className={`flex items-center justify-between gap-3 p-2 rounded-md bg-background/60 border border-border/40 group transition-all duration-1000 ${topic.archived ? 'opacity-60' : ''
+                            } ${focusedId === topic.id ? 'ring-2 ring-primary ring-inset' : ''}`}>
                             <div className="flex items-center gap-2 min-w-0">
                               <ListChecks className="h-3.5 w-3.5 text-primary/70 shrink-0" />
                               <span className="text-xs font-medium truncate">{topic.title}</span>
@@ -315,11 +324,11 @@ export function CourseManagementHub() {
                                 <Button
                                   variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
                                   onClick={() => handleAction(
-                                      "Delete topic",
-                                      `Delete the "${topic.title}" topic? This action is irreversible.`,
-                                      () => deleteTopic(topic.id).then(() => toast.success("Topic deleted")),
-                                      "delete"
-                                    )}
+                                    "Delete topic",
+                                    `Delete the "${topic.title}" topic? This action is irreversible.`,
+                                    () => deleteTopic(topic.id).then(() => toast.success("Topic deleted")),
+                                    "delete"
+                                  )}
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>
@@ -340,8 +349,8 @@ export function CourseManagementHub() {
                               <div
                                 key={ilo.id}
                                 id={`entity-${ilo.id}`}
-                                className={`flex items-center justify-between gap-3 p-2 rounded-md bg-background/20 border border-border/20 group/ilo transition-all ${ilo.archived ? 'opacity-60' : ''
-                                  } ${search.focus === ilo.id ? 'ring-2 ring-primary ring-inset' : ''}`}
+                                className={`flex items-center justify-between gap-3 p-2 rounded-md bg-background/20 border border-border/20 group/ilo transition-all duration-1000 ${ilo.archived ? 'opacity-60' : ''
+                                  } ${focusedId === ilo.id ? 'ring-2 ring-primary ring-inset' : ''}`}
                               >
                                 <div className="flex gap-2 min-w-0">
                                   <Target className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />

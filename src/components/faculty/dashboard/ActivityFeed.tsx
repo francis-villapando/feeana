@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Activity, BookOpen, ListChecks, Target } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import type { ActivityEntry, EntityKind, Course, Topic, ILO } from "@/lib/types/types";
 import { getIloPath, getTopicPath } from "@/lib/hooks/hierarchy";
+import { toast } from "sonner";
 import { ActivityFeedDialog } from "./ActivityFeedDialog";
 
 const ICONS: Record<EntityKind, typeof BookOpen> = {
@@ -94,17 +95,20 @@ export function ActivityRow({
   currentUserId,
   courses,
   topics,
-  ilos
+  ilos,
+  onClick,
 }: {
   entry: ActivityEntry;
   currentUserId: string | null;
   courses: Course[];
   topics: Topic[];
   ilos: ILO[];
+  onClick?: () => void;
 }) {
   const Icon = ICONS[entry.entity];
   const isCurrentUser = entry.userId === currentUserId;
   const navigate = useNavigate();
+  const lastClickRef = useRef(0);
 
   const path = useMemo(() => {
     if (entry.entity === "ILO") return getIloPath(entry.entityId, courses, topics, ilos);
@@ -115,7 +119,13 @@ export function ActivityRow({
   return (
     <div
       className="flex items-start gap-3 rounded-md border border-border/60 bg-background/30 px-3 py-2 cursor-pointer hover:bg-background/50 hover:border-primary/30 transition-colors group"
-      onClick={() => navigate({ to: "/dashboard", search: { focus: entry.entityId } })}
+      onClick={() => {
+        const now = Date.now();
+        if (now - lastClickRef.current < 500) toast.info("Navigating...");
+        lastClickRef.current = now;
+        onClick?.();
+        navigate({ to: "/dashboard", search: { focus: entry.entityId, t: now }, resetScroll: false });
+      }}
     >
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30 group-hover:bg-primary/20 transition-colors">
         <Icon className="h-3.5 w-3.5" />
@@ -123,7 +133,7 @@ export function ActivityRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-col">
           {path && (
-            <span className="text-[9px] uppercase tracking-wider text-muted-foreground/80 font-semibold mb-0.5 truncate block">
+            <span className="text-[9px] tracking-wider text-muted-foreground/80 font-semibold mb-0.5 truncate block">
               {path}
             </span>
           )}

@@ -48,6 +48,7 @@ export function ActivityFeedDialog({
                 courses={courses}
                 topics={topics}
                 ilos={ilos}
+                onClick={() => onOpenChange(false)}
               />
             ))}
           </div>
