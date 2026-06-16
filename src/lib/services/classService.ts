@@ -213,6 +213,18 @@ export async function enrollClassByCode(code: string, studentId: string): Promis
   if (!cls || cls.length === 0) return null;
   const classData = cls[0];
 
+  const { data: activeEnrollment } = await supabase
+    .from("enrollments")
+    .select("id")
+    .eq("class_id", classData.id)
+    .eq("student_id", studentId)
+    .is("removed_at", null)
+    .maybeSingle();
+
+  if (activeEnrollment) {
+    throw new Error("already_enrolled");
+  }
+
   const { data: existing } = await supabase
     .from("enrollments")
     .select("id")

@@ -43,6 +43,12 @@ export function EnrollClassDialog({
       onOpenChange(false);
       await refreshEnrolledClasses();
       navigate({ to: "/student/home" });
+    } catch (e) {
+      if (e instanceof Error && e.message === "already_enrolled") {
+        toast.error("You're already enrolled in this class.");
+      } else {
+        toast.error("Something went wrong. Try again.");
+      }
     } finally {
       setEnrolling(false);
     }
