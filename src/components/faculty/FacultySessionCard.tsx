@@ -32,12 +32,12 @@ export function SessionCard({ session }: { session: Session }) {
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base">{session.topic}</CardTitle>
+          <CardTitle className="line-clamp-2 min-h-[2.75rem] text-base">{session.topic}</CardTitle>
           <Badge
             variant={session.status === "active" ? "default" : "secondary"}
-            className={
+            className={`capitalize ${
               session.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/20" : ""
-            }
+            }`}
           >
             {session.status}
           </Badge>
