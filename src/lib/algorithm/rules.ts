@@ -1,5 +1,8 @@
 import type { CltCategory } from "./types";
 
+/** Bump this when any rule, mapping, or threshold changes to invalidate cached results. */
+export const RULES_VERSION = "1.0";
+
 export const TTI_RULES: Record<string, string> = {
   "relational coldness": "Positive Climate",
   "classroom tension": "Negative Climate",

@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RecommendationParagraph, ModelLoaderOverlay, chartTooltipProps, ChartTooltipContent, AnalysisTriggerModal } from "@/components/analysis";
-import { runAnalysis, fetchAnalysisResult } from "@/lib/orchestration/analysis";
+import { runAnalysisPipeline, fetchComputedResult } from "@/lib/algorithm/pipeline";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
@@ -103,7 +103,7 @@ function AnalysisPage() {
     async function loadInitial() {
       setLoading(true);
       try {
-        const data = await fetchAnalysisResult(sessionId);
+        const data = await fetchComputedResult(sessionId);
         if (active) {
           setResult(data);
         }
@@ -144,7 +144,7 @@ function AnalysisPage() {
     setInferenceProgress(null);
     setDownloadProgress(0);
     try {
-      const data = await runAnalysis(session.id);
+      const data = await runAnalysisPipeline(session.id);
       if (!isCancelledRef.current) {
         setResult(data);
         if (classId) {

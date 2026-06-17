@@ -34,7 +34,7 @@ export function AnalysisStoreProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("analysis_results")
+        .from("feedback_diagnostics")
         .select("session_id, result")
         .in("session_id", sessionIds);
 

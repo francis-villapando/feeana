@@ -1,87 +1,39 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
 import { supabaseAdmin } from "./supabase-admin";
-import type { PipelineOutput } from "../lib/algorithm/types";
+import type { RawDiagnostic } from "../lib/algorithm/types";
 
 /* Constants */
 const TEST_SESSION_ID = "f1234567-1234-4321-abcd-000000000001";
 const FACULTY_EMAIL = "faculty@test.com";
 const FACULTY_PASSWORD = "faculty123";
 
-/* Mock — intercepts getMLWorker() so runAnalysis() uses fake output */
-const mockRun = vi.fn();
+/* Mock — intercepts getMLWorker() so runAnalysisPipeline() uses fake output */
+const mockRunInference = vi.fn();
 const mockPreload = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("../../mlWorkerStore", () => ({
+vi.mock("../lib/ml/mlWorkerStore", () => ({
   getMLWorker: vi.fn(() => ({
     api: {
       preloadModel: mockPreload,
-      run: mockRun,
+      runInference: mockRunInference,
     },
   })),
 }));
 
 // above mock must be hoisted above the subject import
-import { runAnalysis, fetchAnalysisResult } from "../lib/orchestration/analysis";
+import { runAnalysisPipeline, fetchComputedResult } from "../lib/algorithm/pipeline";
 import { supabase } from "../lib/db/supabase";
 
 /* Suite-level state */
 let testFeedbackIds: string[] = [];
 
 /* Helpers */
-function buildMockOutput(feedbackIds: string[]): PipelineOutput {
-  const diagnostics = [
-    {
-      feedbackId: feedbackIds[0],
-      tti: "Interactive Lecture",
-      rbt: 3,
-      clt: "Intrinsic" as const,
-      issue: "clarity deficit",
-      polarity: "neg" as const,
-      isGap: true,
-    },
-    {
-      feedbackId: feedbackIds[1],
-      tti: "Pacing",
-      rbt: 2,
-      clt: "Intrinsic" as const,
-      issue: "clarity deficit",
-      polarity: "neg" as const,
-      isGap: true,
-    },
-    {
-      feedbackId: feedbackIds[2],
-      tti: "Seatwork",
-      rbt: 4,
-      clt: "Extraneous" as const,
-      issue: "instructional cadence",
-      polarity: "neu" as const,
-      isGap: false,
-    },
+function buildMockOutput(feedbackIds: string[]): RawDiagnostic[] {
+  return [
+    { feedbackId: feedbackIds[0], issue: "clarity deficit", polarity: "neg" },
+    { feedbackId: feedbackIds[1], issue: "clarity deficit", polarity: "neg" },
+    { feedbackId: feedbackIds[2], issue: "instructional cadence", polarity: "neu" },
   ];
-
-  return {
-    recommendationList: [
-      {
-        id: "rec-1",
-        issue: "clarity deficit",
-        paragraph:
-          "Students report difficulty following the lesson. Consider using more structured examples and checking for understanding frequently.",
-        terms: [],
-        priority: 0.67,
-        theories: ["Cognitive Load Theory"],
-        isGap: true,
-      },
-    ],
-    warningList: [],
-    stats: {
-      totalFeedback: feedbackIds.length,
-      issueCounts: { "clarity deficit": 2, "instructional cadence": 1 },
-      gapCount: 2,
-      aspectCounts: { "clarity deficit": 2, "instructional cadence": 1 },
-      polarityCounts: { pos: 0, neu: 1, neg: 2 },
-    },
-    diagnostics,
-  };
 }
 
 async function cleanCreatedData(): Promise<void> {
@@ -156,10 +108,10 @@ describe("Pipeline Integration Tests", () => {
 
     testFeedbackIds = insertedFeedback.map(f => f.id);
 
-    /* config the mock to return diagnostics referencing our feedback IDs */
-    mockRun.mockResolvedValue(buildMockOutput(testFeedbackIds));
+    /* config the mock to return raw diagnostics referencing our feedback IDs */
+    mockRunInference.mockResolvedValue(buildMockOutput(testFeedbackIds));
 
-    /* sign in as faculty so runAnalysis() passes RLS */
+    /* sign in as faculty so runAnalysisPipeline() passes RLS */
     const { error: signInErr } = await supabase.auth.signInWithPassword({
       email: FACULTY_EMAIL,
       password: FACULTY_PASSWORD,
@@ -175,36 +127,43 @@ describe("Pipeline Integration Tests", () => {
   });
 
   /* Tests */
-  it("1. runAnalysis() fetches session data correctly and returns a result", async () => {
-    const result = await runAnalysis(TEST_SESSION_ID);
+  it("1. runAnalysisPipeline() fetches session data correctly and returns a result", async () => {
+    const result = await runAnalysisPipeline(TEST_SESSION_ID);
 
     expect(result).not.toBeNull();
     expect(result.sessionId).toBe(TEST_SESSION_ID);
     expect(result.totalFeedback).toBe(testFeedbackIds.length);
     expect(result.recommendations.length).toBeGreaterThan(0);
     expect(mockPreload).toHaveBeenCalledOnce();
-    expect(mockRun).toHaveBeenCalledOnce();
+    expect(mockRunInference).toHaveBeenCalledOnce();
   });
 
-  it("2. pipeline saves results to analysis_results and feedback_diagnostics", async () => {
-    /* analysis_results */
+  it("2. pipeline saves raw ML output to analysis_results and computed result to feedback_diagnostics", async () => {
+    /* analysis_results — one row per feedback with issue/polarity */
     const { data: ar } = await supabaseAdmin
       .from("analysis_results")
       .select("*")
       .eq("session_id", TEST_SESSION_ID);
 
     expect(ar).not.toBeNull();
-    expect(ar!.length).toBe(1);
-    expect(ar![0].is_mock).toBe(false);
+    expect(ar!.length).toBe(testFeedbackIds.length);
+    for (const row of ar!) {
+      expect(row.feedback_id).toBeTruthy();
+      expect(typeof row.issue).toBe("string");
+      expect(["pos", "neu", "neg"]).toContain(row.polarity);
+    }
 
-    /* feedback_diagnostics */
+    /* feedback_diagnostics — single JSONB cache row */
     const { data: diag } = await supabaseAdmin
       .from("feedback_diagnostics")
       .select("*")
       .eq("session_id", TEST_SESSION_ID);
 
     expect(diag).not.toBeNull();
-    expect(diag!.length).toBe(testFeedbackIds.length);
+    expect(diag!.length).toBe(1);
+    expect(diag![0].result).toBeTruthy();
+    expect(typeof diag![0].rules_version).toBe("string");
+    expect(diag![0].rules_version.length).toBeGreaterThan(0);
 
     /* last_analyzed_at */
     const { data: session } = await supabaseAdmin
@@ -217,8 +176,8 @@ describe("Pipeline Integration Tests", () => {
     expect(new Date(session!.last_analyzed_at).getTime()).not.toBeNaN();
   });
 
-  it("3. fetchAnalysisResult() retrieves saved results", async () => {
-    const result = await fetchAnalysisResult(TEST_SESSION_ID);
+  it("3. fetchComputedResult() retrieves saved results", async () => {
+    const result = await fetchComputedResult(TEST_SESSION_ID);
 
     expect(result).not.toBeNull();
     expect(result!.sessionId).toBe(TEST_SESSION_ID);
@@ -229,53 +188,47 @@ describe("Pipeline Integration Tests", () => {
     expect(result!.issueDist.length).toBeGreaterThan(0);
   });
 
-  it("4. diagnostic records in the DB match expected schema", async () => {
-    const { data: diag } = await supabaseAdmin
-      .from("feedback_diagnostics")
+  it("4. analysis_results rows match expected raw schema", async () => {
+    const { data: ar } = await supabaseAdmin
+      .from("analysis_results")
       .select("*")
       .eq("session_id", TEST_SESSION_ID);
 
-    expect(diag).not.toBeNull();
-    expect(diag!.length).toBeGreaterThan(0);
+    expect(ar).not.toBeNull();
+    expect(ar!.length).toBeGreaterThan(0);
 
     const validPolarities = new Set(["pos", "neu", "neg"]);
-    const validClts = new Set(["Intrinsic", "Extraneous"]);
 
-    for (const record of diag!) {
+    for (const record of ar!) {
       expect(record.feedback_id).toBeTruthy();
       expect(record.session_id).toBe(TEST_SESSION_ID);
-      expect(record.tti).toBeTruthy();
-      expect(Number.isInteger(record.rbt)).toBe(true);
-      expect(record.rbt).toBeGreaterThanOrEqual(1);
-      expect(record.rbt).toBeLessThanOrEqual(6);
-      expect(validClts.has(record.clt)).toBe(true);
-      expect(record.issue).toBeTruthy();
+      expect(typeof record.issue).toBe("string");
+      expect(record.issue.length).toBeGreaterThan(0);
       expect(validPolarities.has(record.polarity)).toBe(true);
-      expect(typeof record.is_gap).toBe("boolean");
     }
   });
 
   it("5. re-analysis overwrites previous results cleanly", async () => {
     /* run twice */
-    await runAnalysis(TEST_SESSION_ID);
-    await runAnalysis(TEST_SESSION_ID);
+    await runAnalysisPipeline(TEST_SESSION_ID);
+    await runAnalysisPipeline(TEST_SESSION_ID);
 
-    /* still exactly 1 analysis_results row */
+    /* still exactly N analysis_results rows (one per feedback, not accumulating) */
     const { data: ar } = await supabaseAdmin
       .from("analysis_results")
       .select("id", { count: "exact" })
       .eq("session_id", TEST_SESSION_ID);
 
     expect(ar).not.toBeNull();
-    expect(ar!.length).toBe(1);
+    expect(ar!.length).toBe(testFeedbackIds.length);
 
-    /* still exactly N feedback_diagnostics rows */
+    /* still exactly 1 feedback_diagnostics row */
     const { data: diag } = await supabaseAdmin
       .from("feedback_diagnostics")
       .select("id", { count: "exact" })
       .eq("session_id", TEST_SESSION_ID);
 
     expect(diag).not.toBeNull();
-    expect(diag!.length).toBe(testFeedbackIds.length);
+    expect(diag!.length).toBe(1);
   });
 });

@@ -1,4 +1,3 @@
--- Create feedback_diagnostics table to store individual feedback analysis metrics
 CREATE TABLE IF NOT EXISTS feedback_diagnostics (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   feedback_id uuid NOT NULL REFERENCES feedback(id) ON DELETE CASCADE,
@@ -12,14 +11,10 @@ CREATE TABLE IF NOT EXISTS feedback_diagnostics (
   created_at timestamptz DEFAULT now()
 );
 
--- Index foreign keys for performant join and search queries
 CREATE INDEX IF NOT EXISTS idx_diagnostics_feedback ON feedback_diagnostics(feedback_id);
 CREATE INDEX IF NOT EXISTS idx_diagnostics_session ON feedback_diagnostics(session_id);
 
--- Enable Row Level Security (RLS)
 ALTER TABLE feedback_diagnostics ENABLE ROW LEVEL SECURITY;
-
--- Create access policies restricted to class-owning faculty members
 
 CREATE POLICY "Faculty can select diagnostics for own classes"
   ON feedback_diagnostics FOR SELECT

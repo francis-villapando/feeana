@@ -1,18 +1,17 @@
--- ============================================================
--- Seed Script: 40 Taglish Classroom Feedback Entries
+﻿-- Seed Script: 40 Taglish Classroom Feedback Entries
 -- Target  : Session "Introduction to Game Programming" (CSEG2)
 -- Course  : CSEG2 — Game Programming 1
 -- Section : 3CS-C
 -- Student : student@test.com (all 40 entries)
 -- Faculty : faculty@test.com
--- ============================================================
+
 -- How to run:
 --   Option A (Supabase SQL Editor):
 --     Copy-paste this entire file into your Supabase SQL Editor
 --     at https://supabase.com/dashboard/project/narsikmkqjoxlfbonsqs/sql/new
 --     and click "Run".
 --
---   Option B (Local supabase CLI — auto-loads from config.toml):
+--   Option B (Local supabase CLI â€” auto-loads from config.toml):
 --     supabase db reset
 --
 --   Option C (Direct psql):
@@ -24,22 +23,18 @@
 --   section). No hardcoded UUIDs except the session ID which the 40
 --   feedback entries must reference. This makes the seed portable
 --   across environments without UUID collision risk.
--- ============================================================
 
-----------------------------------------------------------------------
+
 -- RE-RUN SAFETY: Clear previously seeded feedback rows only.
 -- Prerequisite rows (profiles, courses, classes, etc.) are left alone
 -- because they use ON CONFLICT / WHERE NOT EXISTS to handle duplicates.
-----------------------------------------------------------------------
 DELETE FROM feedback
 WHERE session_id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e';
 
-----------------------------------------------------------------------
 -- 1. PROFILES (faculty + student)
 -- Uses ON CONFLICT (email) because email column has a UNIQUE constraint.
--- In the hosted project these users likely already exist — the INSERT
+-- In the hosted project these users likely already exist â€” the INSERT
 -- is silently skipped.
-----------------------------------------------------------------------
 INSERT INTO profiles (id, email, full_name, role)
 SELECT gen_random_uuid(), 'faculty@test.com', 'Test Faculty', 'faculty'
 WHERE NOT EXISTS (SELECT 1 FROM profiles WHERE email = 'faculty@test.com');
@@ -48,19 +43,15 @@ INSERT INTO profiles (id, email, full_name, role)
 SELECT gen_random_uuid(), 'student@test.com', 'Test Student', 'student'
 WHERE NOT EXISTS (SELECT 1 FROM profiles WHERE email = 'student@test.com');
 
-----------------------------------------------------------------------
--- 2. COURSE (CSEG2 — Game Programming 1)
+-- 2. COURSE (CSEG2 â€” Game Programming 1)
 -- Uses WHERE NOT EXISTS because courses.code has no UNIQUE constraint
 -- (only a non-unique index for lookups).
-----------------------------------------------------------------------
 INSERT INTO courses (code, title)
 SELECT 'CSEG2', 'Game Programming 1'
 WHERE NOT EXISTS (SELECT 1 FROM courses WHERE code = 'CSEG2');
 
-----------------------------------------------------------------------
 -- 3. TOPIC (Introduction to Game Programming)
 -- ILOs require a topic_id FK, so ensure the topic exists first.
-----------------------------------------------------------------------
 INSERT INTO topics (course_id, title)
 SELECT c.id, 'Introduction to Game Programming'
 FROM courses c WHERE c.code = 'CSEG2'
@@ -68,12 +59,10 @@ AND NOT EXISTS (
   SELECT 1 FROM topics WHERE course_id = c.id AND title = 'Introduction to Game Programming'
 );
 
-----------------------------------------------------------------------
 -- 4. INTENDED LEARNING OUTCOMES (ILOs)
 -- Used by the analysis pipeline to compute target RBT levels.
 -- The `code` column was removed from the schema; uniqueness is
 -- enforced by (course_id, statement) in this seed.
-----------------------------------------------------------------------
 INSERT INTO ilos (course_id, topic_id, statement, bloom_level)
 SELECT c.id, t.id, 'Apply fundamental game programming concepts to build a simple interactive application', 'Apply'
 FROM courses c
@@ -94,12 +83,10 @@ AND NOT EXISTS (
   WHERE course_id = c.id AND statement = 'Analyze game mechanics and implement gameplay systems using object-oriented design'
 );
 
-----------------------------------------------------------------------
 -- 5. CLASS (3CS-C section)
 -- enroll_code has a UNIQUE index so the seed uses a distinct value
 -- to avoid collision with any existing class that may already use
 -- the same section+course combination.
-----------------------------------------------------------------------
 INSERT INTO classes (faculty_id, course_id, course, section, name, enroll_code)
 SELECT
   (SELECT id FROM profiles WHERE email = 'faculty@test.com'),
@@ -112,10 +99,8 @@ WHERE NOT EXISTS (
   SELECT 1 FROM classes WHERE section = '3CS-C' AND course = 'CSEG2'
 );
 
-----------------------------------------------------------------------
 -- 6. ENROLLMENT (student enrolled in the class)
 -- Uses ON CONFLICT on the (class_id, student_id) unique constraint.
-----------------------------------------------------------------------
 INSERT INTO enrollments (class_id, student_id)
 SELECT c.id, p.id
 FROM classes c, profiles p
@@ -123,13 +108,11 @@ WHERE c.section = '3CS-C' AND c.course = 'CSEG2'
   AND p.email = 'student@test.com'
 ON CONFLICT (class_id, student_id) DO NOTHING;
 
-----------------------------------------------------------------------
 -- 7. SESSION
 -- Uses the fixed UUID that the 40 feedback entries reference below.
 -- ON CONFLICT (id) DO NOTHING ensures it works whether the session
 -- already exists (hosted project) or not (local environment).
 -- ilo_ids is uuid[] so we use array_agg() not jsonb_agg().
-----------------------------------------------------------------------
 INSERT INTO sessions (id, class_id, course_id, topic, status, ilo_ids)
 SELECT
   '3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
@@ -142,11 +125,9 @@ FROM classes c
 WHERE c.section = '3CS-C' AND c.course = 'CSEG2'
 ON CONFLICT (id) DO NOTHING;
 
-----------------------------------------------------------------------
 -- 8. BACKFILL: Fix existing session with null course_id
 -- The hosted project may already have this session from before the
 -- course_id column was added. Set it to the CSEG2 course.
-----------------------------------------------------------------------
 UPDATE sessions s
 SET course_id = c.course_id
 FROM classes c
@@ -154,13 +135,11 @@ WHERE s.id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e'
   AND c.id = s.class_id
   AND s.course_id IS NULL;
 
-----------------------------------------------------------------------
 -- 9. FEEDBACK (40 Taglish/code-switched entries)
 -- Always inserted (DELETE at top handles re-run safety).
-----------------------------------------------------------------------
 INSERT INTO feedback (session_id, content, meta) VALUES
 
--- ======== relational coldness ========
+-- relational coldness
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Parang suplado si sir, tinatanong ko sa Discord pero dinidedma lang ako.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -169,7 +148,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Hindi nagre-reply si Sir sa MS Teams, parang ayaw niya kaming tulungan sa debugging.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== classroom tension ========
+-- classroom tension
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Sobrang nakakatakot at high pressure tuwing Q&A, palaging galit at naninermon si ma''am.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -182,7 +161,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Nakakatakot magtanong kay Sir, baka sermunan lang kami imbes na sagutin yung query.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== evaluation unfairness ========
+-- evaluation unfairness
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Parang ang unfair ng pag-grade, laging may paborito si sir sa section natin.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -195,7 +174,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Parang paborito ni sir yung kabilang group, mas mahaba siya mag-explain sa kanila.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== perceived marginalization ========
+-- perceived marginalization
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Pakiramdam ko na-ooverlook ako sa class activities kasi laging yung maiingay lang ang pinapansin.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -204,7 +183,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Feeling ko invisible ako sa class discussion, kahit nagre-raise hand ako, ''di ako napapansin.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== subject alienation ========
+-- subject alienation
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Bakit ba natin pinag-aaralan ito? Parang wala namang practical application sa totoong buhay.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -217,7 +196,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Bakit kailangan pa i-solve ito manually? Parang wala namang sense sa modern programming.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== peer distraction ========
+-- peer distraction
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Maingay masyado sa likod habang nagle-lecture, hindi ako makapag-focus dahil sa chismisan nila.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -230,7 +209,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Sobrang toxic ng environment sa Discord, panay chismis imbes na tulungan sa coding.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== instructional cadence ========
+-- instructional cadence
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Sobrang bilis magsalita at mag-slide ni sir, hindi ko na ma-follow yung tempo ng lesson.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -243,7 +222,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Medyo slow yung pacing, feeling ko sayang yung time kasi alam na namin yung basics.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== clarity deficit ========
+-- clarity deficit
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Ang gulo at malabo mag-explain si ma''am, walang magandang examples para magets namin.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -256,7 +235,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Ang labo ng instructions sa activity, parang kailangan pa naming manghula kung ano yung output.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== abstract logic gap ========
+-- abstract logic gap
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Ang hirap intindihin ng logical proofs at algorithms, parang andaming mathematical logic leaps.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -269,7 +248,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Hirap i-visualize nung Binary Search Tree rotations, ''di ko ma-follow yung logical steps.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== procedural bottleneck ========
+-- procedural bottleneck
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Nalilito ako sa step-by-step setup ng development environment at compiler configuration.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -282,7 +261,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Palaging error yung environment variables ko, ''di ako makapag-proceed sa actual coding.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== conceptual misalignment ========
+-- conceptual misalignment
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Medyo nalilito pa rin ako sa pinagkaiba ng parameters vs arguments sa functions.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -295,7 +274,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Lito ako sa difference ng ''Pass by Value'' vs ''Pass by Reference'' sa implementation.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== design synthesis failure ========
+-- design synthesis failure
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Nahihirapan akong pagsamahin yung visual layout design at yung dynamic backend state ng application.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -308,7 +287,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Hindi ko alam kung paano pagsasamahin yung Auth logic at yung State Management.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== feedback latency ========
+-- feedback latency
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Matagal mag-feedback si ma''am, tapos na ang midterms pero hindi pa rin nachecheckan yung early assignments.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -321,7 +300,7 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Tagal mag-update ng grades ni Ma''am, ''di namin alam kung papasa ba kami.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
 
--- ======== notation struggle ========
+-- notation struggle
 ('3da770a1-ca05-422c-9b6b-c85f2f92dc4e',
  'Palagi akong sumasablay sa syntax, nakakalimutan ko kung saan dapat ilagay yung curly braces at semicolons.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb),
@@ -334,9 +313,9 @@ INSERT INTO feedback (session_id, content, meta) VALUES
  'Nakakalimutan ko lagi yong colon at indentation sa Python, nakaka-frustrate yung logic errors.',
  '{"submittedBy": "f728d46a-0c73-4c93-b2b6-85b16ba47533"}'::jsonb);
 
--- ============================================================
+
 -- Verify
--- ============================================================
+
 SELECT
   (SELECT COUNT(*) FROM feedback WHERE session_id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e') AS total_seeded_feedback,
   (SELECT COUNT(*) FROM sessions WHERE id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e') AS session_exists,

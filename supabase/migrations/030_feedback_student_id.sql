@@ -1,4 +1,3 @@
--- Add student_id column for per-student submission tracking
 ALTER TABLE feedback ADD COLUMN IF NOT EXISTS student_id uuid REFERENCES profiles(id);
 
 -- Backfill existing rows from meta->>'submittedBy'
@@ -25,5 +24,4 @@ WHERE id IN (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_feedback_student_session
 ON feedback(session_id, student_id) WHERE student_id IS NOT NULL;
 
--- Index for student-based lookups (getStudentSubmissions)
 CREATE INDEX IF NOT EXISTS idx_feedback_student_id ON feedback(student_id);
