@@ -27,7 +27,9 @@ import { classParticipation } from "@/lib/hooks/metrics";
 export function ClassStudentsTab({ classId }: { classId: string }) {
   const { studentsForClass, dismissStudent, getClass, sessionsForClass } = useClassStore();
   const { feedback } = useFeedbackStore();
-  const students = studentsForClass(classId);
+  const students = [...studentsForClass(classId)].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
   const cls = getClass(classId);
   const sessions = sessionsForClass(classId);
   const participation = cls ? classParticipation(cls, sessions, feedback) : 0;
@@ -47,6 +49,7 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-8 text-muted-foreground">#</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden md:table-cell">Email</TableHead>
                 <TableHead className="hidden md:table-cell">Enrolled</TableHead>
@@ -54,8 +57,9 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((s) => (
+              {students.map((s, i) => (
                 <TableRow key={s.id}>
+                  <TableCell className="text-xs text-muted-foreground">{i + 1}</TableCell>
                   <TableCell className="font-medium">{s.name}</TableCell>
                   <TableCell className="hidden text-xs text-muted-foreground md:table-cell">
                     {s.email}
