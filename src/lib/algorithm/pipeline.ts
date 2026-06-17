@@ -18,7 +18,6 @@ import type { AnalysisResult, DistEntry } from "../types/types";
 import { supabase } from "../db/supabase";
 import { getMLWorker } from "../ml/mlWorkerStore";
 import { collectPipelineData } from "./dataCollection";
-import { map_tti, map_rbt, map_clt } from "./pedagogicalDiagnosticMapping";
 import {
   CalculateDistributions,
   GeneratePedagogicalCue,
@@ -31,7 +30,6 @@ import type {
   FeedbackInput,
   DiagnosticRecord,
   BufferedDiagnostic,
-  RawDiagnostic,
   PipelineOutput,
 } from "./types";
 
@@ -44,10 +42,9 @@ const BLOOM_LEVEL_MAP: Record<string, number> = {
 
 // Read path
 
-/**
- * Loads a previously computed result from the cache.
- * Returns null if no result exists or the cache is stale (rules_version mismatch).
- */
+// Loads a previously computed result from the cache.
+// Returns null if no result exists or the cache is stale (rules_version mismatch).
+
 export async function fetchComputedResult(sessionId: string): Promise<AnalysisResult | null> {
   const { data, error } = await supabase
     .from("feedback_diagnostics")
@@ -145,16 +142,16 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
     feedbackData ?? [],
   );
 
-  // Modules 2-3: ML inference in Web Worker
+  // Modules 2-3-4: per-feedback loop in Web Worker (preprocess → extract → map)
   const { api } = getMLWorker();
   await api.preloadModel();
-  const rawDiagnostics: RawDiagnostic[] = await api.runInference(feedbackStream);
+  const buffer: DiagnosticRecord[] = await api.runInference(feedbackStream, targetIloRbt);
 
   // Save raw ML output to analysis_results
   await supabase.from("analysis_results").delete().eq("session_id", sessionId);
-  if (rawDiagnostics.length > 0) {
+  if (buffer.length > 0) {
     const { error: insertErr } = await supabase.from("analysis_results").insert(
-      rawDiagnostics.map((d) => ({
+      buffer.map((d) => ({
         session_id: sessionId,
         feedback_id: d.feedbackId,
         issue: d.issue,
@@ -163,17 +160,6 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
     );
     if (insertErr) console.error("Error saving raw ML output:", insertErr);
   }
-
-  // Module 4: Pedagogical Diagnostic Mapping (in-memory)
-  const buffer: DiagnosticRecord[] = rawDiagnostics.map((d) => ({
-    feedbackId: d.feedbackId,
-    issue: d.issue,
-    polarity: d.polarity,
-    tti: map_tti(d.issue),
-    rbt: map_rbt(d.issue),
-    clt: map_clt(d.issue),
-    isGap: map_rbt(d.issue) <= targetIloRbt && map_clt(d.issue) === "Intrinsic",
-  }));
 
   // Module 5: Strategy Generation
   const totalFeedback = feedbackStream.length;

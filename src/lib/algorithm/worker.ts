@@ -1,12 +1,12 @@
-/*
- * Web Worker — runs only Modules 2-3 (preprocess + ML inference).
- * No DOM, React, or browser-only imports allowed.
- */
+// Web Worker — runs Modules 2-3-4 (preprocess → ML inference → diagnostic mapping).
+// No DOM, React, or browser-only imports allowed.
+
 import * as Comlink from "comlink";
 import { env } from "@huggingface/transformers";
 import { Preprocess } from "./preprocess";
 import { ExtractPID, getClassifier } from "./informationExtraction";
-import type { FeedbackInput, RawDiagnostic } from "./types";
+import { map_tti, map_rbt, map_clt } from "./pedagogicalDiagnosticMapping";
+import type { FeedbackInput, DiagnosticRecord } from "./types";
 
 env.allowLocalModels = false;
 
@@ -18,9 +18,9 @@ if (env.backends.onnx.wasm) {
 }
 
 const api = {
-  async runInference(feedbackStream: FeedbackInput[]): Promise<RawDiagnostic[]> {
-    console.debug("[worker] Running inference-only pipeline.");
-    const results: RawDiagnostic[] = [];
+  async runInference(feedbackStream: FeedbackInput[], targetIloRbt: number): Promise<DiagnosticRecord[]> {
+    console.debug("[worker] Running Modules 2-3-4 per-feedback loop.");
+    const results: DiagnosticRecord[] = [];
 
     for (let i = 0; i < feedbackStream.length; i++) {
       const feedback = feedbackStream[i];
@@ -36,10 +36,17 @@ const api = {
 
       const cleanText = Preprocess(feedback);
       const extraction = await ExtractPID(cleanText);
+      const tti = map_tti(extraction.issue);
+      const rbt = map_rbt(extraction.issue);
+      const clt = map_clt(extraction.issue);
       results.push({
         feedbackId: feedback.id,
         issue: extraction.issue,
         polarity: extraction.polarity,
+        tti,
+        rbt,
+        clt,
+        isGap: rbt <= targetIloRbt && clt === "Intrinsic",
       });
     }
 

@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
 import { supabaseAdmin } from "./supabase-admin";
-import type { RawDiagnostic } from "../lib/algorithm/types";
+import type { DiagnosticRecord } from "../lib/algorithm/types";
 
 /* Constants */
 const TEST_SESSION_ID = "f1234567-1234-4321-abcd-000000000001";
@@ -28,11 +28,11 @@ import { supabase } from "../lib/db/supabase";
 let testFeedbackIds: string[] = [];
 
 /* Helpers */
-function buildMockOutput(feedbackIds: string[]): RawDiagnostic[] {
+function buildMockOutput(feedbackIds: string[]): DiagnosticRecord[] {
   return [
-    { feedbackId: feedbackIds[0], issue: "clarity deficit", polarity: "neg" },
-    { feedbackId: feedbackIds[1], issue: "clarity deficit", polarity: "neg" },
-    { feedbackId: feedbackIds[2], issue: "instructional cadence", polarity: "neu" },
+    { feedbackId: feedbackIds[0], issue: "clarity deficit", polarity: "neg", tti: "Instructional Learning Formats", rbt: 5, clt: "Extraneous", isGap: false },
+    { feedbackId: feedbackIds[1], issue: "clarity deficit", polarity: "neg", tti: "Instructional Learning Formats", rbt: 5, clt: "Extraneous", isGap: false },
+    { feedbackId: feedbackIds[2], issue: "instructional cadence", polarity: "neu", tti: "Productivity", rbt: 2, clt: "Extraneous", isGap: false },
   ];
 }
 

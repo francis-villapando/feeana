@@ -1,6 +1,5 @@
-/*
- * Maps extracted issues to TTI, RBT, and CLT pedagogic categories.
- */
+// Module 4: Pedagogical Diagnostic Mapping
+// Maps extracted issues to TTI, RBT, and CLT pedagogic categories.
 
 import type { CltCategory } from "./types";
 import { TTI_RULES, RBT_RULES, CLT_RULES } from "./rules";

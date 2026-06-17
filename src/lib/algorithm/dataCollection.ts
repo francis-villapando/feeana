@@ -1,7 +1,6 @@
-/*
- * Assembles all pipeline inputs: faculty metadata and student feedback.
- * The caller is responsible for fetching data from Supabase; this module only constructs typed objects.
- */
+// Module 1: Data Collection
+// Assembles all pipeline inputs: faculty metadata and student feedback.
+// The caller is responsible for fetching data from Supabase; this module only constructs typed objects.
 
 import type { SessionContext, FeedbackInput } from "./types";
 

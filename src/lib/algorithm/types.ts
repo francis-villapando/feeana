@@ -29,13 +29,6 @@ export interface IssueExtractionResult {
   polarity: Polarity;
 }
 
-/** Raw per-feedback output from Module 3 (ML inference), before mapping. */
-export interface RawDiagnostic {
-  feedbackId: string;
-  issue: string;
-  polarity: Polarity;
-}
-
 export interface DiagnosticRecord {
   tti: string;
   rbt: number;

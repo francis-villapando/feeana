@@ -1,12 +1,11 @@
-/*
- * Zero-shot classification for pedagogical issue extraction.
- * Intended to run inside the Web Worker.
- */
+// Module 3: Information Extraction
+// Zero-shot classification for pedagogical issue extraction.
+// Intended to run inside the Web Worker.
 
 import { pipeline, type PipelineType } from "@huggingface/transformers";
 import type { IssueExtractionResult } from "./types";
 
-// The 14 official taxonomy tags for zero-shot classification candidate labels.
+// 14 pedagogical issue tags
 const CANDIDATE_LABELS = [
   "relational coldness",
   "classroom tension",
@@ -27,9 +26,7 @@ const CANDIDATE_LABELS = [
 // Singleton classifier instance inside the worker
 let classifierPromise: Promise<any> | null = null;
 
-/**
- * Initializes or returns the existing zero-shot classification pipeline.
- */
+// Initializes or returns the existing zero-shot classification pipeline.
 export async function getClassifier(progress_callback?: (info: any) => void) {
   if (!classifierPromise) {
     console.log("[informationExtraction] Initializing zero-shot-classification pipeline...");
@@ -43,10 +40,8 @@ export async function getClassifier(progress_callback?: (info: any) => void) {
   return classifierPromise;
 }
 
-/**
- * Asynchronously extracts the pedagogical issue from text.
- * Mapped implicitly to negative polarity per system design.
- */
+// Asynchronously extracts the pedagogical issue from text.
+// Mapped implicitly to negative polarity per system design.
 export async function ExtractPID(cleanText: string): Promise<IssueExtractionResult> {
   console.debug("[informationExtraction] Extracting PID via Zero-Shot ML", {
     cleanTextLength: cleanText.length,
@@ -54,7 +49,7 @@ export async function ExtractPID(cleanText: string): Promise<IssueExtractionResu
 
   try {
     const classifier = await getClassifier();
-    
+
     // We pass multi_label: false so the scores sum to 1.
     const result = await classifier(cleanText, CANDIDATE_LABELS, {
       multi_label: false,

@@ -4,7 +4,7 @@ Begin
 
   Initialize recommendation_list, warning_list, buffer
   
-  // Module 2, 3, & 4
+  // Module 2, 3, & 4 --- worker.ts
   For each feedback in feedback_stream Do
     clean_text = Preprocess(feedback) // Module 2: Preprocessing --- preprocess.ts
     { issue, polarity } = ExtractPID(clean_text) // Module 3: Information Extraction --- informationExtraction.ts

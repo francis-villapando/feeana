@@ -1,6 +1,5 @@
-/*
- * Formats pipeline results into the final UI payload.
- */
+// Module 6: Dashboard Output
+// Formats pipeline results into the final UI payload.
 
 import type {
   PipelineOutput,

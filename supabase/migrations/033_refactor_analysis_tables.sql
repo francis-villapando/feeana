@@ -34,6 +34,17 @@ ALTER TABLE feedback_diagnostics ADD COLUMN IF NOT EXISTS rules_version text NOT
 
 CREATE INDEX IF NOT EXISTS idx_diagnostics_session ON feedback_diagnostics(session_id);
 
+DELETE FROM feedback_diagnostics
+WHERE id IN (
+  SELECT id FROM (
+    SELECT id, ROW_NUMBER() OVER (
+      PARTITION BY session_id ORDER BY created_at DESC
+    ) AS rn
+    FROM feedback_diagnostics
+  ) sub
+  WHERE sub.rn > 1
+);
+
 -- Restrict to one cache row per session
 CREATE UNIQUE INDEX IF NOT EXISTS idx_diagnostics_unique_session ON feedback_diagnostics(session_id);
 
