@@ -25,7 +25,6 @@ import { supabase } from "@/lib/db/supabase";
 import { fromDbFeedback } from "@/lib/services/feedbackService";
 import {
   averageRate,
-  iloAchievementForClass,
   iloAchievementForSession,
   recommendationTrendData,
   submissionRateForSession,
@@ -116,7 +115,7 @@ function ClassLayout() {
     [sessions, cls, feedback],
   );
   const iloRate = useMemo(
-    () => iloAchievementForClass(sessions, results),
+    () => averageRate(sessions.map((s) => iloAchievementForSession(s, results))),
     [sessions, results],
   );
   const trend = useMemo(
@@ -167,13 +166,13 @@ function ClassLayout() {
           icon={<Users className="h-4 w-4" />}
           label="Submission rate"
           value={`${submissionRate}%`}
-          hint="Average across sessions"
+          hint="Across sessions in this class"
         />
         <KpiCard
           icon={<Target className="h-4 w-4" />}
           label="ILO achievement"
           value={`${iloRate}%`}
-          hint="Class achievement rate"
+          hint="Across sessions in this class"
         />
       </div>
 

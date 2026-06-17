@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
-import { averageRate, iloAchievementForClass, iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
+import { averageRate, iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
 import { CourseManagementHub, ActivityFeed } from "@/components/faculty/dashboard";
 import { CrossClassSessionCreator, KpiCard } from "@/components/faculty";
 
@@ -50,7 +50,7 @@ function DashboardPage() {
     );
     const classAchievements = activeClasses.map((cls) => {
       const classSessions = sessions.filter((s) => s.classId === cls.id);
-      return iloAchievementForClass(classSessions, results);
+      return averageRate(classSessions.map((s) => iloAchievementForSession(s, results)));
     });
     const ilo = averageRate(classAchievements);
     return { active, submission, ilo };
@@ -76,13 +76,13 @@ function DashboardPage() {
           icon={<Users className="h-4 w-4" />}
           label="Submission rate"
           value={`${stats.submission}%`}
-          hint="Average across sessions"
+          hint="Across all sessions"
         />
         <KpiCard
           icon={<Target className="h-4 w-4" />}
           label="ILO achievement"
           value={`${stats.ilo}%`}
-          hint="Overall achievement rate"
+          hint="Across all sessions"
         />
         <KpiCard
           icon={<GraduationCap className="h-4 w-4" />}

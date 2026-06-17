@@ -8,6 +8,7 @@ import {
   PlayCircle,
   Sparkles,
   Target,
+  Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -33,9 +34,11 @@ import { runAnalysisPipeline, fetchComputedResult } from "@/lib/algorithm/pipeli
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
+import { iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
 import { computeIloStatuses } from "@/lib/hooks/iloStatus";
 import type { AnalysisResult } from "@/lib/types/types";
 import { CountBadge } from "@/components/common";
+import { KpiCard } from "@/components/faculty";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
 import React from "react";
 
@@ -176,6 +179,9 @@ function AnalysisPage() {
   const feedbackStatus = computeFeedbackStatus(session, feedback);
   const newFeedbackCount = feedbackStatus.newCount;
 
+  const submissionRate = submissionRateForSession(session, cls, feedback);
+  const iloRate = result ? iloAchievementForSession(session, { [session.id]: result }) : 100;
+
   return (
     <div className="space-y-8">
       <div>
@@ -201,9 +207,32 @@ function AnalysisPage() {
         </div>
       </div>
 
-      {!result && !loading && !isAnalyzing && <EmptyState onTrigger={() => setModalOpen(true)} />}
-      {loading && <LoadingState />}
-      {result && <Results result={result} />}
+      {loading ? (
+        <LoadingState />
+      ) : (
+        <>
+          {!result && !isAnalyzing && <EmptyState onTrigger={() => setModalOpen(true)} />}
+          {result && (
+            <>
+              <div className="grid gap-4 grid-cols-2">
+                <KpiCard
+                  icon={<Users className="h-4 w-4" />}
+                  label="Submission rate"
+                  value={`${submissionRate}%`}
+                  hint="This session"
+                />
+                <KpiCard
+                  icon={<Target className="h-4 w-4" />}
+                  label="ILO achievement"
+                  value={`${iloRate}%`}
+                  hint="This session"
+                />
+              </div>
+              <Results result={result} />
+            </>
+          )}
+        </>
+      )}
 
       <ModelLoaderOverlay
         isVisible={isAnalyzing}
@@ -250,11 +279,17 @@ function EmptyState({ onTrigger }: { onTrigger: () => void }) {
 
 function LoadingState() {
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <Skeleton className="h-64 lg:col-span-2" />
-      <Skeleton className="h-64" />
-      <Skeleton className="h-48 lg:col-span-3" />
-      <Skeleton className="h-72 lg:col-span-3" />
+    <div className="space-y-4">
+      <div className="grid gap-4 grid-cols-2">
+        <Skeleton className="h-28" />
+        <Skeleton className="h-28" />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Skeleton className="h-64 lg:col-span-2" />
+        <Skeleton className="h-64" />
+        <Skeleton className="h-48 lg:col-span-3" />
+        <Skeleton className="h-72 lg:col-span-3" />
+      </div>
     </div>
   );
 }

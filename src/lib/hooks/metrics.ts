@@ -1,13 +1,21 @@
 import type { AnalysisResult, Class, Feedback, Session } from "../types/types";
 
-/** % of students who submitted at least one feedback per session. */
+/** % of students who submitted at least one feedback per session.
+ *  Counts only feedback that existed at analysis time (created_at <= last_analyzed_at)
+ *  when the session has been analyzed. Falls back to all feedback otherwise. */
 export function submissionRateForSession(
   session: Session,
   cls: Class | undefined,
   feedback: Feedback[],
 ): number {
   if (!cls || cls.studentCount === 0) return 0;
-  const responses = feedback.filter((f) => f.sessionId === session.id).length;
+  const responses = feedback.filter((f) => {
+    if (f.sessionId !== session.id) return false;
+    if (session.last_analyzed_at) {
+      return f.createdAt <= session.last_analyzed_at;
+    }
+    return true;
+  }).length;
   return Math.min(100, Math.round((responses / cls.studentCount) * 100));
 }
 
@@ -26,30 +34,6 @@ export function iloAchievementForSession(
   const achievedCount = totalSessionIlos - flaggedIloIds.size;
 
   return Math.round((achievedCount / totalSessionIlos) * 100);
-}
-
-/** ILO achievement per class = % of unique session-level ILOs that have no flagged gaps in any analyzed session of this class. */
-export function iloAchievementForClass(
-  sessions: Session[],
-  analyses: Record<string, AnalysisResult>,
-): number {
-  const activeIloIds = Array.from(new Set(sessions.flatMap((s) => s.iloIds)));
-  if (activeIloIds.length === 0) return 100;
-
-  // Identify all gaps flagged across all analyzed sessions for this class
-  const flaggedIloIds = new Set<string>();
-  for (const session of sessions) {
-    const analysis = analyses[session.id];
-    if (analysis) {
-      const sessionGaps = analysis.gaps ?? [];
-      for (const gap of sessionGaps) {
-        flaggedIloIds.add(gap.iloId);
-      }
-    }
-  }
-
-  const achievedCount = activeIloIds.filter((id) => !flaggedIloIds.has(id)).length;
-  return Math.round((achievedCount / activeIloIds.length) * 100);
 }
 
 export function averageRate(values: number[]): number {
