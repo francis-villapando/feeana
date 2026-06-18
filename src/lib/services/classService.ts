@@ -97,7 +97,7 @@ export async function createClass(
     .insert({
       faculty_id: facultyId,
       course_id: input.courseId,
-      course: `${input.courseCode} \u2014 ${input.courseTitle}`,
+      course: `${input.courseCode} — ${input.courseTitle}`,
       name: input.courseCode,
       section: input.section.trim(),
       enroll_code: enrollCode,

@@ -104,7 +104,7 @@ export function ClassInfoDialog({
         <DialogHeader>
           <DialogTitle>{cls.courseDisplay}</DialogTitle>
           <DialogDescription>
-            {cls.facultyName && <>{cls.facultyName} \u00b7 </>}{cls.section}
+            {cls.facultyName && <>{cls.facultyName} · </>}{cls.section}
           </DialogDescription>
         </DialogHeader>
 
@@ -165,7 +165,7 @@ export function ClassInfoDialog({
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           {formatDT(session.startsAt)}
-                          <span className="text-muted-foreground/50">\u2192</span>
+                          <span className="text-muted-foreground/50">→</span>
                           {formatDT(session.endsAt)}
                         </p>
                       </div>
