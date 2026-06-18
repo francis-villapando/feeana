@@ -285,7 +285,11 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
 
 
   const value = useMemo<ClassStoreValue>(() => {
-    const activeClasses = classes.filter((cls) => !cls.archived);
+    const activeClasses = classes.filter((cls) => !cls.archived).sort((a, b) => {
+      const cmp = a.courseCode.localeCompare(b.courseCode);
+      if (cmp !== 0) return cmp;
+      return a.section.localeCompare(b.section);
+    });
     const archivedClasses = classes.filter((cls) => cls.archived);
     const activeSessions = sessions.filter((s) => s.status === "active");
     return {
