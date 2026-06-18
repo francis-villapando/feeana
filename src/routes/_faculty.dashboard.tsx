@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Database, GraduationCap } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,12 +31,17 @@ function DashboardPage() {
 
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
 
+  const [isDataFresh, setIsDataFresh] = useState(false);
+
   useEffect(() => {
     if (sessionIdsKey) {
+      setIsDataFresh(false);
       const ids = sessionIdsKey.split(",").filter(Boolean);
       if (ids.length > 0) {
-        fetchForSessions(ids);
-        fetchFeedbackBySessions(ids);
+        Promise.all([
+          fetchForSessions(ids),
+          fetchFeedbackBySessions(ids),
+        ]).finally(() => setIsDataFresh(true));
       }
     }
   }, [sessionIdsKey, fetchForSessions, fetchFeedbackBySessions]);
@@ -66,24 +71,28 @@ function DashboardPage() {
       </div>
 
       {/* KPI row */}
-      <KeyMetricsRow
-        submissionRate={stats.submission}
-        iloRate={stats.ilo}
-        submissionHint="Across all sessions"
-        iloHint="Across all sessions"
-        wide
-      >
-        <KpiCard
-          icon={<GraduationCap className="h-4 w-4" />}
-          label="Active classes"
-          value={activeClasses.length.toString()}
-        />
-        <KpiCard
-          icon={<Database className="h-4 w-4" />}
-          label="Active sessions"
-          value={stats.active.toString()}
-        />
-      </KeyMetricsRow>
+      {isDataFresh ? (
+        <KeyMetricsRow
+          submissionRate={stats.submission}
+          iloRate={stats.ilo}
+          submissionHint="Across all sessions"
+          iloHint="Across all sessions"
+          wide
+        >
+          <KpiCard
+            icon={<GraduationCap className="h-4 w-4" />}
+            label="Active classes"
+            value={activeClasses.length.toString()}
+          />
+          <KpiCard
+            icon={<Database className="h-4 w-4" />}
+            label="Active sessions"
+            value={stats.active.toString()}
+          />
+        </KeyMetricsRow>
+      ) : (
+        <DashboardKpiSkeleton />
+      )}
 
       {/* Hub + activity feed */}
       <div className="grid min-h-0 min-w-0 flex-1 gap-6 lg:grid-cols-[2fr_1fr]">
@@ -93,6 +102,24 @@ function DashboardPage() {
 
       {/* Cross-class creator */}
       <CrossClassSessionCreator />
+    </div>
+  );
+}
+
+function DashboardKpiSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="border-border/60 bg-card/70 backdrop-blur-xl">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
+            </div>
+            <Skeleton className="mt-3 h-8 w-16" />
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

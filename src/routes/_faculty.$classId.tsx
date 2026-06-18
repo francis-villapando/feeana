@@ -51,6 +51,7 @@ function ClassLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [isDataFresh, setIsDataFresh] = useState(false);
 
   const cls = getClass(classId);
   const sessions = sessionsForClass(classId);
@@ -58,20 +59,25 @@ function ClassLayout() {
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
 
   useEffect(() => {
+    const promises: Promise<any>[] = [];
+
     if (classId) {
-      fetchFeedbackByClass(classId);
+      promises.push(fetchFeedbackByClass(classId));
       refreshStudents(classId);
     }
-  }, [classId, fetchFeedbackByClass, refreshStudents]);
 
-  useEffect(() => {
     if (sessionIdsKey) {
       const ids = sessionIdsKey.split(",").filter(Boolean);
       if (ids.length > 0) {
-        fetchForSessions(ids);
+        promises.push(fetchForSessions(ids));
       }
     }
-  }, [sessionIdsKey, fetchForSessions]);
+
+    if (promises.length > 0) {
+      setIsDataFresh(false);
+      Promise.all(promises).finally(() => setIsDataFresh(true));
+    }
+  }, [classId, sessionIdsKey, fetchFeedbackByClass, refreshStudents, fetchForSessions]);
 
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;
@@ -150,31 +156,62 @@ function ClassLayout() {
       </Button>
 
       {/* KPI cards */}
-      <KeyMetricsRow
-        submissionRate={submissionRate}
-        iloRate={iloRate}
-        submissionHint="Across sessions in this class"
-        iloHint="Across sessions in this class"
-      />
+      {isDataFresh ? (
+        <>
+          <KeyMetricsRow
+            submissionRate={submissionRate}
+            iloRate={iloRate}
+            submissionHint="Across sessions in this class"
+            iloHint="Across sessions in this class"
+          />
 
-      <ClassTrendCard trend={trend} />
+          <ClassTrendCard trend={trend} />
 
-      {/* Trend interpretation */}
-      <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-base">Trend interpretation</CardTitle>
-          <CardDescription>AI-generated insights from class performance data.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border border-border/60 bg-background/40 p-4 text-sm text-muted-foreground">
-            {trend.length === 0 ? (
-              <p>Trend interpretation will appear once you have enough analyzed sessions.</p>
-            ) : (
-              <p>Interpreting class trends over time...</p>
-            )}
+          {/* Trend interpretation */}
+          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="text-base">Trend interpretation</CardTitle>
+              <CardDescription>AI-generated insights from class performance data.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border border-border/60 bg-background/40 p-4 text-sm text-muted-foreground">
+                {trend.length === 0 ? (
+                  <p>Trend interpretation will appear once you have enough analyzed sessions.</p>
+                ) : (
+                  <p>Interpreting class trends over time...</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Card key={i} className="border-border/60 bg-card/70 backdrop-blur-xl">
+                <CardContent className="p-5">
+                  <Skeleton className="h-3 w-28" />
+                  <Skeleton className="mt-3 h-8 w-16" />
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+            <CardContent className="p-6">
+              <Skeleton className="h-40 w-full" />
+            </CardContent>
+          </Card>
+          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="mt-1 h-3 w-48" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-12 w-full" />
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Two-column: tabs left, details + creator right */}
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
