@@ -18,6 +18,7 @@ export const TTI_RULES: Record<string, string> = {
   "design synthesis failure": "Concept Development",
   "feedback latency": "Quality of Feedback",
   "notation struggle": "Language Modeling",
+  "uncategorized": "Uncategorized",
 };
 
 export const RBT_RULES: Record<string, number> = {
@@ -35,6 +36,7 @@ export const RBT_RULES: Record<string, number> = {
   "design synthesis failure": 6,
   "feedback latency": 5,
   "notation struggle": 1,
+  "uncategorized": 1,
 };
 
 export const ISSUE_RULES: Record<string, string> = {
@@ -52,6 +54,7 @@ export const ISSUE_RULES: Record<string, string> = {
   "design synthesis failure": "Design Synthesis Failure",
   "feedback latency": "Feedback Latency",
   "notation struggle": "Notation Struggle",
+  "uncategorized": "Uncategorized",
 };
 
 export const CLT_RULES: Record<string, CltCategory> = {
@@ -69,6 +72,7 @@ export const CLT_RULES: Record<string, CltCategory> = {
   "design synthesis failure": "Intrinsic",
   "feedback latency": "Extraneous",
   "notation struggle": "Intrinsic",
+  "uncategorized": "Extraneous",
 };
 
 export const ISSUE_RECOMMENDATIONS: Record<string, string> = {
@@ -86,6 +90,7 @@ export const ISSUE_RECOMMENDATIONS: Record<string, string> = {
   "design synthesis failure": `Thus, "recommendation cue for design synthesis failure."`,
   "feedback latency": `Thus, "recommendation cue for feedback latency."`,
   "notation struggle": `Thus, "recommendation cue for notation struggle."`,
+  "uncategorized": `Thus, "no intervention needed for uncategorized feedback."`,
 };
 
 export const RBT_LEVELS = ["", "Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"] as const;
@@ -105,6 +110,7 @@ export const ISSUE_DESCRIPTIONS: Record<string, string> = {
   "design synthesis failure": "Challenges in assembling learned elements to produce new or original work, such as formulated code structures.",
   "feedback latency": "Concerns regarding the speed or quality of instructional scaffolding provided during the learning process.",
   "notation struggle": "Difficulties related to the specialized symbols, syntax, and formal language unique to the computer science discipline.",
+  "uncategorized": "Feedback that does not match any known pedagogical issue pattern.",
 };
 
 export const RBT_DESCRIPTIONS: Record<string, string> = {
