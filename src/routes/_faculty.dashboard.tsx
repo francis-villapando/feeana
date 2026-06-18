@@ -42,7 +42,10 @@ function DashboardPage() {
   }, [sessionIdsKey, fetchForSessions, fetchFeedbackBySessions]);
 
   const stats = useMemo(() => {
-    const active = sessions.filter((s) => s.status === "active").length;
+    const activeClassIds = new Set(activeClasses.map((c) => c.id));
+    const active = sessions.filter(
+      (s) => s.status === "active" && activeClassIds.has(s.classId),
+    ).length;
     const submission = computeDashboardSubmissionRate(activeClasses, sessions, feedback);
     const ilo = computeDashboardIloAchievement(activeClasses, sessions, results);
     return { active, submission, ilo };
