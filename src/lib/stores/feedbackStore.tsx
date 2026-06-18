@@ -9,6 +9,7 @@ interface FeedbackStoreValue {
   addFeedback: (sessionId: string, rawText: string) => Promise<Feedback>;
   fetchFeedback: (sessionId: string) => Promise<Feedback[]>;
   fetchFeedbackByClass: (classId: string) => Promise<Feedback[]>;
+  fetchFeedbackBySessions: (sessionIds: string[]) => Promise<Feedback[]>;
   feedbackForSession: (sessionId: string) => Feedback[];
   insertRealtimeFeedback: (fb: Feedback) => void;
 }
@@ -53,6 +54,22 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const fetchFeedbackBySessions = useCallback(async (sessionIds: string[]) => {
+    if (sessionIds.length === 0) return [];
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await feedbackService.getFeedbackBySessions(sessionIds);
+      setFeedback(data);
+      return data;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load feedback");
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const addFeedback = useCallback(async (sessionId: string, rawText: string) => {
     const entry = await feedbackService.submitFeedback(sessionId, rawText);
     setFeedback((prev) => [...prev, entry]);
@@ -72,8 +89,8 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<FeedbackStoreValue>(
-    () => ({ feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, feedbackForSession, insertRealtimeFeedback }),
-    [feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, feedbackForSession, insertRealtimeFeedback],
+    () => ({ feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, fetchFeedbackBySessions, feedbackForSession, insertRealtimeFeedback }),
+    [feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, fetchFeedbackBySessions, feedbackForSession, insertRealtimeFeedback],
   );
 
   return <FeedbackStoreContext.Provider value={value}>{children}</FeedbackStoreContext.Provider>;

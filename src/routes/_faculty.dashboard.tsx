@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_faculty/dashboard")({
 });
 
 function DashboardPage() {
-  const { feedback } = useFeedbackStore();
+  const { feedback, fetchFeedbackBySessions } = useFeedbackStore();
   const { activeClasses, sessions, classes, isLoading } = useClassStore();
   const { results, fetchForSessions } = useAnalysisStore();
 
@@ -36,22 +36,29 @@ function DashboardPage() {
       const ids = sessionIdsKey.split(",").filter(Boolean);
       if (ids.length > 0) {
         fetchForSessions(ids);
+        fetchFeedbackBySessions(ids);
       }
     }
-  }, [sessionIdsKey, fetchForSessions]);
+  }, [sessionIdsKey, fetchForSessions, fetchFeedbackBySessions]);
 
   const stats = useMemo(() => {
     const active = sessions.filter((s) => s.status === "active").length;
+
+    const analyzedSessions = sessions.filter((s) => s.last_analyzed_at);
     const submission = averageRate(
-      sessions.map((s) => {
+      analyzedSessions.map((s) => {
         const cls = classes.find((cls) => cls.id === s.classId);
         return submissionRateForSession(s, cls, feedback);
       }),
     );
-    const classAchievements = activeClasses.map((cls) => {
-      const classSessions = sessions.filter((s) => s.classId === cls.id);
-      return averageRate(classSessions.map((s) => iloAchievementForSession(s, results)));
-    });
+
+    const classAchievements = activeClasses
+      .map((cls) => {
+        const classSessions = sessions.filter((s) => s.classId === cls.id && results[s.id]);
+        if (classSessions.length === 0) return null;
+        return averageRate(classSessions.map((s) => iloAchievementForSession(s, results)));
+      })
+      .filter((v): v is number => v !== null);
     const ilo = averageRate(classAchievements);
     return { active, submission, ilo };
   }, [feedback, sessions, classes, activeClasses, results]);

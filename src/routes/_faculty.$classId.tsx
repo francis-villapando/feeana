@@ -110,13 +110,22 @@ function ClassLayout() {
     };
   }, [classId, insertRealtimeFeedback]);
 
+  const analyzedSessions = useMemo(
+    () => sessions.filter((s) => s.last_analyzed_at),
+    [sessions],
+  );
+  const analyzedSessionsWithResults = useMemo(
+    () => sessions.filter((s) => results[s.id]),
+    [sessions, results],
+  );
+
   const submissionRate = useMemo(
-    () => averageRate(sessions.map((s) => submissionRateForSession(s, cls, feedback))),
-    [sessions, cls, feedback],
+    () => averageRate(analyzedSessions.map((s) => submissionRateForSession(s, cls, feedback))),
+    [analyzedSessions, cls, feedback],
   );
   const iloRate = useMemo(
-    () => averageRate(sessions.map((s) => iloAchievementForSession(s, results))),
-    [sessions, results],
+    () => averageRate(analyzedSessionsWithResults.map((s) => iloAchievementForSession(s, results))),
+    [analyzedSessionsWithResults, results],
   );
   const trend = useMemo(
     () => recommendationTrendData(sessions, results, feedback),

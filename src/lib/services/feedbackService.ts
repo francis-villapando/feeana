@@ -35,6 +35,17 @@ export async function getFeedback(sessionId: string): Promise<Feedback[]> {
   return (data ?? []).map(fromDbFeedback);
 }
 
+export async function getFeedbackBySessions(sessionIds: string[]): Promise<Feedback[]> {
+  if (sessionIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("feedback")
+    .select("*")
+    .in("session_id", sessionIds)
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(fromDbFeedback);
+}
+
 export async function submitFeedback(sessionId: string, content: string): Promise<Feedback> {
   const {
     data: { user },

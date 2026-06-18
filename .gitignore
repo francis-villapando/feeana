@@ -33,4 +33,3 @@ dist-ssr
 .env
 
 plans
-supabase/seed_dashboard.ts
