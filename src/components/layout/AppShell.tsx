@@ -62,7 +62,7 @@ export function AppShell({ navItems, children }: { navItems: NavItem[]; children
               size="sm"
               onClick={() => {
                 logout();
-                navigate({ to: "/" });
+                navigate({ to: user?.role === "faculty" ? "/login/faculty" : "/login/student" });
               }}
             >
               <LogOut className="h-4 w-4" />
