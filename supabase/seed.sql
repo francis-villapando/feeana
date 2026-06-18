@@ -5,25 +5,12 @@
 -- Student : student@test.com (all 40 entries)
 -- Faculty : faculty@test.com
 
--- How to run:
---   Option A (Supabase SQL Editor):
---     Copy-paste this entire file into your Supabase SQL Editor
---     at https://supabase.com/dashboard/project/narsikmkqjoxlfbonsqs/sql/new
---     and click "Run".
---
---   Option B (Local supabase CLI â€” auto-loads from config.toml):
---     supabase db reset
---
---   Option C (Direct psql):
---     psql "postgresql://..." -f supabase/seed.sql
---
 -- Design:
 --   All prerequisite IDs (faculty, course, class, etc.) are resolved
 --   via subqueries using stable business keys (email, course code,
 --   section). No hardcoded UUIDs except the session ID which the 40
 --   feedback entries must reference. This makes the seed portable
 --   across environments without UUID collision risk.
-
 
 -- RE-RUN SAFETY: Clear previously seeded feedback rows only.
 -- Prerequisite rows (profiles, courses, classes, etc.) are left alone
@@ -33,7 +20,7 @@ WHERE session_id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e';
 
 -- 1. PROFILES (faculty + student)
 -- Uses ON CONFLICT (email) because email column has a UNIQUE constraint.
--- In the hosted project these users likely already exist â€” the INSERT
+-- In the hosted project these users likely already exist — the INSERT
 -- is silently skipped.
 INSERT INTO profiles (id, email, full_name, role)
 SELECT gen_random_uuid(), 'faculty@test.com', 'Test Faculty', 'faculty'
@@ -43,7 +30,7 @@ INSERT INTO profiles (id, email, full_name, role)
 SELECT gen_random_uuid(), 'student@test.com', 'Test Student', 'student'
 WHERE NOT EXISTS (SELECT 1 FROM profiles WHERE email = 'student@test.com');
 
--- 2. COURSE (CSEG2 â€” Game Programming 1)
+-- 2. COURSE (CSEG2 — Game Programming 1)
 -- Uses WHERE NOT EXISTS because courses.code has no UNIQUE constraint
 -- (only a non-unique index for lookups).
 INSERT INTO courses (code, title)
