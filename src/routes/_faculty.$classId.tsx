@@ -190,7 +190,10 @@ function ClassLayout() {
             {Array.from({ length: 2 }).map((_, i) => (
               <Card key={i} className="border-border/60 bg-card/70 backdrop-blur-xl">
                 <CardContent className="p-5">
-                  <Skeleton className="h-3 w-28" />
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                  </div>
                   <Skeleton className="mt-3 h-8 w-16" />
                 </CardContent>
               </Card>
