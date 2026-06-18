@@ -48,7 +48,7 @@ function ArchivedPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8 py-8">
+    <div className="space-y-10">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Archive className="h-5 w-5" />
