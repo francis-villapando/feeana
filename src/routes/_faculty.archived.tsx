@@ -83,7 +83,7 @@ function ArchivedPage() {
         onClose={() => setRestoringId(null)}
         onConfirm={handleRestore}
         title="Restore class"
-        description={`Restore the "${archivedClasses.find(cls => cls.id === restoringId)?.courseCode}" class? This will move it back to your active dashboard.`}
+        description={`Restore the "${archivedClasses.find(cls => cls.id === restoringId)?.courseCode} · ${archivedClasses.find(cls => cls.id === restoringId)?.section}" class? This will move it back to your active dashboard.`}
         actionType="restore"
       />
 
@@ -92,7 +92,7 @@ function ArchivedPage() {
         onClose={() => setDeletingId(null)}
         onConfirm={handleDelete}
         title="Delete class"
-        description={`Delete the "${archivedClasses.find(cls => cls.id === deletingId)?.courseCode}" class? This will delete all sessions and feedback associated with this class. This action cannot be undone.`}
+        description={`Delete the "${archivedClasses.find(cls => cls.id === deletingId)?.courseCode} · ${archivedClasses.find(cls => cls.id === deletingId)?.section}" class? This will delete all sessions and feedback associated with this class. This action cannot be undone.`}
         actionType="delete"
       />
     </div>

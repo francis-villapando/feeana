@@ -226,7 +226,7 @@ function ClassLayout() {
         onClose={() => setArchiveOpen(false)}
         onConfirm={handleArchive}
         title="Archive class"
-        description={`Archive the "${cls.courseCode}" class? This class will be hidden from your dashboard but can be restored later.`}
+        description={`Archive the "${cls.courseCode} · ${cls.section}" class? This class will be hidden from your dashboard but can be restored later.`}
         actionType="archive"
       />
     </div>
