@@ -19,13 +19,14 @@ export function submissionRateForSession(
   return Math.min(100, Math.round((responses / cls.studentCount) * 100));
 }
 
-/** ILO achievement = % of active ILOs that have no flagged gaps in this session. */
+/** ILO achievement = % of active ILOs that have no flagged gaps in this session.
+ *  Caller must ensure `analyses[session.id]` exists — passes NaN otherwise. */
 export function iloAchievementForSession(
   session: Session,
   analyses: Record<string, AnalysisResult>,
 ): number {
   const analysis = analyses[session.id];
-  if (!analysis) return 100; // Default to 100% (unflagged/achieved) if not yet analyzed
+  if (!analysis) return NaN;
 
   const totalSessionIlos = session.iloIds.length;
   if (totalSessionIlos === 0) return 100;
@@ -37,8 +38,67 @@ export function iloAchievementForSession(
 }
 
 export function averageRate(values: number[]): number {
-  if (values.length === 0) return 0;
-  return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+  const clean = values.filter((v) => !isNaN(v));
+  if (clean.length === 0) return 0;
+  return Math.round(clean.reduce((a, b) => a + b, 0) / clean.length);
+}
+
+/** Filter sessions that have analysis results cached. */
+export function sessionsWithResults(
+  sessions: Session[],
+  results: Record<string, AnalysisResult>,
+): Session[] {
+  return sessions.filter((s) => results[s.id]);
+}
+
+/** Class-level submission rate: average of per-session submission rates.
+ *  Only sessions with `last_analyzed_at` are included. */
+export function computeClassSubmissionRate(
+  classSessions: Session[],
+  cls: Class | undefined,
+  feedback: Feedback[],
+): number {
+  const analyzed = classSessions.filter((s) => s.last_analyzed_at);
+  return averageRate(analyzed.map((s) => submissionRateForSession(s, cls, feedback)));
+}
+
+/** Class-level ILO achievement: average of per-session ILO rates.
+ *  Only sessions with cached results are included. */
+export function computeClassIloAchievement(
+  classSessions: Session[],
+  results: Record<string, AnalysisResult>,
+): number {
+  return averageRate(sessionsWithResults(classSessions, results).map((s) => iloAchievementForSession(s, results)));
+}
+
+/** Dashboard-level submission rate: per-class averages → dashboard average. */
+export function computeDashboardSubmissionRate(
+  activeClasses: Class[],
+  sessions: Session[],
+  feedback: Feedback[],
+): number {
+  const classRates = activeClasses
+    .map((cls) => {
+      const classSessions = sessions.filter((s) => s.classId === cls.id);
+      return computeClassSubmissionRate(classSessions, cls, feedback);
+    })
+    .filter((r) => r > 0);
+  return averageRate(classRates);
+}
+
+/** Dashboard-level ILO achievement: per-class ILO averages → dashboard average. */
+export function computeDashboardIloAchievement(
+  activeClasses: Class[],
+  sessions: Session[],
+  results: Record<string, AnalysisResult>,
+): number {
+  const classRates = activeClasses
+    .map((cls) => {
+      const classSessions = sessions.filter((s) => s.classId === cls.id);
+      return computeClassIloAchievement(classSessions, results);
+    })
+    .filter((r) => r > 0);
+  return averageRate(classRates);
 }
 
 /** Class-level participation: responses / (students × sessions). */

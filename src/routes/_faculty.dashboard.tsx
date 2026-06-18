@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
-import { averageRate, iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
+import { computeDashboardSubmissionRate, computeDashboardIloAchievement } from "@/lib/hooks/metrics";
 import { CourseManagementHub, ActivityFeed } from "@/components/faculty/dashboard";
 import { CrossClassSessionCreator, KeyMetricsRow, KpiCard } from "@/components/faculty";
 
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_faculty/dashboard")({
 
 function DashboardPage() {
   const { feedback, fetchFeedbackBySessions } = useFeedbackStore();
-  const { activeClasses, sessions, classes, isLoading } = useClassStore();
+  const { activeClasses, sessions, isLoading } = useClassStore();
   const { results, fetchForSessions } = useAnalysisStore();
 
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
@@ -43,25 +43,10 @@ function DashboardPage() {
 
   const stats = useMemo(() => {
     const active = sessions.filter((s) => s.status === "active").length;
-
-    const analyzedSessions = sessions.filter((s) => s.last_analyzed_at);
-    const submission = averageRate(
-      analyzedSessions.map((s) => {
-        const cls = classes.find((cls) => cls.id === s.classId);
-        return submissionRateForSession(s, cls, feedback);
-      }),
-    );
-
-    const classAchievements = activeClasses
-      .map((cls) => {
-        const classSessions = sessions.filter((s) => s.classId === cls.id && results[s.id]);
-        if (classSessions.length === 0) return null;
-        return averageRate(classSessions.map((s) => iloAchievementForSession(s, results)));
-      })
-      .filter((v): v is number => v !== null);
-    const ilo = averageRate(classAchievements);
+    const submission = computeDashboardSubmissionRate(activeClasses, sessions, feedback);
+    const ilo = computeDashboardIloAchievement(activeClasses, sessions, results);
     return { active, submission, ilo };
-  }, [feedback, sessions, classes, activeClasses, results]);
+  }, [feedback, sessions, activeClasses, results]);
 
   if (isLoading) return <DashboardSkeleton />;
 

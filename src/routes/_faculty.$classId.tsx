@@ -14,10 +14,9 @@ import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { supabase } from "@/lib/db/supabase";
 import { fromDbFeedback } from "@/lib/services/feedbackService";
 import {
-  averageRate,
-  iloAchievementForSession,
+  computeClassSubmissionRate,
+  computeClassIloAchievement,
   recommendationTrendData,
-  submissionRateForSession,
 } from "@/lib/hooks/metrics";
 
 export const Route = createFileRoute("/_faculty/$classId")({
@@ -100,22 +99,13 @@ function ClassLayout() {
     };
   }, [classId, insertRealtimeFeedback]);
 
-  const analyzedSessions = useMemo(
-    () => sessions.filter((s) => s.last_analyzed_at),
-    [sessions],
-  );
-  const analyzedSessionsWithResults = useMemo(
-    () => sessions.filter((s) => results[s.id]),
-    [sessions, results],
-  );
-
   const submissionRate = useMemo(
-    () => averageRate(analyzedSessions.map((s) => submissionRateForSession(s, cls, feedback))),
-    [analyzedSessions, cls, feedback],
+    () => computeClassSubmissionRate(sessions, cls, feedback),
+    [sessions, cls, feedback],
   );
   const iloRate = useMemo(
-    () => averageRate(analyzedSessionsWithResults.map((s) => iloAchievementForSession(s, results))),
-    [analyzedSessionsWithResults, results],
+    () => computeClassIloAchievement(sessions, results),
+    [sessions, results],
   );
   const trend = useMemo(
     () => recommendationTrendData(sessions, results, feedback),

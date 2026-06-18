@@ -33,6 +33,7 @@ import { runAnalysisPipeline, fetchComputedResult } from "@/lib/algorithm/pipeli
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
+import { useAnalysisStore } from "@/lib/stores/analysisStore";
 import { iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
 import { computeIloStatuses } from "@/lib/hooks/iloStatus";
 import type { AnalysisResult } from "@/lib/types/types";
@@ -76,7 +77,7 @@ function AnalysisPage() {
   const { sessions, getClass, studentCountForClass, refreshStudents, refreshSessions } = useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
   const { feedback, fetchFeedback } = useFeedbackStore();
-
+  const { set: setAnalysisResult } = useAnalysisStore();
   const [loading, setLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -149,6 +150,7 @@ function AnalysisPage() {
       const data = await runAnalysisPipeline(session.id);
       if (!isCancelledRef.current) {
         setResult(data);
+        setAnalysisResult(session.id, data);
         if (classId) {
           await refreshSessions(classId);
         }
