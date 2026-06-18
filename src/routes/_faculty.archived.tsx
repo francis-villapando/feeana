@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Archive, RotateCcw } from "lucide-react";
+import { Archive } from "lucide-react";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useClassStore } from "@/lib/stores/classStore";
 
+import { ClassCard } from "@/components/faculty/ClassCard";
 import { ConfirmationDialog } from "@/components/faculty";
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_faculty/archived")({
   head: () => ({
@@ -70,38 +68,12 @@ function ArchivedPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {archivedClasses.map((cls) => (
-            <Card key={cls.id} className="border-border/60 bg-card/70 backdrop-blur-xl">
-              <CardHeader>
-                <CardTitle className="text-base">{cls.courseCode}</CardTitle>
-                <CardDescription>
-                  {cls.courseDisplay} · Section {cls.section}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-md border border-border/60 bg-background/40 px-3 py-2 text-xs">
-                  <span className="text-muted-foreground">Code </span>
-                  <span className="font-mono tracking-wider">{cls.enrollCode}</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setRestoringId(cls.id)}
-                  >
-                    <RotateCcw className="h-4 w-4" /> Restore
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => setDeletingId(cls.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ClassCard
+              key={cls.id}
+              cls={cls}
+              onRestore={(id) => setRestoringId(id)}
+              onDelete={(id) => setDeletingId(id)}
+            />
           ))}
         </div>
       )}
