@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Database, GraduationCap, Target, Users } from "lucide-react";
+import { Database, GraduationCap } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
 import { averageRate, iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
 import { CourseManagementHub, ActivityFeed } from "@/components/faculty/dashboard";
-import { CrossClassSessionCreator, KpiCard } from "@/components/faculty";
+import { CrossClassSessionCreator, KeyMetricsRow, KpiCard } from "@/components/faculty";
 
 export const Route = createFileRoute("/_faculty/dashboard")({
   head: () => ({
@@ -78,19 +78,13 @@ function DashboardPage() {
       </div>
 
       {/* KPI row */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          icon={<Users className="h-4 w-4" />}
-          label="Submission rate"
-          value={`${stats.submission}%`}
-          hint="Across all sessions"
-        />
-        <KpiCard
-          icon={<Target className="h-4 w-4" />}
-          label="ILO achievement"
-          value={`${stats.ilo}%`}
-          hint="Across all sessions"
-        />
+      <KeyMetricsRow
+        submissionRate={stats.submission}
+        iloRate={stats.ilo}
+        submissionHint="Across all sessions"
+        iloHint="Across all sessions"
+        wide
+      >
         <KpiCard
           icon={<GraduationCap className="h-4 w-4" />}
           label="Active classes"
@@ -101,7 +95,7 @@ function DashboardPage() {
           label="Active sessions"
           value={stats.active.toString()}
         />
-      </div>
+      </KeyMetricsRow>
 
       {/* Hub + activity feed */}
       <div className="grid min-h-0 min-w-0 flex-1 gap-6 lg:grid-cols-[2fr_1fr]">

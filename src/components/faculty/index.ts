@@ -1,5 +1,6 @@
 export { ClassCard } from "./ClassCard";
 export { ClassTrendCard } from "./ClassTrendCard";
+export { KeyMetricsRow } from "./KeyMetricsRow";
 export { KpiCard } from "./KpiCard";
 export { ClassStudentsTab } from "./ClassStudentsTab";
 export { ConfirmationDialog, type ActionType } from "./ConfirmationDialog";

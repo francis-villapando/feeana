@@ -8,7 +8,6 @@ import {
   PlayCircle,
   Sparkles,
   Target,
-  Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -38,7 +37,7 @@ import { iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/
 import { computeIloStatuses } from "@/lib/hooks/iloStatus";
 import type { AnalysisResult } from "@/lib/types/types";
 import { CountBadge } from "@/components/common";
-import { KpiCard } from "@/components/faculty";
+import { KeyMetricsRow } from "@/components/faculty";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
 import React from "react";
 
@@ -214,20 +213,12 @@ function AnalysisPage() {
           {!result && !isAnalyzing && <EmptyState onTrigger={() => setModalOpen(true)} />}
           {result && (
             <>
-              <div className="grid gap-4 grid-cols-2">
-                <KpiCard
-                  icon={<Users className="h-4 w-4" />}
-                  label="Submission rate"
-                  value={`${submissionRate}%`}
-                  hint="This session"
-                />
-                <KpiCard
-                  icon={<Target className="h-4 w-4" />}
-                  label="ILO achievement"
-                  value={`${iloRate}%`}
-                  hint="This session"
-                />
-              </div>
+              <KeyMetricsRow
+                submissionRate={submissionRate}
+                iloRate={iloRate}
+                submissionHint="This session"
+                iloHint="This session"
+              />
               <Results result={result} />
             </>
           )}

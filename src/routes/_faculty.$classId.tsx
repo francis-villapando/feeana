@@ -1,9 +1,9 @@
 import { createFileRoute, Link, notFound, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Target, Users } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ClassDetailsCard, ClassTrendCard, ConfirmationDialog, ClassStudentsTab, SessionCreator, SessionCard as FacultySessionCard, KpiCard } from "@/components/faculty";
+import { ClassDetailsCard, ClassTrendCard, ConfirmationDialog, ClassStudentsTab, KeyMetricsRow, SessionCreator, SessionCard as FacultySessionCard } from "@/components/faculty";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -160,20 +160,12 @@ function ClassLayout() {
       </Button>
 
       {/* KPI cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-2">
-        <KpiCard
-          icon={<Users className="h-4 w-4" />}
-          label="Submission rate"
-          value={`${submissionRate}%`}
-          hint="Across sessions in this class"
-        />
-        <KpiCard
-          icon={<Target className="h-4 w-4" />}
-          label="ILO achievement"
-          value={`${iloRate}%`}
-          hint="Across sessions in this class"
-        />
-      </div>
+      <KeyMetricsRow
+        submissionRate={submissionRate}
+        iloRate={iloRate}
+        submissionHint="Across sessions in this class"
+        iloHint="Across sessions in this class"
+      />
 
       <ClassTrendCard trend={trend} />
 
