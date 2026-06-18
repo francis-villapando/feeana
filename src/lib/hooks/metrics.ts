@@ -90,7 +90,7 @@ export function recommendationTrendData(
 ): RecommendationTrendPoint[] {
   return [...sessions]
     .filter((s) => analyses[s.id])
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
     .map((s) => ({
       topic: s.topic,
       recommendations: analyses[s.id].recommendations.length,
