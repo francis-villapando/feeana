@@ -684,9 +684,9 @@ async function createAnalysisResults(
     const buffer: DiagnosticRecord[] = feedbacks.map((fb) => {
       if (fb.issue === "Uncategorized") {
         return {
-          tti: TTI_RULES["Uncategorized"],
-          rbt: RBT_RULES["Uncategorized"],
-          clt: CLT_RULES["Uncategorized"],
+          tti: TTI_RULES["uncategorized"],
+          rbt: RBT_RULES["uncategorized"],
+          clt: CLT_RULES["uncategorized"],
           issue: "Uncategorized" as const,
           polarity: fb.polarity,
           isGap: false,
