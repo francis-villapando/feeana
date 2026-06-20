@@ -1,4 +1,4 @@
-import type { AnalysisResult, Class, Feedback, Session } from "../types/types";
+import type { AnalysisResult, Class, DistEntry, Feedback, Session } from "../types/types";
 
 /** % of students who submitted at least one feedback per session.
  *  Counts only feedback that existed at analysis time (created_at <= last_analyzed_at)
@@ -133,27 +133,47 @@ export function avgPolarityForSession(session: Session, feedback: Feedback[]): n
   return scores.reduce((a, b) => a + b, 0) / scores.length;
 }
 
-export interface RecommendationTrendPoint {
+export interface TrendPoint {
   topic: string;
-  recommendations: number;
+  sessionId: string;
+  submissionRate: number;
+  iloAchievement: number;
   avgPolarity: number;
+  recommendationCount: number;
+  warningCount: number;
+  aspectDist: DistEntry[];
+  issueDist: DistEntry[];
+  rbtDist: DistEntry[];
+  cltDist: DistEntry[];
 }
 
 /**
- * Trend over sessions that have a stored analysis result: number of
- * recommendations + average polarity. X is chronological by createdAt.
+ * Per-session trend data for a class: scalar metrics + distributions
+ * across analyzed sessions, sorted chronologically by startsAt.
  */
-export function recommendationTrendData(
+export function classTrendData(
   sessions: Session[],
   analyses: Record<string, AnalysisResult>,
+  cls: Class | undefined,
   feedback: Feedback[],
-): RecommendationTrendPoint[] {
+): TrendPoint[] {
   return [...sessions]
     .filter((s) => analyses[s.id])
     .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
-    .map((s) => ({
-      topic: s.topic,
-      recommendations: analyses[s.id].recommendations.length,
-      avgPolarity: Number(avgPolarityForSession(s, feedback).toFixed(2)),
-    }));
+    .map((s) => {
+      const analysis = analyses[s.id];
+      return {
+        topic: s.topic,
+        sessionId: s.id,
+        submissionRate: submissionRateForSession(s, cls, feedback),
+        iloAchievement: iloAchievementForSession(s, analyses),
+        avgPolarity: Number(avgPolarityForSession(s, feedback).toFixed(2)),
+        recommendationCount: analysis.recommendations.length,
+        warningCount: analysis.warnings.length,
+        aspectDist: analysis.aspectDist,
+        issueDist: analysis.issueDist,
+        rbtDist: analysis.rbtDist ?? [],
+        cltDist: analysis.cltDist ?? [],
+      };
+    });
 }

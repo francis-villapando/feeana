@@ -104,7 +104,7 @@ function LandingPage() {
             <FeatureTile
               icon={<BookOpenCheck className="h-4 w-4" />}
               title="Longitudinal trends"
-              body="Track sentiment and issue persistence across sessions."
+              body="Track polarity and issue persistence across sessions."
               span="col-span-2"
             />
           </div>

@@ -47,10 +47,10 @@ export interface StrategyStats {
   totalFeedback: number;
   issueCounts: Record<string, number>;
   gapCount: number;
-  distributionByClt?: never;
-  distributionByRbt?: never;
   aspectCounts: Record<string, number>;
   polarityCounts: Record<string, number>;
+  rbtCounts: Record<string, number>;
+  cltCounts: Record<string, number>;
 }
 
 export interface RecommendationItem {

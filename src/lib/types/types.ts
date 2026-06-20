@@ -152,6 +152,8 @@ export interface AnalysisResult {
   aspectDist: DistEntry[];
   issueDist: DistEntry[];
   polarityDist: DistEntry[];
+  rbtDist: DistEntry[];
+  cltDist: DistEntry[];
   gaps: GapItem[];
   recommendations: Recommendation[];
   warnings: Warning[];

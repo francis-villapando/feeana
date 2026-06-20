@@ -24,7 +24,7 @@ import {
   GenerateDiagnosticWarning,
 } from "./strategyGeneration";
 import { formatDashboardOutput } from "./dashboardOutput";
-import { ISSUE_RULES, RULES_VERSION } from "./rules";
+import { ISSUE_RULES, RBT_LEVELS, RULES_VERSION } from "./rules";
 import type {
   SessionContext,
   FeedbackInput,
@@ -229,6 +229,14 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
     { label: "Negative", value: stats.polarityCounts.neg || 0 },
   ];
 
+  const rbtDist: DistEntry[] = Object.entries(stats.rbtCounts)
+    .map(([label, value]) => ({ label, value } as DistEntry))
+    .sort((a, b) => (RBT_LEVELS as readonly string[]).indexOf(a.label) - (RBT_LEVELS as readonly string[]).indexOf(b.label));
+
+  const cltDist: DistEntry[] = Object.entries(stats.cltCounts)
+    .map(([label, value]) => ({ label, value } as DistEntry))
+    .sort((a, b) => b.value - a.value);
+
   // Enrich distribution entries with contributing feedback texts
   const feedbackMap = new Map<string, string>();
   for (const fb of feedbackStream) feedbackMap.set(fb.id, fb.rawText);
@@ -236,6 +244,8 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   const aspectToTexts = new Map<string, string[]>();
   const issueToTexts = new Map<string, string[]>();
   const polarityToTexts: Record<string, string[]> = { pos: [], neu: [], neg: [] };
+  const rbtToTexts = new Map<string, string[]>();
+  const cltToTexts = new Map<string, string[]>();
 
   for (const diag of buffer) {
     const text = feedbackMap.get(diag.feedbackId ?? "");
@@ -253,12 +263,24 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
     if (diag.polarity in polarityToTexts) {
       polarityToTexts[diag.polarity].push(text);
     }
+
+    const rbtName = diag.issue === "Uncategorized" ? "Uncategorized" : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
+    const rbtList = rbtToTexts.get(rbtName) ?? [];
+    rbtList.push(text);
+    rbtToTexts.set(rbtName, rbtList);
+
+    const cltLabel = diag.issue === "Uncategorized" ? "Uncategorized" : diag.clt;
+    const cltList = cltToTexts.get(cltLabel) ?? [];
+    cltList.push(text);
+    cltToTexts.set(cltLabel, cltList);
   }
 
   for (const entry of aspectDist) entry.feedbackTexts = aspectToTexts.get(entry.label);
   for (const entry of issueDist) entry.feedbackTexts = issueToTexts.get(entry.label);
   const polarityLabelKey: Record<string, string> = { Positive: "pos", Neutral: "neu", Negative: "neg" };
   for (const entry of polarityDist) entry.feedbackTexts = polarityToTexts[polarityLabelKey[entry.label]];
+  for (const entry of rbtDist) entry.feedbackTexts = rbtToTexts.get(entry.label);
+  for (const entry of cltDist) entry.feedbackTexts = cltToTexts.get(entry.label);
 
   // Gap items
   const gaps: any[] = [];
@@ -280,6 +302,8 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
     aspectDist,
     issueDist,
     polarityDist,
+    rbtDist,
+    cltDist,
     gaps,
     recommendations: recommendationList.map((r) => ({
       id: r.id,

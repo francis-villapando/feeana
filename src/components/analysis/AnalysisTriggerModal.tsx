@@ -124,10 +124,10 @@ export function AnalysisTriggerModal({
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Participation rate
+                    Submission rate
                   </h4>
                   <p className="text-sm font-medium text-foreground">
-                    {feedbackCount} submissions received
+                    {feedbackCount} submission(s) received
                   </p>
                   <p className="text-xs text-muted-foreground">
                     out of {expectedCount} expected student(s)

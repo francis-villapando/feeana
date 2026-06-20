@@ -1,0 +1,36 @@
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
+import type { DistEntry } from "@/lib/types/types";
+
+interface RbtDistChartProps {
+  data: DistEntry[];
+}
+
+export function RbtDistChart({ data }: RbtDistChartProps) {
+  return (
+    <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="text-base">RBT distribution</CardTitle>
+        <CardDescription>Cognitive-process level distribution.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={Math.max(220, data.length * 36)}>
+          <BarChart data={data} layout="vertical">
+            <CartesianGrid stroke="var(--color-border)" horizontal={false} />
+            <XAxis type="number" domain={[0, 'dataMax']} allowDecimals={false} stroke="var(--color-muted-foreground)" fontSize={11} />
+            <YAxis
+              type="category"
+              dataKey="label"
+              stroke="var(--color-muted-foreground)"
+              fontSize={11}
+              width={130}
+            />
+            <Tooltip {...chartTooltipProps} content={<ChartTooltipContent />} />
+            <Bar dataKey="value" fill="var(--color-chart-5)" radius={[0, 6, 6, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}

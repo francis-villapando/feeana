@@ -54,7 +54,7 @@ function PrivacyPage() {
               </li>
               <li>
                 <strong>Faculty Visibility:</strong> Faculty members see aggregated trend reports, issue
-                distributions, and sentiment analyses. Individual submissions are not displayed to
+                distributions, and polarity analyses. Individual submissions are not displayed to
                 faculty.
               </li>
             </ul>

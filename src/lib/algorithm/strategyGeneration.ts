@@ -9,6 +9,7 @@ import type {
   RecommendationItem,
   WarningItem,
   SessionContext,
+  CltCategory,
 } from "./types";
 
 export function CalculateDistributions(
@@ -26,6 +27,8 @@ export function CalculateDistributions(
     gapCount: 0,
     aspectCounts: {},
     polarityCounts: { pos: 0, neu: 0, neg: 0 },
+    rbtCounts: {},
+    cltCounts: {},
   };
 
   for (const diag of buffer) {
@@ -36,6 +39,12 @@ export function CalculateDistributions(
     if (diag.polarity === "pos" || diag.polarity === "neu" || diag.polarity === "neg") {
       stats.polarityCounts[diag.polarity]++;
     }
+
+    const rbtName = diag.issue === "Uncategorized" ? "Uncategorized" : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
+    stats.rbtCounts[rbtName] = (stats.rbtCounts[rbtName] || 0) + 1;
+
+    const cltLabel = diag.issue === "Uncategorized" ? "Uncategorized" : diag.clt;
+    stats.cltCounts[cltLabel] = (stats.cltCounts[cltLabel] || 0) + 1;
   }
 
   return stats;

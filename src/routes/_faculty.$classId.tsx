@@ -3,7 +3,8 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ClassDetailsCard, ClassTrendCard, ConfirmationDialog, ClassStudentsTab, KeyMetricsRow, SessionCreator, SessionCard as FacultySessionCard } from "@/components/faculty";
+import { ClassDetailsCard, ConfirmationDialog, ClassStudentsTab, KeyMetricsRow, SessionCreator, SessionCard as FacultySessionCard } from "@/components/faculty";
+import { ClassTrendCard, RbtCltTrendCard } from "@/components/faculty/charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,9 +15,9 @@ import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { supabase } from "@/lib/db/supabase";
 import { fromDbFeedback } from "@/lib/services/feedbackService";
 import {
+  classTrendData,
   computeClassSubmissionRate,
   computeClassIloAchievement,
-  recommendationTrendData,
 } from "@/lib/hooks/metrics";
 
 export const Route = createFileRoute("/_faculty/$classId")({
@@ -114,8 +115,8 @@ function ClassLayout() {
     [sessions, results],
   );
   const trend = useMemo(
-    () => recommendationTrendData(sessions, results, feedback),
-    [sessions, results, feedback],
+    () => classTrendData(sessions, results, cls, feedback),
+    [sessions, results, cls, feedback],
   );
 
   if (location.pathname.includes("/analysis/")) {
@@ -167,8 +168,24 @@ function ClassLayout() {
 
           <ClassTrendCard trend={trend} />
 
+          {/* Distribution trends */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <RbtCltTrendCard
+              trend={trend}
+              dataKey="rbtDist"
+              title="RBT trend"
+              description="Bloom's cognitive-process level distribution per session."
+            />
+            <RbtCltTrendCard
+              trend={trend}
+              dataKey="cltDist"
+              title="CLT trend"
+              description="Intrinsic vs extraneous cognitive load per session."
+            />
+          </div>
+
           {/* Trend interpretation */}
-          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+          {/* <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
             <CardHeader>
               <CardTitle className="text-base">Trend interpretation</CardTitle>
               <CardDescription>AI-generated insights from class performance data.</CardDescription>
@@ -182,7 +199,7 @@ function ClassLayout() {
                 )}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </>
       ) : (
         <>
@@ -204,6 +221,14 @@ function ClassLayout() {
               <Skeleton className="h-40 w-full" />
             </CardContent>
           </Card>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+              <CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent>
+            </Card>
+            <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+              <CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent>
+            </Card>
+          </div>
           <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
             <CardHeader>
               <Skeleton className="h-5 w-32" />

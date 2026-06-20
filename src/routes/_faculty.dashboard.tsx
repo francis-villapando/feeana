@@ -8,8 +8,8 @@ import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
 import { computeDashboardSubmissionRate, computeDashboardIloAchievement } from "@/lib/hooks/metrics";
-import { CourseManagementHub, ActivityFeed } from "@/components/faculty/dashboard";
-import { CrossClassSessionCreator, KeyMetricsRow, KpiCard } from "@/components/faculty";
+import { CourseManagementHub, ActivityFeed, CrossClassSessionCreator } from "@/components/faculty/dashboard";
+import { KeyMetricsRow, KpiCard } from "@/components/faculty";
 
 export const Route = createFileRoute("/_faculty/dashboard")({
   head: () => ({

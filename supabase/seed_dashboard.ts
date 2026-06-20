@@ -8,6 +8,7 @@ import {
 import {
   TTI_RULES,
   RBT_RULES,
+  RBT_LEVELS,
   CLT_RULES,
   ISSUE_RULES,
   RULES_VERSION,
@@ -761,6 +762,14 @@ async function createAnalysisResults(
       { label: "Negative", value: stats.polarityCounts.neg || 0 },
     ];
 
+    const rbtDist: DistEntry[] = Object.entries(stats.rbtCounts)
+      .map(([label, value]) => ({ label, value } as DistEntry))
+      .sort((a, b) => (RBT_LEVELS as readonly string[]).indexOf(a.label) - (RBT_LEVELS as readonly string[]).indexOf(b.label));
+
+    const cltDist: DistEntry[] = Object.entries(stats.cltCounts)
+      .map(([label, value]) => ({ label, value } as DistEntry))
+      .sort((a, b) => b.value - a.value);
+
     // Enrich distribution entries with contributing feedback texts
     const feedbackMap = new Map<string, string>();
     for (const fb of feedbacks) feedbackMap.set(fb.id, fb.content);
@@ -768,6 +777,8 @@ async function createAnalysisResults(
     const aspectToTexts = new Map<string, string[]>();
     const issueToTexts = new Map<string, string[]>();
     const polarityToTexts: Record<string, string[]> = { pos: [], neu: [], neg: [] };
+    const rbtToTexts = new Map<string, string[]>();
+    const cltToTexts = new Map<string, string[]>();
 
     for (const diag of buffer) {
       const text = feedbackMap.get(diag.feedbackId ?? "");
@@ -785,12 +796,24 @@ async function createAnalysisResults(
       if (diag.polarity in polarityToTexts) {
         polarityToTexts[diag.polarity].push(text);
       }
+
+      const rbtName = diag.issue === "Uncategorized" ? "Uncategorized" : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
+      const rbtList = rbtToTexts.get(rbtName) ?? [];
+      rbtList.push(text);
+      rbtToTexts.set(rbtName, rbtList);
+
+      const cltLabel = diag.issue === "Uncategorized" ? "Uncategorized" : diag.clt;
+      const cltList = cltToTexts.get(cltLabel) ?? [];
+      cltList.push(text);
+      cltToTexts.set(cltLabel, cltList);
     }
 
     for (const entry of aspectDist) entry.feedbackTexts = aspectToTexts.get(entry.label);
     for (const entry of issueDist) entry.feedbackTexts = issueToTexts.get(entry.label);
     const polarityLabelKey: Record<string, string> = { Positive: "pos", Neutral: "neu", Negative: "neg" };
     for (const entry of polarityDist) entry.feedbackTexts = polarityToTexts[polarityLabelKey[entry.label]];
+    for (const entry of rbtDist) entry.feedbackTexts = rbtToTexts.get(entry.label);
+    for (const entry of cltDist) entry.feedbackTexts = cltToTexts.get(entry.label);
 
     // Gap items
     const gaps: GapItem[] = [];
@@ -812,6 +835,8 @@ async function createAnalysisResults(
       aspectDist,
       issueDist,
       polarityDist,
+      rbtDist,
+      cltDist,
       gaps,
       recommendations: recommendationList.map((r) => ({
         id: seedId("recommendation", session.id, r.issue),
