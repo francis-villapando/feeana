@@ -8,7 +8,6 @@ interface WarningsCardProps {
 }
 
 export function WarningsCard({ data }: WarningsCardProps) {
-  if (data.length === 0) return null;
 
   return (
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
@@ -21,20 +20,26 @@ export function WarningsCard({ data }: WarningsCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {[...data].sort((a, b) => b.count - a.count).map((w) => (
-          <div
-            key={w.id}
-            className="flex items-center justify-between rounded-lg border border-border/60 bg-background/40 p-3"
-          >
-            <p className="text-sm leading-relaxed">{w.issue}</p>
-            <Badge
-              variant="default"
-              className="shrink-0 text-[9px] px-1 h-3.5 font-normal"
+        {data.length === 0 ? (
+          <p className="rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
+            No warning for this session.
+          </p>
+        ) : (
+          [...data].sort((a, b) => b.count - a.count).map((w) => (
+            <div
+              key={w.id}
+              className="flex items-center justify-between rounded-lg border border-border/60 bg-background/40 p-3"
             >
-              {w.count}
-            </Badge>
-          </div>
-        ))}
+              <p className="text-sm leading-relaxed">{w.issue}</p>
+              <Badge
+                variant="default"
+                className="shrink-0 text-[9px] px-1 h-3.5 font-normal"
+              >
+                {w.count}
+              </Badge>
+            </div>
+          ))
+        )}
       </CardContent>
     </Card>
   );

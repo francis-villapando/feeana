@@ -21,7 +21,7 @@ export function IloGapCard({ statuses }: IloGapCardProps) {
       <CardContent className="space-y-2">
         {statuses.length === 0 ? (
           <p className="rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
-            No ILOs defined for this course.
+            No ILOs defined for selected topic.
           </p>
         ) : (
           statuses.map(({ ilo, achieved }) => (

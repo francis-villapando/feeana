@@ -3,16 +3,7 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TrendPoint } from "@/lib/hooks/metrics";
 
-const CHART_COLORS = [
-  "var(--color-chart-1)",
-  "var(--color-chart-2)",
-  "var(--color-chart-3)",
-  "var(--color-chart-4)",
-  "var(--color-chart-5)",
-  "#8b5cf6",
-  "#f59e0b",
-  "#10b981",
-];
+import { CHART_COLORS, SPECIAL_COLORS, RBT_COLOR_ORDER, CLT_COLOR_ORDER } from "@/lib/constants/chart-colors";
 
 interface RbtCltTrendCardProps {
   trend: TrendPoint[];
@@ -33,15 +24,36 @@ export function RbtCltTrendCard({ trend, dataKey, title, description }: RbtCltTr
         </CardHeader>
         <CardContent>
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Distribution trend will appear after multiple sessions are analyzed.
+            Trend will appear after you trigger analysis on at least one session.
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  const allLabels = [...new Set(analyzed.flatMap((p) => p[dataKey].map((d) => d.label)))];
-  const colorMap = Object.fromEntries(allLabels.map((label, i) => [label, CHART_COLORS[i % CHART_COLORS.length]]));
+  const presentLabels = new Set(analyzed.flatMap((p) => p[dataKey].map((d) => d.label)));
+
+  let allLabels: string[];
+  let colorMap: Record<string, string>;
+
+  const orderSource =
+    dataKey === "rbtDist" ? RBT_COLOR_ORDER :
+    dataKey === "cltDist" ? CLT_COLOR_ORDER :
+    null;
+
+  if (orderSource) {
+    const ordered = orderSource.filter(([label]) => presentLabels.has(label));
+    allLabels = ordered.map(([label]) => label);
+    colorMap = Object.fromEntries(ordered);
+  } else {
+    allLabels = [...presentLabels];
+    colorMap = Object.fromEntries(
+      allLabels.map((label, i) => [
+        label,
+        SPECIAL_COLORS[label] || CHART_COLORS[i % CHART_COLORS.length]
+      ])
+    );
+  }
 
   const chartData = analyzed.map((p) => {
     const entry: Record<string, string | number> = { topic: p.topic };
@@ -73,6 +85,7 @@ export function RbtCltTrendCard({ trend, dataKey, title, description }: RbtCltTr
                 borderRadius: 8,
                 fontSize: 12,
               }}
+              itemSorter={(item) => -allLabels.indexOf(item.name as string)}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             {allLabels.map((label) => (

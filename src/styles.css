@@ -1,11 +1,6 @@
-@import "tailwindcss" source(none);
-@source "../src";
+@import "tailwindcss";
 @import "tw-animate-css";
 @custom-variant dark (&:is(.dark *));
-/*
- * Feeana design system — dark-first SaaS aesthetic.
- * Deep slate base + vibrant emerald accent. All colors use oklch.
- */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -44,6 +39,9 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -54,7 +52,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Default to dark theme — Feeana is a dark-mode-first product. */
+/* Dark theme */
 :root {
   --radius: 0.75rem;
   --background: oklch(0.21 0.04 256);
@@ -85,6 +83,9 @@
   --chart-3: oklch(0.75 0.15 80);
   --chart-4: oklch(0.65 0.22 25);
   --chart-5: oklch(0.62 0.2 290);
+  --chart-6: oklch(0.48 0.21 270);
+  --chart-7: oklch(0.53 0.17 65);
+  --chart-8: oklch(0.46 0.16 170);
   --sidebar: oklch(0.2 0.04 256);
   --sidebar-foreground: oklch(0.97 0.01 250);
   --sidebar-primary: oklch(0.78 0.18 156);
@@ -95,7 +96,7 @@
   --sidebar-ring: oklch(0.78 0.18 156);
 }
 
-/* Light theme overrides — enables light mode via .light class on <html> */
+/* Light theme */
 .light {
   --background: oklch(0.98 0.01 250);
   --foreground: oklch(0.21 0.04 256);
@@ -125,6 +126,9 @@
   --chart-3: oklch(0.55 0.15 80);
   --chart-4: oklch(0.6 0.2 25);
   --chart-5: oklch(0.5 0.18 290);
+  --chart-6: #7c3aed;
+  --chart-7: #d97706;
+  --chart-8: #059669;
   --sidebar: oklch(0.98 0.01 250);
   --sidebar-foreground: oklch(0.21 0.04 256);
   --sidebar-primary: oklch(0.6 0.18 156);
@@ -191,16 +195,20 @@
   .chart-tooltip-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
+
   .chart-tooltip-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .chart-tooltip-scrollbar::-webkit-scrollbar-thumb {
     background: var(--color-border);
     border-radius: 3px;
   }
+
   .chart-tooltip-scrollbar::-webkit-scrollbar-thumb:hover {
     background: var(--color-muted-foreground);
   }
+
   .chart-tooltip-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;

@@ -22,11 +22,17 @@ export function RecommendationCuesCard({ recommendations, ilos }: Recommendation
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ol className="space-y-3">
-          {sorted.map((rec, i) => (
-            <RecommendationParagraph key={rec.id} rec={rec} index={i} ilos={ilos} />
-          ))}
-        </ol>
+        {sorted.length === 0 ? (
+          <p className="rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
+            No recommendation cues needed for this session.
+          </p>
+        ) : (
+          <ol className="space-y-3">
+            {sorted.map((rec, i) => (
+              <RecommendationParagraph key={rec.id} rec={rec} index={i} ilos={ilos} />
+            ))}
+          </ol>
+        )}
       </CardContent>
     </Card>
   );

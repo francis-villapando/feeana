@@ -2,12 +2,15 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import type { DistEntry } from "@/lib/types/types";
+import { CLT_COLOR_ORDER } from "@/lib/constants/chart-colors";
 
 interface CltDistChartProps {
   data: DistEntry[];
 }
 
 export function CltDistChart({ data }: CltDistChartProps) {
+  const colorMap = Object.fromEntries(CLT_COLOR_ORDER);
+
   return (
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
       <CardHeader>
@@ -26,12 +29,12 @@ export function CltDistChart({ data }: CltDistChartProps) {
               fontSize={11}
               width={120}
             />
-            <Tooltip {...chartTooltipProps} content={<ChartTooltipContent />} />
+            <Tooltip {...chartTooltipProps} content={<ChartTooltipContent colorMap={colorMap} />} />
             <Bar dataKey="value" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]}>
               {data.map((entry) => (
                 <Cell
                   key={entry.label}
-                  fill={entry.label === "Intrinsic" ? "var(--color-chart-4)" : "var(--color-chart-2)"}
+                  fill={colorMap[entry.label] || "var(--color-chart-2)"}
                 />
               ))}
             </Bar>

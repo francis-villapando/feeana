@@ -1,7 +1,8 @@
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import type { DistEntry } from "@/lib/types/types";
+import { SPECIAL_COLORS } from "@/lib/constants/chart-colors";
 
 interface AspectDistChartProps {
   data: DistEntry[];
@@ -30,7 +31,14 @@ export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
               width={170}
             />
             <Tooltip {...chartTooltipProps} content={<ChartTooltipContent />} />
-            <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]} />
+            <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]}>
+              {data.map((entry) => (
+                <Cell
+                  key={entry.label}
+                  fill={SPECIAL_COLORS[entry.label] || "var(--color-chart-5)"}
+                />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

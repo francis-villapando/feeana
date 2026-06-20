@@ -38,7 +38,11 @@ export function PolarityDistChart({ data }: PolarityDistChartProps) {
                 />
               ))}
             </Pie>
-            <Tooltip {...chartTooltipProps} content={<ChartTooltipContent colorMap={POLARITY_COLORS} />} />
+            <Tooltip
+              {...chartTooltipProps}
+              offset={20}
+              content={<ChartTooltipContent colorMap={POLARITY_COLORS} />}
+            />
             <Legend wrapperStyle={{ fontSize: 11 }} />
           </PieChart>
         </ResponsiveContainer>
