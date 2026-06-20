@@ -8,7 +8,14 @@ import { ExtractPID, getClassifier } from "./informationExtraction";
 import { map_tti, map_rbt, map_clt } from "./pedagogicalDiagnosticMapping";
 import type { FeedbackInput, DiagnosticRecord } from "./types";
 
-env.allowLocalModels = false;
+env.allowLocalModels = true;
+
+// Attempt GPU (WebGL) acceleration; fallback to CPU (WASM) if unavailable
+try {
+  env.backends.onnx.backend = 'webgl';
+} catch {
+  // WebGL not supported — WASM fallback is automatic
+}
 
 let lastProgressTime = 0;
 const THROTTLE_MS = 66;
@@ -35,7 +42,14 @@ const api = {
       });
 
       const cleanText = Preprocess(feedback);
+      performance.mark(`extract:entry-${i}-start`);
       const extraction = await ExtractPID(cleanText);
+      performance.mark(`extract:entry-${i}-end`);
+      performance.measure(`Entry inference #${i}`, {
+        start: `extract:entry-${i}-start`,
+        end: `extract:entry-${i}-end`,
+        detail: { targetMs: 8000 },
+      });
       const tti = map_tti(extraction.issue);
       const rbt = map_rbt(extraction.issue);
       const clt = map_clt(extraction.issue);

@@ -79,30 +79,24 @@ async function fetchSessionData(sessionId: string) {
   const courseId = session.course_id || (session.classes as any)?.course_id;
   if (!courseId) throw new Error("Course context not found for this session.");
 
-  const { data: ilosData, error: ilosErr } = await supabase
-    .from("ilos")
-    .select("*")
-    .eq("course_id", courseId)
-    .eq("archived", false);
+  // Fire remaining 3 queries in parallel (ILOs, feedback, course)
+  const [ilosResult, feedbackResult, courseResult] = await Promise.all([
+    supabase.from("ilos").select("*").eq("course_id", courseId).eq("archived", false),
+    supabase.from("feedback").select("*").eq("session_id", sessionId),
+    supabase.from("courses").select("title").eq("id", courseId).maybeSingle(),
+  ]);
 
-  if (ilosErr) throw new Error(ilosErr.message);
+  if (ilosResult.error) throw new Error(ilosResult.error.message);
+  if (feedbackResult.error) throw new Error(feedbackResult.error.message);
 
-  const { data: feedbackData, error: feedbackErr } = await supabase
-    .from("feedback")
-    .select("*")
-    .eq("session_id", sessionId);
+  const courseName = courseResult.data?.title || (session.classes as any)?.course || "Unknown Course";
 
-  if (feedbackErr) throw new Error(feedbackErr.message);
-
-  const { data: courseData } = await supabase
-    .from("courses")
-    .select("title")
-    .eq("id", courseId)
-    .maybeSingle();
-
-  const courseName = courseData?.title || (session.classes as any)?.course || "Unknown Course";
-
-  return { session, courseName, ilosData: ilosData ?? [], feedbackData: feedbackData ?? [] };
+  return {
+    session,
+    courseName,
+    ilosData: ilosResult.data ?? [],
+    feedbackData: feedbackResult.data ?? [],
+  };
 }
 
 /**
@@ -122,7 +116,14 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   console.debug("[pipeline] Starting analysis pipeline for session", { sessionId });
 
   // Module 1: Fetch + assemble data
+  performance.mark('pipeline:fetch-start');
   const { session, courseName, ilosData, feedbackData } = await fetchSessionData(sessionId);
+  performance.mark('pipeline:fetch-end');
+  performance.measure('Supabase read', {
+    start: 'pipeline:fetch-start',
+    end: 'pipeline:fetch-end',
+    detail: { targetMs: 2500 },
+  });
 
   const sessionIloIds = Array.isArray(session.ilo_ids) ? session.ilo_ids : [];
   const activeIlos = ilosData.filter((ilo: any) => sessionIloIds.includes(ilo.id));
@@ -144,10 +145,26 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
 
   // Modules 2-3-4: per-feedback loop in Web Worker (preprocess → extract → map)
   const { api } = getMLWorker();
+  performance.mark('pipeline:model-load-start');
   await api.preloadModel();
+  performance.mark('pipeline:model-load-end');
+  performance.measure('Model init (warm)', {
+    start: 'pipeline:model-load-start',
+    end: 'pipeline:model-load-end',
+    detail: { targetMs: 6000 },
+  });
+
+  performance.mark('pipeline:inference-start');
   const buffer: DiagnosticRecord[] = await api.runInference(feedbackStream, targetIloRbt);
+  performance.mark('pipeline:inference-end');
+  performance.measure('Pipeline total', {
+    start: 'pipeline:inference-start',
+    end: 'pipeline:inference-end',
+    detail: { targetMs: 240000 },
+  });
 
   // Save raw ML output to analysis_results
+  performance.mark('pipeline:write-start');
   await supabase.from("analysis_results").delete().eq("session_id", sessionId);
   if (buffer.length > 0) {
     const { error: insertErr } = await supabase.from("analysis_results").insert(
@@ -286,6 +303,12 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
     rules_version: RULES_VERSION,
   });
   if (cacheErr) console.error("Error saving computed result:", cacheErr);
+  performance.mark('pipeline:write-end');
+  performance.measure('Supabase write (diagnostics)', {
+    start: 'pipeline:write-start',
+    end: 'pipeline:write-end',
+    detail: { targetMs: 5000 },
+  });
 
   // Update sessions.last_analyzed_at
   const { error: updateErr } = await supabase
