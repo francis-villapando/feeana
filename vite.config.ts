@@ -45,4 +45,11 @@ function onnxWasmDevPlugin() {
 export default defineConfig({
   cloudflare: false,
   plugins: [nitro(), onnxWasmDevPlugin()],
+  vite: {
+    server: {
+      hmr: {
+        overlay: false,
+      },
+    },
+  },
 });
