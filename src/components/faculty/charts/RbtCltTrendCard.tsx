@@ -79,6 +79,7 @@ export function RbtCltTrendCard({ trend, dataKey, title, description }: RbtCltTr
             <XAxis dataKey="topic" stroke="var(--color-muted-foreground)" fontSize={11} />
             <YAxis allowDecimals={false} stroke="var(--color-muted-foreground)" fontSize={11} />
             <Tooltip
+              cursor={{ fill: "var(--color-border)" }}
               contentStyle={{
                 background: "var(--color-popover)",
                 border: "1px solid var(--color-border)",
