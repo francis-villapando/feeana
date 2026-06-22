@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/stores/auth";
 import type { UserRole } from "@/lib/types/types";
 import { ThemeToggle } from "@/components/common";
+import { PasswordField } from "./PasswordField";
 
 const ALLOWED_FACULTY_DOMAIN = import.meta.env.VITE_FACULTY_DOMAIN as string | undefined;
 
@@ -154,33 +155,29 @@ export function AuthPage({ role }: { role: UserRole }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={
-                    role === "faculty" ? `you@${ALLOWED_FACULTY_DOMAIN}` : "you@example.com"
+                    role === "faculty" && ALLOWED_FACULTY_DOMAIN
+                      ? `you@${ALLOWED_FACULTY_DOMAIN}`
+                      : "you@example.com"
                   }
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
+              <PasswordField
+                id="password"
+                label="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                placeholder="Enter your password"
+              />
               {mode === "signup" && (
-                <div className="space-y-2">
-                  <Label htmlFor="confirm">Confirm password</Label>
-                  <Input
-                    id="confirm"
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    placeholder="••••••••"
-                  />
-                </div>
+                <PasswordField
+                  id="confirm"
+                  label="Confirm password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder="Re-enter your password"
+                />
               )}
               <Button type="submit" className="w-full" disabled={submitting}>
                 {mode === "signin" ? (
@@ -191,47 +188,45 @@ export function AuthPage({ role }: { role: UserRole }) {
                 {submitting
                   ? mode === "signin"
                     ? "Signing in..."
-                    : "Creating..."
+                    : "Signing up..."
                   : mode === "signin"
                     ? "Sign in"
-                    : "Create account"}
+                    : "Sign up"}
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm">
+            <div className="mt-6 text-center text-sm text-muted-foreground">
               {mode === "signin" ? (
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-foreground"
-                  onClick={() => setMode("signup")}
-                >
-                  New here? <span className="text-primary hover:underline">Create an account</span>
-                </button>
+                <>
+                  New here?{" "}
+                  <button
+                    type="button"
+                    className="text-primary hover:underline"
+                    onClick={() => setMode("signup")}
+                  >
+                    Sign up
+                  </button>
+                </>
               ) : (
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-foreground"
-                  onClick={() => setMode("signin")}
-                >
+                <>
                   Already have an account?{" "}
-                  <span className="text-primary hover:underline">Sign in</span>
-                </button>
+                  <button
+                    type="button"
+                    className="text-primary hover:underline"
+                    onClick={() => setMode("signin")}
+                  >
+                    Sign in
+                  </button>
+                </>
               )}
             </div>
 
             <p className="mt-6 text-center text-xs text-muted-foreground">
               By continuing you accept the{" "}
-              <Link to="/privacy-policy" className="text-primary hover:underline">
+              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                 Privacy policy
-              </Link>
+              </a>
               .
-            </p>
-
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-              Test credentials:{" "}
-              {role === "faculty"
-                ? "faculty@test.com / faculty123"
-                : "student@test.com / student123"}
             </p>
           </CardContent>
         </Card>

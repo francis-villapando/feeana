@@ -36,8 +36,9 @@ function PrivacyPage() {
           </span>
           <h1 className="text-3xl font-semibold tracking-tight">Privacy Policy</h1>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">Consent Module — Feeana Research Build</p>
-        <p className="text-xs text-muted-foreground/60">Last Updated: June 11, 2026</p>
+        <p className="mt-2 text-sm text-muted-foreground">Feeana — AI-Powered Feedback Analyzer for Enhancing Teaching
+          Strategies in Digital Classrooms</p>
+        <p className="text-xs text-muted-foreground/60">Last Updated: June 22, 2026</p>
 
         <div className="mt-8 space-y-6 text-sm leading-relaxed text-muted-foreground">
           <section>
@@ -54,8 +55,7 @@ function PrivacyPage() {
               </li>
               <li>
                 <strong>Faculty Visibility:</strong> Faculty members see aggregated trend reports, issue
-                distributions, and polarity analyses. Individual submissions are not displayed to
-                faculty.
+                distributions, and polarity analyses.
               </li>
             </ul>
           </section>
@@ -70,19 +70,15 @@ function PrivacyPage() {
                 and abbreviation expansion.
               </li>
               <li>
-                <strong>Classification:</strong> Text is filtered into pedagogical or non-pedagogical
-                categories.
-              </li>
-              <li>
-                <strong>Analysis:</strong> Submissions are analyzed for aspect-based sentiment and mapped
+                <strong>Analysis:</strong> Submissions are analyzed for pedagogical issue-driven aspect-based sentiment and mapped
                 to Intended Learning Outcomes (ILOs) and educational theories (Revised Bloom&#39;s
                 Taxonomy, Cognitive Load Theory, and Teaching Through Interactions).
               </li>
               <li>
-                <strong>AI/Third-Party Disclosure:</strong> All analysis models run entirely inside your
-                browser via a Web Worker. On your first visit, a pre-trained ML model (DistilXLM-R)
-                is downloaded from HuggingFace Hub into your browser cache. No raw text leaves your
-                device for inference.
+                <strong>AI/Third-Party Disclosure:</strong> All analysis models run entirely inside the
+                faculty's browser via a Web Worker. On their first visit, a pre-trained ML model (DistilXLM-R)
+                is downloaded from HuggingFace Hub into their browser cache. No raw text leaves their
+                browser for inference.
               </li>
             </ul>
           </section>
@@ -99,7 +95,7 @@ function PrivacyPage() {
                 your browser cache will not delete stored data.
               </li>
               <li>
-                <strong>Retention:</strong> Data is retained for the duration of this research build.
+                <strong>Retention:</strong> Data is retained for the duration of this thesis.
                 There is currently no automated deletion mechanism. Contact the researcher below to
                 request removal of your data.
               </li>
@@ -109,7 +105,7 @@ function PrivacyPage() {
             <h2 className="text-base font-semibold text-foreground">4. Your Consent &amp; Rights</h2>
             <p className="mt-2">
               By proceeding to submit feedback through this application, you confirm your voluntary
-              participation in this research build.
+              participation in this thesis.
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               <li>
