@@ -19,7 +19,12 @@ interface AuthContextValue {
   isLoading: boolean;
   hasRole: (role: UserRole) => boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
-  register: (email: string, password: string, name: string, role: UserRole) => Promise<AuthUser>;
+  register: (
+    email: string,
+    password: string,
+    name: string,
+    role: UserRole,
+  ) => Promise<AuthUser & { needsEmailConfirmation: boolean }>;
   logout: () => Promise<void>;
 }
 
@@ -94,11 +99,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (error) throw new Error(error.message);
       if (!data.user) throw new Error("Registration failed");
+      if (data.user.identities?.length === 0) {
+        throw new Error("This email is already registered.");
+      }
       return {
         id: data.user.id,
         email: data.user.email ?? email,
         name,
         role,
+        needsEmailConfirmation: !data.session,
       };
     },
     [],

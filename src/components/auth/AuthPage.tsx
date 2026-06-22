@@ -88,12 +88,24 @@ export function AuthPage({ role }: { role: UserRole }) {
     try {
       if (mode === "signin") {
         const u = await login(email, password);
+        if (u.role !== role) {
+          throw new Error("Invalid email or password.");
+        }
         toast.success(`Welcome, ${u.name}`);
         goHome(u.role);
       } else {
         const u = await register(email, password, name, role);
-        toast.success(`Account created — welcome, ${u.name}`);
-        goHome(u.role);
+        if (u.needsEmailConfirmation) {
+          toast.success("Check your email to confirm your account.");
+          setMode("signin");
+          setName("");
+          setEmail("");
+          setPassword("");
+          setConfirm("");
+        } else {
+          toast.success(`Account created — welcome, ${u.name}`);
+          goHome(u.role);
+        }
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong.");
