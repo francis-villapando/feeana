@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/common";
 import { useTheme } from "@/lib/providers/themeProvider";
+import { SignOutDialog } from "@/components/auth";
 
 interface AppMenuProps {
   role: "faculty" | "student";
@@ -32,10 +33,12 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
           <span className="text-muted-foreground capitalize">{role}</span>
           <span className="font-medium">{userName}</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={onSignOut} className="text-destructive">
-          <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline">Sign out</span>
-        </Button>
+        <SignOutDialog onConfirm={onSignOut}>
+          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Sign out</span>
+          </Button>
+        </SignOutDialog>
       </div>
 
       {/* Mobile: popover menu */}
@@ -95,14 +98,15 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
 
           <Separator className="my-1.5" />
 
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-destructive hover:bg-destructive/10"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </button>
+          <SignOutDialog onConfirm={onSignOut}>
+            <button
+              type="button"
+              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </button>
+          </SignOutDialog>
         </PopoverContent>
       </Popover>
     </>
