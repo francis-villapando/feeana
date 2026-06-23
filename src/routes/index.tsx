@@ -9,7 +9,7 @@ import {
   Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { ThemeToggle } from "@/components/common";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,12 +37,14 @@ function LandingPage() {
         </div>
         <nav className="flex items-center gap-2">
           <ThemeToggle />
-          <Link
-            to="/privacy"
+          <a
+            href="/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
             className="hidden items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground sm:flex"
           >
             <ShieldCheck className="h-4 w-4" /> Privacy
-          </Link>
+          </a>
         </nav>
       </header>
 
@@ -85,13 +87,13 @@ function LandingPage() {
           <div className="grid grid-cols-2 gap-3">
             <FeatureTile
               icon={<Target className="h-4 w-4" />}
-              title="ILO Alignment Analysis"
+              title="ILO alignment analysis"
               body="Compare expected outcomes to what students actually experience."
               span="row-span-2"
             />
             <FeatureTile
               icon={<LineChart className="h-4 w-4" />}
-              title="Aspect, Issue, & Polarity"
+              title="Aspect, issue, & polarity"
               body="ABSA distributions across every collected feedback batch."
             />
             <FeatureTile
@@ -101,8 +103,8 @@ function LandingPage() {
             />
             <FeatureTile
               icon={<BookOpenCheck className="h-4 w-4" />}
-              title="Longitudinal Trends"
-              body="Track sentiment and issue persistence across sessions."
+              title="Longitudinal trends"
+              body="Track polarity and issue persistence across sessions."
               span="col-span-2"
             />
           </div>

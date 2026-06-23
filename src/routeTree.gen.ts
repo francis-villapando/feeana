@@ -9,7 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as StudentRouteImport } from './routes/_student'
 import { Route as FacultyRouteImport } from './routes/_faculty'
 import { Route as IndexRouteImport } from './routes/index'
@@ -20,12 +20,11 @@ import { Route as FacultyDashboardRouteImport } from './routes/_faculty.dashboar
 import { Route as FacultyArchivedRouteImport } from './routes/_faculty.archived'
 import { Route as FacultyClassIdRouteImport } from './routes/_faculty.$classId'
 import { Route as StudentStudentHomeRouteImport } from './routes/_student.student.home'
-import { Route as StudentStudentSubmitSessionIdRouteImport } from './routes/_student.student.submit.$sessionId'
 import { Route as FacultyClassIdAnalysisSessionIdRouteImport } from './routes/_faculty.$classId.analysis.$sessionId'
 
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudentRoute = StudentRouteImport.update({
@@ -76,12 +75,6 @@ const StudentStudentHomeRoute = StudentStudentHomeRouteImport.update({
   path: '/student/home',
   getParentRoute: () => StudentRoute,
 } as any)
-const StudentStudentSubmitSessionIdRoute =
-  StudentStudentSubmitSessionIdRouteImport.update({
-    id: '/student/submit/$sessionId',
-    path: '/student/submit/$sessionId',
-    getParentRoute: () => StudentRoute,
-  } as any)
 const FacultyClassIdAnalysisSessionIdRoute =
   FacultyClassIdAnalysisSessionIdRouteImport.update({
     id: '/analysis/$sessionId',
@@ -91,7 +84,7 @@ const FacultyClassIdAnalysisSessionIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/privacy': typeof PrivacyRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/$classId': typeof FacultyClassIdRouteWithChildren
   '/archived': typeof FacultyArchivedRoute
   '/dashboard': typeof FacultyDashboardRoute
@@ -100,11 +93,10 @@ export interface FileRoutesByFullPath {
   '/login/student': typeof LoginStudentRoute
   '/student/home': typeof StudentStudentHomeRoute
   '/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
-  '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/privacy': typeof PrivacyRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/$classId': typeof FacultyClassIdRouteWithChildren
   '/archived': typeof FacultyArchivedRoute
   '/dashboard': typeof FacultyDashboardRoute
@@ -113,14 +105,13 @@ export interface FileRoutesByTo {
   '/login/student': typeof LoginStudentRoute
   '/student/home': typeof StudentStudentHomeRoute
   '/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
-  '/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_faculty': typeof FacultyRouteWithChildren
   '/_student': typeof StudentRouteWithChildren
-  '/privacy': typeof PrivacyRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
   '/_faculty/$classId': typeof FacultyClassIdRouteWithChildren
   '/_faculty/archived': typeof FacultyArchivedRoute
   '/_faculty/dashboard': typeof FacultyDashboardRoute
@@ -129,13 +120,12 @@ export interface FileRoutesById {
   '/login/student': typeof LoginStudentRoute
   '/_student/student/home': typeof StudentStudentHomeRoute
   '/_faculty/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
-  '/_student/student/submit/$sessionId': typeof StudentStudentSubmitSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/privacy'
+    | '/privacy-policy'
     | '/$classId'
     | '/archived'
     | '/dashboard'
@@ -144,11 +134,10 @@ export interface FileRouteTypes {
     | '/login/student'
     | '/student/home'
     | '/$classId/analysis/$sessionId'
-    | '/student/submit/$sessionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/privacy'
+    | '/privacy-policy'
     | '/$classId'
     | '/archived'
     | '/dashboard'
@@ -157,13 +146,12 @@ export interface FileRouteTypes {
     | '/login/student'
     | '/student/home'
     | '/$classId/analysis/$sessionId'
-    | '/student/submit/$sessionId'
   id:
     | '__root__'
     | '/'
     | '/_faculty'
     | '/_student'
-    | '/privacy'
+    | '/privacy-policy'
     | '/_faculty/$classId'
     | '/_faculty/archived'
     | '/_faculty/dashboard'
@@ -172,25 +160,24 @@ export interface FileRouteTypes {
     | '/login/student'
     | '/_student/student/home'
     | '/_faculty/$classId/analysis/$sessionId'
-    | '/_student/student/submit/$sessionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FacultyRoute: typeof FacultyRouteWithChildren
   StudentRoute: typeof StudentRouteWithChildren
-  PrivacyRoute: typeof PrivacyRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   LoginFacultyRoute: typeof LoginFacultyRoute
   LoginStudentRoute: typeof LoginStudentRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_student': {
@@ -263,13 +250,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentStudentHomeRouteImport
       parentRoute: typeof StudentRoute
     }
-    '/_student/student/submit/$sessionId': {
-      id: '/_student/student/submit/$sessionId'
-      path: '/student/submit/$sessionId'
-      fullPath: '/student/submit/$sessionId'
-      preLoaderRoute: typeof StudentStudentSubmitSessionIdRouteImport
-      parentRoute: typeof StudentRoute
-    }
     '/_faculty/$classId/analysis/$sessionId': {
       id: '/_faculty/$classId/analysis/$sessionId'
       path: '/analysis/$sessionId'
@@ -311,12 +291,10 @@ const FacultyRouteWithChildren =
 
 interface StudentRouteChildren {
   StudentStudentHomeRoute: typeof StudentStudentHomeRoute
-  StudentStudentSubmitSessionIdRoute: typeof StudentStudentSubmitSessionIdRoute
 }
 
 const StudentRouteChildren: StudentRouteChildren = {
   StudentStudentHomeRoute: StudentStudentHomeRoute,
-  StudentStudentSubmitSessionIdRoute: StudentStudentSubmitSessionIdRoute,
 }
 
 const StudentRouteWithChildren =
@@ -326,7 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FacultyRoute: FacultyRouteWithChildren,
   StudentRoute: StudentRouteWithChildren,
-  PrivacyRoute: PrivacyRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
   LoginFacultyRoute: LoginFacultyRoute,
   LoginStudentRoute: LoginStudentRoute,
 }

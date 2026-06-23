@@ -1,5 +1,5 @@
-import { supabase } from "@/lib/supabase";
-import type { Class, Session, Student } from "@/lib/types";
+import { supabase } from "@/lib/db/supabase";
+import type { Class, Session, Student } from "@/lib/types/types";
 
 const SAFE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function generateCode(len = 6): string {
@@ -11,16 +11,29 @@ function generateCode(len = 6): string {
 }
 
 function fromDbClass(row: Record<string, unknown>): Class {
+  const faculty = row.profiles
+    ? (row.profiles as Record<string, unknown>)
+    : row.faculty
+      ? (row.faculty as Record<string, unknown>)
+      : null;
+  const enrollments = Array.isArray(row.enrollments)
+    ? (row.enrollments as Record<string, unknown>[]) : [];
+  const activeEnrollmentCount = enrollments.filter(
+    (item) => item.removed_at === null || item.removed_at === undefined,
+  ).length;
+
   return {
     id: row.id as string,
-    name: (row.name as string) ?? "",
+    courseCode: (row.name as string) ?? "",
     courseId: (row.course_id as string) ?? "",
-    course: row.course as string,
+    courseDisplay: row.course as string,
     section: row.section as string,
-    code: row.enroll_code as string,
+    enrollCode: row.enroll_code as string,
     createdAt: row.created_at as string,
     archived: row.archived as boolean,
-    studentCount: (row.student_count as number) ?? 0,
+    studentCount:
+      enrollments.length > 0 ? activeEnrollmentCount : ((row.student_count as number) ?? 0),
+    facultyName: (faculty?.full_name as string) ?? (row.faculty_name as string) ?? undefined,
   };
 }
 
@@ -36,6 +49,7 @@ function fromDbSession(row: Record<string, unknown>): Session {
     createdAt: row.created_at as string,
     startsAt: row.starts_at as string,
     endsAt: row.ends_at as string,
+    last_analyzed_at: (row.last_analyzed_at as string) ?? null,
   };
 }
 
@@ -50,6 +64,7 @@ function toDbSession(s: Session) {
     status: s.status,
     starts_at: s.startsAt,
     ends_at: s.endsAt,
+    last_analyzed_at: s.last_analyzed_at,
   };
 }
 
@@ -60,7 +75,7 @@ export async function getClasses(facultyId: string): Promise<Class[]> {
     .eq("faculty_id", facultyId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []).map(fromDbClass);
+  return (data ?? []).map((row: Record<string, unknown>) => fromDbClass(row));
 }
 
 export async function createClass(
@@ -173,7 +188,8 @@ export async function getStudents(classId: string): Promise<Student[]> {
       )
     `,
     )
-    .eq("class_id", classId);
+    .eq("class_id", classId)
+    .is("removed_at", null);
   if (error) throw new Error(error.message);
 
   return (data ?? []).map((row: Record<string, unknown>) => {
@@ -197,12 +213,37 @@ export async function enrollClassByCode(code: string, studentId: string): Promis
   if (!cls || cls.length === 0) return null;
   const classData = cls[0];
 
-  await supabase.from("enrollments").delete().eq("class_id", classData.id).eq("student_id", studentId);
-
-  const { error } = await supabase
+  const { data: activeEnrollment } = await supabase
     .from("enrollments")
-    .insert({ class_id: classData.id, student_id: studentId });
-  if (error && error.code !== "23505") throw new Error(error.message);
+    .select("id")
+    .eq("class_id", classData.id)
+    .eq("student_id", studentId)
+    .is("removed_at", null)
+    .maybeSingle();
+
+  if (activeEnrollment) {
+    throw new Error("already_enrolled");
+  }
+
+  const { data: existing } = await supabase
+    .from("enrollments")
+    .select("id")
+    .eq("class_id", classData.id)
+    .eq("student_id", studentId)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("enrollments")
+      .update({ removed_at: null })
+      .eq("id", existing.id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase
+      .from("enrollments")
+      .insert({ class_id: classData.id, student_id: studentId });
+    if (error && error.code !== "23505") throw new Error(error.message);
+  }
 
   return fromDbClass(classData);
 }
@@ -210,17 +251,33 @@ export async function enrollClassByCode(code: string, studentId: string): Promis
 export async function dismissStudent(classId: string, studentId: string): Promise<void> {
   const { error } = await supabase
     .from("enrollments")
-    .delete()
+    .update({ removed_at: new Date().toISOString() })
     .eq("class_id", classId)
-    .eq("student_id", studentId);
+    .eq("student_id", studentId)
+    .is("removed_at", null);
+  if (error) throw new Error(error.message);
+}
+
+export async function unenrollSelf(classId: string, studentId: string): Promise<void> {
+  const { error } = await supabase
+    .from("enrollments")
+    .update({ removed_at: new Date().toISOString() })
+    .eq("class_id", classId)
+    .eq("student_id", studentId)
+    .is("removed_at", null);
   if (error) throw new Error(error.message);
 }
 
 export async function getClassById(id: string): Promise<Class | null> {
-  const { data, error } = await supabase.from("classes").select("*").eq("id", id).single();
+  const { data, error } = await supabase
+    .from("classes")
+    .select("*")
+    .eq("id", id)
+    .single();
   if (error?.code === "PGRST116") return null;
   if (error) throw new Error(error.message);
-  return data ? fromDbClass(data) : null;
+  if (!data) return null;
+  return fromDbClass(data);
 }
 
 export async function getSessionById(id: string): Promise<Session | null> {
@@ -255,11 +312,14 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
         enroll_code,
         created_at,
         archived,
-        student_count
+        student_count,
+        profiles!faculty_id (full_name)
       )
     `
     )
-    .eq("student_id", studentId);
+    .eq("student_id", studentId)
+    .is("removed_at", null)
+    .order("classes(name)");
 
   if (error) throw new Error(error.message);
 
@@ -268,5 +328,5 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
       const cls = row.classes as Record<string, unknown>;
       return fromDbClass(cls || {});
     })
-    .filter((c) => c.id);
+    .filter((cls) => cls.id);
 }

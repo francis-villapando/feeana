@@ -1,0 +1,42 @@
+Begin
+  // Module 1: Data Collection --- dataCollection.ts
+  session = session_context(course, topic, target_ILO_rbt)
+
+  Initialize recommendation_list, warning_list, buffer
+  
+  // Module 2, 3, & 4 --- worker.ts
+  For each feedback in feedback_stream Do
+    clean_text = Preprocess(feedback) // Module 2: Preprocessing --- preprocess.ts
+    { issue, polarity } = ExtractPID(clean_text) // Module 3: Information Extraction --- informationExtraction.ts
+
+    // Module 4: Pedagogical Diagnostic Mapping --- pedagogicalDiagnosticMapping.ts
+    tti = map_tti(issue)
+    rbt = map_rbt(issue)
+    clt = map_clt(issue)
+    is_gap = (rbt <= session.target_ILO_rbt) AND (clt == "Intrinsic")
+
+    buffer.add({ tti, rbt, clt, issue, polarity, is_gap })
+  End For
+  
+  // Module 5: Strategy Generation --- strategyGeneration.ts
+  Total_F = Count(feedback_stream) // Total number of feedback entries
+  stats = CalculateDistributions(buffer) // Compute data for dashboard charts
+  
+  For each unique_issue in buffer Do
+    // Unified Priority Scoring (P)
+    w_c = unique_issue.is_gap ? 1.5 : 1.0
+    P = (unique_issue.count / Total_F) * w_c
+
+    // Threshold Trigger
+    If P >= 0.30 Then // Trigger full diagnostic recommendation
+      recommendation = GeneratePedagogicalCue(session.topic, unique_issue.is_gap, unique_issue)
+      recommendation_list.add(recommendation)
+    Else // Return a passive diagnostic warning for the dashboard
+      warning = GenerateDiagnosticWarning(unique_issue)
+      warning_list.add(warning)
+    End If
+  End For
+
+  // Module 6: Dashboard Output --- dashboardOutput.ts
+  Return { recommendation_list, warning_list, stats }
+End

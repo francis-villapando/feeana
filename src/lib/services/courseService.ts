@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+﻿import { supabase } from "@/lib/db/supabase";
 import type {
   ActivityEntry,
   BloomLevel,
@@ -7,7 +7,97 @@ import type {
   ActivityAction,
   ILO,
   Topic,
-} from "@/lib/types";
+} from "@/lib/types/types";
+
+export class DuplicateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DuplicateError";
+  }
+}
+
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
+async function isConflictingRecordArchived(
+  table: "courses" | "topics" | "ilos",
+  filters: Record<string, unknown>,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from(table)
+    .select("archived")
+    .match(filters)
+    .maybeSingle();
+  return data?.archived === true;
+}
+
+async function handleDuplicateError(
+  table: "courses" | "topics" | "ilos",
+  filters: Record<string, unknown>,
+  message: string,
+  code: string,
+): Promise<void> {
+  if (code !== "23505") return;
+  const archived = await isConflictingRecordArchived(table, filters);
+  throw new DuplicateError(`${message}${archived ? " (archived)" : ""}`);
+}
+
+async function toggleEntityArchived(
+  table: "courses" | "topics" | "ilos",
+  entityKind: EntityKind,
+  id: string,
+  action: "archived" | "restored",
+  makeLabel: (row: Record<string, unknown>) => string,
+  onRestoreError?: (row: Record<string, unknown>, code: string) => Promise<void>,
+): Promise<void> {
+  let row: Record<string, unknown> | null = null;
+  if (action === "restored" && onRestoreError) {
+    const { data, error } = await supabase
+      .from(table)
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) throw new Error(error.message);
+    row = data;
+  }
+
+  const { data, error } = await supabase
+    .from(table)
+    .update({ archived: action === "archived" })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    if (action === "restored" && onRestoreError && row) {
+      await onRestoreError(row, error.code);
+    }
+    throw new Error(error.message);
+  }
+
+  await logActivity(entityKind, id, action, makeLabel(data as Record<string, unknown>));
+}
+
+async function deleteEntity(
+  table: "courses" | "topics" | "ilos",
+  entityKind: EntityKind,
+  id: string,
+  makeLabel: (row: Record<string, unknown>) => string,
+): Promise<void> {
+  const { data, error: fetchError } = await supabase
+    .from(table)
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+  const { error } = await supabase.from(table).delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  await logActivity(entityKind, id, "deleted", makeLabel(data as Record<string, unknown>));
+}
 
 function fromDbCourse(row: Record<string, unknown>): Course {
   return {
@@ -15,6 +105,7 @@ function fromDbCourse(row: Record<string, unknown>): Course {
     code: row.code as string,
     title: row.title as string,
     archived: row.archived as boolean,
+    version: (row.version as number) ?? 1,
   };
 }
 
@@ -25,6 +116,7 @@ function fromDbTopic(row: Record<string, unknown>): Topic {
     title: row.title as string,
     archived: row.archived as boolean,
     createdAt: row.created_at as string,
+    version: (row.version as number) ?? 1,
   };
 }
 
@@ -36,19 +128,22 @@ function fromDbIlo(row: Record<string, unknown>): ILO {
     statement: row.statement as string,
     bloomLevel: row.bloom_level as BloomLevel,
     archived: row.archived as boolean,
+    version: (row.version as number) ?? 1,
   };
 }
 
 function fromDbActivity(row: Record<string, unknown>): ActivityEntry {
+  const profile = row.profiles as Record<string, unknown> | null;
   return {
     id: row.id as string,
     entity: row.entity as EntityKind,
     entityId: row.entity_id as string,
     action: row.action as ActivityAction,
     label: row.label as string,
+    newLabel: row.new_label as string | undefined,
     timestamp: row.timestamp as string,
     userId: row.user_id as string,
-    userName: row.full_name as string,
+    userName: (profile?.full_name as string) ?? undefined,
   };
 }
 
@@ -67,53 +162,53 @@ export async function createCourse(input: { code: string; title: string }): Prom
     .insert({ code: input.code.trim(), title: input.title.trim() })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    await handleDuplicateError("courses", { code: input.code.trim() }, "A course with this code already exists.", error.code);
+    throw new Error(error.message);
+  }
   await logActivity("course", data.id, "created", `${data.code} — ${data.title}`);
   return fromDbCourse(data);
 }
 
 export async function updateCourse(
   id: string,
-  input: { code: string; title: string },
+  input: { code: string; title: string; version: number },
 ): Promise<void> {
-  const { error } = await supabase
+  const { data: old, error: fetchError } = await supabase
     .from("courses")
-    .update({ code: input.code.trim(), title: input.title.trim() })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("course", id, "updated", `${input.code} — ${input.title}`);
+    .select("code, title")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+  const { data, error } = await supabase
+    .from("courses")
+    .update({ code: input.code.trim(), title: input.title.trim(), version: input.version + 1 })
+    .eq("id", id)
+    .eq("version", input.version)
+    .eq("archived", false)
+    .select();
+  if (error) {
+    await handleDuplicateError("courses", { code: input.code.trim() }, "A course with this code already exists.", error.code);
+    throw new Error(error.message);
+  }
+  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
+  await logActivity(
+    "course",
+    id,
+    "updated",
+    `${old.code} — ${old.title}`,
+    `${input.code.trim()} — ${input.title.trim()}`,
+  );
 }
 
 export async function archiveCourse(id: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("courses")
-    .update({ archived: true })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  await logActivity(
-    "course",
-    id,
-    "archived",
-    `${(data as Record<string, unknown>).code} — ${(data as Record<string, unknown>).title}`,
-  );
+  await toggleEntityArchived("courses", "course", id, "archived", (r) => `${r.code} — ${r.title}`);
 }
 
 export async function restoreCourse(id: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("courses")
-    .update({ archived: false })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  await logActivity(
-    "course",
-    id,
-    "restored",
-    `${(data as Record<string, unknown>).code} — ${(data as Record<string, unknown>).title}`,
-  );
+  await toggleEntityArchived("courses", "course", id, "restored", (r) => `${r.code} — ${r.title}`, async (row, code) => {
+    await handleDuplicateError("courses", { code: row.code as string }, "A course with this code already exists.", code);
+  });
 }
 
 export async function getTopics(courseId?: string): Promise<Topic[]> {
@@ -130,43 +225,47 @@ export async function createTopic(input: { courseId: string; title: string }): P
     .insert({ course_id: input.courseId, title: input.title.trim() })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    await handleDuplicateError("topics", { course_id: input.courseId, title: input.title.trim() }, "A topic with this title already exists in this course.", error.code);
+    throw new Error(error.message);
+  }
   await logActivity("topic", data.id, "created", data.title);
   return fromDbTopic(data);
 }
 
 export async function updateTopic(
   id: string,
-  input: { courseId: string; title: string },
+  input: { title: string; version: number },
 ): Promise<void> {
-  const { error } = await supabase
+  const { data: old, error: fetchError } = await supabase
     .from("topics")
-    .update({ course_id: input.courseId, title: input.title.trim() })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("topic", id, "updated", input.title);
+    .select("title, course_id")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+  const { data, error } = await supabase
+    .from("topics")
+    .update({ title: input.title.trim(), version: input.version + 1 })
+    .eq("id", id)
+    .eq("version", input.version)
+    .eq("archived", false)
+    .select();
+  if (error) {
+    await handleDuplicateError("topics", { course_id: old.course_id, title: input.title.trim() }, "A topic with this title already exists in this course.", error.code);
+    throw new Error(error.message);
+  }
+  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
+  await logActivity("topic", id, "updated", old.title, input.title.trim());
 }
 
 export async function archiveTopic(id: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("topics")
-    .update({ archived: true })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  await logActivity("topic", id, "archived", (data as Record<string, unknown>).title as string);
+  await toggleEntityArchived("topics", "topic", id, "archived", (r) => r.title as string);
 }
 
 export async function restoreTopic(id: string): Promise<void> {
-  const { data, error } = await supabase
-    .from("topics")
-    .update({ archived: false })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  await logActivity("topic", id, "restored", (data as Record<string, unknown>).title as string);
+  await toggleEntityArchived("topics", "topic", id, "restored", (r) => r.title as string, async (row, code) => {
+    await handleDuplicateError("topics", { course_id: row.course_id as string, title: (row.title as string).trim() }, "A topic with this title already exists in this course.", code);
+  });
 }
 
 export async function getILOs(courseId?: string): Promise<ILO[]> {
@@ -193,59 +292,69 @@ export async function createILO(input: {
     })
     .select()
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    await handleDuplicateError("ilos", { topic_id: input.topicId, statement: input.statement.trim() }, "An ILO with this statement already exists in this topic.", error.code);
+    throw new Error(error.message);
+  }
   await logActivity("ILO", data.id, "created", `${data.statement.slice(0, 40)}`);
   return fromDbIlo(data);
 }
 
 export async function updateILO(
   id: string,
-  input: { courseId: string; topicId: string; statement: string; bloomLevel: BloomLevel },
+  input: { statement: string; bloomLevel: BloomLevel; version: number },
 ): Promise<void> {
-  const { error } = await supabase
+  const { data: old, error: fetchError } = await supabase
+    .from("ilos")
+    .select("statement, topic_id")
+    .eq("id", id)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+  const { data, error } = await supabase
     .from("ilos")
     .update({
-      course_id: input.courseId,
-      topic_id: input.topicId,
       statement: input.statement.trim(),
       bloom_level: input.bloomLevel,
+      version: input.version + 1,
     })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("ILO", id, "updated", `${input.statement.slice(0, 40)}`);
+    .eq("id", id)
+    .eq("version", input.version)
+    .eq("archived", false)
+    .select();
+  if (error) {
+    await handleDuplicateError("ilos", { topic_id: old.topic_id, statement: input.statement.trim() }, "An ILO with this statement already exists in this topic.", error.code);
+    throw new Error(error.message);
+  }
+  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
+  await logActivity(
+    "ILO",
+    id,
+    "updated",
+    `${old.statement.slice(0, 40)}`,
+    `${input.statement.trim().slice(0, 40)}`,
+  );
 }
 
 export async function archiveILO(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("ilos")
-    .update({ archived: true })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("ILO", id, "archived", "ILO");
+  await toggleEntityArchived("ilos", "ILO", id, "archived", (r) => `${(r.statement as string).slice(0, 40)}`);
 }
 
 export async function restoreILO(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("ilos")
-    .update({ archived: false })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity("ILO", id, "restored", "ILO");
+  await toggleEntityArchived("ilos", "ILO", id, "restored", (r) => `${(r.statement as string).slice(0, 40)}`, async (row, code) => {
+    await handleDuplicateError("ilos", { topic_id: row.topic_id as string, statement: (row.statement as string).trim() }, "An ILO with this statement already exists in this topic.", code);
+  });
 }
 
 export async function deleteCourse(id: string): Promise<void> {
-  const { error } = await supabase.from("courses").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  await deleteEntity("courses", "course", id, (r) => `${r.code} — ${r.title}`);
 }
 
 export async function deleteTopic(id: string): Promise<void> {
-  const { error } = await supabase.from("topics").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  await deleteEntity("topics", "topic", id, (r) => r.title as string);
 }
 
 export async function deleteILO(id: string): Promise<void> {
-  const { error } = await supabase.from("ilos").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  await deleteEntity("ilos", "ILO", id, (r) => `${(r.statement as string).slice(0, 40)}`);
 }
 
 async function logActivity(
@@ -253,6 +362,7 @@ async function logActivity(
   entityId: string,
   action: ActivityAction,
   label: string,
+  newLabel?: string,
 ): Promise<void> {
   const {
     data: { user },
@@ -266,6 +376,7 @@ async function logActivity(
         entity_id: entityId,
         action,
         label,
+        new_label: newLabel,
         user_id: user.id,
       });
   } catch {

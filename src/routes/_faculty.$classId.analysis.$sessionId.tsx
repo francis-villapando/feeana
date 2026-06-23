@@ -1,39 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  AlertCircle,
-  ArrowLeft,
-  CheckCircle2,
-  Lightbulb,
-  PlayCircle,
-  Sparkles,
-  Target,
-} from "lucide-react";
+import { ArrowLeft, PlayCircle, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RecommendationParagraph } from "@/components/analysis/RecommendationParagraph";
-import { runAnalysis } from "@/lib/analysis";
-import { useAnalysisStore } from "@/lib/analysisStore";
-import { useFeedbackStore } from "@/lib/feedbackStore";
-import { useClassStore } from "@/lib/classStore";
-import { useCourseStore } from "@/lib/courseStore";
-import { computeIloStatuses } from "@/lib/iloStatus";
-import type { AnalysisResult } from "@/lib/types";
+import { ModelLoaderOverlay, AnalysisTriggerModal } from "@/components/analysis";
+import {
+  AspectDistChart,
+  PolarityDistChart,
+  IssueDistChart,
+  RbtDistChart,
+  CltDistChart,
+  IloGapCard,
+  RecommendationCuesCard,
+  WarningsCard,
+} from "@/components/faculty/charts";
+import { runAnalysisPipeline, fetchComputedResult } from "@/lib/algorithm/pipeline";
+import { useFeedbackStore } from "@/lib/stores/feedbackStore";
+import { useClassStore } from "@/lib/stores/classStore";
+import { useCourseStore } from "@/lib/stores/courseStore";
+import { useAnalysisStore } from "@/lib/stores/analysisStore";
+import { iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
+import { computeIloStatuses } from "@/lib/hooks/iloStatus";
+import type { AnalysisResult } from "@/lib/types/types";
+import { CountBadge } from "@/components/common";
+import { KeyMetricsRow } from "@/components/faculty";
+import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
+import React from "react";
 
 export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
   loader: async ({ params }) => {
@@ -59,39 +53,116 @@ export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
   component: AnalysisPage,
 });
 
-const POLARITY_COLORS: Record<string, string> = {
-  Positive: "var(--color-chart-1)",
-  Neutral: "var(--color-chart-3)",
-  Negative: "var(--color-chart-4)",
-};
-
 function AnalysisPage() {
   const { classId, sessionId } = Route.useParams();
-  const { sessions } = useClassStore();
+  const { sessions, getClass, studentCountForClass, refreshStudents, refreshSessions } = useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
-  const { get, set } = useAnalysisStore();
+  const { feedback, fetchFeedback } = useFeedbackStore();
+  const { set: setAnalysisResult } = useAnalysisStore();
   const [loading, setLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [inferenceProgress, setInferenceProgress] = useState<{ current: number; total: number; text: string } | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(100);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // Track cancellation to prevent error toasts when worker is terminated
+  const isCancelledRef = React.useRef(false);
 
   useEffect(() => {
-    const cached = get(sessionId);
-    if (cached) setResult(cached);
-  }, [get, sessionId]);
+    import("@/lib/ml/mlWorkerStore").then(({ setInferenceProgressListener, setDownloadProgressListener }) => {
+      setInferenceProgressListener((payload) => {
+        setInferenceProgress(payload);
+      });
+      setDownloadProgressListener((data) => {
+        setDownloadProgress(data.status === 'done' ? 100 : (data.progress ?? 0));
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    let active = true;
+
+    async function loadInitial() {
+      setLoading(true);
+      try {
+        const data = await fetchComputedResult(sessionId);
+        if (active) {
+          setResult(data);
+        }
+        // Fetch fresh feedback entries for count verification
+        await fetchFeedback(sessionId);
+        // Load student enrollment count
+        if (classId) {
+          await refreshStudents(classId);
+        }
+      } catch (err) {
+        console.error("Failed to load initial analysis from database:", err);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitial();
+
+    return () => {
+      active = false;
+    };
+  }, [sessionId, classId, fetchFeedback, refreshStudents]);
+
+  const handleCancel = async () => {
+    isCancelledRef.current = true;
+    const { terminateMLWorker } = await import("@/lib/ml/mlWorkerStore");
+    terminateMLWorker();
+    setIsAnalyzing(false);
+    toast.success("Analysis cancelled.");
+  };
 
   const handleTrigger = async () => {
-    setLoading(true);
-    setResult(null);
+    if (!session) return;
+    setIsAnalyzing(true);
+    isCancelledRef.current = false;
+    setInferenceProgress(null);
+    setDownloadProgress(0);
     try {
-      const data = await runAnalysis(session.id);
-      setResult(data);
-      set(session.id, data);
-      toast.success("Analysis complete");
+      const data = await runAnalysisPipeline(session.id);
+      if (!isCancelledRef.current) {
+        setResult(data);
+        setAnalysisResult(session.id, data);
+        if (classId) {
+          await refreshSessions(classId);
+        }
+        toast.success("Analysis complete");
+      }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Analysis failed.");
+      if (!isCancelledRef.current) {
+        toast.error(err instanceof Error ? err.message : "Analysis failed.");
+      }
     } finally {
-      setLoading(false);
+      if (!isCancelledRef.current) {
+        setIsAnalyzing(false);
+      }
     }
   };
+
+  if (!session) return null;
+
+  // State machine values
+  const sessionFeedback = feedback.filter((f) => f.sessionId === sessionId);
+  const feedbackCount = sessionFeedback.length;
+  const cls = getClass(classId);
+  const studentCount = classId ? studentCountForClass(classId) : 0;
+  const lastAnalyzedAt = session?.last_analyzed_at ?? null;
+
+  // Feedback analysis status
+  const feedbackStatus = computeFeedbackStatus(session, feedback);
+  const newFeedbackCount = feedbackStatus.newCount;
+
+  const submissionRate = submissionRateForSession(session, cls, feedback);
+  const iloRate = result ? iloAchievementForSession(session, { [session.id]: result }) : 100;
 
   return (
     <div className="space-y-8">
@@ -108,16 +179,52 @@ function AnalysisPage() {
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">{session.topic}</h1>
           </div>
-          <Button size="lg" onClick={handleTrigger} disabled={loading}>
-            <PlayCircle className="h-4 w-4" />
-            {result ? "Re-run analysis" : "Trigger analysis"}
-          </Button>
+          <div className="relative">
+            <Button size="lg" onClick={() => setModalOpen(true)} disabled={loading || isAnalyzing}>
+              <PlayCircle className="h-4 w-4" />
+              {result ? "Re-run analysis" : "Trigger analysis"}
+            </Button>
+            <CountBadge count={newFeedbackCount} />
+          </div>
         </div>
       </div>
 
-      {!result && !loading && <EmptyState onTrigger={handleTrigger} />}
-      {loading && <LoadingState />}
-      {result && <Results result={result} />}
+      {loading ? (
+        <LoadingState />
+      ) : (
+        <>
+          {!result && !isAnalyzing && <EmptyState onTrigger={() => setModalOpen(true)} />}
+          {result && (
+            <>
+              <KeyMetricsRow
+                submissionRate={submissionRate}
+                iloRate={iloRate}
+                submissionHint="This session"
+                iloHint="This session"
+              />
+              <Results result={result} />
+            </>
+          )}
+        </>
+      )}
+
+      <ModelLoaderOverlay
+        isVisible={isAnalyzing}
+        downloadProgress={downloadProgress}
+        inferenceProgress={inferenceProgress}
+        statusText={inferenceProgress ? "Processing feedback entries..." : "Initializing Machine Learning Engine..."}
+        onCancel={handleCancel}
+      />
+
+      <AnalysisTriggerModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={handleTrigger}
+        feedbackCount={feedbackCount}
+        studentCount={studentCount}
+        lastAnalyzedAt={lastAnalyzedAt}
+        newFeedbackCount={newFeedbackCount}
+      />
     </div>
   );
 }
@@ -146,11 +253,17 @@ function EmptyState({ onTrigger }: { onTrigger: () => void }) {
 
 function LoadingState() {
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <Skeleton className="h-64 lg:col-span-2" />
-      <Skeleton className="h-64" />
-      <Skeleton className="h-48 lg:col-span-3" />
-      <Skeleton className="h-72 lg:col-span-3" />
+    <div className="space-y-4">
+      <div className="grid gap-4 grid-cols-2">
+        <Skeleton className="h-28" />
+        <Skeleton className="h-28" />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Skeleton className="h-64 lg:col-span-2" />
+        <Skeleton className="h-64" />
+        <Skeleton className="h-48 lg:col-span-3" />
+        <Skeleton className="h-72 lg:col-span-3" />
+      </div>
     </div>
   );
 }
@@ -163,157 +276,17 @@ function Results({ result }: { result: AnalysisResult }) {
   const { ilos } = useCourseStore();
   if (!session) return null;
   const iloStatuses = computeIloStatuses(session, result, feedback, ilos);
-  const sortedRecs = [...result.recommendations].sort((a, b) => b.priority - a.priority);
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
-      <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-base">Aspect distribution</CardTitle>
-          <CardDescription>
-            What students talked about across {result.totalFeedback} responses (
-            {result.pedagogicalCount} pedagogical).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={result.aspectDist}>
-              <CartesianGrid stroke="var(--color-border)" vertical={false} />
-              <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={11} />
-              <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
-              <Tooltip
-                cursor={{ fill: "var(--color-border)" }}
-                contentStyle={{
-                  background: "var(--color-popover)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-              <Bar dataKey="value" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-        <CardHeader>
-          <CardTitle className="text-base">Polarity</CardTitle>
-          <CardDescription>Sentiment split.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie
-                data={result.polarityDist}
-                dataKey="value"
-                nameKey="label"
-                innerRadius={50}
-                outerRadius={85}
-                paddingAngle={3}
-              >
-                {result.polarityDist.map((entry) => (
-                  <Cell
-                    key={entry.label}
-                    fill={POLARITY_COLORS[entry.label] ?? "var(--color-chart-2)"}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  background: "var(--color-popover)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
-        <CardHeader>
-          <CardTitle className="text-base">Issue distribution</CardTitle>
-          <CardDescription>Specific concerns extracted via ABSA.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={Math.max(220, result.issueDist.length * 32)}>
-            <BarChart data={result.issueDist} layout="vertical">
-              <CartesianGrid stroke="var(--color-border)" horizontal={false} />
-              <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={11} />
-              <YAxis
-                type="category"
-                dataKey="label"
-                stroke="var(--color-muted-foreground)"
-                fontSize={11}
-                width={170}
-              />
-              <Tooltip
-                cursor={{ fill: "var(--color-border)" }}
-                contentStyle={{
-                  background: "var(--color-popover)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-              <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card className="border-primary/30 bg-card/70 backdrop-blur-xl lg:col-span-3">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Target className="h-4 w-4 text-primary" /> ILO Gap Analysis
-          </CardTitle>
-          <CardDescription>
-            Status of every intended learning outcome for this course.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {iloStatuses.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
-              No ILOs defined for this course.
-            </p>
-          ) : (
-            iloStatuses.map(({ ilo, achieved }) => (
-              <div
-                key={ilo.id}
-                className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-3"
-              >
-                {achieved ? (
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
-                ) : (
-                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
-                )}
-                <p className="text-sm leading-relaxed">{ilo.statement}</p>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Lightbulb className="h-4 w-4 text-primary" /> Recommendation cues
-          </CardTitle>
-          <CardDescription>
-            Hover the highlighted terms to see how each maps across pedagogical frameworks.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ol className="space-y-3">
-            {sortedRecs.map((rec, i) => (
-              <RecommendationParagraph key={rec.id} rec={rec} index={i} ilos={ilos} />
-            ))}
-          </ol>
-        </CardContent>
-      </Card>
+      <AspectDistChart data={result.aspectDist} totalFeedback={result.totalFeedback} />
+      <PolarityDistChart data={result.polarityDist} />
+      <IssueDistChart data={result.issueDist} />
+      <RbtDistChart data={result.rbtDist} />
+      <CltDistChart data={result.cltDist} />
+      <IloGapCard statuses={iloStatuses} />
+      <RecommendationCuesCard recommendations={result.recommendations} ilos={ilos} />
+      <WarningsCard data={result.warnings} />
     </div>
   );
 }

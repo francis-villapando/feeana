@@ -8,15 +8,15 @@ import {
 import { Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
-import { AnalysisStoreProvider } from "@/lib/analysisStore";
-import { AuthProvider } from "@/lib/auth";
-import { ClassStoreProvider } from "@/lib/classStore";
-import { CourseStoreProvider } from "@/lib/courseStore";
-import { FeedbackStoreProvider } from "@/lib/feedbackStore";
-import { ThemeProvider, useTheme } from "@/lib/theme-provider";
+import { AnalysisStoreProvider } from "@/lib/stores/analysisStore";
+import { AuthProvider } from "@/lib/stores/auth";
+import { ClassStoreProvider } from "@/lib/stores/classStore";
+import { CourseStoreProvider } from "@/lib/stores/courseStore";
+import { FeedbackStoreProvider } from "@/lib/stores/feedbackStore";
+import { ThemeProvider, useTheme } from "@/lib/providers/themeProvider";
 import bgImage from "../assets/bg-abstract.jpg";
 
-import appCss from "../styles.css?url";
+import "../styles.css";
 
 function NotFoundComponent() {
   return (
@@ -59,7 +59,6 @@ export const Route = createRootRouteWithContext()({
       },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -69,10 +68,11 @@ export const Route = createRootRouteWithContext()({
 function RootShell({ children }: { children: React.ReactNode }) {
   const bgStyle = `:root { --feeana-bg-image: url(${bgImage}); }`;
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
@@ -98,7 +98,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
           }}
         />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
