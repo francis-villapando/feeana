@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/stores/auth";
 import type { UserRole } from "@/lib/types/types";
 import { ThemeToggle } from "@/components/common";
 import { PasswordField } from "./PasswordField";
+import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
 
 const ALLOWED_FACULTY_DOMAIN = import.meta.env.VITE_FACULTY_DOMAIN as string | undefined;
 
@@ -43,6 +44,7 @@ export function AuthPage({ role }: { role: UserRole }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   const goHome = (r: UserRole) => {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
@@ -181,6 +183,17 @@ export function AuthPage({ role }: { role: UserRole }) {
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
                 placeholder="Enter your password"
               />
+              {mode === "signin" && (
+                <div className="text-right text-xs">
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-primary hover:underline"
+                    onClick={() => setForgotOpen(true)}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
               {mode === "signup" && (
                 <PasswordField
                   id="confirm"
@@ -242,6 +255,12 @@ export function AuthPage({ role }: { role: UserRole }) {
             </p>
           </CardContent>
         </Card>
+        <ForgotPasswordDialog
+          open={forgotOpen}
+          onOpenChange={setForgotOpen}
+          defaultEmail={email}
+          role={role}
+        />
       </div>
     </div>
   );
