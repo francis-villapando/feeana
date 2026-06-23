@@ -17,6 +17,7 @@ interface AuthContextValue {
   supabaseUser: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isPasswordRecovery: boolean;
   hasRole: (role: UserRole) => boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
   register: (
@@ -26,6 +27,9 @@ interface AuthContextValue {
     role: UserRole,
   ) => Promise<AuthUser & { needsEmailConfirmation: boolean }>;
   logout: () => Promise<void>;
+  forgotPassword: (email: string, redirectTo?: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
+  clearPasswordRecovery: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -37,6 +41,7 @@ function normalizeUserRole(role: string | undefined): UserRole {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -48,7 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+      }
       setSupabaseUser((prev) => {
         if (prev?.id === session?.user?.id) return prev;
         return session?.user ?? null;
@@ -117,18 +125,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   }, []);
 
+  const forgotPassword = useCallback(async (email: string, redirectTo?: string) => {
+    const url = redirectTo ?? (typeof window !== "undefined" ? window.location.origin : undefined);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: url,
+    });
+    if (error) throw new Error(error.message);
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw new Error(error.message);
+  }, []);
+
+  const clearPasswordRecovery = useCallback(() => {
+    setIsPasswordRecovery(false);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       supabaseUser,
       isAuthenticated: user !== null,
       isLoading,
+      isPasswordRecovery,
       hasRole: (role: UserRole) => user?.role === role,
       login,
       register,
       logout,
+      forgotPassword,
+      updatePassword,
+      clearPasswordRecovery,
     }),
-    [user, supabaseUser, isLoading, login, register, logout],
+    [user, supabaseUser, isLoading, isPasswordRecovery, login, register, logout, forgotPassword, updatePassword, clearPasswordRecovery],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
