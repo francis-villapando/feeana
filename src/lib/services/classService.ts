@@ -169,11 +169,6 @@ export async function createSession(input: {
   return fromDbSession(data);
 }
 
-export async function closeSession(id: string): Promise<void> {
-  const { error } = await supabase.from("sessions").update({ status: "closed" }).eq("id", id);
-  if (error) throw new Error(error.message);
-}
-
 export async function getStudents(classId: string): Promise<Student[]> {
   const { data, error } = await supabase
     .from("enrollments")

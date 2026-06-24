@@ -21,8 +21,8 @@ interface DateTimePickerProps {
   className?: string;
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
+const HOURS_12 = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 
 export function DateTimePicker({
   value,
@@ -31,25 +31,39 @@ export function DateTimePicker({
   className,
 }: DateTimePickerProps) {
   const date = useMemo(() => (value ? new Date(value) : undefined), [value]);
-  const hour = date ? String(date.getHours()).padStart(2, "0") : "09";
-  const minute = date ? String(date.getMinutes()).padStart(2, "0") : "00";
+
+  const hour24 = date ? date.getHours() : 9;
+  const displayHour = hour24 % 12 || 12;
+  const displayHourStr = String(displayHour).padStart(2, "0");
+  const minuteStr = date ? String(date.getMinutes()).padStart(2, "0") : "00";
+  const period = hour24 < 12 ? "AM" : "PM";
+
+  const to24 = (h12: number, p: string) => {
+    if (h12 === 12) return p === "AM" ? 0 : 12;
+    return p === "PM" ? h12 + 12 : h12;
+  };
 
   const emit = (next: Date) => onChange(next.toISOString());
 
   const handleDate = (d: Date | undefined) => {
     if (!d) return;
     const next = new Date(d);
-    next.setHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
+    next.setHours(to24(displayHour, period), parseInt(minuteStr, 10), 0, 0);
     emit(next);
   };
-  const handleHour = (h: string) => {
+  const handleHour12 = (h12: string) => {
     const base = date ?? new Date();
-    base.setHours(parseInt(h, 10), parseInt(minute, 10), 0, 0);
+    base.setHours(to24(parseInt(h12, 10), period), parseInt(minuteStr, 10), 0, 0);
     emit(base);
   };
   const handleMinute = (m: string) => {
     const base = date ?? new Date();
-    base.setHours(parseInt(hour, 10), parseInt(m, 10), 0, 0);
+    base.setHours(to24(displayHour, period), parseInt(m, 10), 0, 0);
+    emit(base);
+  };
+  const handlePeriod = (p: string) => {
+    const base = date ?? new Date();
+    base.setHours(to24(displayHour, p), parseInt(minuteStr, 10), 0, 0);
     emit(base);
   };
 
@@ -69,22 +83,25 @@ export function DateTimePicker({
           {date ? format(date, "PPP · p") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0" align="start" data-slot="popover-content">
         <Calendar
           mode="single"
           selected={date}
           onSelect={handleDate}
           initialFocus
-          className={cn("p-3 pointer-events-auto")}
+          className={cn("p-3 pointer-events-auto w-full")}
+          classNames={{
+            root: "w-full",
+          }}
         />
         <div className="flex items-center gap-2 border-t border-border/60 p-3">
           <Clock className="h-4 w-4 text-muted-foreground" />
-          <Select value={hour} onValueChange={handleHour}>
+          <Select value={displayHourStr} onValueChange={handleHour12}>
             <SelectTrigger className="w-[80px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-60">
-              {HOURS.map((h) => (
+              {HOURS_12.map((h) => (
                 <SelectItem key={h} value={h}>
                   {h}
                 </SelectItem>
@@ -92,7 +109,7 @@ export function DateTimePicker({
             </SelectContent>
           </Select>
           <span className="text-muted-foreground">:</span>
-          <Select value={minute} onValueChange={handleMinute}>
+          <Select value={minuteStr} onValueChange={handleMinute}>
             <SelectTrigger className="w-[80px]">
               <SelectValue />
             </SelectTrigger>
@@ -102,6 +119,15 @@ export function DateTimePicker({
                   {m}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={period} onValueChange={handlePeriod}>
+            <SelectTrigger className="w-[72px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="AM">AM</SelectItem>
+              <SelectItem value="PM">PM</SelectItem>
             </SelectContent>
           </Select>
         </div>

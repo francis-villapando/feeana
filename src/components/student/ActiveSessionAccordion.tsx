@@ -18,6 +18,7 @@ interface ActiveSessionAccordionProps {
   submittedSessionIds: Set<string>;
   onClassInfoClick: (cls: Class) => void;
   onSubmitSession?: (session: Session) => void;
+  verifyingSessionId?: string | null;
 }
 
 export function ActiveSessionAccordion({
@@ -26,6 +27,7 @@ export function ActiveSessionAccordion({
   submittedSessionIds,
   onClassInfoClick,
   onSubmitSession,
+  verifyingSessionId,
 }: ActiveSessionAccordionProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -93,7 +95,7 @@ export function ActiveSessionAccordion({
               ) : (
                 <div className="space-y-2">
                   {activeSessions.map((s) => (
-                    <SessionCard key={s.id} session={s} onSubmit={onSubmitSession} />
+                    <SessionCard key={s.id} session={s} onSubmit={onSubmitSession} verifyingSessionId={verifyingSessionId} />
                   ))}
                 </div>
               )}
