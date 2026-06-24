@@ -20,7 +20,23 @@ serve(async (req) => {
     const sessionId =
       parts[parts.length - 2] === "session" ? parts[parts.length - 1] : parts[parts.length - 1];
 
-    const tokenHash = hashToken(token, serverSalt);
+    const tokenHash = await hashToken(token, serverSalt);
+
+    // verify session is still active
+    const sessionRes = await fetch(
+      `${supabaseUrl}/rest/v1/sessions?id=eq.${sessionId}&select=ends_at,status`,
+      {
+        headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
+      },
+    );
+    const sessionRows = await sessionRes.json();
+    if (!sessionRes.ok || sessionRows.length === 0)
+      return new Response(JSON.stringify({ error: "session_not_found" }), { status: 404 });
+    const session = sessionRows[0];
+    if (session.status !== "active")
+      return new Response(JSON.stringify({ error: "session_ended" }), { status: 403 });
+    if (new Date(session.ends_at) < new Date())
+      return new Response(JSON.stringify({ error: "session_ended" }), { status: 403 });
 
     // find token row
     const findRes = await fetch(
@@ -60,6 +76,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true }), { status: 201 });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    const message = e instanceof Error ? e.message : "Unknown error";
+    return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 });

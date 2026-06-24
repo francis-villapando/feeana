@@ -1,17 +1,19 @@
-import { createHash } from "crypto";
-
-export function hashToken(token: string, salt: string) {
-  return createHash("sha256")
-    .update(token + salt)
-    .digest("hex");
+export async function hashToken(token: string, salt: string): Promise<string> {
+  const data = new TextEncoder().encode(token + salt);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export function genToken(): string {
   return cryptoRandom(32);
 }
 
-function cryptoRandom(bytes: number) {
-  // returns base64url string
-  const buf = Buffer.from(Array.from({ length: bytes }, () => Math.floor(Math.random() * 256)));
-  return buf.toString("hex");
+function cryptoRandom(bytes: number): string {
+  const buf = new Uint8Array(bytes);
+  crypto.getRandomValues(buf);
+  return Array.from(buf)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
