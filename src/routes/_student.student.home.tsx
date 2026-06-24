@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { BookOpenCheck } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +9,7 @@ import { WelcomeHero } from "@/components/common";
 import { ClassInfoDialog, EnrollClassDialog, ActiveSessionAccordion, SubmitFeedbackDialog } from "@/components/student";
 import { useAuth } from "@/lib/stores/auth";
 import { useClassStore } from "@/lib/stores/classStore";
+import { getSessionById } from "@/lib/services/classService";
 import type { Class, Session } from "@/lib/types/types";
 
 export const Route = createFileRoute("/_student/student/home")({
@@ -61,11 +63,29 @@ function LoadingSkeleton() {
 }
 
 function StudentHome() {
-  const { enrolledClassIds, classes, sessions, isLoading, submittedSessionIds } = useClassStore();
+  const { enrolledClassIds, classes, sessions, isLoading, submittedSessionIds, refreshEnrolledClasses, refreshSessions } = useClassStore();
   const { user } = useAuth();
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [classInfo, setClassInfo] = useState<Class | null>(null);
   const [submitSession, setSubmitSession] = useState<Session | null>(null);
+  const [verifyingSessionId, setVerifyingSessionId] = useState<string | null>(null);
+
+  const handleSubmitSession = async (session: Session) => {
+    setVerifyingSessionId(session.id);
+    try {
+      const fresh = await getSessionById(session.id);
+      if (fresh && fresh.status !== "active") {
+        toast.error("This session has ended. Feedback is no longer being accepted.");
+        await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+        return;
+      }
+      setSubmitSession(session);
+    } catch {
+      toast.error("Failed to verify session. Please try again.");
+    } finally {
+      setVerifyingSessionId(null);
+    }
+  };
 
   const enrolled = classes.filter((cls) => enrolledClassIds.includes(cls.id));
 
@@ -97,7 +117,8 @@ function StudentHome() {
           sessions={sessions}
           submittedSessionIds={submittedSessionIds}
           onClassInfoClick={(cls) => setClassInfo(cls)}
-          onSubmitSession={(s) => setSubmitSession(s)}
+          onSubmitSession={handleSubmitSession}
+          verifyingSessionId={verifyingSessionId}
         />
       )}
 

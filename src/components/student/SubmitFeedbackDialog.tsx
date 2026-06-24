@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -40,16 +40,18 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
   const { classes, refreshEnrolledClasses, refreshSessions, addSubmittedSession } = useClassStore();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [sessionEnded, setSessionEnded] = useState(false);
+
+  useEffect(() => {
+    if (!open || !session) return;
+    setText("");
+  }, [open, session?.id]);
 
   if (!session) return null;
 
   const cls = classes.find((cls) => cls.id === session.classId);
-  const isActive = session.status === "active";
 
   const handleClose = () => {
     setText("");
-    setSessionEnded(false);
     onOpenChange(false);
   };
 
@@ -61,7 +63,9 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
 
     const fresh = await getSessionById(session.id);
     if (fresh && fresh.status !== "active") {
-      setSessionEnded(true);
+      toast.error("This session has ended. Feedback is no longer being accepted.");
+      await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+      handleClose();
       return;
     }
 
@@ -76,6 +80,7 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
       if (e instanceof Error && e.message === "duplicate_submission") {
         addSubmittedSession(session.id);
         toast.error("You've already submitted feedback for this session.");
+        await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
         handleClose();
       } else {
         toast.error("Failed to submit feedback. Please try again.");
@@ -108,38 +113,32 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
           </p>
         </div>
 
-        {isActive && !sessionEnded ? (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="e.g. Sir mabilis po yung discussion sa typecasting, hirap mahabol…"
-                className="min-h-[120px] resize-none"
-                maxLength={500}
-              />
-              <p className="text-right text-[11px] text-muted-foreground">{text.length} / 500</p>
-            </div>
-            <div className="space-y-3">
-              <Button onClick={handleSubmit} disabled={submitting} className="w-full" size="lg">
-                <Send className="h-4 w-4" />
-                {submitting ? "Submitting…" : "Submit feedback"}
-              </Button>
-              <a
-                href="/privacy-policy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <ShieldCheck className="h-3.5 w-3.5" /> Read the privacy policy
-              </a>
-            </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="e.g. Sir mabilis po yung discussion sa typecasting, hirap mahabol…"
+              className="min-h-[120px] resize-none"
+              maxLength={500}
+            />
+            <p className="text-right text-[11px] text-muted-foreground">{text.length} / 500</p>
           </div>
-        ) : (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            This session has ended. Feedback is no longer being accepted.
+          <div className="space-y-3">
+            <Button onClick={handleSubmit} disabled={submitting} className="w-full" size="lg">
+              <Send className="h-4 w-4" />
+              {submitting ? "Submitting…" : "Submit feedback"}
+            </Button>
+            <a
+              href="/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" /> Read the privacy policy
+            </a>
           </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   );
