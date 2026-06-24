@@ -6,21 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
 import { CountBadge } from "@/components/common";
+import { formatSessionDate } from "@/lib/utils/formatSessionDate";
 import type { Session } from "@/lib/types/types";
-
-function formatDT(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 export function SessionCard({ session }: { session: Session }) {
   const { feedback } = useFeedbackStore();
@@ -47,7 +34,7 @@ export function SessionCard({ session }: { session: Session }) {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
           <span>
-            {formatDT(session.startsAt)} → {formatDT(session.endsAt)}
+            {formatSessionDate(session.startsAt)} → {formatSessionDate(session.endsAt)}
           </span>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">

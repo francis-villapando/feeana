@@ -23,6 +23,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClassStore } from "@/lib/stores/classStore";
 import * as feedbackService from "@/lib/services/feedbackService";
+import { formatSessionDate } from "@/lib/utils/formatSessionDate";
 import type { Class } from "@/lib/types/types";
 
 interface ClassInfoDialogProps {
@@ -30,19 +31,6 @@ interface ClassInfoDialogProps {
   onOpenChange: (open: boolean) => void;
   cls: Class;
   studentId: string;
-}
-
-function formatDT(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
 }
 
 export function ClassInfoDialog({
@@ -164,9 +152,9 @@ export function ClassInfoDialog({
                         <span className="text-sm">{session.topic}</span>
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          {formatDT(session.startsAt)}
-                          <span className="text-muted-foreground/50">→</span>
-                          {formatDT(session.endsAt)}
+                          {formatSessionDate(session.startsAt)}
+                          →
+                          {formatSessionDate(session.endsAt)}
                         </p>
                       </div>
                       {submitted ? (

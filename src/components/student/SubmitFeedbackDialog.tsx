@@ -14,25 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { getSessionById } from "@/lib/services/classService";
+import { formatSessionDate } from "@/lib/utils/formatSessionDate";
 import type { Session } from "@/lib/types/types";
 
 interface SubmitFeedbackDialogProps {
   session: Session | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-function formatDT(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
 }
 
 export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeedbackDialogProps) {
@@ -109,7 +97,7 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
           <h3 className="text-sm font-semibold tracking-tight">{session.topic}</h3>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
-            Open {formatDT(session.startsAt)} → {formatDT(session.endsAt)}
+            Open {formatSessionDate(session.startsAt)} → {formatSessionDate(session.endsAt)}
           </p>
         </div>
 
