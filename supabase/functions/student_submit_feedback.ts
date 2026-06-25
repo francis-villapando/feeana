@@ -24,7 +24,7 @@ serve(async (req) => {
 
     // verify session is still active
     const sessionRes = await fetch(
-      `${supabaseUrl}/rest/v1/sessions?id=eq.${sessionId}&select=ends_at,status`,
+      `${supabaseUrl}/rest/v1/sessions?id=eq.${sessionId}&select=starts_at,ends_at,status`,
       {
         headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
       },
@@ -34,6 +34,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "session_not_found" }), { status: 404 });
     const session = sessionRows[0];
     if (session.status !== "active")
+      return new Response(JSON.stringify({ error: "session_ended" }), { status: 403 });
+    if (new Date(session.starts_at) > new Date())
       return new Response(JSON.stringify({ error: "session_ended" }), { status: 403 });
     if (new Date(session.ends_at) < new Date())
       return new Response(JSON.stringify({ error: "session_ended" }), { status: 403 });

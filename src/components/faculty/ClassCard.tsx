@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { useClassStore } from "@/lib/stores/classStore";
 import {useCourseStore} from "@/lib/stores/courseStore";
 import type { Class } from "@/lib/types/types";
+import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
+import { useLiveNow } from "@/lib/hooks/useLiveNow";
 
 export function ClassCard({
   cls,
@@ -19,7 +21,8 @@ export function ClassCard({
 }) {
   const { sessionsForClass, studentCountForClass } = useClassStore();
   const sessions = sessionsForClass(cls.id);
-  const activeCount = sessions.filter((s) => s.status === "active").length;
+  const now = useLiveNow();
+  const activeCount = sessions.filter((s) => isSessionActive(s, new Date(now))).length;
   const studentCount = studentCountForClass(cls.id);
   const course = useCourseStore().courses.find((crs) => crs.id === cls.courseId);
 

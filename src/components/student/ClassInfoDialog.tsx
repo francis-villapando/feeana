@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useClassStore } from "@/lib/stores/classStore";
 import * as feedbackService from "@/lib/services/feedbackService";
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
+import { computeSessionDisplayStatus } from "@/lib/utils/sessionStatusUtils";
 import type { Class } from "@/lib/types/types";
 
 interface ClassInfoDialogProps {
@@ -46,7 +47,14 @@ export function ClassInfoDialog({
   const navigate = useNavigate();
 
   const sessions = useMemo(
-    () => allSessions.filter((s) => s.classId === cls.id && (s.status === "closed" || submittedIds.has(s.id))),
+    () => allSessions.filter((s) => {
+      if (s.classId !== cls.id) return false;
+      const displayStatus = computeSessionDisplayStatus(s);
+      const submitted = submittedIds.has(s.id);
+      if (displayStatus === "closed") return true;
+      if (displayStatus === "active" && submitted) return true;
+      return false;
+    }),
     [allSessions, cls.id, submittedIds],
   );
 
@@ -137,7 +145,7 @@ export function ClassInfoDialog({
               </div>
             ) : sessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No closed sessions yet.
+                No past sessions yet.
               </p>
             ) : (
               <div className="space-y-1">

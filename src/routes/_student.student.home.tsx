@@ -10,6 +10,7 @@ import { ClassInfoDialog, EnrollClassDialog, ActiveSessionAccordion, SubmitFeedb
 import { useAuth } from "@/lib/stores/auth";
 import { useClassStore } from "@/lib/stores/classStore";
 import { getSessionById } from "@/lib/services/classService";
+import { computeSessionDisplayStatus } from "@/lib/utils/sessionStatusUtils";
 import type { Class, Session } from "@/lib/types/types";
 
 export const Route = createFileRoute("/_student/student/home")({
@@ -74,7 +75,7 @@ function StudentHome() {
     setVerifyingSessionId(session.id);
     try {
       const fresh = await getSessionById(session.id);
-      if (fresh && fresh.status !== "active") {
+      if (fresh && (fresh.status !== "active" || computeSessionDisplayStatus(fresh) !== "active")) {
         toast.error("This session has ended. Feedback is no longer being accepted.");
         await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
         return;

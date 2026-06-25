@@ -12,6 +12,7 @@ import { useAuth } from "./auth";
 import type { Class, Session, Student } from "../types/types";
 import * as classService from "../services/classService";
 import * as feedbackService from "../services/feedbackService";
+import { isSessionActive } from "../utils/sessionStatusUtils";
 
 interface ClassStoreValue {
   classes: Class[];
@@ -291,7 +292,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       return a.section.localeCompare(b.section);
     });
     const archivedClasses = classes.filter((cls) => cls.archived);
-    const activeSessions = sessions.filter((s) => s.status === "active");
+    const activeSessions = sessions.filter((s) => isSessionActive(s));
     return {
       classes,
       sessions,

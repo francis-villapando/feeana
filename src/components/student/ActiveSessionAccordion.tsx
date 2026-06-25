@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/accordion";
 import { CountBadge } from "@/components/common";
 import { SessionCard } from "@/components/student";
+import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
+import { useLiveNow } from "@/lib/hooks/useLiveNow";
 import type { Class, Session } from "@/lib/types/types";
 
 interface ActiveSessionAccordionProps {
@@ -30,6 +32,7 @@ export function ActiveSessionAccordion({
   verifyingSessionId,
 }: ActiveSessionAccordionProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const now = useLiveNow();
 
   return (
     <Accordion
@@ -42,7 +45,7 @@ export function ActiveSessionAccordion({
         const activeSessions = sessions.filter(
           (s) =>
             s.classId === cls.id &&
-            s.status === "active" &&
+            isSessionActive(s, new Date(now)) &&
             !submittedSessionIds.has(s.id),
         );
 

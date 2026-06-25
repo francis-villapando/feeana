@@ -282,16 +282,6 @@ export async function getSessionById(id: string): Promise<Session | null> {
   return data ? fromDbSession(data) : null;
 }
 
-export async function getActiveSessionsCount(facultyId: string): Promise<number> {
-  const { data, error } = await supabase
-    .from("sessions")
-    .select("id", { count: "exact" })
-    .eq("status", "active")
-    .eq("classes!inner.faculty_id", facultyId);
-  if (error) throw new Error(error.message);
-  return data?.length ?? 0;
-}
-
 export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
   const { data, error } = await supabase
     .from("enrollments")

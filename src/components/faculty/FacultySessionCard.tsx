@@ -7,6 +7,7 @@ import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
 import { CountBadge } from "@/components/common";
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
+import { useSessionDisplayStatus } from "@/lib/hooks/useSessionDisplayStatus";
 import type { Session } from "@/lib/types/types";
 
 export function SessionCard({ session }: { session: Session }) {
@@ -14,6 +15,7 @@ export function SessionCard({ session }: { session: Session }) {
   const feedbackStatus = computeFeedbackStatus(session, feedback);
   const sessionFeedback = feedback.filter((f) => f.sessionId === session.id);
   const responses = sessionFeedback.length;
+  const displayStatus = useSessionDisplayStatus(session);
 
   return (
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl transition hover:border-primary/40">
@@ -21,12 +23,12 @@ export function SessionCard({ session }: { session: Session }) {
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="line-clamp-2 min-h-[2.75rem] text-base">{session.topic}</CardTitle>
           <Badge
-            variant={session.status === "active" ? "default" : "secondary"}
+            variant={displayStatus === "active" ? "default" : "secondary"}
             className={`capitalize ${
-              session.status === "active" ? "bg-primary/15 text-primary hover:bg-primary/20" : ""
+              displayStatus === "active" ? "bg-primary/15 text-primary hover:bg-primary/20" : ""
             }`}
           >
-            {session.status}
+            {displayStatus}
           </Badge>
         </div>
       </CardHeader>

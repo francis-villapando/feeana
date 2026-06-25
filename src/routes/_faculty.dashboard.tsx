@@ -8,6 +8,8 @@ import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
 import { computeDashboardSubmissionRate, computeDashboardIloAchievement } from "@/lib/hooks/metrics";
+import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
+import { useLiveNow } from "@/lib/hooks/useLiveNow";
 import { CourseManagementHub, ActivityFeed, CrossClassSessionCreator } from "@/components/faculty/dashboard";
 import { KeyMetricsRow, KpiCard } from "@/components/faculty";
 
@@ -31,6 +33,8 @@ function DashboardPage() {
 
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
 
+  const now = useLiveNow();
+
   const [isDataFresh, setIsDataFresh] = useState(false);
 
   useEffect(() => {
@@ -49,12 +53,12 @@ function DashboardPage() {
   const stats = useMemo(() => {
     const activeClassIds = new Set(activeClasses.map((c) => c.id));
     const active = sessions.filter(
-      (s) => s.status === "active" && activeClassIds.has(s.classId),
+      (s) => isSessionActive(s, new Date(now)) && activeClassIds.has(s.classId),
     ).length;
     const submission = computeDashboardSubmissionRate(activeClasses, sessions, feedback);
     const ilo = computeDashboardIloAchievement(activeClasses, sessions, results);
     return { active, submission, ilo };
-  }, [feedback, sessions, activeClasses, results]);
+  }, [feedback, sessions, activeClasses, results, now]);
 
   if (isLoading) return <DashboardSkeleton />;
 
