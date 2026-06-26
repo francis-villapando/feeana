@@ -2,7 +2,7 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import type { DistEntry } from "@/lib/types/types";
-import { CLT_COLOR_ORDER } from "@/lib/constants/chart-colors";
+import { CLT_COLOR_ORDER } from "@/lib/constants/chartColors";
 
 interface CltDistChartProps {
   data: DistEntry[];

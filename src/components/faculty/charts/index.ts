@@ -7,5 +7,5 @@ export { IloGapCard } from "./IloGapCard";
 export { RecommendationCuesCard } from "./RecommendationCuesCard";
 export { WarningsCard } from "./WarningsCard";
 
-export { ClassTrendCard } from "./ClassTrendCard";
-export { RbtCltTrendCard } from "./RbtCltTrendCard";
+export { TrendLineCard } from "./TrendLineCard";
+export { TrendBarCard } from "./TrendBarCard";

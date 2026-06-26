@@ -2,12 +2,9 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recha
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { chartTooltipProps } from "@/components/analysis";
 import type { DistEntry } from "@/lib/types/types";
+import { POLARITY_COLOR_ORDER } from "@/lib/constants/chartColors";
 
-const POLARITY_COLORS: Record<string, string> = {
-  Positive: "var(--color-chart-1)",
-  Neutral: "var(--color-chart-3)",
-  Negative: "var(--color-chart-4)",
-};
+const polarityColorMap = Object.fromEntries(POLARITY_COLOR_ORDER);
 
 interface PolarityDistChartProps {
   data: DistEntry[];
@@ -34,7 +31,7 @@ export function PolarityDistChart({ data }: PolarityDistChartProps) {
               {data.map((entry) => (
                 <Cell
                   key={entry.label}
-                  fill={POLARITY_COLORS[entry.label] ?? "var(--color-chart-2)"}
+                  fill={polarityColorMap[entry.label] ?? "var(--color-chart-1)"}
                 />
               ))}
             </Pie>
@@ -43,7 +40,7 @@ export function PolarityDistChart({ data }: PolarityDistChartProps) {
               content={({ active, payload }) => {
                 if (!active || !payload || !payload.length) return null;
                 const entry = payload[0].payload as DistEntry;
-                const color = POLARITY_COLORS[entry.label] || "var(--color-foreground)";
+                const color = polarityColorMap[entry.label] ?? "var(--color-foreground)";
                 const texts = entry.feedbackTexts ?? [];
                 const preview = texts.slice(0, 3);
                 const remaining = texts.length - preview.length;

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ClassDetailsCard, ConfirmationDialog, ClassStudentsTab, KeyMetricsRow, SessionCreator, SessionCard as FacultySessionCard } from "@/components/faculty";
-import { ClassTrendCard, RbtCltTrendCard } from "@/components/faculty/charts";
+import { TrendLineCard, TrendBarCard } from "@/components/faculty/charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -166,23 +166,9 @@ function ClassLayout() {
             iloHint="Across sessions in this class"
           />
 
-          <ClassTrendCard trend={trend} />
+          <TrendLineCard trend={trend} />
 
-          {/* Distribution trends */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            <RbtCltTrendCard
-              trend={trend}
-              dataKey="rbtDist"
-              title="RBT trend"
-              description="Bloom's cognitive-process level distribution per session."
-            />
-            <RbtCltTrendCard
-              trend={trend}
-              dataKey="cltDist"
-              title="CLT trend"
-              description="Intrinsic vs extraneous cognitive load per session."
-            />
-          </div>
+          <TrendBarCard trend={trend} />
 
           {/* Trend interpretation */}
           {/* <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
@@ -221,14 +207,9 @@ function ClassLayout() {
               <Skeleton className="h-40 w-full" />
             </CardContent>
           </Card>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-              <CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent>
-            </Card>
-            <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-              <CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent>
-            </Card>
-          </div>
+          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+            <CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent>
+          </Card>
           <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
             <CardHeader>
               <Skeleton className="h-5 w-32" />

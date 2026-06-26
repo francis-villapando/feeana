@@ -2,12 +2,14 @@ import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import type { DistEntry } from "@/lib/types/types";
-import { SPECIAL_COLORS } from "@/lib/constants/chart-colors";
+import { CHART_COLORS, ASPECT_COLOR_ORDER } from "@/lib/constants/chartColors";
 
 interface AspectDistChartProps {
   data: DistEntry[];
   totalFeedback: number;
 }
+
+const aspectColorMap = Object.fromEntries(ASPECT_COLOR_ORDER);
 
 export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
   return (
@@ -30,12 +32,12 @@ export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
               fontSize={11}
               width={170}
             />
-            <Tooltip {...chartTooltipProps} content={<ChartTooltipContent />} />
-            <Bar dataKey="value" fill="var(--color-chart-2)" radius={[0, 6, 6, 0]}>
+            <Tooltip {...chartTooltipProps} content={<ChartTooltipContent colorMap={aspectColorMap} />} />
+            <Bar dataKey="value" radius={[0, 6, 6, 0]}>
               {data.map((entry) => (
                 <Cell
                   key={entry.label}
-                  fill={SPECIAL_COLORS[entry.label] || "var(--color-chart-5)"}
+                  fill={aspectColorMap[entry.label] || CHART_COLORS[0]}
                 />
               ))}
             </Bar>

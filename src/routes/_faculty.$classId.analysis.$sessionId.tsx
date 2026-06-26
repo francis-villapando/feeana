@@ -282,8 +282,10 @@ function Results({ result }: { result: AnalysisResult }) {
       <AspectDistChart data={result.aspectDist} totalFeedback={result.totalFeedback} />
       <PolarityDistChart data={result.polarityDist} />
       <IssueDistChart data={result.issueDist} />
-      <RbtDistChart data={result.rbtDist} />
-      <CltDistChart data={result.cltDist} />
+      <div className="grid gap-4 lg:grid-cols-2 lg:col-span-3">
+        <RbtDistChart data={result.rbtDist} />
+        <CltDistChart data={result.cltDist} />
+      </div>
       <IloGapCard statuses={iloStatuses} />
       <RecommendationCuesCard recommendations={result.recommendations} ilos={ilos} />
       <WarningsCard data={result.warnings} />
