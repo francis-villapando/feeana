@@ -16,8 +16,6 @@ import { CourseStoreProvider } from "@/lib/stores/courseStore";
 import { FeedbackStoreProvider } from "@/lib/stores/feedbackStore";
 import { ThemeProvider, useTheme } from "@/lib/providers/themeProvider";
 import { ResetPasswordDialog } from "@/components/auth";
-import bgImage from "../assets/bg-abstract.jpg";
-
 import "../styles.css";
 
 function NotFoundComponent() {
@@ -68,7 +66,6 @@ export const Route = createRootRouteWithContext()({
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
-  const bgStyle = `:root { --feeana-bg-image: url(${bgImage}); }`;
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -79,7 +76,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <style dangerouslySetInnerHTML={{ __html: bgStyle }} />
         <script
           dangerouslySetInnerHTML={{
             __html: `

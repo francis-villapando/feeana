@@ -177,20 +177,6 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Global animated/abstract background layer. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -2;
-    background-image: var(--feeana-bg-image);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0.35;
-    pointer-events: none;
-  }
-
   body::after {
     content: "";
     position: fixed;
