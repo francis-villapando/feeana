@@ -18,11 +18,7 @@ import type { AnalysisResult, DistEntry } from "../types/types";
 import { supabase } from "../db/supabase";
 import { getMLWorker } from "../ml/mlWorkerStore";
 import { collectPipelineData } from "./dataCollection";
-import {
-  CalculateDistributions,
-  GeneratePedagogicalCue,
-  GenerateDiagnosticWarning,
-} from "./strategyGeneration";
+import { CalculateDistributions, GeneratePedagogicalCue } from "./strategyGeneration";
 import { formatDashboardOutput } from "./dashboardOutput";
 import { ISSUE_RULES, RBT_LEVELS, RULES_VERSION } from "./rules";
 import type {
@@ -30,14 +26,19 @@ import type {
   FeedbackInput,
   DiagnosticRecord,
   BufferedDiagnostic,
+  RecommendationItem,
   PipelineOutput,
 } from "./types";
 
 const PRIORITY_THRESHOLD = 0.3;
 
 const BLOOM_LEVEL_MAP: Record<string, number> = {
-  Remember: 1, Understand: 2, Apply: 3,
-  Analyze: 4, Evaluate: 5, Create: 6,
+  Remember: 1,
+  Understand: 2,
+  Apply: 3,
+  Analyze: 4,
+  Evaluate: 5,
+  Create: 6,
 };
 
 // Read path
@@ -116,12 +117,12 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   console.debug("[pipeline] Starting analysis pipeline for session", { sessionId });
 
   // Module 1: Fetch + assemble data
-  performance.mark('pipeline:fetch-start');
+  performance.mark("pipeline:fetch-start");
   const { session, courseName, ilosData, feedbackData } = await fetchSessionData(sessionId);
-  performance.mark('pipeline:fetch-end');
-  performance.measure('Supabase read', {
-    start: 'pipeline:fetch-start',
-    end: 'pipeline:fetch-end',
+  performance.mark("pipeline:fetch-end");
+  performance.measure("Supabase read", {
+    start: "pipeline:fetch-start",
+    end: "pipeline:fetch-end",
     detail: { targetMs: 2500 },
   });
 
@@ -145,26 +146,26 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
 
   // Modules 2-3-4: per-feedback loop in Web Worker (preprocess → extract → map)
   const { api } = getMLWorker();
-  performance.mark('pipeline:model-load-start');
+  performance.mark("pipeline:model-load-start");
   await api.preloadModel();
-  performance.mark('pipeline:model-load-end');
-  performance.measure('Model init (warm)', {
-    start: 'pipeline:model-load-start',
-    end: 'pipeline:model-load-end',
+  performance.mark("pipeline:model-load-end");
+  performance.measure("Model init (warm)", {
+    start: "pipeline:model-load-start",
+    end: "pipeline:model-load-end",
     detail: { targetMs: 6000 },
   });
 
-  performance.mark('pipeline:inference-start');
+  performance.mark("pipeline:inference-start");
   const buffer: DiagnosticRecord[] = await api.runInference(feedbackStream, targetIloRbt);
-  performance.mark('pipeline:inference-end');
-  performance.measure('Pipeline total', {
-    start: 'pipeline:inference-start',
-    end: 'pipeline:inference-end',
+  performance.mark("pipeline:inference-end");
+  performance.measure("Pipeline total", {
+    start: "pipeline:inference-start",
+    end: "pipeline:inference-end",
     detail: { targetMs: 240000 },
   });
 
   // Save raw ML output to analysis_results
-  performance.mark('pipeline:write-start');
+  performance.mark("pipeline:write-start");
   await supabase.from("analysis_results").delete().eq("session_id", sessionId);
   if (buffer.length > 0) {
     const { error: insertErr } = await supabase.from("analysis_results").insert(
@@ -193,21 +194,21 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
     }
   }
 
-  const recommendationList: PipelineOutput["recommendationList"] = [];
-  const warningList: PipelineOutput["warningList"] = [];
+  const recommendationList: RecommendationItem[] = [];
+  const warningList: RecommendationItem[] = [];
 
   for (const uniqueIssue of uniqueIssueMap.values()) {
     if (uniqueIssue.issue === "Uncategorized") continue;
 
-    const w_c = uniqueIssue.isGap ? 1.5 : 1.0;
-    const P = (uniqueIssue.count / totalFeedback) * w_c;
+    const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
+    const priorityScore = (uniqueIssue.count / totalFeedback) * weightedCoefficient;
 
-    if (P >= PRIORITY_THRESHOLD) {
-      recommendationList.push(
-        GeneratePedagogicalCue(sessionContext, uniqueIssue, totalFeedback),
-      );
+    const pedagogicalCue = GeneratePedagogicalCue(sessionContext, uniqueIssue, totalFeedback);
+
+    if (priorityScore >= PRIORITY_THRESHOLD) {
+      recommendationList.push(pedagogicalCue);
     } else {
-      warningList.push(GenerateDiagnosticWarning(uniqueIssue));
+      warningList.push(pedagogicalCue);
     }
   }
 
@@ -216,11 +217,11 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
 
   // Build final AnalysisResult shape
   const aspectDist: DistEntry[] = Object.entries(stats.aspectCounts)
-    .map(([label, value]) => ({ label, value } as DistEntry))
+    .map(([label, value]) => ({ label, value }) as DistEntry)
     .sort((a, b) => b.value - a.value);
 
   const issueDist: DistEntry[] = Object.entries(stats.issueCounts)
-    .map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value } as DistEntry))
+    .map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry)
     .sort((a, b) => b.value - a.value);
 
   const polarityDist: DistEntry[] = [
@@ -230,11 +231,15 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   ];
 
   const rbtDist: DistEntry[] = Object.entries(stats.rbtCounts)
-    .map(([label, value]) => ({ label, value } as DistEntry))
-    .sort((a, b) => (RBT_LEVELS as readonly string[]).indexOf(a.label) - (RBT_LEVELS as readonly string[]).indexOf(b.label));
+    .map(([label, value]) => ({ label, value }) as DistEntry)
+    .sort(
+      (a, b) =>
+        (RBT_LEVELS as readonly string[]).indexOf(a.label) -
+        (RBT_LEVELS as readonly string[]).indexOf(b.label),
+    );
 
   const cltDist: DistEntry[] = Object.entries(stats.cltCounts)
-    .map(([label, value]) => ({ label, value } as DistEntry))
+    .map(([label, value]) => ({ label, value }) as DistEntry)
     .sort((a, b) => b.value - a.value);
 
   // Enrich distribution entries with contributing feedback texts
@@ -264,7 +269,8 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
       polarityToTexts[diag.polarity].push(text);
     }
 
-    const rbtName = diag.issue === "Uncategorized" ? "Uncategorized" : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
+    const rbtName =
+      diag.issue === "Uncategorized" ? "Uncategorized" : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
     const rbtList = rbtToTexts.get(rbtName) ?? [];
     rbtList.push(text);
     rbtToTexts.set(rbtName, rbtList);
@@ -277,8 +283,13 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
 
   for (const entry of aspectDist) entry.feedbackTexts = aspectToTexts.get(entry.label);
   for (const entry of issueDist) entry.feedbackTexts = issueToTexts.get(entry.label);
-  const polarityLabelKey: Record<string, string> = { Positive: "pos", Neutral: "neu", Negative: "neg" };
-  for (const entry of polarityDist) entry.feedbackTexts = polarityToTexts[polarityLabelKey[entry.label]];
+  const polarityLabelKey: Record<string, string> = {
+    Positive: "pos",
+    Neutral: "neu",
+    Negative: "neg",
+  };
+  for (const entry of polarityDist)
+    entry.feedbackTexts = polarityToTexts[polarityLabelKey[entry.label]];
   for (const entry of rbtDist) entry.feedbackTexts = rbtToTexts.get(entry.label);
   for (const entry of cltDist) entry.feedbackTexts = cltToTexts.get(entry.label);
 
@@ -312,10 +323,14 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
       theories: r.theories as any[],
       priority: r.priority,
     })),
-    warnings: warningList.map((w) => ({
-      id: w.id,
-      issue: w.issue,
-      count: w.count,
+    warnings: warningList.map((recommendationItem) => ({
+      id: recommendationItem.id,
+      issue: recommendationItem.issue,
+      terms: recommendationItem.terms as any[],
+      theories: recommendationItem.theories as any[],
+      priority: recommendationItem.priority,
+      count: recommendationItem.priority,
+      isGap: recommendationItem.isGap,
     })),
   };
 
@@ -327,10 +342,10 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
     rules_version: RULES_VERSION,
   });
   if (cacheErr) console.error("Error saving computed result:", cacheErr);
-  performance.mark('pipeline:write-end');
-  performance.measure('Supabase write (diagnostics)', {
-    start: 'pipeline:write-start',
-    end: 'pipeline:write-end',
+  performance.mark("pipeline:write-end");
+  performance.measure("Supabase write (diagnostics)", {
+    start: "pipeline:write-start",
+    end: "pipeline:write-end",
     detail: { targetMs: 5000 },
   });
 

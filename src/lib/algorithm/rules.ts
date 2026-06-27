@@ -114,11 +114,11 @@ export const ISSUE_DESCRIPTIONS: Record<string, string> = {
 };
 
 export const RBT_DESCRIPTIONS: Record<string, string> = {
-  "Remember": "Recognizing: identifying --- Recalling/retrieving",
-  "Understand": "Interpreting: clarifying/paraphrasing/translating/representing --- Exemplifying: illustrating/instantiating --- Classifying: categorizing/subsuming --- Summarizing: abstracting/generalizing --- Inferring: concluding/extrapolating/interpolating/predicting --- Comparing: contrasting/mapping/matching --- Explaining",
+  "Remember": "Recognizing: identifying --- Recalling, retrieving",
+  "Understand": "Interpreting: clarifying, paraphrasing, translating, representing --- Exemplifying: illustrating, instantiating --- Classifying: categorizing, subsuming --- Summarizing: abstracting, generalizing --- Inferring: concluding, extrapolating, interpolating, predicting --- Comparing: contrasting, mapping, matching --- Explaining",
   "Apply": "Executing: carrying out --- Implementing: using",
-  "Analyze": "Differentiating: distinguishing/discriminating/focusing/selecting --- Organizing: finding/coherence/integrating/outlining/structuring --- Attributing: deconstructing",
-  "Evaluate": "Checking: monitoring/testing --- Critiquing: judging",
+  "Analyze": "Differentiating: distinguishing, discriminating, focusing, selecting --- Organizing: finding, coherence, integrating, outlining, structuring --- Attributing: deconstructing",
+  "Evaluate": "Checking: monitoring, testing --- Critiquing: judging",
   "Create": "Generating: hypothesizing --- Planning: designing --- Producing: constructing",
 };
 

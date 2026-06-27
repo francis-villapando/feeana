@@ -108,7 +108,15 @@ export interface Feedback {
 
 export type Theory = "RBT" | "CLT" | "TTI";
 
-export type TermKind = "issue" | "RBT" | "CLT" | "TTI" | "ILO" | "metric" | "topic" | "recommendation";
+export type TermKind =
+  | "issue"
+  | "RBT"
+  | "CLT"
+  | "TTI"
+  | "ILO"
+  | "prevalence"
+  | "topic"
+  | "recommendation";
 
 export interface RecommendationTerm {
   text: string;
@@ -129,6 +137,10 @@ export interface Warning {
   id: string;
   issue: string;
   count: number;
+  terms: RecommendationTerm[];
+  theories: Theory[];
+  priority: number;
+  isGap: boolean;
 }
 
 export type Severity = "low" | "medium" | "high";

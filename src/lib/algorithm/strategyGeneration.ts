@@ -1,13 +1,18 @@
 // Module 5: Strategy Generation
 // Computes distributions and generates recommendations or warnings.
 
-import { ISSUE_DESCRIPTIONS, ISSUE_RECOMMENDATIONS, RBT_DESCRIPTIONS, RBT_LEVELS, TTI_DESCRIPTIONS } from "./rules";
+import {
+  ISSUE_DESCRIPTIONS,
+  ISSUE_RECOMMENDATIONS,
+  RBT_DESCRIPTIONS,
+  RBT_LEVELS,
+  TTI_DESCRIPTIONS,
+} from "./rules";
 import type {
   BufferedDiagnostic,
   DiagnosticRecord,
   StrategyStats,
   RecommendationItem,
-  WarningItem,
   SessionContext,
   CltCategory,
 } from "./types";
@@ -40,7 +45,8 @@ export function CalculateDistributions(
       stats.polarityCounts[diag.polarity]++;
     }
 
-    const rbtName = diag.issue === "Uncategorized" ? "Uncategorized" : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
+    const rbtName =
+      diag.issue === "Uncategorized" ? "Uncategorized" : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
     stats.rbtCounts[rbtName] = (stats.rbtCounts[rbtName] || 0) + 1;
 
     const cltLabel = diag.issue === "Uncategorized" ? "Uncategorized" : diag.clt;
@@ -53,7 +59,7 @@ export function CalculateDistributions(
 export function GeneratePedagogicalCue(
   sessionContext: SessionContext,
   uniqueIssue: BufferedDiagnostic,
-  totalFeedback: number
+  totalFeedback: number,
 ): RecommendationItem {
   console.debug("[strategyGeneration] Generating pedagogical cue", {
     topic: sessionContext.topic,
@@ -68,7 +74,9 @@ export function GeneratePedagogicalCue(
   const rbtLower = rbtName.toLowerCase();
   const cltLower = uniqueIssue.clt.toLowerCase();
   const ttiLower = uniqueIssue.tti.toLowerCase();
-  const recommendationSentence = ISSUE_RECOMMENDATIONS[uniqueIssue.issue] ?? `Thus, "recommendation cue for ${uniqueIssue.issue}."`;
+  const recommendationSentence =
+    ISSUE_RECOMMENDATIONS[uniqueIssue.issue] ??
+    `Thus, "recommendation cue for ${uniqueIssue.issue}."`;
 
   const paragraph = uniqueIssue.isGap
     ? `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the goal: ${sessionContext.iloStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
@@ -77,7 +85,7 @@ export function GeneratePedagogicalCue(
   const terms = [
     {
       text: percentageStr,
-      kind: "metric",
+      kind: "prevalence",
       detail: `${uniqueIssue.count} out of ${totalFeedback} responses`,
     },
     {
@@ -102,19 +110,20 @@ export function GeneratePedagogicalCue(
     },
     ...(uniqueIssue.isGap
       ? [
-        {
-          text: sessionContext.iloStatement,
-          kind: "ILO" as const,
-          detail: sessionContext.iloStatement,
-        },
-      ]
+          {
+            text: sessionContext.iloStatement,
+            kind: "ILO" as const,
+            detail: sessionContext.iloStatement,
+          },
+        ]
       : []),
     {
       text: uniqueIssue.clt,
       kind: "CLT",
-      detail: uniqueIssue.clt === "Intrinsic"
-        ? "The inherent complexity of a task."
-        : "The way in which instruction has been designed.",
+      detail:
+        uniqueIssue.clt === "Intrinsic"
+          ? "The inherent complexity of a task."
+          : "The way in which instruction has been designed.",
     },
     {
       text: recommendationSentence,
@@ -131,19 +140,5 @@ export function GeneratePedagogicalCue(
     priority: uniqueIssue.count,
     theories: ["RBT", "CLT"],
     isGap: uniqueIssue.isGap,
-  };
-}
-
-export function GenerateDiagnosticWarning(
-  uniqueIssue: BufferedDiagnostic,
-): WarningItem {
-  console.debug("[strategyGeneration] Generating diagnostic warning", {
-    issue: uniqueIssue.issue,
-  });
-
-  return {
-    id: `warn-${Math.random().toString(36).slice(2, 10)}`,
-    issue: uniqueIssue.issue,
-    count: uniqueIssue.count,
   };
 }

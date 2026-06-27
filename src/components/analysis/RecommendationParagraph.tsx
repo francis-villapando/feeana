@@ -7,7 +7,7 @@ const KIND_LABEL: Record<TermKind, string> = {
   CLT: "Cognitive Load Theory",
   TTI: "Teaching Through Interactions",
   ILO: "Intended Learning Outcome",
-  metric: "Metric",
+  prevalence: "Prevalence",
   topic: "Topic",
   recommendation: "Recommendation",
 };

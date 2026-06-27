@@ -3,7 +3,6 @@ import { createHash } from "node:crypto";
 import {
   CalculateDistributions,
   GeneratePedagogicalCue,
-  GenerateDiagnosticWarning,
 } from "../src/lib/algorithm/strategyGeneration";
 import {
   TTI_RULES,
@@ -13,7 +12,7 @@ import {
   ISSUE_RULES,
   RULES_VERSION,
 } from "../src/lib/algorithm/rules";
-import type { SessionContext, DiagnosticRecord, BufferedDiagnostic, RecommendationItem, WarningItem } from "../src/lib/algorithm/types";
+import type { SessionContext, DiagnosticRecord, BufferedDiagnostic, RecommendationItem } from "../src/lib/algorithm/types";
 import type { DistEntry, AnalysisResult, GapItem } from "../src/lib/types/types";
 
 // Dashboard Test Seed — 3 Classes, 60 Students, 9 Sessions, ~159 Feedback
@@ -730,20 +729,20 @@ async function createAnalysisResults(
     }
 
     const recommendationList: RecommendationItem[] = [];
-    const warningList: WarningItem[] = [];
+    const warningList: RecommendationItem[] = [];
 
     for (const uniqueIssue of uniqueIssueMap.values()) {
       if (uniqueIssue.issue === "Uncategorized") continue;
 
-      const w_c = uniqueIssue.isGap ? 1.5 : 1.0;
-      const P = (uniqueIssue.count / total) * w_c;
+      const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
+      const priorityScore = (uniqueIssue.count / total) * weightedCoefficient;
 
-      if (P >= PRIORITY_THRESHOLD) {
-        recommendationList.push(
-          GeneratePedagogicalCue(sessionContext, uniqueIssue, total),
-        );
+      const pedagogicalCue = GeneratePedagogicalCue(sessionContext, uniqueIssue, total);
+
+      if (priorityScore >= PRIORITY_THRESHOLD) {
+        recommendationList.push(pedagogicalCue);
       } else {
-        warningList.push(GenerateDiagnosticWarning(uniqueIssue));
+        warningList.push(pedagogicalCue);
       }
     }
 
@@ -845,10 +844,14 @@ async function createAnalysisResults(
         theories: r.theories as any[],
         priority: r.priority,
       })),
-      warnings: warningList.map((w) => ({
-        id: seedId("warning", session.id, w.issue),
-        issue: w.issue,
-        count: w.count,
+      warnings: warningList.map((recommendationItem) => ({
+        id: seedId("warning", session.id, recommendationItem.issue),
+        issue: recommendationItem.issue,
+        terms: recommendationItem.terms as any[],
+        theories: recommendationItem.theories as any[],
+        priority: recommendationItem.priority,
+        count: recommendationItem.priority,
+        isGap: recommendationItem.isGap,
       })),
     };
 

@@ -67,22 +67,13 @@ export interface RecommendationItem {
   isGap: boolean;
 }
 
-export interface WarningItem {
-  id: string;
-  issue: string;
-  count: number;
-}
-
 export interface PipelineOutput {
   recommendationList: RecommendationItem[];
-  warningList: WarningItem[];
+  warningList: RecommendationItem[];
   stats: StrategyStats;
   diagnostics?: DiagnosticRecord[];
 }
 
 export interface AlgorithmPipeline {
-  run(
-    sessionContext: SessionContext,
-    feedbackStream: FeedbackInput[],
-  ): Promise<PipelineOutput>;
+  run(sessionContext: SessionContext, feedbackStream: FeedbackInput[]): Promise<PipelineOutput>;
 }
