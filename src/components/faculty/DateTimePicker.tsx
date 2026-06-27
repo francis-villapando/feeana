@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import {
 import { cn } from "@/lib/hooks/utils";
 
 interface DateTimePickerProps {
-  /** ISO string or empty */
   value: string;
   onChange: (iso: string) => void;
   placeholder?: string;
@@ -30,41 +29,64 @@ export function DateTimePicker({
   placeholder = "Pick date & time",
   className,
 }: DateTimePickerProps) {
-  const date = useMemo(() => (value ? new Date(value) : undefined), [value]);
+  const initial = useMemo(() => (value ? new Date(value) : undefined), [value]);
 
-  const hour24 = date ? date.getHours() : 9;
-  const displayHour = hour24 % 12 || 12;
-  const displayHourStr = String(displayHour).padStart(2, "0");
-  const minuteStr = date ? String(date.getMinutes()).padStart(2, "0") : "00";
-  const period = hour24 < 12 ? "AM" : "PM";
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(initial);
+  const [selectedHour, setSelectedHour] = useState<string | undefined>(
+    initial ? String(initial.getHours() % 12 || 12).padStart(2, "0") : undefined,
+  );
+  const [selectedMinute, setSelectedMinute] = useState<string | undefined>(
+    initial ? String(initial.getMinutes()).padStart(2, "0") : undefined,
+  );
+  const [selectedPeriod, setSelectedPeriod] = useState<string | undefined>(
+    initial ? (initial.getHours() < 12 ? "AM" : "PM") : undefined,
+  );
+
+  useEffect(() => {
+    const d = value ? new Date(value) : undefined;
+    setSelectedDate(d);
+    setSelectedHour(d ? String(d.getHours() % 12 || 12).padStart(2, "0") : undefined);
+    setSelectedMinute(d ? String(d.getMinutes()).padStart(2, "0") : undefined);
+    setSelectedPeriod(d ? (d.getHours() < 12 ? "AM" : "PM") : undefined);
+  }, [value]);
 
   const to24 = (h12: number, p: string) => {
     if (h12 === 12) return p === "AM" ? 0 : 12;
     return p === "PM" ? h12 + 12 : h12;
   };
 
-  const emit = (next: Date) => onChange(next.toISOString());
+  const emitIfComplete = (
+    date: Date | undefined,
+    hour: string | undefined,
+    minute: string | undefined,
+    period: string | undefined,
+  ) => {
+    if (date && hour && minute && period) {
+      const next = new Date(date);
+      next.setHours(to24(parseInt(hour, 10), period), parseInt(minute, 10), 0, 0);
+      onChange(next.toISOString());
+    }
+  };
 
   const handleDate = (d: Date | undefined) => {
     if (!d) return;
-    const next = new Date(d);
-    next.setHours(to24(displayHour, period), parseInt(minuteStr, 10), 0, 0);
-    emit(next);
+    setSelectedDate(d);
+    emitIfComplete(d, selectedHour, selectedMinute, selectedPeriod);
   };
+
   const handleHour12 = (h12: string) => {
-    const base = date ?? new Date();
-    base.setHours(to24(parseInt(h12, 10), period), parseInt(minuteStr, 10), 0, 0);
-    emit(base);
+    setSelectedHour(h12);
+    emitIfComplete(selectedDate, h12, selectedMinute, selectedPeriod);
   };
+
   const handleMinute = (m: string) => {
-    const base = date ?? new Date();
-    base.setHours(to24(displayHour, period), parseInt(m, 10), 0, 0);
-    emit(base);
+    setSelectedMinute(m);
+    emitIfComplete(selectedDate, selectedHour, m, selectedPeriod);
   };
+
   const handlePeriod = (p: string) => {
-    const base = date ?? new Date();
-    base.setHours(to24(displayHour, p), parseInt(minuteStr, 10), 0, 0);
-    emit(base);
+    setSelectedPeriod(p);
+    emitIfComplete(selectedDate, selectedHour, selectedMinute, p);
   };
 
   return (
@@ -75,18 +97,18 @@ export function DateTimePicker({
           variant="outline"
           className={cn(
             "w-full justify-start font-normal",
-            !date && "text-muted-foreground",
+            !value && "text-muted-foreground",
             className,
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
-          {date ? format(date, "PPP · p") : <span>{placeholder}</span>}
+          {value ? format(new Date(value), "PPP · p") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start" data-slot="popover-content">
         <Calendar
           mode="single"
-          selected={date}
+          selected={selectedDate}
           onSelect={handleDate}
           initialFocus
           className={cn("p-3 pointer-events-auto w-full")}
@@ -96,9 +118,9 @@ export function DateTimePicker({
         />
         <div className="flex items-center gap-2 border-t border-border/60 p-3">
           <Clock className="h-4 w-4 text-muted-foreground" />
-          <Select value={displayHourStr} onValueChange={handleHour12}>
+          <Select value={selectedHour ?? ""} onValueChange={handleHour12}>
             <SelectTrigger className="w-[80px]">
-              <SelectValue />
+              <SelectValue placeholder="--" />
             </SelectTrigger>
             <SelectContent className="max-h-60">
               {HOURS_12.map((h) => (
@@ -109,9 +131,9 @@ export function DateTimePicker({
             </SelectContent>
           </Select>
           <span className="text-muted-foreground">:</span>
-          <Select value={minuteStr} onValueChange={handleMinute}>
+          <Select value={selectedMinute ?? ""} onValueChange={handleMinute}>
             <SelectTrigger className="w-[80px]">
-              <SelectValue />
+              <SelectValue placeholder="--" />
             </SelectTrigger>
             <SelectContent className="max-h-60">
               {MINUTES.map((m) => (
@@ -121,9 +143,9 @@ export function DateTimePicker({
               ))}
             </SelectContent>
           </Select>
-          <Select value={period} onValueChange={handlePeriod}>
+          <Select value={selectedPeriod ?? ""} onValueChange={handlePeriod}>
             <SelectTrigger className="w-[72px]">
-              <SelectValue />
+              <SelectValue placeholder="--" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="AM">AM</SelectItem>
