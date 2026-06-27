@@ -11,7 +11,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisCard } from "./AnalysisCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CHART_COLORS } from "@/lib/constants/chartColors";
@@ -38,7 +39,7 @@ export function TrendLineCard({ trend }: { trend: TrendPoint[] }) {
   const [view, setView] = useState<TrendView>("engagement");
 
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+    <AnalysisCard>
       <CardHeader>
         <Tabs value={view} onValueChange={(v) => setView(v as TrendView)}>
           <div className="flex items-center justify-between gap-3">
@@ -91,7 +92,7 @@ export function TrendLineCard({ trend }: { trend: TrendPoint[] }) {
           </TabsContent>
         </Tabs>
       </CardHeader>
-    </Card>
+    </AnalysisCard>
   );
 }
 

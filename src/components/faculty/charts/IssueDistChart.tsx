@@ -1,5 +1,6 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisCard } from "./AnalysisCard";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import type { DistEntry } from "@/lib/types/types";
 import { CHART_COLORS, ISSUE_COLOR_ORDER } from "@/lib/constants/chartColors";
@@ -12,7 +13,7 @@ const issueColorMap = Object.fromEntries(ISSUE_COLOR_ORDER);
 
 export function IssueDistChart({ data }: IssueDistChartProps) {
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
+    <AnalysisCard className="lg:col-span-3">
       <CardHeader>
         <CardTitle className="text-base">Issue distribution</CardTitle>
         <CardDescription>Specific concerns extracted via PID-ABSA.</CardDescription>
@@ -41,6 +42,6 @@ export function IssueDistChart({ data }: IssueDistChartProps) {
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
-    </Card>
+    </AnalysisCard>
   );
 }

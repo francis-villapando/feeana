@@ -1,5 +1,6 @@
 import { Lightbulb } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisCard } from "./AnalysisCard";
 import { RecommendationParagraph } from "@/components/analysis";
 import type { ILO, Recommendation } from "@/lib/types/types";
 
@@ -12,7 +13,7 @@ export function RecommendationCuesCard({ recommendations, ilos }: Recommendation
   const sorted = [...recommendations].sort((a, b) => b.priority - a.priority);
 
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
+    <AnalysisCard className="lg:col-span-3">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Lightbulb className="h-4 w-4 text-primary" /> Recommendation cues
@@ -34,6 +35,6 @@ export function RecommendationCuesCard({ recommendations, ilos }: Recommendation
           </ol>
         )}
       </CardContent>
-    </Card>
+    </AnalysisCard>
   );
 }

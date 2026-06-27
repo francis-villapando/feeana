@@ -1,6 +1,7 @@
 import { AlertCircle, CheckCircle2, Target } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisCard } from "./AnalysisCard";
 import type { IloStatus } from "@/lib/hooks/iloStatus";
 
 interface IloGapCardProps {
@@ -9,7 +10,7 @@ interface IloGapCardProps {
 
 export function IloGapCard({ statuses }: IloGapCardProps) {
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
+    <AnalysisCard className="lg:col-span-3">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Target className="h-4 w-4 text-primary" /> ILO gap analysis
@@ -45,6 +46,6 @@ export function IloGapCard({ statuses }: IloGapCardProps) {
           ))
         )}
       </CardContent>
-    </Card>
+    </AnalysisCard>
   );
 }

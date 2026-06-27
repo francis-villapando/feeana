@@ -1,5 +1,6 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisCard } from "./AnalysisCard";
 import { chartTooltipProps } from "@/components/analysis";
 import type { DistEntry } from "@/lib/types/types";
 import { POLARITY_COLOR_ORDER } from "@/lib/constants/chartColors";
@@ -12,7 +13,7 @@ interface PolarityDistChartProps {
 
 export function PolarityDistChart({ data }: PolarityDistChartProps) {
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+    <AnalysisCard>
       <CardHeader>
         <CardTitle className="text-base">Polarity distribution</CardTitle>
         <CardDescription>Feedback tone distribution.</CardDescription>
@@ -93,6 +94,6 @@ export function PolarityDistChart({ data }: PolarityDistChartProps) {
           </PieChart>
         </ResponsiveContainer>
       </CardContent>
-    </Card>
+    </AnalysisCard>
   );
 }

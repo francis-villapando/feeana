@@ -1,5 +1,6 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisCard } from "./AnalysisCard";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import type { DistEntry } from "@/lib/types/types";
 import { CHART_COLORS, ASPECT_COLOR_ORDER } from "@/lib/constants/chartColors";
@@ -13,7 +14,7 @@ const aspectColorMap = Object.fromEntries(ASPECT_COLOR_ORDER);
 
 export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-2">
+    <AnalysisCard className="lg:col-span-2">
       <CardHeader>
         <CardTitle className="text-base">Aspect distribution</CardTitle>
         <CardDescription>
@@ -44,6 +45,6 @@ export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
-    </Card>
+    </AnalysisCard>
   );
 }

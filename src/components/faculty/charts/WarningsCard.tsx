@@ -1,6 +1,7 @@
 import { AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisCard } from "./AnalysisCard";
 import type { Warning } from "@/lib/types/types";
 
 interface WarningsCardProps {
@@ -10,7 +11,7 @@ interface WarningsCardProps {
 export function WarningsCard({ data }: WarningsCardProps) {
 
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl lg:col-span-3">
+    <AnalysisCard className="lg:col-span-3">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <AlertTriangle className="h-4 w-4 text-warning" /> Warnings
@@ -41,6 +42,6 @@ export function WarningsCard({ data }: WarningsCardProps) {
           ))
         )}
       </CardContent>
-    </Card>
+    </AnalysisCard>
   );
 }

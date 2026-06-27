@@ -2,7 +2,8 @@ import { BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalysisCard } from "./AnalysisCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CHART_COLORS, SPECIAL_COLORS, RBT_COLOR_ORDER, CLT_COLOR_ORDER, ASPECT_COLOR_ORDER, ISSUE_COLOR_ORDER } from "@/lib/constants/chartColors";
@@ -79,7 +80,7 @@ export function TrendBarCard({ trend }: { trend: TrendPoint[] }) {
   });
 
   return (
-    <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+    <AnalysisCard>
       <CardHeader>
         <Tabs value={view} onValueChange={(v) => setView(v as BarView)}>
           <div className="flex items-center justify-between gap-3">
@@ -136,6 +137,6 @@ export function TrendBarCard({ trend }: { trend: TrendPoint[] }) {
           </TabsContent>
         </Tabs>
       </CardHeader>
-    </Card>
+    </AnalysisCard>
   );
 }
