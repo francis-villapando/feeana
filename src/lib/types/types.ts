@@ -71,7 +71,7 @@ export interface Class {
   facultyName?: string;
 }
 
-export type SessionStatus = "active" | "archived" | "closed";
+export type SessionStatus = "active" | "archived" | "closed" | "upcoming";
 
 export interface Session {
   id: string;

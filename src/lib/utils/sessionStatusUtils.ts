@@ -6,7 +6,9 @@ export function computeSessionDisplayStatus(session: Session, now?: Date): Sessi
   if (session.status === "archived") return "archived";
   const current = now ?? new Date();
   if (current < new Date(session.startsAt)) return "upcoming";
-  if (current > new Date(session.endsAt)) return "closed";
+  const grace = new Date(session.endsAt);
+  grace.setSeconds(59, 999);
+  if (current > grace) return "closed";
   return "active";
 }
 

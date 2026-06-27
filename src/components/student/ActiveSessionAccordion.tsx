@@ -10,8 +10,6 @@ import {
 } from "@/components/ui/accordion";
 import { CountBadge } from "@/components/common";
 import { SessionCard } from "@/components/student";
-import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
-import { useLiveNow } from "@/lib/hooks/useLiveNow";
 import type { Class, Session } from "@/lib/types/types";
 
 interface ActiveSessionAccordionProps {
@@ -20,7 +18,6 @@ interface ActiveSessionAccordionProps {
   submittedSessionIds: Set<string>;
   onClassInfoClick: (cls: Class) => void;
   onSubmitSession?: (session: Session) => void;
-  verifyingSessionId?: string | null;
 }
 
 export function ActiveSessionAccordion({
@@ -29,10 +26,8 @@ export function ActiveSessionAccordion({
   submittedSessionIds,
   onClassInfoClick,
   onSubmitSession,
-  verifyingSessionId,
 }: ActiveSessionAccordionProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const now = useLiveNow();
 
   return (
     <Accordion
@@ -45,7 +40,7 @@ export function ActiveSessionAccordion({
         const activeSessions = sessions.filter(
           (s) =>
             s.classId === cls.id &&
-            isSessionActive(s, new Date(now)) &&
+            s.status === "active" &&
             !submittedSessionIds.has(s.id),
         );
 
@@ -98,7 +93,7 @@ export function ActiveSessionAccordion({
               ) : (
                 <div className="space-y-2">
                   {activeSessions.map((s) => (
-                    <SessionCard key={s.id} session={s} onSubmit={onSubmitSession} verifyingSessionId={verifyingSessionId} />
+                    <SessionCard key={s.id} session={s} onSubmit={onSubmitSession} />
                   ))}
                 </div>
               )}

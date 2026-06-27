@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
-import { getSessionById } from "@/lib/services/classService";
+
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
 import type { Session } from "@/lib/types/types";
 
@@ -25,7 +25,7 @@ interface SubmitFeedbackDialogProps {
 
 export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeedbackDialogProps) {
   const { addFeedback } = useFeedbackStore();
-  const { classes, refreshEnrolledClasses, refreshSessions, addSubmittedSession } = useClassStore();
+  const { classes, refreshEnrolledClasses, refreshSessions, addSubmittedSession, closeSessionLocally } = useClassStore();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -49,10 +49,10 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
       return;
     }
 
-    const fresh = await getSessionById(session.id);
-    if (fresh && fresh.status !== "active") {
-      toast.error("This session has ended. Feedback is no longer being accepted.");
+    if (session.status !== "active") {
+      toast.error("This session is currently not accepting feedback.");
       await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+      closeSessionLocally(session.id);
       handleClose();
       return;
     }

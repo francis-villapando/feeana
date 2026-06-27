@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { BookOpenCheck } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,14 +8,12 @@ import { WelcomeHero } from "@/components/common";
 import { ClassInfoDialog, EnrollClassDialog, ActiveSessionAccordion, SubmitFeedbackDialog } from "@/components/student";
 import { useAuth } from "@/lib/stores/auth";
 import { useClassStore } from "@/lib/stores/classStore";
-import { getSessionById } from "@/lib/services/classService";
-import { computeSessionDisplayStatus } from "@/lib/utils/sessionStatusUtils";
 import type { Class, Session } from "@/lib/types/types";
 
 export const Route = createFileRoute("/_student/student/home")({
   head: () => ({
     meta: [
-      { title: "Student home — Feeana" },
+      { title: "Student home \u2014 Feeana" },
       {
         name: "description",
         content: "Active sessions from your enrolled classes.",
@@ -29,7 +26,6 @@ export const Route = createFileRoute("/_student/student/home")({
 function LoadingSkeleton() {
   return (
     <div className="space-y-8">
-      {/* Hero Section Skeleton */}
       <section className="relative overflow-hidden rounded-2xl border border-primary/10 bg-card/40 p-8 backdrop-blur-xl">
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-3">
@@ -41,7 +37,6 @@ function LoadingSkeleton() {
         </div>
       </section>
 
-      {/* Accordion Skeletons */}
       <div className="space-y-2">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
@@ -64,29 +59,11 @@ function LoadingSkeleton() {
 }
 
 function StudentHome() {
-  const { enrolledClassIds, classes, sessions, isLoading, submittedSessionIds, refreshEnrolledClasses, refreshSessions } = useClassStore();
+  const { enrolledClassIds, classes, sessions, isLoading, submittedSessionIds } = useClassStore();
   const { user } = useAuth();
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [classInfo, setClassInfo] = useState<Class | null>(null);
   const [submitSession, setSubmitSession] = useState<Session | null>(null);
-  const [verifyingSessionId, setVerifyingSessionId] = useState<string | null>(null);
-
-  const handleSubmitSession = async (session: Session) => {
-    setVerifyingSessionId(session.id);
-    try {
-      const fresh = await getSessionById(session.id);
-      if (fresh && (fresh.status !== "active" || computeSessionDisplayStatus(fresh) !== "active")) {
-        toast.error("This session has ended. Feedback is no longer being accepted.");
-        await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
-        return;
-      }
-      setSubmitSession(session);
-    } catch {
-      toast.error("Failed to verify session. Please try again.");
-    } finally {
-      setVerifyingSessionId(null);
-    }
-  };
 
   const enrolled = classes.filter((cls) => enrolledClassIds.includes(cls.id));
 
@@ -118,8 +95,7 @@ function StudentHome() {
           sessions={sessions}
           submittedSessionIds={submittedSessionIds}
           onClassInfoClick={(cls) => setClassInfo(cls)}
-          onSubmitSession={handleSubmitSession}
-          verifyingSessionId={verifyingSessionId}
+          onSubmitSession={(session) => setSubmitSession(session)}
         />
       )}
 

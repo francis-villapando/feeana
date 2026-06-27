@@ -12,7 +12,6 @@ import { useAuth } from "./auth";
 import type { Class, Session, Student } from "../types/types";
 import * as classService from "../services/classService";
 import * as feedbackService from "../services/feedbackService";
-import { isSessionActive } from "../utils/sessionStatusUtils";
 
 interface ClassStoreValue {
   classes: Class[];
@@ -39,6 +38,10 @@ interface ClassStoreValue {
     startsAt: string;
     endsAt: string;
   }) => Promise<Session>;
+  updateSession: (id: string, fields: { topic?: string; startsAt?: string; endsAt?: string }) => Promise<Session>;
+  archiveSession: (id: string) => Promise<void>;
+  restoreSession: (id: string) => Promise<Session>;
+  deleteSession: (id: string) => Promise<void>;
   enrollClassByCode: (code: string) => Promise<Class | null>;
   activeSessions: Session[];
   submittedSessionIds: Set<string>;
@@ -48,6 +51,7 @@ interface ClassStoreValue {
   refreshStudents: (classId: string) => Promise<void>;
   studentCountForClass: (classId: string) => number;
   addSubmittedSession: (sessionId: string) => void;
+  closeSessionLocally: (id: string) => void;
   unenrollStudent: (classId: string) => Promise<void>;
 }
 
@@ -143,6 +147,10 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       next.add(sessionId);
       return next;
     });
+  }, []);
+
+  const closeSessionLocally = useCallback((id: string) => {
+    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, status: "closed" } : s)));
   }, []);
 
   useEffect(() => {
@@ -247,6 +255,31 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const updateSession = useCallback(
+    async (id: string, fields: { topic?: string; startsAt?: string; endsAt?: string }) => {
+      const s = await classService.updateSession(id, fields);
+      setSessions((prev) => prev.map((session) => (session.id === id ? s : session)));
+      return s;
+    },
+    [],
+  );
+
+  const archiveSession = useCallback(async (id: string) => {
+    await classService.archiveSession(id);
+    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, status: "archived" } : s)));
+  }, []);
+
+  const restoreSession = useCallback(async (id: string) => {
+    const s = await classService.restoreSession(id);
+    setSessions((prev) => prev.map((session) => (session.id === id ? s : session)));
+    return s;
+  }, []);
+
+  const deleteSession = useCallback(async (id: string) => {
+    await classService.deleteSession(id);
+    setSessions((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
   const enrollClassByCode = useCallback(
     async (code: string) => {
       if (!user) return null;
@@ -292,7 +325,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       return a.section.localeCompare(b.section);
     });
     const archivedClasses = classes.filter((cls) => cls.archived);
-    const activeSessions = sessions.filter((s) => isSessionActive(s));
+    const activeSessions = sessions.filter((s) => s.status === "active");
     return {
       classes,
       sessions,
@@ -314,6 +347,10 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       restoreClass,
       deleteClass,
       createSession,
+      updateSession,
+      archiveSession,
+      restoreSession,
+      deleteSession,
       enrollClassByCode,
       refreshClasses,
       refreshEnrolledClasses,
@@ -321,6 +358,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       refreshStudents,
       studentCountForClass,
       addSubmittedSession,
+      closeSessionLocally,
     };
   }, [
     classes,
@@ -333,6 +371,10 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     restoreClass,
     deleteClass,
     createSession,
+    updateSession,
+    archiveSession,
+    restoreSession,
+    deleteSession,
     enrollClassByCode,
     dismissStudent,
     isLoading,
@@ -342,6 +384,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     refreshSessions,
     refreshStudents,
     addSubmittedSession,
+    closeSessionLocally,
   ]);
 
   return <ClassStoreContext.Provider value={value}>{children}</ClassStoreContext.Provider>;

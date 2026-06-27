@@ -24,7 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useClassStore } from "@/lib/stores/classStore";
 import * as feedbackService from "@/lib/services/feedbackService";
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
-import { computeSessionDisplayStatus } from "@/lib/utils/sessionStatusUtils";
 import type { Class } from "@/lib/types/types";
 
 interface ClassInfoDialogProps {
@@ -49,10 +48,9 @@ export function ClassInfoDialog({
   const sessions = useMemo(
     () => allSessions.filter((s) => {
       if (s.classId !== cls.id) return false;
-      const displayStatus = computeSessionDisplayStatus(s);
       const submitted = submittedIds.has(s.id);
-      if (displayStatus === "closed") return true;
-      if (displayStatus === "active" && submitted) return true;
+      if (s.status === "closed") return true;
+      if (s.status === "active" && submitted) return true;
       return false;
     }),
     [allSessions, cls.id, submittedIds],

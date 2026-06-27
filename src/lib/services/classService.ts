@@ -37,6 +37,15 @@ function fromDbClass(row: Record<string, unknown>): Class {
   };
 }
 
+function computeStatus(startsAt: string, endsAt: string): Session["status"] {
+  const now = new Date();
+  if (now < new Date(startsAt)) return "upcoming";
+  const grace = new Date(endsAt);
+  grace.setSeconds(59, 999);
+  if (now > grace) return "closed";
+  return "active";
+}
+
 function fromDbSession(row: Record<string, unknown>): Session {
   return {
     id: row.id as string,
@@ -45,7 +54,7 @@ function fromDbSession(row: Record<string, unknown>): Session {
     topic: (row.topic as string) ?? "",
     topicId: row.topic_id as string | undefined,
     iloIds: (row.ilo_ids as string[]) ?? [],
-    status: (row.status as "active" | "archived" | "closed") ?? "active",
+    status: (row.status as Session["status"]) ?? "active",
     createdAt: row.created_at as string,
     startsAt: row.starts_at as string,
     endsAt: row.ends_at as string,
@@ -126,12 +135,64 @@ export async function deleteClass(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+export async function updateSession(
+  id: string,
+  fields: { topic?: string; startsAt?: string; endsAt?: string },
+): Promise<Session> {
+  if (fields.startsAt !== undefined || fields.endsAt !== undefined) {
+    const current = await getSessionById(id);
+    if (current) {
+      fields.startsAt = fields.startsAt ?? current.startsAt;
+      fields.endsAt = fields.endsAt ?? current.endsAt;
+    }
+  }
+  const updateFields: Record<string, unknown> = {};
+  if (fields.topic !== undefined) updateFields.topic = fields.topic.trim();
+  if (fields.startsAt !== undefined) updateFields.starts_at = fields.startsAt;
+  if (fields.endsAt !== undefined) updateFields.ends_at = fields.endsAt;
+  if (fields.startsAt !== undefined && fields.endsAt !== undefined) {
+    updateFields.status = computeStatus(fields.startsAt, fields.endsAt);
+  }
+  const { data, error } = await supabase.from("sessions").update(updateFields).eq("id", id).select().single();
+  if (error) throw new Error(error.message);
+  return fromDbSession(data);
+}
+
+export async function archiveSession(id: string): Promise<void> {
+  const { error } = await supabase.from("sessions").update({ status: "archived" }).eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function restoreSession(id: string): Promise<Session> {
+  const session = await getSessionById(id);
+  if (!session) throw new Error("Session not found");
+  const status = computeStatus(session.startsAt, session.endsAt);
+  const { data, error } = await supabase.from("sessions").update({ status }).eq("id", id).select().single();
+  if (error) throw new Error(error.message);
+  return fromDbSession(data);
+}
+
+export async function deleteSession(id: string): Promise<void> {
+  const { error } = await supabase.from("sessions").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+async function closeExpired() {
+  const { error } = await supabase
+    .from("sessions")
+    .update({ status: "closed" })
+    .lt("ends_at", new Date(Date.now() - 59000).toISOString())
+    .not("status", "in", '("archived","closed")');
+  if (error) console.error("Failed to close expired sessions", error);
+}
+
 export async function getSessions(classId: string): Promise<Session[]> {
+  await closeExpired();
   const { data, error } = await supabase
     .from("sessions")
     .select("*")
     .eq("class_id", classId)
-    .order("created_at", { ascending: false });
+    .order("starts_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(fromDbSession);
 }
@@ -157,7 +218,7 @@ export async function createSession(input: {
       topic_id: input.topicId ?? null,
       course_id: input.courseId ?? null,
       ilo_ids: input.iloIds ?? [],
-      status: "active",
+      status: computeStatus(input.startsAt, input.endsAt),
       starts_at: input.startsAt,
       ends_at: input.endsAt,
       created_by: user?.id,
@@ -276,6 +337,7 @@ export async function getClassById(id: string): Promise<Class | null> {
 }
 
 export async function getSessionById(id: string): Promise<Session | null> {
+  await closeExpired();
   const { data, error } = await supabase.from("sessions").select("*").eq("id", id).single();
   if (error?.code === "PGRST116") return null;
   if (error) throw new Error(error.message);

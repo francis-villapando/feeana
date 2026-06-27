@@ -13,10 +13,11 @@ export function useSessionDisplayStatus(session: Session): SessionDisplayStatus 
     const now = Date.now();
     const startsAt = new Date(session.startsAt).getTime();
     const endsAt = new Date(session.endsAt).getTime();
+    const closedAt = endsAt + 60000;
 
     const nextUpdate = Math.min(
       now < startsAt ? startsAt - now : Infinity,
-      now < endsAt ? endsAt - now : Infinity,
+      now < closedAt ? closedAt - now : Infinity,
     );
     if (nextUpdate === Infinity || !isFinite(nextUpdate)) return;
 
