@@ -6,27 +6,29 @@ export function useSessionDisplayStatus(session: Session): SessionDisplayStatus 
   const [displayStatus, setDisplayStatus] = useState(() => computeSessionDisplayStatus(session));
 
   useEffect(() => {
-    setDisplayStatus(computeSessionDisplayStatus(session));
+    const currentStatus = computeSessionDisplayStatus(session);
+    setDisplayStatus(currentStatus);
 
     if (session.status === "archived") return;
 
     const now = Date.now();
     const startsAt = new Date(session.startsAt).getTime();
-    const endsAt = new Date(session.endsAt).getTime();
-    const closedAt = endsAt + 60000;
+    const grace = new Date(session.endsAt);
+    grace.setSeconds(59, 999);
+    const closedAt = grace.getTime() + 1;
 
     const nextUpdate = Math.min(
       now < startsAt ? startsAt - now : Infinity,
       now < closedAt ? closedAt - now : Infinity,
     );
-    if (nextUpdate === Infinity || !isFinite(nextUpdate)) return;
+    if (nextUpdate === Infinity || !isFinite(nextUpdate) || nextUpdate <= 0) return;
 
     const timer = setTimeout(
       () => setDisplayStatus(computeSessionDisplayStatus(session)),
       Math.min(nextUpdate, 2_147_483_647),
     );
     return () => clearTimeout(timer);
-  }, [session, session.startsAt, session.endsAt, session.status]);
+  }, [session, session.startsAt, session.endsAt, session.status, displayStatus]);
 
   return displayStatus;
 }

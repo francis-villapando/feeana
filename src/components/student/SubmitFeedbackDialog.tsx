@@ -15,6 +15,7 @@ import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
+import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
 import type { Session } from "@/lib/types/types";
 
 interface SubmitFeedbackDialogProps {
@@ -49,7 +50,7 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
       return;
     }
 
-    if (session.status !== "active") {
+    if (!isSessionActive(session)) {
       toast.error("This session is currently not accepting feedback.");
       await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
       closeSessionLocally(session.id);

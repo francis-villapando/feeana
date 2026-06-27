@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { CountBadge } from "@/components/common";
 import { SessionCard } from "@/components/student";
+import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
 import type { Class, Session } from "@/lib/types/types";
 
 interface ActiveSessionAccordionProps {
@@ -40,7 +41,7 @@ export function ActiveSessionAccordion({
         const activeSessions = sessions.filter(
           (s) =>
             s.classId === cls.id &&
-            s.status === "active" &&
+            isSessionActive(s) &&
             !submittedSessionIds.has(s.id),
         );
 
