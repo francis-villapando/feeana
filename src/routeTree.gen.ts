@@ -15,6 +15,7 @@ import { Route as FacultyRouteImport } from './routes/_faculty'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginStudentRouteImport } from './routes/login.student'
 import { Route as LoginFacultyRouteImport } from './routes/login.faculty'
+import { Route as DevCompareModelsRouteImport } from './routes/dev.compare-models'
 import { Route as FacultyHomeRouteImport } from './routes/_faculty.home'
 import { Route as FacultyDashboardRouteImport } from './routes/_faculty.dashboard'
 import { Route as FacultyArchivedRouteImport } from './routes/_faculty.archived'
@@ -48,6 +49,11 @@ const LoginStudentRoute = LoginStudentRouteImport.update({
 const LoginFacultyRoute = LoginFacultyRouteImport.update({
   id: '/login/faculty',
   path: '/login/faculty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevCompareModelsRoute = DevCompareModelsRouteImport.update({
+  id: '/dev/compare-models',
+  path: '/dev/compare-models',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FacultyHomeRoute = FacultyHomeRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/archived': typeof FacultyArchivedRoute
   '/dashboard': typeof FacultyDashboardRoute
   '/home': typeof FacultyHomeRoute
+  '/dev/compare-models': typeof DevCompareModelsRoute
   '/login/faculty': typeof LoginFacultyRoute
   '/login/student': typeof LoginStudentRoute
   '/student/home': typeof StudentStudentHomeRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/archived': typeof FacultyArchivedRoute
   '/dashboard': typeof FacultyDashboardRoute
   '/home': typeof FacultyHomeRoute
+  '/dev/compare-models': typeof DevCompareModelsRoute
   '/login/faculty': typeof LoginFacultyRoute
   '/login/student': typeof LoginStudentRoute
   '/student/home': typeof StudentStudentHomeRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/_faculty/archived': typeof FacultyArchivedRoute
   '/_faculty/dashboard': typeof FacultyDashboardRoute
   '/_faculty/home': typeof FacultyHomeRoute
+  '/dev/compare-models': typeof DevCompareModelsRoute
   '/login/faculty': typeof LoginFacultyRoute
   '/login/student': typeof LoginStudentRoute
   '/_student/student/home': typeof StudentStudentHomeRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/archived'
     | '/dashboard'
     | '/home'
+    | '/dev/compare-models'
     | '/login/faculty'
     | '/login/student'
     | '/student/home'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/archived'
     | '/dashboard'
     | '/home'
+    | '/dev/compare-models'
     | '/login/faculty'
     | '/login/student'
     | '/student/home'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/_faculty/archived'
     | '/_faculty/dashboard'
     | '/_faculty/home'
+    | '/dev/compare-models'
     | '/login/faculty'
     | '/login/student'
     | '/_student/student/home'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   FacultyRoute: typeof FacultyRouteWithChildren
   StudentRoute: typeof StudentRouteWithChildren
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  DevCompareModelsRoute: typeof DevCompareModelsRoute
   LoginFacultyRoute: typeof LoginFacultyRoute
   LoginStudentRoute: typeof LoginStudentRoute
 }
@@ -213,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/login/faculty'
       fullPath: '/login/faculty'
       preLoaderRoute: typeof LoginFacultyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/compare-models': {
+      id: '/dev/compare-models'
+      path: '/dev/compare-models'
+      fullPath: '/dev/compare-models'
+      preLoaderRoute: typeof DevCompareModelsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_faculty/home': {
@@ -305,6 +325,7 @@ const rootRouteChildren: RootRouteChildren = {
   FacultyRoute: FacultyRouteWithChildren,
   StudentRoute: StudentRouteWithChildren,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
+  DevCompareModelsRoute: DevCompareModelsRoute,
   LoginFacultyRoute: LoginFacultyRoute,
   LoginStudentRoute: LoginStudentRoute,
 }

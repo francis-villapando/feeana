@@ -46,6 +46,14 @@ export default defineConfig({
   cloudflare: false,
   plugins: [nitro(), onnxWasmDevPlugin()],
   vite: {
+    optimizeDeps: {
+      exclude: ["onnxruntime-node"],
+    },
+    build: {
+      rollupOptions: {
+        external: ["onnxruntime-node"],
+      },
+    },
     server: {
       hmr: {
         overlay: false,
