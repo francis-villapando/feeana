@@ -1,5 +1,16 @@
 import { useState, useEffect } from "react";
-import { useModelBenchmark, type TestCase, type ModelBenchmarkResult } from "./ModelBenchmarkRunner";
+import { useModelBenchmark, type TestCase } from "./ModelBenchmarkRunner";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 async function loadTestSet(): Promise<TestCase[]> {
   const res = await fetch("/model-data/labeled-test-set.json");
@@ -27,116 +38,138 @@ export function CompareModelsPage() {
     loadTestSet().then(setTestSet).catch(console.error);
   }, []);
 
-  return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Model Comparison Benchmark</h1>
-        <button
-          onClick={() => runAll(testSet)}
-          disabled={loading || testSet.length === 0}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50"
-        >
-          {loading ? `Running: ${currentModel}...` : "Run All Benchmarks"}
-        </button>
+  if (testSet.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Loading test set...</p>
       </div>
+    );
+  }
 
-      {progress.stage && (
-        <div className="bg-muted p-4 rounded-lg">
-          <div className="flex justify-between text-sm mb-1">
-            <span>{progress.stage}</span>
-            <span>{progress.current} / {progress.total}</span>
+  return (
+    <div className="min-h-screen">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">
+              Dev
+            </p>
+            <h1 className="text-3xl font-bold">Model Comparison Benchmark</h1>
           </div>
-          <div className="h-2 bg-muted-foreground/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${(progress.current / progress.total) * 100}%` }}
-            />
-          </div>
+          <Button onClick={() => runAll(testSet)} disabled={loading}>
+            {loading ? `Running: ${currentModel}...` : "Run All Benchmarks"}
+          </Button>
         </div>
-      )}
 
-      {results.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Aggregate Results</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-border text-left">
-                  <th className="p-3 font-medium">Model</th>
-                  <th className="p-3 font-medium">Macro F1</th>
-                  <th className="p-3 font-medium">Macro Precision</th>
-                  <th className="p-3 font-medium">Macro Recall</th>
-                  <th className="p-3 font-medium">Avg Latency</th>
-                  <th className="p-3 font-medium">P50 Latency</th>
-                  <th className="p-3 font-medium">P95 Latency</th>
-                  <th className="p-3 font-medium">Load Time</th>
-                  <th className="p-3 font-medium">Load Memory</th>
-                  <th className="p-3 font-medium">Inference Memory</th>
-                  <th className="p-3 font-medium">Residual Memory</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r) => (
-                  <tr key={r.modelName} className="border-b border-border/50">
-                    <td className="p-3 font-mono font-medium">{r.modelName.toUpperCase()}</td>
-                    <td className="p-3">{formatPct(r.macroF1)}</td>
-                    <td className="p-3">{formatPct(r.macroPrecision)}</td>
-                    <td className="p-3">{formatPct(r.macroRecall)}</td>
-                    <td className="p-3">{formatMs(r.avgLatencyMs)}</td>
-                    <td className="p-3">{formatMs(r.p50LatencyMs)}</td>
-                    <td className="p-3">{formatMs(r.p95LatencyMs)}</td>
-                    <td className="p-3">{formatMs(r.loadTimeMs)}</td>
-                    <td className="p-3">{formatMB(r.loadMemoryMB)}</td>
-                    <td className="p-3">{formatMB(r.inferenceMemoryMB)}</td>
-                    <td className="p-3">{formatMB(r.residualMemoryMB)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <h2 className="text-xl font-semibold mt-8">Per-Sample Predictions</h2>
-          {results.map((r) => (
-            <details key={r.modelName} className="group">
-              <summary className="cursor-pointer p-3 bg-muted rounded-lg font-medium">
-                {r.modelName.toUpperCase()} — {r.predictions.length} samples
-              </summary>
-              <div className="p-3 overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-border text-left">
-                      <th className="p-2 font-medium">Sample ID</th>
-                      <th className="p-2 font-medium">Predicted</th>
-                      <th className="p-2 font-medium">Expected</th>
-                      <th className="p-2 font-medium">Correct</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {r.predictions.map((p) => (
-                      <tr key={p.sampleId} className="border-b border-border/50">
-                        <td className="p-2 font-mono">{p.sampleId}</td>
-                        <td className="p-2">{p.predicted}</td>
-                        <td className="p-2">{p.expected}</td>
-                        <td className="p-2 text-center">
-                          <span className={p.correct ? "text-green-500" : "text-red-500"}>
-                            {p.correct ? "✓" : "✗"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        {progress.stage && (
+          <Card className="bg-card/70 backdrop-blur-xl">
+            <CardContent className="space-y-2 p-4">
+              <div className="flex justify-between text-sm">
+                <span>{progress.stage}</span>
+                <span>
+                  {progress.current} / {progress.total}
+                </span>
               </div>
-            </details>
-          ))}
-        </div>
-      )}
+              <Progress value={(progress.current / progress.total) * 100} />
+            </CardContent>
+          </Card>
+        )}
 
-      {testSet.length === 0 && (
-        <div className="text-center text-muted-foreground py-12">
-          Loading test set...
-        </div>
-      )}
+        {results.length > 0 && (
+          <div className="space-y-4">
+            <Card className="bg-card/70 backdrop-blur-xl">
+              <CardHeader>
+                <CardTitle>Aggregate Results</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Model</TableHead>
+                      <TableHead>Macro F1</TableHead>
+                      <TableHead>Macro Precision</TableHead>
+                      <TableHead>Macro Recall</TableHead>
+                      <TableHead>Avg Latency</TableHead>
+                      <TableHead>P50 Latency</TableHead>
+                      <TableHead>P95 Latency</TableHead>
+                      <TableHead>Load Time</TableHead>
+                      <TableHead>Load Memory</TableHead>
+                      <TableHead>Inference Memory</TableHead>
+                      <TableHead>Residual Memory</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.map((r) => (
+                      <TableRow key={r.modelName}>
+                        <TableCell className="font-mono font-medium">
+                          {r.modelName.toUpperCase()}
+                        </TableCell>
+                        <TableCell>{formatPct(r.macroF1)}</TableCell>
+                        <TableCell>{formatPct(r.macroPrecision)}</TableCell>
+                        <TableCell>{formatPct(r.macroRecall)}</TableCell>
+                        <TableCell>{formatMs(r.avgLatencyMs)}</TableCell>
+                        <TableCell>{formatMs(r.p50LatencyMs)}</TableCell>
+                        <TableCell>{formatMs(r.p95LatencyMs)}</TableCell>
+                        <TableCell>{formatMs(r.loadTimeMs)}</TableCell>
+                        <TableCell>{formatMB(r.loadMemoryMB)}</TableCell>
+                        <TableCell>{formatMB(r.inferenceMemoryMB)}</TableCell>
+                        <TableCell>{formatMB(r.residualMemoryMB)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/70 backdrop-blur-xl">
+              <CardHeader>
+                <CardTitle>Per-Sample Predictions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {results.map((r) => (
+                  <details key={r.modelName} className="group">
+                    <summary className="cursor-pointer rounded-lg bg-card/70 p-3 font-medium backdrop-blur-xl">
+                      {r.modelName.toUpperCase()} — {r.predictions.length} samples
+                    </summary>
+                    <div className="overflow-x-auto p-3">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Sample ID</TableHead>
+                            <TableHead>Predicted</TableHead>
+                            <TableHead>Expected</TableHead>
+                            <TableHead>Correct</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {r.predictions.map((p) => (
+                            <TableRow key={p.sampleId}>
+                              <TableCell className="font-mono">
+                                {p.sampleId}
+                              </TableCell>
+                              <TableCell>{p.predicted}</TableCell>
+                              <TableCell>{p.expected}</TableCell>
+                              <TableCell>
+                                <span
+                                  className={
+                                    p.correct ? "text-green-500" : "text-red-500"
+                                  }
+                                >
+                                  {p.correct ? "✓" : "✗"}
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </details>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
