@@ -1,7 +1,7 @@
 import type { CltCategory } from "./types";
 
 /** Bump this when any rule, mapping, or threshold changes to invalidate cached results. */
-export const RULES_VERSION = "1.0";
+export const RULES_VERSION = "1.1";
 
 export const TTI_RULES: Record<string, string> = {
   "relational coldness": "Positive Climate",
@@ -24,17 +24,17 @@ export const TTI_RULES: Record<string, string> = {
 export const RBT_RULES: Record<string, number> = {
   "relational coldness": 1,
   "classroom tension": 1,
-  "evaluation unfairness": 5,
+  "evaluation unfairness": 1,
   "perceived marginalization": 1,
   "subject alienation": 1,
   "peer distraction": 1,
   "instructional cadence": 2,
-  "clarity deficit": 5,
+  "clarity deficit": 2,
   "abstract logic gap": 4,
   "procedural bottleneck": 3,
   "conceptual misalignment": 2,
   "design synthesis failure": 6,
-  "feedback latency": 5,
+  "feedback latency": 2,
   "notation struggle": 1,
   "uncategorized": 1,
 };
