@@ -1,7 +1,6 @@
 import type { CltCategory } from "./types";
 
-/** Bump this when any rule, mapping, or threshold changes to invalidate cached results. */
-export const RULES_VERSION = "1.1";
+export const RULES_VERSION = "1.2";
 
 export const TTI_RULES: Record<string, string> = {
   "relational coldness": "Positive Climate",
@@ -76,21 +75,21 @@ export const CLT_RULES: Record<string, CltCategory> = {
 };
 
 export const ISSUE_RECOMMENDATIONS: Record<string, string> = {
-  "relational coldness": `Thus, "recommendation cue for relational coldness."`,
-  "classroom tension": `Thus, "recommendation cue for classroom tension."`,
-  "evaluation unfairness": `Thus, "recommendation cue for evaluation unfairness."`,
-  "perceived marginalization": `Thus, "recommendation cue for perceived marginalization."`,
-  "subject alienation": `Thus, "recommendation cue for subject alienation."`,
-  "peer distraction": `Thus, "recommendation cue for peer distraction."`,
-  "instructional cadence": `Thus, "recommendation cue for instructional cadence."`,
-  "clarity deficit": `Thus, "recommendation cue for clarity deficit."`,
-  "abstract logic gap": `Thus, "recommendation cue for abstract logic gap."`,
-  "procedural bottleneck": `Thus, "recommendation cue for procedural bottleneck."`,
-  "conceptual misalignment": `Thus, "recommendation cue for conceptual misalignment."`,
-  "design synthesis failure": `Thus, "recommendation cue for design synthesis failure."`,
-  "feedback latency": `Thus, "recommendation cue for feedback latency."`,
-  "notation struggle": `Thus, "recommendation cue for notation struggle."`,
-  "uncategorized": `Thus, "no intervention needed for uncategorized feedback."`,
+  "relational coldness": `It is recommended to establish social contact venues, such as dedicated open forums, to project social presence and warmth through positive communication markers. `,
+  "classroom tension": `It is recommended to manage digital/personal discourse by issuing behavioral reminders or stopping aggressive interactions, while utilizing non-confrontational language to de-escalate student frustration.`,
+  "evaluation unfairness": `It is recommended to explicitly specify all assessment criteria and rubrics before tasks begin to establish transparent expectations and ensure perceived equity in grading.`,
+  "perceived marginalization": `It is recommended to adopt participatory pedagogies by incorporating student-led discussion prompts and forums that prioritize learner autonomy and value diverse student perspectives.`,
+  "subject alienation": `It is recommended to utilize advanced organizers and real-world examples to explicitly tie new session topics to the students' background knowledge and existing mental schemas.`,
+  "peer distraction": `It is recommended to establish clear, consistent behavioral rules and use engaging learning formats to redirect student attention away from distractions and toward academic goals.`,
+  "instructional cadence": `It is recommended to regulate the instructional tempo by establishing consistent routines and a secondary transition plan to minimize downtime and align delivery with student processing speeds.`,
+  "clarity deficit": `It is recommended to integrate disparate information sources into a single location and use visual cues, such as color-coordinated highlights or arrows, to point toward essential learning objectives.`,
+  "abstract logic gap": `It is recommended to introduce complex logical concepts piece-by-piece using a sequential scaffold that bridges the gap between basic understanding and higher-order analysis.`,
+  "procedural bottleneck": `It is recommended to provide a complete worked-out example with every step clearly shown for students to study and replicate before they attempt to solve the procedure independently.`,
+  "conceptual misalignment": `It is recommended to provide completion problems that require students to finish a partially completed activity to verify their interpretation and align their understanding with key disciplinary concepts.`,
+  "design synthesis failure": `It is recommended to apply the guidance fading effect by systematically tapering instructor support to allow students to develop the mental schemas necessary for original design synthesis.`,
+  "feedback latency": `It is recommended to provide immediate, specific, and contingent formative feedback to sustain student effort and ensure that instructional cues remain relevant to the current learning context.`,
+  "notation struggle": `It is recommended to apply the signaling principle by using distinct fonts, colors, or shading to pick out and highlight the critical syntax and formal symbols of the discipline.`,
+  "uncategorized": `There is no intervention needed for uncategorized issues in feedback.`,
 };
 
 export const RBT_LEVELS = ["", "Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"] as const;
