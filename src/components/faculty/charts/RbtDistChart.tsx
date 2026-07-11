@@ -1,7 +1,9 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
+import { InterpretationBlock } from "./InterpretationBlock";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
+import { interpretDistribution } from "./interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
 import { RBT_COLOR_ORDER } from "@/lib/constants/chartColors";
 
@@ -11,6 +13,8 @@ interface RbtDistChartProps {
 
 export function RbtDistChart({ data }: RbtDistChartProps) {
   const colorMap = Object.fromEntries(RBT_COLOR_ORDER);
+  const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
+  const interpretation = interpretDistribution(data, { kind: "rbt", totalFeedback });
 
   const sortedData = [...data].sort((a, b) => b.value - a.value);
 
@@ -19,6 +23,7 @@ export function RbtDistChart({ data }: RbtDistChartProps) {
       <CardHeader>
         <CardTitle className="text-base">RBT distribution</CardTitle>
         <CardDescription>Cognitive-process level distribution.</CardDescription>
+        <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={Math.max(220, sortedData.length * 36)}>

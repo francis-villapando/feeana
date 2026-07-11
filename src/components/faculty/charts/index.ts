@@ -6,6 +6,7 @@ export { CltDistChart } from "./CltDistChart";
 export { IloGapCard } from "./IloGapCard";
 export { RecommendationCuesCard } from "./RecommendationCuesCard";
 export { WarningsCard } from "./WarningsCard";
-export { AnalysisCard } from "./AnalysisCard"
+export { AnalysisCard } from "./AnalysisCard";
+export { InterpretationBlock } from "./InterpretationBlock";
 export { TrendLineCard } from "./TrendLineCard";
 export { TrendBarCard } from "./TrendBarCard";
