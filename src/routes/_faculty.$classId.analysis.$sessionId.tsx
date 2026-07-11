@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModelLoaderOverlay, AnalysisTriggerModal } from "@/components/analysis";
+import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
 import {
   AspectDistChart,
   PolarityDistChart,
@@ -255,14 +256,21 @@ function LoadingState() {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 grid-cols-2">
-        <Skeleton className="h-28" />
-        <Skeleton className="h-28" />
+        {Array.from({ length: 2 }).map((_, i) => (
+          <KpiCardSkeleton key={i} />
+        ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
-        <Skeleton className="h-64 lg:col-span-2" />
-        <Skeleton className="h-64" />
-        <Skeleton className="h-48 lg:col-span-3" />
-        <Skeleton className="h-72 lg:col-span-3" />
+        <div className="lg:col-span-2">
+          <ChartCardSkeleton height="h-64" />
+        </div>
+        <ChartCardSkeleton height="h-64" />
+        <div className="lg:col-span-3">
+          <ChartCardSkeleton height="h-48" />
+        </div>
+        <div className="lg:col-span-3">
+          <ChartCardSkeleton height="h-72" />
+        </div>
       </div>
     </div>
   );

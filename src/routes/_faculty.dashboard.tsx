@@ -12,6 +12,7 @@ import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
 import { useLiveNow } from "@/lib/hooks/useLiveNow";
 import { CourseManagementHub, ActivityFeed, CrossClassSessionCreator } from "@/components/faculty/dashboard";
 import { KeyMetricsRow, KpiCard } from "@/components/faculty";
+import { KpiCardSkeleton, PageHeaderSkeleton } from "@/components/skeletons";
 
 export const Route = createFileRoute("/_faculty/dashboard")({
   head: () => ({
@@ -95,7 +96,11 @@ function DashboardPage() {
           />
         </KeyMetricsRow>
       ) : (
-        <DashboardKpiSkeleton />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <KpiCardSkeleton key={i} />
+          ))}
+        </div>
       )}
 
       {/* Hub + activity feed */}
@@ -110,44 +115,14 @@ function DashboardPage() {
   );
 }
 
-function DashboardKpiSkeleton() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i} className="border-border/60 bg-card/70 backdrop-blur-xl">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-3 w-28" />
-              <Skeleton className="h-8 w-8 rounded-lg" />
-            </div>
-            <Skeleton className="mt-3 h-8 w-16" />
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
 function DashboardSkeleton() {
   return (
     <div className="space-y-8">
-      <div className="space-y-3">
-        <Skeleton className="h-3 w-32" />
-        <Skeleton className="h-9 w-48" />
-        <Skeleton className="h-4 w-72" />
-      </div>
+      <PageHeaderSkeleton />
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="border-border/60 bg-card/70 backdrop-blur-xl">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-3 w-28" />
-                <Skeleton className="h-8 w-8 rounded-lg" />
-              </div>
-              <Skeleton className="mt-3 h-8 w-16" />
-            </CardContent>
-          </Card>
+          <KpiCardSkeleton key={i} />
         ))}
       </div>
 

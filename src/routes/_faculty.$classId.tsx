@@ -8,6 +8,7 @@ import { TrendLineCard, TrendBarCard } from "@/components/faculty/charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
 
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
 import { useClassStore } from "@/lib/stores/classStore";
@@ -191,25 +192,11 @@ function ClassLayout() {
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             {Array.from({ length: 2 }).map((_, i) => (
-              <Card key={i} className="border-border/60 bg-card/70 backdrop-blur-xl">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-3 w-28" />
-                    <Skeleton className="h-8 w-8 rounded-lg" />
-                  </div>
-                  <Skeleton className="mt-3 h-8 w-16" />
-                </CardContent>
-              </Card>
+              <KpiCardSkeleton key={i} />
             ))}
           </div>
-          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-            <CardContent className="p-6">
-              <Skeleton className="h-40 w-full" />
-            </CardContent>
-          </Card>
-          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-            <CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent>
-          </Card>
+          <ChartCardSkeleton height="h-40" />
+          <ChartCardSkeleton height="h-40" />
           <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
             <CardHeader>
               <Skeleton className="h-5 w-32" />
@@ -288,15 +275,20 @@ function ClassLoadingSkeleton() {
     <div className="space-y-6">
       <Skeleton className="h-6 w-24" />
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-2">
-        <Skeleton className="h-28" />
-        <Skeleton className="h-28" />
+        {Array.from({ length: 2 }).map((_, i) => (
+          <KpiCardSkeleton key={i} />
+        ))}
       </div>
-      <Skeleton className="h-80" />
+      <ChartCardSkeleton height="h-80" />
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <Skeleton className="h-64" />
+        <ChartCardSkeleton height="h-64" />
         <div className="space-y-4">
-          <Skeleton className="h-48" />
-          <Skeleton className="h-32" />
+          <ChartCardSkeleton height="h-48" />
+          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
+            <CardContent className="p-6">
+              <Skeleton className="h-32 w-full" />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

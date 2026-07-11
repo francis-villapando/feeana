@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WelcomeHero } from "@/components/common";
 import { ClassInfoDialog, EnrollClassDialog, ActiveSessionAccordion, SubmitFeedbackDialog } from "@/components/student";
+import { ListItemSkeleton } from "@/components/skeletons";
 import { useAuth } from "@/lib/stores/auth";
 import { useClassStore } from "@/lib/stores/classStore";
 import type { Class, Session } from "@/lib/types/types";
@@ -43,14 +44,7 @@ function LoadingSkeleton() {
             key={i}
             className="border border-border/60 rounded-lg bg-background/40 px-1"
           >
-            <div className="flex items-center gap-3 px-3 py-3">
-              <Skeleton className="h-8 w-8 shrink-0 rounded-md" />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Skeleton className="h-4 w-48" />
-                <Skeleton className="h-3 w-28" />
-              </div>
-              <Skeleton className="h-4 w-4 shrink-0" />
-            </div>
+            <ListItemSkeleton width={i % 2 === 0 ? "w-56" : "w-48"} />
           </div>
         ))}
       </div>

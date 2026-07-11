@@ -4,6 +4,7 @@ import { Outlet } from "@tanstack/react-router";
 import { AppHeader } from "@/components/layout";
 import { EnrollClassDialog } from "@/components/student";
 import { useAuth } from "@/lib/stores/auth";
+import { LayoutSkeleton } from "@/components/skeletons";
 
 export const Route = createFileRoute("/_student")({
   component: StudentLayout,
@@ -22,7 +23,7 @@ function StudentLayout() {
   }, [isLoading, user, navigate]);
 
   if (isLoading) {
-    return null;
+    return <LayoutSkeleton />;
   }
 
   if (!user || user.role !== "student") {

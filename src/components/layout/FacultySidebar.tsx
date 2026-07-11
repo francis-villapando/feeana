@@ -12,6 +12,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
@@ -22,7 +23,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useClassStore } from "@/lib/stores/classStore";
 import { CreateClassDialog } from "@/components/faculty";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function FacultySidebar() {
   const { activeClasses, isLoading } = useClassStore();
@@ -36,7 +36,7 @@ export function FacultySidebar() {
   const currentClassId = location.pathname.match(
     /^\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/,
   )?.[1];
-  const [classesOpen, setClassesOpen] = useState(inClass);
+  const [classesOpen, setClassesOpen] = useState(true);
 
   return (
     <>
@@ -94,15 +94,15 @@ export function FacultySidebar() {
                       <SidebarMenuSub>
                         {isLoading && (
                           <>
-                            <li className="px-2 py-1">
-                              <Skeleton className="h-5 w-24 rounded" />
-                            </li>
-                            <li className="px-2 py-1">
-                              <Skeleton className="h-5 w-32 rounded" />
-                            </li>
-                            <li className="px-2 py-1">
-                              <Skeleton className="h-5 w-20 rounded" />
-                            </li>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSkeleton />
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSkeleton />
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSkeleton />
+                            </SidebarMenuSubItem>
                           </>
                         )}
                         {!isLoading && activeClasses.length === 0 && (
