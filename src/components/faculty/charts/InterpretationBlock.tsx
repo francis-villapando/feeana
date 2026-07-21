@@ -1,19 +1,9 @@
-import React from "react";
+import type { ReactNode } from "react";
 
-function parseBold(text: string): React.ReactNode[] {
-  const parts = text.split(/(\*\*.*?\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
-    }
-    return part;
-  });
-}
-
-export function InterpretationBlock({ text }: { text: string }) {
+export function InterpretationBlock({ text }: { text: ReactNode }) {
   return (
     <p className="mt-2 text-xs leading-relaxed text-muted-foreground border-l-2 border-primary/30 pl-3 italic">
-      {parseBold(text)}
+      {text}
     </p>
   );
 }

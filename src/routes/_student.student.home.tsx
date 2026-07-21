@@ -14,7 +14,7 @@ import type { Class, Session } from "@/lib/types/types";
 export const Route = createFileRoute("/_student/student/home")({
   head: () => ({
     meta: [
-      { title: "Student home \u2014 Feeana" },
+      { title: "Student home — Feeana" },
       {
         name: "description",
         content: "Active sessions from your enrolled classes.",

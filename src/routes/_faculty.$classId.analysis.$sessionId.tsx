@@ -13,6 +13,7 @@ import {
   IssueDistChart,
   RbtDistChart,
   CltDistChart,
+  UnclassifiedNotice,
   IloGapCard,
   RecommendationCuesCard,
   WarningsCard,
@@ -294,6 +295,7 @@ function Results({ result }: { result: AnalysisResult }) {
         <RbtDistChart data={result.rbtDist} />
         <CltDistChart data={result.cltDist} />
       </div>
+      <UnclassifiedNotice rbtDist={result.rbtDist} cltDist={result.cltDist} />
       <IloGapCard statuses={iloStatuses} />
       <RecommendationCuesCard recommendations={result.recommendations} ilos={ilos} />
       <WarningsCard data={result.warnings} />
