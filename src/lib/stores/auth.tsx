@@ -84,6 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) throw new Error(error.message);
     if (!data.user) throw new Error("Login failed");
+    
+    setSupabaseUser(data.user);
+
     const meta = data.user.user_metadata;
     return {
       id: data.user.id,
@@ -110,6 +113,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.user.identities?.length === 0) {
         throw new Error("This email is already registered.");
       }
+
+      // If registered and logged in immediately (no confirmation needed)
+      if (data.session?.user) {
+        setSupabaseUser(data.session.user);
+      }
+
       return {
         id: data.user.id,
         email: data.user.email ?? email,
@@ -123,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
+    setSupabaseUser(null);
   }, []);
 
   const forgotPassword = useCallback(async (email: string, redirectTo?: string) => {
