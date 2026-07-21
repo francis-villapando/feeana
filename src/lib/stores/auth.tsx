@@ -25,7 +25,8 @@ interface AuthContextValue {
     password: string,
     name: string,
     role: UserRole,
-  ) => Promise<AuthUser & { needsEmailConfirmation: boolean }>;
+  ) => Promise<AuthUser & { needsEmailConfirmation: boolean; alreadyExists: boolean; confirmed: boolean }>;
+  resendConfirmation: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   forgotPassword: (email: string, redirectTo?: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -98,6 +99,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (email: string, password: string, name: string, role: UserRole) => {
+      // Probe before signUp to avoid duplicate confirmation emails
+      const { error: probeError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (!probeError) {
+        // Email exists and confirmed
+        const { data: { user: freshUser } } = await supabase.auth.getUser();
+        if (freshUser) {
+          setSupabaseUser(freshUser);
+        }
+        return {
+          id: freshUser?.id ?? "",
+          email,
+          name,
+          role,
+          needsEmailConfirmation: false,
+          alreadyExists: true,
+          confirmed: true,
+        };
+      }
+
+      if (probeError.message?.includes("Email not confirmed")) {
+        // Email exists and unconfirmed
+        return {
+          id: "",
+          email,
+          name,
+          role,
+          needsEmailConfirmation: false,
+          alreadyExists: true,
+          confirmed: false,
+        };
+      }
+
+      // "Invalid login credentials" — email doesn't exist (or wrong password), proceed with signUp
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -110,11 +148,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (error) throw new Error(error.message);
       if (!data.user) throw new Error("Registration failed");
+
       if (data.user.identities?.length === 0) {
-        throw new Error("This email is already registered.");
+        // Email exists but password didn't match probe
+        const { error: retryError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (!retryError) {
+          const { data: { user: retryUser } } = await supabase.auth.getUser();
+          if (retryUser) {
+            setSupabaseUser(retryUser);
+          }
+          return {
+            id: data.user.id,
+            email: data.user.email ?? email,
+            name,
+            role,
+            needsEmailConfirmation: false,
+            alreadyExists: true,
+            confirmed: true,
+          };
+        }
+
+        const isUnconfirmed = retryError.message?.includes("Email not confirmed");
+        return {
+          id: data.user.id,
+          email: data.user.email ?? email,
+          name,
+          role,
+          needsEmailConfirmation: false,
+          alreadyExists: true,
+          confirmed: !isUnconfirmed,
+        };
       }
 
-      // If registered and logged in immediately (no confirmation needed)
+      // New user created successfully
       if (data.session?.user) {
         setSupabaseUser(data.session.user);
       }
@@ -125,6 +195,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name,
         role,
         needsEmailConfirmation: !data.session,
+        alreadyExists: false,
+        confirmed: false,
       };
     },
     [],
@@ -133,6 +205,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setSupabaseUser(null);
+  }, []);
+
+  const resendConfirmation = useCallback(async (email: string) => {
+    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/login/student` : undefined;
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
+    });
+    if (error) throw new Error(error.message);
   }, []);
 
   const forgotPassword = useCallback(async (email: string, redirectTo?: string) => {
@@ -163,11 +245,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      resendConfirmation,
       forgotPassword,
       updatePassword,
       clearPasswordRecovery,
     }),
-    [user, supabaseUser, isLoading, isPasswordRecovery, login, register, logout, forgotPassword, updatePassword, clearPasswordRecovery],
+    [user, supabaseUser, isLoading, isPasswordRecovery, login, register, logout, resendConfirmation, forgotPassword, updatePassword, clearPasswordRecovery],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
