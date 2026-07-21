@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
 import type { IloStatus } from "@/lib/hooks/iloStatus";
+import { RBT_LEVEL_NUMBERS } from "@/lib/constants/chartColors";
 
 interface IloGapCardProps {
   statuses: IloStatus[];
@@ -40,7 +41,7 @@ export function IloGapCard({ statuses }: IloGapCardProps) {
                 variant="default"
                 className="self-center shrink-0 text-[9px] px-1 h-3.5 font-normal uppercase tracking-tighter"
               >
-                {ilo.bloomLevel}
+                {ilo.bloomLevel} ({RBT_LEVEL_NUMBERS[ilo.bloomLevel] || "?"})
               </Badge>
             </div>
           ))

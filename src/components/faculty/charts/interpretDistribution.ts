@@ -1,4 +1,5 @@
 import type { DistEntry } from "@/lib/types/types";
+import { RBT_LEVEL_NUMBERS } from "@/lib/constants/chartColors";
 
 type ChartKind = "aspect" | "polarity" | "issue" | "rbt" | "clt";
 
@@ -6,15 +7,6 @@ interface InterpretationContext {
   kind: ChartKind;
   totalFeedback: number;
 }
-
-const RBT_LEVEL_NUMBER: Record<string, number> = {
-  Remember: 1,
-  Understand: 2,
-  Apply: 3,
-  Analyze: 4,
-  Evaluate: 5,
-  Create: 6,
-};
 
 function formatPercent(count: number, total: number): string {
   if (total === 0) return "0%";
@@ -102,7 +94,7 @@ function interpretRbt(data: DistEntry[], totalFeedback: number): string {
   const maxCount = Math.max(...categorizedEntries.map((entry) => entry.value));
   const topEntries = categorizedEntries.filter((entry) => entry.value === maxCount);
   const topLabels = topEntries.map((entry) => entry.label);
-  const levelNumbers = topLabels.map((label) => RBT_LEVEL_NUMBER[label] ?? "?");
+  const levelNumbers = topLabels.map((label) => RBT_LEVEL_NUMBERS[label] ?? "?");
   const levelInfo = topLabels.map((label, index) => `**${label}** (Level ${levelNumbers[index]})`).join(" and ");
 
   const firstSentence = maxCount === 0
@@ -112,10 +104,10 @@ function interpretRbt(data: DistEntry[], totalFeedback: number): string {
   // Other non-zero, non-uncategorized levels
   const otherLevels = categorizedEntries
     .filter((entry) => entry.value > 0 && entry.value < maxCount)
-    .sort((a, b) => (RBT_LEVEL_NUMBER[a.label] ?? 0) - (RBT_LEVEL_NUMBER[b.label] ?? 0));
+    .sort((a, b) => (RBT_LEVEL_NUMBERS[a.label] ?? 0) - (RBT_LEVEL_NUMBERS[b.label] ?? 0));
   const secondSentence = otherLevels.length === 0
     ? ""
-    : ` Other levels present: ${otherLevels.map((entry) => `**${entry.label}** (Level ${RBT_LEVEL_NUMBER[entry.label] ?? "?"})`).join(", ")}.`;
+    : ` Other levels present: ${otherLevels.map((entry) => `**${entry.label}** (Level ${RBT_LEVEL_NUMBERS[entry.label] ?? "?"})`).join(", ")}.`;
 
   // Uncategorized
   const uncategorizedEntry = data.find((entry) => entry.label === "Uncategorized");
