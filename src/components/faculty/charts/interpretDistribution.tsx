@@ -95,32 +95,40 @@ function interpretPolarity(data: DistEntry[], totalFeedback: number): ReactNode 
 function interpretRbt(data: DistEntry[], totalFeedback: number): ReactNode {
   if (data.length === 0) return "No data available for interpretation.";
 
-  // Most prominent level
   const categorizedEntries = data.filter((entry) => entry.label !== "Uncategorized");
-  const maxCount = Math.max(...categorizedEntries.map((entry) => entry.value));
-  const topEntries = categorizedEntries.filter((entry) => entry.value === maxCount);
-  const topLabels = topEntries.map((entry) => entry.label);
-  const levelNumbers = topLabels.map((label) => RBT_LEVEL_NUMBERS[label] ?? "?");
-  const levelInfo = topLabels.map((label, index) => <><AccentLabel>{label}</AccentLabel> (Level {levelNumbers[index]})</>);
-
-  const firstSentence = maxCount === 0
-    ? "No prominent cognitive-process pattern was identified."
-    : <>Student feedback primarily reflects {levelInfo.length === 1 ? levelInfo[0] : <>{levelInfo[0]} and {levelInfo[1]}</>} ({maxCount} {maxCount === 1 ? "mention" : "mentions"}, {formatPercent(maxCount, totalFeedback)} of responses).</>;
-
-  // Other non-zero, non-uncategorized levels
-  const otherLevels = categorizedEntries
-    .filter((entry) => entry.value > 0 && entry.value < maxCount)
-    .sort((a, b) => (RBT_LEVEL_NUMBERS[a.label] ?? 0) - (RBT_LEVEL_NUMBERS[b.label] ?? 0));
-  const secondSentence = otherLevels.length === 0
-    ? ""
-    : <> Other levels present: {otherLevels.map((entry) => <><AccentLabel>{entry.label}</AccentLabel> (Level {RBT_LEVEL_NUMBERS[entry.label] ?? "?"})</>).join(", ")}.</>;
-
-  // Uncategorized
   const uncategorizedEntry = data.find((entry) => entry.label === "Uncategorized");
   const uncategorizedCount = uncategorizedEntry?.value ?? 0;
   const thirdSentence = uncategorizedCount > 0
     ? ` ${uncategorizedCount} response${uncategorizedCount === 1 ? "" : "s"} (${formatPercent(uncategorizedCount, totalFeedback)}) could not be mapped to a Bloom's level, limiting the analysis.`
     : "";
+
+  if (categorizedEntries.length === 0) {
+    return <>No prominent cognitive-process pattern was identified.{thirdSentence}</>;
+  }
+
+  const maxCount = Math.max(...categorizedEntries.map((entry) => entry.value));
+  const topEntries = categorizedEntries.filter((entry) => entry.value === maxCount);
+  const topLevelLabels = topEntries.map(
+    (entry) => `${entry.label} (Level ${RBT_LEVEL_NUMBERS[entry.label] ?? "?"})`,
+  );
+
+  const firstSentence = maxCount === 0
+    ? "No prominent cognitive-process pattern was identified."
+    : <>Student feedback primarily reflects {enumerateLabels(topLevelLabels)} ({maxCount} {maxCount === 1 ? "mention" : "mentions"}, {formatPercent(maxCount, totalFeedback)} of responses).</>;
+
+  const otherLevels = categorizedEntries
+    .filter((entry) => entry.value > 0 && entry.value < maxCount)
+    .sort((a, b) => (RBT_LEVEL_NUMBERS[a.label] ?? 0) - (RBT_LEVEL_NUMBERS[b.label] ?? 0));
+  const secondSentence = otherLevels.length === 0
+    ? ""
+    : <>
+        {' '}Other levels present: {otherLevels.map((entry, index) => (
+          <Fragment key={entry.label}>
+            {index > 0 ? ", " : ""}
+            <AccentLabel>{entry.label}</AccentLabel> (Level {RBT_LEVEL_NUMBERS[entry.label] ?? "?"})
+          </Fragment>
+        ))}.
+      </>;
 
   return <>{firstSentence}{secondSentence}{thirdSentence}</>;
 }

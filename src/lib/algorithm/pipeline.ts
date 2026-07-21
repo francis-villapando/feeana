@@ -21,6 +21,7 @@ import { collectPipelineData } from "./dataCollection";
 import { CalculateDistributions, GeneratePedagogicalCue } from "./strategyGeneration";
 import { formatDashboardOutput } from "./dashboardOutput";
 import { ISSUE_RULES, RBT_LEVELS, RULES_VERSION } from "./rules";
+import { buildIloGapItems } from "./dashboardOutput";
 import type {
   SessionContext,
   FeedbackInput,
@@ -31,15 +32,6 @@ import type {
 } from "./types";
 
 const PRIORITY_THRESHOLD = 0.3;
-
-const BLOOM_LEVEL_MAP: Record<string, number> = {
-  Remember: 1,
-  Understand: 2,
-  Apply: 3,
-  Analyze: 4,
-  Evaluate: 5,
-  Create: 6,
-};
 
 // Read path
 
@@ -129,16 +121,10 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   const sessionIloIds = Array.isArray(session.ilo_ids) ? session.ilo_ids : [];
   const activeIlos = ilosData.filter((ilo: any) => sessionIloIds.includes(ilo.id));
 
-  let targetIloRbt = 1;
-  if (activeIlos.length > 0) {
-    const rbtLevels = activeIlos.map((ilo: any) => BLOOM_LEVEL_MAP[ilo.bloom_level] ?? 1);
-    targetIloRbt = Math.max(...rbtLevels);
-  }
-
   const { sessionContext, feedbackStream } = collectPipelineData(
     courseName,
     session.topic || "Unknown Topic",
-    targetIloRbt,
+    1,
     sessionId,
     activeIlos[0]?.statement || "Unknown Goal",
     feedbackData ?? [],
@@ -156,7 +142,7 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   });
 
   performance.mark("pipeline:inference-start");
-  const buffer: DiagnosticRecord[] = await api.runInference(feedbackStream, targetIloRbt);
+  const buffer: DiagnosticRecord[] = await api.runInference(feedbackStream, 1);
   performance.mark("pipeline:inference-end");
   performance.measure("Pipeline total", {
     start: "pipeline:inference-start",
@@ -293,19 +279,8 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   for (const entry of rbtDist) entry.feedbackTexts = rbtToTexts.get(entry.label);
   for (const entry of cltDist) entry.feedbackTexts = cltToTexts.get(entry.label);
 
-  // Gap items
-  const gaps: any[] = [];
-  for (const gapDiag of buffer.filter((d) => d.isGap)) {
-    const ilo = activeIlos[0];
-    if (ilo) {
-      gaps.push({
-        iloId: ilo.id,
-        expected: ilo.statement,
-        actual: `Issue: "${gapDiag.issue}" (CLT: ${gapDiag.clt}, RBT: Level ${gapDiag.rbt})`,
-        severity: "medium" as const,
-      });
-    }
-  }
+  // Gap items follow the RBT cascade rule: a diagnostic at level N flags ILOs at level N or above.
+  const gaps = buildIloGapItems(buffer, activeIlos);
 
   const finalResult: AnalysisResult = {
     sessionId,
