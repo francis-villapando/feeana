@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, BookOpenCheck, GraduationCap, LogIn, UserPlus } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, GraduationCap, LogIn, Mail, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ const ROLE_META: Record<
 type Mode = "signin" | "signup";
 
 export function AuthPage({ role }: { role: UserRole }) {
-  const { login, register } = useAuth();
+  const { login, register, resendConfirmation } = useAuth();
   const navigate = useNavigate();
   const meta = ROLE_META[role];
   const Icon = meta.icon;
@@ -45,6 +45,7 @@ export function AuthPage({ role }: { role: UserRole }) {
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [accountExists, setAccountExists] = useState(false);
 
   const goHome = (r: UserRole) => {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
@@ -97,7 +98,14 @@ export function AuthPage({ role }: { role: UserRole }) {
         goHome(u.role);
       } else {
         const u = await register(email, password, name, role);
-        if (u.needsEmailConfirmation) {
+        if (u.alreadyExists) {
+          if (u.confirmed) {
+            toast.success(`Welcome back, ${u.name}`);
+            goHome(u.role);
+          } else {
+            setAccountExists(true);
+          }
+        } else if (u.needsEmailConfirmation) {
           toast.success("Check your email to confirm your account.");
           setMode("signin");
           setName("");
@@ -114,6 +122,26 @@ export function AuthPage({ role }: { role: UserRole }) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleResend = async () => {
+    try {
+      await resendConfirmation(email);
+      toast.success("Confirmation link sent. Check your email.");
+      setAccountExists(false);
+      setMode("signin");
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirm("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send confirmation email.");
+    }
+  };
+
+  const handleSwitchToSignIn = () => {
+    setAccountExists(false);
+    setMode("signin");
   };
 
   return (
@@ -140,6 +168,24 @@ export function AuthPage({ role }: { role: UserRole }) {
             </div>
           </CardHeader>
           <CardContent>
+            {accountExists ? (
+              <div className="space-y-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  An account with <span className="font-medium text-foreground">{email}</span> already exists.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  If you haven't confirmed your email yet, check your inbox for the confirmation link.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={handleSwitchToSignIn} className="w-full">
+                    <LogIn className="h-4 w-4" /> Sign in
+                  </Button>
+                  <Button onClick={handleResend} variant="outline" className="w-full">
+                    <Mail className="h-4 w-4" /> Resend confirmation email
+                  </Button>
+                </div>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === "signup" && (
                 <div className="space-y-2">
@@ -219,6 +265,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                     : "Sign up"}
               </Button>
             </form>
+            )}
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               {mode === "signin" ? (
