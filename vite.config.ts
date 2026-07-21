@@ -42,9 +42,11 @@ function onnxWasmDevPlugin() {
   };
 }
 
+const isVitest = process.env.VITEST === "true";
+
 export default defineConfig({
   cloudflare: false,
-  plugins: [nitro(), onnxWasmDevPlugin()],
+  plugins: [!(isVitest) ? nitro() : null, onnxWasmDevPlugin()].filter(Boolean),
   vite: {
     optimizeDeps: {
       exclude: ["onnxruntime-node"],

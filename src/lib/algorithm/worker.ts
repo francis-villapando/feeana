@@ -25,7 +25,7 @@ if (env.backends.onnx.wasm) {
 }
 
 const api = {
-  async runInference(feedbackStream: FeedbackInput[], targetIloRbt: number): Promise<DiagnosticRecord[]> {
+  async runInference(feedbackStream: FeedbackInput[], _targetIloRbt: number): Promise<DiagnosticRecord[]> {
     console.debug("[worker] Running Modules 2-3-4 per-feedback loop.");
     const results: DiagnosticRecord[] = [];
 
@@ -60,7 +60,7 @@ const api = {
         tti,
         rbt,
         clt,
-        isGap: rbt <= targetIloRbt && clt === "Intrinsic",
+        isGap: extraction.issue !== "Uncategorized",
       });
     }
 
