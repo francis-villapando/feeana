@@ -55,7 +55,7 @@ export async function submitFeedback(sessionId: string, content: string): Promis
     .from("feedback")
     .insert({
       session_id: sessionId,
-      content,
+      content: content.trim(),
       student_id: user?.id,
       meta: {
         cleanedText: content.trim().toLowerCase(),

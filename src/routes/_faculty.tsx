@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader, FacultySidebar } from "@/components/layout";
 import { useAuth } from "@/lib/stores/auth";
+import { LayoutSkeleton } from "@/components/skeletons";
 
 export const Route = createFileRoute("/_faculty")({
   component: FacultyLayout,
@@ -20,7 +21,7 @@ function FacultyLayout() {
   }, [isLoading, user, navigate]);
 
   if (isLoading) {
-    return null;
+    return <LayoutSkeleton />;
   }
 
   if (!user || user.role !== "faculty") {

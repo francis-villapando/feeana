@@ -1,7 +1,9 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
+import { InterpretationBlock } from "./InterpretationBlock";
 import { chartTooltipProps } from "@/components/analysis";
+import { interpretDistribution } from "./interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
 import { POLARITY_COLOR_ORDER } from "@/lib/constants/chartColors";
 
@@ -12,11 +14,15 @@ interface PolarityDistChartProps {
 }
 
 export function PolarityDistChart({ data }: PolarityDistChartProps) {
+  const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
+  const interpretation = interpretDistribution(data, { kind: "polarity", totalFeedback });
+
   return (
     <AnalysisCard>
       <CardHeader>
         <CardTitle className="text-base">Polarity distribution</CardTitle>
         <CardDescription>Feedback tone distribution.</CardDescription>
+        <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={260}>

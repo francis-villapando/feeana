@@ -1,7 +1,9 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
+import { InterpretationBlock } from "./InterpretationBlock";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
+import { interpretDistribution } from "./interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
 import { CHART_COLORS, ASPECT_COLOR_ORDER } from "@/lib/constants/chartColors";
 
@@ -13,6 +15,8 @@ interface AspectDistChartProps {
 const aspectColorMap = Object.fromEntries(ASPECT_COLOR_ORDER);
 
 export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
+  const interpretation = interpretDistribution(data, { kind: "aspect", totalFeedback });
+
   return (
     <AnalysisCard className="lg:col-span-2">
       <CardHeader>
@@ -20,6 +24,7 @@ export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
         <CardDescription>
           What students talked about across {totalFeedback} responses.
         </CardDescription>
+        <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={Math.max(220, data.length * 32)}>

@@ -1,24 +1,41 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
+import { InterpretationBlock } from "./InterpretationBlock";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
+import { interpretDistribution } from "./interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
-import { RBT_COLOR_ORDER } from "@/lib/constants/chartColors";
+import { RBT_COLOR_ORDER, RBT_LEVEL_NUMBERS } from "@/lib/constants/chartColors";
 
 interface RbtDistChartProps {
   data: DistEntry[];
 }
 
 export function RbtDistChart({ data }: RbtDistChartProps) {
-  const colorMap = Object.fromEntries(RBT_COLOR_ORDER);
+  const colorMap = Object.fromEntries(
+    RBT_COLOR_ORDER.map(([label, color]) => {
+      const num = RBT_LEVEL_NUMBERS[label];
+      const newLabel = num ? `${label} (${num})` : label;
+      return [newLabel, color];
+    })
+  );
+  const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
+  const interpretation = interpretDistribution(data, { kind: "rbt", totalFeedback });
 
-  const sortedData = [...data].sort((a, b) => b.value - a.value);
+  const sortedData = data.map((entry) => {
+    const num = RBT_LEVEL_NUMBERS[entry.label];
+    return {
+      ...entry,
+      label: num ? `${entry.label} (${num})` : entry.label,
+    };
+  }).sort((a, b) => b.value - a.value);
 
   return (
     <AnalysisCard>
       <CardHeader>
         <CardTitle className="text-base">RBT distribution</CardTitle>
         <CardDescription>Cognitive-process level distribution.</CardDescription>
+        <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={Math.max(220, sortedData.length * 36)}>

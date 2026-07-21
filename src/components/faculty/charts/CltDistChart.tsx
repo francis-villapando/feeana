@@ -1,7 +1,9 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
+import { InterpretationBlock } from "./InterpretationBlock";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
+import { interpretDistribution } from "./interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
 import { CLT_COLOR_ORDER } from "@/lib/constants/chartColors";
 
@@ -11,12 +13,15 @@ interface CltDistChartProps {
 
 export function CltDistChart({ data }: CltDistChartProps) {
   const colorMap = Object.fromEntries(CLT_COLOR_ORDER);
+  const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
+  const interpretation = interpretDistribution(data, { kind: "clt", totalFeedback });
 
   return (
     <AnalysisCard>
       <CardHeader>
         <CardTitle className="text-base">CLT distribution</CardTitle>
         <CardDescription>Cognitive-load type split.</CardDescription>
+        <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={Math.max(220, data.length * 48)}>

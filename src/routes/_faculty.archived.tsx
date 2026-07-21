@@ -5,6 +5,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 
 import { ClassCard } from "@/components/faculty/ClassCard";
 import { ConfirmationDialog } from "@/components/faculty";
+import { ArchivedClassCardSkeleton } from "@/components/skeletons";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_faculty/archived")({
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_faculty/archived")({
 });
 
 function ArchivedPage() {
-  const { archivedClasses, restoreClass, deleteClass } = useClassStore();
+  const { archivedClasses, isLoading, restoreClass, deleteClass } = useClassStore();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
@@ -46,6 +47,8 @@ function ArchivedPage() {
       toast.error(err instanceof Error ? err.message : "Failed to restore class");
     }
   };
+
+  if (isLoading) return <ArchivedSkeleton />;
 
   return (
     <div className="space-y-10">
@@ -95,6 +98,27 @@ function ArchivedPage() {
         description={`Delete the "${archivedClasses.find(cls => cls.id === deletingId)?.courseCode} · ${archivedClasses.find(cls => cls.id === deletingId)?.section}" class? This will delete all sessions and feedback associated with this class. This action cannot be undone.`}
         actionType="delete"
       />
+    </div>
+  );
+}
+
+function ArchivedSkeleton() {
+  return (
+    <div className="space-y-10">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Archive className="h-5 w-5" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold">Archived classes</h1>
+          <p className="text-sm text-muted-foreground">Manage your inactive classes.</p>
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <ArchivedClassCardSkeleton key={i} />
+        ))}
+      </div>
     </div>
   );
 }

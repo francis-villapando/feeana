@@ -80,3 +80,12 @@ export const CLT_COLOR_ORDER: [label: string, color: string][] = [
   ["Extraneous", "var(--color-chart-4)"],
   ["Uncategorized", "var(--color-muted-foreground)"],
 ];
+
+export const RBT_LEVEL_NUMBERS: Record<string, number> = {
+  Remember: 1,
+  Understand: 2,
+  Apply: 3,
+  Analyze: 4,
+  Evaluate: 5,
+  Create: 6,
+};

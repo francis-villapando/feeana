@@ -69,6 +69,7 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
+                      className="hover:bg-destructive/10 hover:text-destructive"
                       size="icon"
                       variant="ghost"
                       onClick={() => setPending({ id: s.id, name: s.name })}

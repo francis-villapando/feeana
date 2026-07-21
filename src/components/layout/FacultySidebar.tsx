@@ -12,6 +12,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
@@ -24,14 +25,18 @@ import { CreateClassDialog } from "@/components/faculty";
 import { Button } from "@/components/ui/button";
 
 export function FacultySidebar() {
-  const { activeClasses } = useClassStore();
+  const { activeClasses, isLoading } = useClassStore();
   const { setOpenMobile } = useSidebar();
   const location = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
 
-  const inClass = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.test(location.pathname);
-  const currentClassId = location.pathname.match(/^\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/)?.[1];
-  const [classesOpen, setClassesOpen] = useState(inClass);
+  const inClass = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.test(
+    location.pathname,
+  );
+  const currentClassId = location.pathname.match(
+    /^\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/,
+  )?.[1];
+  const [classesOpen, setClassesOpen] = useState(true);
 
   return (
     <>
@@ -87,29 +92,40 @@ export function FacultySidebar() {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
                       <SidebarMenuSub>
-                        {activeClasses.length === 0 && (
+                        {isLoading && (
+                          <>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSkeleton />
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSkeleton />
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSkeleton />
+                            </SidebarMenuSubItem>
+                          </>
+                        )}
+                        {!isLoading && activeClasses.length === 0 && (
                           <li className="px-2 py-1 text-xs text-muted-foreground">
                             No classes yet
                           </li>
                         )}
-                        {activeClasses.map((cls) => (
-                          <SidebarMenuSubItem key={cls.id}>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={currentClassId === cls.id}
-                            >
-                              <Link
-                                to="/$classId"
-                                params={{ classId: cls.id }}
-                                onClick={() => setOpenMobile(false)}
-                              >
-                                <span className="truncate">
-                                  {cls.courseCode} · {cls.section}
-                                </span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
+                        {!isLoading &&
+                          activeClasses.map((cls) => (
+                            <SidebarMenuSubItem key={cls.id}>
+                              <SidebarMenuSubButton asChild isActive={currentClassId === cls.id}>
+                                <Link
+                                  to="/$classId"
+                                  params={{ classId: cls.id }}
+                                  onClick={() => setOpenMobile(false)}
+                                >
+                                  <span className="truncate">
+                                    {cls.courseCode} · {cls.section}
+                                  </span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
                         <SidebarMenuSubItem>
                           <button
                             type="button"

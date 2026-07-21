@@ -13,9 +13,9 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
+import { supabase } from "@/lib/db/supabase";
 
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
-import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
 import type { Session } from "@/lib/types/types";
 
 interface SubmitFeedbackDialogProps {
@@ -26,7 +26,7 @@ interface SubmitFeedbackDialogProps {
 
 export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeedbackDialogProps) {
   const { addFeedback } = useFeedbackStore();
-  const { classes, refreshEnrolledClasses, refreshSessions, addSubmittedSession, closeSessionLocally } = useClassStore();
+  const { classes, refreshEnrolledClasses, refreshSessions, addSubmittedSession } = useClassStore();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,16 +50,31 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
       return;
     }
 
-    if (!isSessionActive(session)) {
-      toast.error("This session is currently not accepting feedback.");
-      await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
-      closeSessionLocally(session.id);
-      handleClose();
-      return;
-    }
-
     setSubmitting(true);
     try {
+      const [{ data: liveSession }, { data: enrollment }] = await Promise.all([
+        supabase.from("sessions").select("status").eq("id", session.id).single(),
+        supabase
+          .from("enrollments")
+          .select("id")
+          .eq("class_id", session.classId)
+          .is("removed_at", null),
+      ]);
+
+      if (liveSession?.status === "archived" || liveSession?.status === "closed") {
+        toast.error("This session has been closed.");
+        await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+        handleClose();
+        return;
+      }
+
+      if (!enrollment || enrollment.length === 0) {
+        toast.error("You are no longer enrolled in this class.");
+        await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+        handleClose();
+        return;
+      }
+
       await addFeedback(session.id, text);
       addSubmittedSession(session.id);
       toast.success("Your feedback was recorded.");
@@ -80,7 +95,12 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => { if (!open) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
+    >
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Submit feedback</DialogTitle>

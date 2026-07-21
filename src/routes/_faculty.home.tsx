@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowRight, LayoutDashboard, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { WelcomeHero } from "@/components/common";
 import { ClassCard, CreateClassDialog } from "@/components/faculty";
+import { ClassCardSkeleton } from "@/components/skeletons";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useAuth } from "@/lib/stores/auth";
 
@@ -62,7 +62,7 @@ function HomePage() {
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonCard key={i} />
+              <ClassCardSkeleton key={i} />
             ))}
           </div>
         ) : activeClasses.length === 0 ? (
@@ -86,28 +86,6 @@ function HomePage() {
       </section>
 
       <CreateClassDialog open={createOpen} onOpenChange={setCreateOpen} />
-    </div>
-  );
-}
-
-function SkeletonCard() {
-  return (
-    <div className="rounded-xl border border-border/60 bg-card/70 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-2 flex-1">
-          <Skeleton className="h-5 w-3/5" />
-          <Skeleton className="h-3.5 w-2/5" />
-        </div>
-        <Skeleton className="h-5 w-16 rounded-full" />
-      </div>
-      <div className="mt-5 space-y-3">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-24" />
-        </div>
-        <Skeleton className="h-9 w-full rounded-md" />
-        <Skeleton className="h-9 w-full rounded-md" />
-      </div>
     </div>
   );
 }
