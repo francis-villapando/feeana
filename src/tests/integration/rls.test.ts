@@ -97,9 +97,8 @@ describe("RLS: feedback_diagnostics table", () => {
       { onConflict: "id" },
     );
 
-    /* seed fixture diagnostics */
+    /* clear any leftover diagnostics */
     await clearTestDiagnostics();
-    await seedFixtureDiagnostic();
   });
 
   afterAll(async () => {
