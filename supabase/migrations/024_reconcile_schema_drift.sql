@@ -1,4 +1,4 @@
-﻿-- Migration 024: Reconcile schema drift
+-- Migration 024: Reconcile schema drift
 
 DO $$
 BEGIN
@@ -20,13 +20,13 @@ BEGIN
     RAISE NOTICE 'Added column ilos.topic_id';
   END IF;
 
-  -- 3. Rename `join_code` â†’ `enroll_code` on classes
+  -- 3. Rename `join_code` to `enroll_code` on classes
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = 'classes' AND column_name = 'join_code'
   ) THEN
     ALTER TABLE classes RENAME COLUMN join_code TO enroll_code;
-    RAISE NOTICE 'Renamed classes.join_code â†’ enroll_code';
+    RAISE NOTICE 'Renamed classes.join_code to enroll_code';
   END IF;
 
   -- 4. Rename unique index for classes.enroll_code
@@ -35,10 +35,10 @@ BEGIN
     WHERE schemaname = 'public' AND tablename = 'classes' AND indexname = 'idx_classes_join_code'
   ) THEN
     ALTER INDEX idx_classes_join_code RENAME TO idx_classes_enroll_code;
-    RAISE NOTICE 'Renamed index idx_classes_join_code â†’ idx_classes_enroll_code';
+    RAISE NOTICE 'Renamed index idx_classes_join_code to idx_classes_enroll_code';
   END IF;
 
-  -- 5. Change ilo_ids from jsonb â†’ uuid[] on sessions
+  -- 5. Change ilo_ids from jsonb to uuid[] on sessions
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = 'sessions' AND column_name = 'ilo_ids' AND data_type = 'jsonb'
@@ -57,6 +57,6 @@ BEGIN
     ALTER TABLE sessions DROP COLUMN ilo_ids;
     ALTER TABLE sessions RENAME COLUMN ilo_ids_new TO ilo_ids;
 
-    RAISE NOTICE 'Changed sessions.ilo_ids from jsonb â†’ uuid[]';
+    RAISE NOTICE 'Changed sessions.ilo_ids from jsonb to uuid[]';
   END IF;
 END $$;

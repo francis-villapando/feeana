@@ -1,4 +1,4 @@
-﻿-- Seed Script: 40 Taglish Classroom Feedback Entries
+-- Seed Script: 40 Taglish Classroom Feedback Entries
 -- Target  : Session "Introduction to Game Programming" (CSEG2)
 -- Course  : CSEG2 — Game Programming 1
 -- Section : 3CS-C

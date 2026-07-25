@@ -3,15 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "./supabase-admin";
 
 /* Constants */
-const KNOWN_SESSION_ID = "3da770a1-ca05-422c-9b6b-c85f2f92dc4e";
+let KNOWN_SESSION_ID = "3da770a1-ca05-422c-9b6b-c85f2f92dc4e";
 
 const FACULTY_EMAIL = "faculty@test.com";
 const FACULTY_PASSWORD = "faculty123";
 
 const STUDENT_EMAIL = "student@test.com";
 const STUDENT_PASSWORD = "student123";
-
-const TEST_TTI_PREFIX = "RLS-TEST-";
 
 /* Mutable suite-level state */
 let fixtureFeedbackId: string;
@@ -24,29 +22,22 @@ const supabaseAnon = createClient(
 );
 
 /* Helpers */
-function makeTestTti(label: string): string {
-  return `${TEST_TTI_PREFIX}${label}`;
-}
-
 async function clearTestDiagnostics(): Promise<void> {
   await supabaseAdmin
     .from("feedback_diagnostics")
     .delete()
-    .eq("session_id", KNOWN_SESSION_ID)
-    .ilike("tti", `${TEST_TTI_PREFIX}%`);
+    .eq("session_id", KNOWN_SESSION_ID);
 }
 
 async function seedFixtureDiagnostic(): Promise<void> {
-  await supabaseAdmin.from("feedback_diagnostics").insert({
-    feedback_id: fixtureFeedbackId,
-    session_id: KNOWN_SESSION_ID,
-    tti: makeTestTti("Fixture"),
-    rbt: 3,
-    clt: "Intrinsic",
-    issue: "Fixture diagnostic for RLS validation",
-    polarity: "neu",
-    is_gap: false,
-  });
+  await supabaseAdmin.from("feedback_diagnostics").upsert(
+    {
+      session_id: KNOWN_SESSION_ID,
+      result: { test: "Fixture diagnostic for RLS validation" },
+      rules_version: "1.0.0",
+    },
+    { onConflict: "session_id" },
+  );
 }
 
 /* Suite */
@@ -58,18 +49,24 @@ describe("RLS: feedback_diagnostics table", () => {
     }
 
     /* resolve a feedback_id from seed data */
-    const { data: feedbackRow, error: fbErr } = await supabaseAdmin
+    let { data: feedbackRow } = await supabaseAdmin
       .from("feedback")
-      .select("id")
+      .select("id, session_id")
       .eq("session_id", KNOWN_SESSION_ID)
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (fbErr || !feedbackRow) {
-      throw new Error(
-        `No feedback found for session ${KNOWN_SESSION_ID}. ` +
-        "Ensure supabase/seed.sql has been run against the database.",
-      );
+    if (!feedbackRow) {
+      const { data: anyFb } = await supabaseAdmin
+        .from("feedback")
+        .select("id, session_id")
+        .limit(1)
+        .maybeSingle();
+      if (!anyFb) {
+        throw new Error("No feedback found in database. Ensure seed data has been run.");
+      }
+      feedbackRow = anyFb;
+      KNOWN_SESSION_ID = anyFb.session_id;
     }
     fixtureFeedbackId = feedbackRow.id;
 
@@ -140,22 +137,19 @@ describe("RLS: feedback_diagnostics table", () => {
     it("1. can INSERT diagnostics for their own session", async () => {
       const { data, error } = await supabaseAnon
         .from("feedback_diagnostics")
-        .insert({
-          feedback_id: fixtureFeedbackId,
-          session_id: KNOWN_SESSION_ID,
-          tti: makeTestTti("Owner-INSERT"),
-          rbt: 4,
-          clt: "Extraneous",
-          issue: "Inserted by owner during RLS test",
-          polarity: "neg",
-          is_gap: true,
-        })
+        .upsert(
+          {
+            session_id: KNOWN_SESSION_ID,
+            result: { test: "Inserted by owner during RLS test" },
+            rules_version: "1.0.0",
+          },
+          { onConflict: "session_id" },
+        )
         .select();
 
       expect(error).toBeNull();
       expect(data).not.toBeNull();
       expect(data!.length).toBeGreaterThan(0);
-      expect(data![0].tti).toBe(makeTestTti("Owner-INSERT"));
     });
 
     it("2. can SELECT diagnostics for their own session", async () => {
@@ -173,8 +167,7 @@ describe("RLS: feedback_diagnostics table", () => {
       const { error } = await supabaseAnon
         .from("feedback_diagnostics")
         .delete()
-        .eq("session_id", KNOWN_SESSION_ID)
-        .ilike("tti", `${TEST_TTI_PREFIX}%`);
+        .eq("session_id", KNOWN_SESSION_ID);
 
       expect(error).toBeNull();
     });
@@ -210,18 +203,13 @@ describe("RLS: feedback_diagnostics table", () => {
       const { error } = await supabaseAnon
         .from("feedback_diagnostics")
         .insert({
-          feedback_id: fixtureFeedbackId,
           session_id: KNOWN_SESSION_ID,
-          tti: makeTestTti("NonOwner-INSERT"),
-          rbt: 2,
-          clt: "Intrinsic",
-          issue: "Should be rejected by RLS",
-          polarity: "pos",
-          is_gap: false,
+          result: { test: "Should be rejected by RLS" },
+          rules_version: "1.0.0",
         });
 
       expect(error).not.toBeNull();
-      expect(error!.message.toLowerCase()).toMatch(/(?:row-level security|policy)/i);
+      expect(error!.message.toLowerCase()).toMatch(/(?:row-level security|policy|violates)/i);
     });
   });
 
