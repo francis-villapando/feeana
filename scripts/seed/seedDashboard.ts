@@ -1,10 +1,10 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createHash } from "node:crypto";
-import { connectAdmin, adminExec, closeAdminSqlClient } from "../src/lib/db/adminSql";
+import { connectAdmin, adminExec, closeAdminSqlClient } from "../../src/lib/db/adminSql";
 import {
   CalculateDistributions,
   GeneratePedagogicalCue,
-} from "../src/lib/algorithm/strategyGeneration";
+} from "../../src/lib/algorithm/strategyGeneration";
 import {
   TTI_RULES,
   RBT_RULES,
@@ -12,14 +12,14 @@ import {
   CLT_RULES,
   ISSUE_RULES,
   RULES_VERSION,
-} from "../src/lib/algorithm/rules";
+} from "../../src/lib/algorithm/rules";
 import type {
   SessionContext,
   DiagnosticRecord,
   BufferedDiagnostic,
   RecommendationItem,
-} from "../src/lib/algorithm/types";
-import type { DistEntry, AnalysisResult, GapItem } from "../src/lib/types/types";
+} from "../../src/lib/algorithm/types";
+import type { DistEntry, AnalysisResult, GapItem } from "../../src/lib/types/types";
 
 // Dashboard Test Seed — 3 Classes, 60 Students, 9 Sessions, ~159 Feedback
 //

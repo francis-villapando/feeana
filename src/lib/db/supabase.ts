@@ -1,10 +1,24 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+let _client: SupabaseClient | null = null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables");
+function getClient(): SupabaseClient {
+  if (!_client) {
+    const url = import.meta.env?.VITE_SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+    const key = import.meta.env?.VITE_SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY;
+    if (!url || !key) {
+      throw new Error(
+        "Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. " +
+        "Set them in .env or pass --env-file=.env",
+      );
+    }
+    _client = createClient(url, key);
+  }
+  return _client;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_, prop, receiver) {
+    return Reflect.get(getClient(), prop, receiver);
+  },
+});

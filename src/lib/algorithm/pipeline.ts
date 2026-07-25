@@ -15,8 +15,9 @@
  */
 
 import type { AnalysisResult, DistEntry } from "../types/types";
-import { supabase } from "../db/supabase";
-import { getMLWorker } from "../ml/mlWorkerStore";
+import { supabase as defaultSupabase } from "../db/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getMLWorkerAsync } from "../ml/mlWorkerStore";
 import { collectPipelineData } from "./dataCollection";
 import { CalculateDistributions, GeneratePedagogicalCue } from "./strategyGeneration";
 import { formatDashboardOutput } from "./dashboardOutput";
@@ -38,8 +39,9 @@ const PRIORITY_THRESHOLD = 0.3;
 // Loads a previously computed result from the cache.
 // Returns null if no result exists or the cache is stale (rules_version mismatch).
 
-export async function fetchComputedResult(sessionId: string): Promise<AnalysisResult | null> {
-  const { data, error } = await supabase
+export async function fetchComputedResult(sessionId: string, client?: SupabaseClient): Promise<AnalysisResult | null> {
+  const db = client ?? defaultSupabase;
+  const { data, error } = await db
     .from("feedback_diagnostics")
     .select("result, rules_version")
     .eq("session_id", sessionId)
@@ -58,8 +60,8 @@ export async function fetchComputedResult(sessionId: string): Promise<AnalysisRe
 
 // Write path
 
-async function fetchSessionData(sessionId: string) {
-  const { data: session, error: sessionErr } = await supabase
+async function fetchSessionData(sessionId: string, db: SupabaseClient) {
+  const { data: session, error: sessionErr } = await db
     .from("sessions")
     .select("*, classes(name, course, course_id)")
     .eq("id", sessionId)
@@ -74,9 +76,9 @@ async function fetchSessionData(sessionId: string) {
 
   // Fire remaining 3 queries in parallel (ILOs, feedback, course)
   const [ilosResult, feedbackResult, courseResult] = await Promise.all([
-    supabase.from("ilos").select("*").eq("course_id", courseId).eq("archived", false),
-    supabase.from("feedback").select("*").eq("session_id", sessionId),
-    supabase.from("courses").select("title").eq("id", courseId).maybeSingle(),
+    db.from("ilos").select("*").eq("course_id", courseId).eq("archived", false),
+    db.from("feedback").select("*").eq("session_id", sessionId),
+    db.from("courses").select("title").eq("id", courseId).maybeSingle(),
   ]);
 
   if (ilosResult.error) throw new Error(ilosResult.error.message);
@@ -105,12 +107,13 @@ async function fetchSessionData(sessionId: string) {
  *   7. SAVE computed result to feedback_diagnostics
  *   8. UPDATE sessions.last_analyzed_at
  */
-export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisResult> {
+export async function runAnalysisPipeline(sessionId: string, client?: SupabaseClient): Promise<AnalysisResult> {
+  const db = client ?? defaultSupabase;
   console.debug("[pipeline] Starting analysis pipeline for session", { sessionId });
 
   // Module 1: Fetch + assemble data
   performance.mark("pipeline:fetch-start");
-  const { session, courseName, ilosData, feedbackData } = await fetchSessionData(sessionId);
+  const { session, courseName, ilosData, feedbackData } = await fetchSessionData(sessionId, db);
   performance.mark("pipeline:fetch-end");
   performance.measure("Supabase read", {
     start: "pipeline:fetch-start",
@@ -131,7 +134,7 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   );
 
   // Modules 2-3-4: per-feedback loop in Web Worker (preprocess → extract → map)
-  const { api } = getMLWorker();
+  const { api } = await getMLWorkerAsync();
   performance.mark("pipeline:model-load-start");
   await api.preloadModel();
   performance.mark("pipeline:model-load-end");
@@ -152,9 +155,9 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
 
   // Save raw ML output to analysis_results
   performance.mark("pipeline:write-start");
-  await supabase.from("analysis_results").delete().eq("session_id", sessionId);
+  await db.from("analysis_results").delete().eq("session_id", sessionId);
   if (buffer.length > 0) {
-    const { error: insertErr } = await supabase.from("analysis_results").insert(
+    const { error: insertErr } = await db.from("analysis_results").insert(
       buffer.map((d) => ({
         session_id: sessionId,
         feedback_id: d.feedbackId,
@@ -310,8 +313,8 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   };
 
   // Save computed result to feedback_diagnostics
-  await supabase.from("feedback_diagnostics").delete().eq("session_id", sessionId);
-  const { error: cacheErr } = await supabase.from("feedback_diagnostics").insert({
+  await db.from("feedback_diagnostics").delete().eq("session_id", sessionId);
+  const { error: cacheErr } = await db.from("feedback_diagnostics").insert({
     session_id: sessionId,
     result: finalResult,
     rules_version: RULES_VERSION,
@@ -325,7 +328,7 @@ export async function runAnalysisPipeline(sessionId: string): Promise<AnalysisRe
   });
 
   // Update sessions.last_analyzed_at
-  const { error: updateErr } = await supabase
+  const { error: updateErr } = await db
     .from("sessions")
     .update({ last_analyzed_at: new Date().toISOString() })
     .eq("id", sessionId);

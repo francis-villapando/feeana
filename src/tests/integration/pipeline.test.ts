@@ -8,12 +8,12 @@ const TEST_SESSION_ID = "f1234567-1234-4321-abcd-000000000001";
 const FACULTY_EMAIL = "faculty@test.com";
 const FACULTY_PASSWORD = "faculty123";
 
-/* Mock — intercepts getMLWorker() so runAnalysisPipeline() uses fake output */
+/* Mock — intercepts getMLWorkerAsync() so runAnalysisPipeline() uses fake output */
 const mockRunInference = vi.fn();
 const mockPreload = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("../../lib/ml/mlWorkerStore", () => ({
-  getMLWorker: vi.fn(() => ({
+  getMLWorkerAsync: vi.fn(async () => ({
     api: {
       preloadModel: mockPreload,
       runInference: mockRunInference,

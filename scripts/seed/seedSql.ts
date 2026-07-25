@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { connectAdmin, closeAdminSqlClient } from "../src/lib/db/adminSql";
+import { connectAdmin, closeAdminSqlClient } from "../../src/lib/db/adminSql";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SEED_SQL = path.resolve(__dirname, "../../supabase/seed.sql");
