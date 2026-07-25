@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export type ActionType = "archive" | "delete" | "restore" | "confirm";
+export type ActionType = "archive" | "restore" | "confirm";
 
 interface ConfirmationDialogProps {
   isOpen: boolean;
@@ -35,11 +35,8 @@ export function ConfirmationDialog({
   // Default labels if not provided
   const label = confirmLabel || (
     actionType === "archive" ? "Archive" :
-    actionType === "delete" ? "Delete" :
     actionType === "restore" ? "Restore" : "Confirm"
   );
-
-  const isDestructive = actionType === "delete";
 
   const renderDescription = (text: string) => {
     const first = text.indexOf('"');
@@ -69,7 +66,6 @@ export function ConfirmationDialog({
           <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
           <AlertDialogAction 
             onClick={onConfirm}
-            className={isDestructive ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground" : ""}
           >
             {label}
           </AlertDialogAction>

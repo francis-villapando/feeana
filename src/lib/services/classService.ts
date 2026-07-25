@@ -130,11 +130,6 @@ export async function restoreClass(id: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function deleteClass(id: string): Promise<void> {
-  const { error } = await supabase.from("classes").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-}
-
 export async function updateSession(
   id: string,
   fields: { topic?: string; startsAt?: string; endsAt?: string },
@@ -170,11 +165,6 @@ export async function restoreSession(id: string): Promise<Session> {
   const { data, error } = await supabase.from("sessions").update({ status }).eq("id", id).select().single();
   if (error) throw new Error(error.message);
   return fromDbSession(data);
-}
-
-export async function deleteSession(id: string): Promise<void> {
-  const { error } = await supabase.from("sessions").delete().eq("id", id);
-  if (error) throw new Error(error.message);
 }
 
 async function closeExpired() {

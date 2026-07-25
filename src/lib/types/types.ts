@@ -37,6 +37,7 @@ export interface Topic {
 }
 
 export type EntityKind = "course" | "topic" | "ILO";
+/** @deprecated "deleted" is no longer generated — retained only for historical DB rows. */
 export type ActivityAction = "created" | "updated" | "archived" | "restored" | "deleted";
 
 export interface ActivityEntry {

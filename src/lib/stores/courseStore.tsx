@@ -51,9 +51,6 @@ interface CourseStoreValue {
   ) => Promise<void>;
   archiveILO: (id: string) => Promise<void>;
   restoreILO: (id: string) => Promise<void>;
-  deleteCourse: (id: string) => Promise<void>;
-  deleteTopic: (id: string) => Promise<void>;
-  deleteILO: (id: string) => Promise<void>;
   refreshActivity: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
@@ -229,24 +226,6 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     await refreshActivity();
   }, []);
 
-  const deleteCourse = useCallback(async (id: string) => {
-    await courseService.deleteCourse(id);
-    setCourses((prev) => prev.filter((x) => x.id !== id));
-    await refreshActivity();
-  }, []);
-
-  const deleteTopic = useCallback(async (id: string) => {
-    await courseService.deleteTopic(id);
-    setTopics((prev) => prev.filter((x) => x.id !== id));
-    await refreshActivity();
-  }, []);
-
-  const deleteILO = useCallback(async (id: string) => {
-    await courseService.deleteILO(id);
-    setIlos((prev) => prev.filter((x) => x.id !== id));
-    await refreshActivity();
-  }, []);
-
   const value = useMemo<CourseStoreValue>(
     () => ({
       courses,
@@ -268,9 +247,6 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       updateILO,
       archiveILO,
       restoreILO,
-      deleteCourse,
-      deleteTopic,
-      deleteILO,
       refreshActivity,
       refreshAll,
     }),
@@ -291,9 +267,6 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       updateILO,
       archiveILO,
       restoreILO,
-      deleteCourse,
-      deleteTopic,
-      deleteILO,
       isLoading,
       error,
       refreshActivity,

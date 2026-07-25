@@ -22,20 +22,8 @@ export const Route = createFileRoute("/_faculty/archived")({
 });
 
 function ArchivedPage() {
-  const { archivedClasses, isLoading, restoreClass, deleteClass } = useClassStore();
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { archivedClasses, isLoading, restoreClass } = useClassStore();
   const [restoringId, setRestoringId] = useState<string | null>(null);
-
-  const handleDelete = async () => {
-    if (!deletingId) return;
-    try {
-      await deleteClass(deletingId);
-      setDeletingId(null);
-      toast.success("Class deleted");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete class");
-    }
-  };
 
   const handleRestore = async () => {
     if (!restoringId) return;
@@ -75,7 +63,6 @@ function ArchivedPage() {
               key={cls.id}
               cls={cls}
               onRestore={(id) => setRestoringId(id)}
-              onDelete={(id) => setDeletingId(id)}
             />
           ))}
         </div>
@@ -90,14 +77,7 @@ function ArchivedPage() {
         actionType="restore"
       />
 
-      <ConfirmationDialog
-        isOpen={!!deletingId}
-        onClose={() => setDeletingId(null)}
-        onConfirm={handleDelete}
-        title="Delete class"
-        description={`Delete the "${archivedClasses.find(cls => cls.id === deletingId)?.courseCode} · ${archivedClasses.find(cls => cls.id === deletingId)?.section}" class? This will delete all sessions and feedback associated with this class. This action cannot be undone.`}
-        actionType="delete"
-      />
+
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Calendar, MessageSquare, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { Calendar, MessageSquare, Pencil, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +22,7 @@ const STATUS_BADGE: Record<string, { variant: "default" | "secondary"; className
 
 export function SessionCard({ session }: { session: Session }) {
   const { feedback } = useFeedbackStore();
-  const { restoreSession, deleteSession } = useClassStore();
+  const { restoreSession } = useClassStore();
   const feedbackStatus = computeFeedbackStatus(session, feedback);
   const sessionFeedback = feedback.filter((f) => f.sessionId === session.id);
   const responses = sessionFeedback.length;
@@ -30,7 +30,7 @@ export function SessionCard({ session }: { session: Session }) {
   const badge = useMemo(() => STATUS_BADGE[displayStatus] ?? STATUS_BADGE.archived, [displayStatus]);
   const isArchived = displayStatus === "archived";
   const [editing, setEditing] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<"restore" | "delete" | null>(null);
+  const [confirmRestore, setConfirmRestore] = useState(false);
 
   const handleRestore = async () => {
     try {
@@ -39,19 +39,6 @@ export function SessionCard({ session }: { session: Session }) {
       console.error(err);
     }
   };
-
-  const handleDelete = async () => {
-    try {
-      await deleteSession(session.id);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const confirmTitle = confirmAction === "delete" ? "Delete session" : "Restore session";
-  const confirmDescription = confirmAction === "delete"
-    ? `Permanently delete the "${session.topic}" session? This action is irreversible.`
-    : `Restore the "${session.topic}" session?`;
 
   return (
     <>
@@ -84,11 +71,8 @@ export function SessionCard({ session }: { session: Session }) {
           <div className="flex gap-2">
             {isArchived ? (
               <>
-                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setConfirmAction("restore")}>
+                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setConfirmRestore(true)}>
                   <RotateCcw className="h-4 w-4" />
-                </Button>
-                <Button variant="secondary" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setConfirmAction("delete")}>
-                  <Trash2 className="h-4 w-4" />
                 </Button>
                 <div className="relative flex-1">
                   <Button asChild variant="secondary" size="sm" className="w-full">
@@ -132,15 +116,15 @@ export function SessionCard({ session }: { session: Session }) {
         <SessionEditDialog session={session} onClose={() => setEditing(false)} />
       )}
 
-      {confirmAction && (
+      {confirmRestore && (
         <ConfirmationDialog
-          isOpen={!!confirmAction}
-          onClose={() => setConfirmAction(null)}
-          onConfirm={confirmAction === "delete" ? handleDelete : handleRestore}
-          title={confirmTitle}
-          description={confirmDescription}
-          actionType={confirmAction}
-          confirmLabel={confirmAction === "delete" ? "Delete" : "Restore"}
+          isOpen={confirmRestore}
+          onClose={() => setConfirmRestore(false)}
+          onConfirm={handleRestore}
+          title="Restore session"
+          description={`Restore the "${session.topic}" session?`}
+          actionType="restore"
+          confirmLabel="Restore"
         />
       )}
     </>

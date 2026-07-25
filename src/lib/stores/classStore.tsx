@@ -29,7 +29,6 @@ interface ClassStoreValue {
   createClass: (input: { courseId: string; courseCode: string; courseTitle: string; section: string }) => Promise<Class>;
   archiveClass: (id: string) => Promise<void>;
   restoreClass: (id: string) => Promise<void>;
-  deleteClass: (id: string) => Promise<void>;
   createSession: (input: {
     classId: string;
     topic: string;
@@ -41,7 +40,6 @@ interface ClassStoreValue {
   updateSession: (id: string, fields: { topic?: string; startsAt?: string; endsAt?: string }) => Promise<Session>;
   archiveSession: (id: string) => Promise<void>;
   restoreSession: (id: string) => Promise<Session>;
-  deleteSession: (id: string) => Promise<void>;
   enrollClassByCode: (code: string) => Promise<Class | null>;
   activeSessions: Session[];
   submittedSessionIds: Set<string>;
@@ -226,11 +224,6 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     setClasses((prev) => prev.map((cls) => (cls.id === id ? { ...cls, archived: false } : cls)));
   }, []);
 
-  const deleteClass = useCallback(async (id: string) => {
-    await classService.deleteClass(id);
-    setClasses((prev) => prev.filter((cls) => cls.id !== id));
-  }, []);
-
   const createSession = useCallback(
     async (input: {
       classId: string;
@@ -273,11 +266,6 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     const s = await classService.restoreSession(id);
     setSessions((prev) => prev.map((session) => (session.id === id ? s : session)));
     return s;
-  }, []);
-
-  const deleteSession = useCallback(async (id: string) => {
-    await classService.deleteSession(id);
-    setSessions((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
   const enrollClassByCode = useCallback(
@@ -345,12 +333,10 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       createClass,
       archiveClass,
       restoreClass,
-      deleteClass,
       createSession,
       updateSession,
       archiveSession,
       restoreSession,
-      deleteSession,
       enrollClassByCode,
       refreshClasses,
       refreshEnrolledClasses,
@@ -369,12 +355,10 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     createClass,
     archiveClass,
     restoreClass,
-    deleteClass,
     createSession,
     updateSession,
     archiveSession,
     restoreSession,
-    deleteSession,
     enrollClassByCode,
     dismissStudent,
     isLoading,
