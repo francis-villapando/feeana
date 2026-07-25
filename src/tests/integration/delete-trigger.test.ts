@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "./supabase-admin";
-import { adminExec, closeAdminSqlClient } from "../../scripts/admin-sql";
+import { supabaseAdmin } from "../helpers/supabaseAdmin";
+import { adminExec, closeAdminSqlClient } from "../../lib/db/adminSql";
 
 const TEST_SESSION_ID = "f1234567-1234-4321-abcd-000000000002";
 const FACULTY_EMAIL = "faculty@test.com";

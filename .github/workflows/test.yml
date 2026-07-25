@@ -29,7 +29,7 @@ jobs:
           if [ -n "$MATCHES" ]; then
             echo "ERROR: Found .delete() on protected tables in application code:"
             echo "$MATCHES"
-            echo "Use connectAdmin() from scripts/admin-sql.ts for DELETE operations."
+            echo "Use connectAdmin() from src/lib/db/adminSql.ts for DELETE operations."
             exit 1
           fi
           echo "OK: No unprotected .delete() calls on protected tables."

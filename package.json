@@ -11,9 +11,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest",
-    "db:reset": "supabase db reset && npx tsx --env-file .env supabase/seed_dashboard.ts",
-    "db:seed": "npx tsx scripts/apply-seed.ts",
-    "db:seed:dashboard": "npx tsx --env-file .env supabase/seed_dashboard.ts"
+    "db:reset": "supabase db reset && npx tsx --env-file .env scripts/seed/seedDashboard.ts",
+    "db:seed": "npx tsx scripts/seed/seedSql.ts",
+    "db:seed:dashboard": "npx tsx --env-file .env scripts/seed/seedDashboard.ts"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

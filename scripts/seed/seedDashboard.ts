@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createHash } from "node:crypto";
-import { connectAdmin, adminExec, closeAdminSqlClient } from "../scripts/admin-sql";
+import { connectAdmin, adminExec, closeAdminSqlClient } from "../src/lib/db/adminSql";
 import {
   CalculateDistributions,
   GeneratePedagogicalCue,
@@ -23,7 +23,7 @@ import type { DistEntry, AnalysisResult, GapItem } from "../src/lib/types/types"
 
 // Dashboard Test Seed — 3 Classes, 60 Students, 9 Sessions, ~159 Feedback
 //
-// Usage: npx tsx --env-file .env supabase/seed_dashboard.ts
+// Usage: npx tsx --env-file .env scripts/seed/seedDashboard.ts
 //
 // Deterministic: every ID and timestamp is derived from a fixed seed
 // so re-running produces identical data every time.
@@ -1238,7 +1238,7 @@ async function main() {
 
   if (!SUPABASE_URL || !SERVICE_KEY) {
     console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment.");
-    console.error("Run with: npx tsx --env-file .env supabase/seed_dashboard.ts");
+    console.error("Run with: npx tsx --env-file .env scripts/seed/seedDashboard.ts");
     process.exit(1);
   }
 

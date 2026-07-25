@@ -5,12 +5,12 @@
  * against the seeded 40-entry session WITHOUT writing any results to the DB.
  *
  * Usage:
- *   npx tsx scripts/run-pipeline-smoke.ts
+ *   npx tsx scripts/dev/pipelineSmoke.ts
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { runAlgorithmPipeline } from "../src/lib/algorithm/pipeline";
-import type { SessionContext, FeedbackInput } from "../src/lib/algorithm/types";
+import { runAlgorithmPipeline } from "../../src/lib/algorithm/pipeline";
+import type { SessionContext, FeedbackInput } from "../../src/lib/algorithm/types";
 
 const SESSION_ID = "3da770a1-ca05-422c-9b6b-c85f2f92dc4e";
 const VALID_ISSUES = new Set([
@@ -54,7 +54,7 @@ async function main(): Promise<void> {
     console.error(
       "Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.\n" +
       "Set them in your environment or use:\n" +
-      "  npx tsx --env-file=.env scripts/run-pipeline-smoke.ts",
+      "  npx tsx --env-file=.env scripts/dev/pipelineSmoke.ts",
     );
     process.exit(1);
   }

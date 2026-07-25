@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { createClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "./supabase-admin";
+import { supabaseAdmin } from "../helpers/supabaseAdmin";
 
 /* Constants */
 let KNOWN_SESSION_ID = "3da770a1-ca05-422c-9b6b-c85f2f92dc4e";

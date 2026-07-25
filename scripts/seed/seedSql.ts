@@ -1,6 +1,11 @@
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { connectAdmin, closeAdminSqlClient } from "./admin-sql";
+import { connectAdmin, closeAdminSqlClient } from "../src/lib/db/adminSql";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SEED_SQL = path.resolve(__dirname, "../../supabase/seed.sql");
 
 dotenv.config();
 
@@ -9,7 +14,7 @@ async function main() {
   console.log("Connected + hard-delete bypass enabled.");
 
   try {
-    const sql = fs.readFileSync("supabase/seed.sql", "utf8");
+    const sql = fs.readFileSync(SEED_SQL, "utf8");
     await client.query(sql);
     console.log("Successfully executed supabase/seed.sql");
   } finally {

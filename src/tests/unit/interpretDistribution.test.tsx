@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { interpretDistribution } from "../components/faculty/charts/interpretDistribution";
+import { interpretDistribution } from "../../components/faculty/charts/interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
 
 describe("interpretDistribution RBT rendering", () => {

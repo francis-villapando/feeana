@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
-import { supabaseAdmin } from "./supabase-admin";
-import { adminExec, closeAdminSqlClient } from "../../scripts/admin-sql";
-import type { DiagnosticRecord } from "../lib/algorithm/types";
+import { supabaseAdmin } from "../helpers/supabaseAdmin";
+import { adminExec, closeAdminSqlClient } from "../../lib/db/adminSql";
+import type { DiagnosticRecord } from "../../lib/algorithm/types";
 
 /* Constants */
 const TEST_SESSION_ID = "f1234567-1234-4321-abcd-000000000001";
@@ -12,7 +12,7 @@ const FACULTY_PASSWORD = "faculty123";
 const mockRunInference = vi.fn();
 const mockPreload = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("../lib/ml/mlWorkerStore", () => ({
+vi.mock("../../lib/ml/mlWorkerStore", () => ({
   getMLWorker: vi.fn(() => ({
     api: {
       preloadModel: mockPreload,
@@ -22,8 +22,8 @@ vi.mock("../lib/ml/mlWorkerStore", () => ({
 }));
 
 // above mock must be hoisted above the subject import
-import { runAnalysisPipeline, fetchComputedResult } from "../lib/algorithm/pipeline";
-import { supabase } from "../lib/db/supabase";
+import { runAnalysisPipeline, fetchComputedResult } from "../../lib/algorithm/pipeline";
+import { supabase } from "../../lib/db/supabase";
 
 /* Suite-level state */
 let testFeedbackIds: string[] = [];

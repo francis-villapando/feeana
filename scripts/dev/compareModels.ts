@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createModel, type ModelKind, type ModelAdapter } from "../src/lib/algorithm/models";
+import { createModel, type ModelKind, type ModelAdapter } from "../../src/lib/algorithm/models";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -12,7 +12,7 @@ interface TestCase {
 }
 
 async function loadTestSet(): Promise<TestCase[]> {
-  const filePath = path.join(__dirname, "../public/model-data/labeled-test-set.json");
+  const filePath = path.join(__dirname, "../../public/model-data/labeled-test-set.json");
   const data = fs.readFileSync(filePath, "utf-8");
   return JSON.parse(data);
 }

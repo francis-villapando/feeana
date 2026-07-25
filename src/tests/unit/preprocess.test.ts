@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { Preprocess } from "../lib/algorithm/preprocess";
+import { Preprocess } from "../../lib/algorithm/preprocess";
 
 describe("Preprocess (Module 2: Preprocessing)", () => {
   describe("Vowel Normalization", () => {
