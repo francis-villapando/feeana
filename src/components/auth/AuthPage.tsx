@@ -11,6 +11,7 @@ import type { UserRole } from "@/lib/types/types";
 import { ThemeToggle } from "@/components/common";
 import { PasswordField } from "./PasswordField";
 import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
+import { InlineError } from "../common";
 
 const ALLOWED_FACULTY_DOMAIN = import.meta.env.VITE_FACULTY_DOMAIN as string | undefined;
 
@@ -46,6 +47,8 @@ export function AuthPage({ role }: { role: UserRole }) {
   const [submitting, setSubmitting] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [accountExists, setAccountExists] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const goHome = (r: UserRole) => {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
@@ -58,10 +61,22 @@ export function AuthPage({ role }: { role: UserRole }) {
   };
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !password) {
-      toast.error("Email and password are required.");
+    e.preventDefault();    
+    if (!email.trim() && password.trim()) {
+      setEmailError("Email is required.");
+      setPasswordError("");
       return;
+    } else if (!password.trim() && email.trim()) {
+      setPasswordError("Password is required.");
+      setEmailError("");
+      return;
+    } else if (!email.trim() && !password.trim()) {
+      setEmailError("Email is required.");
+      setPasswordError("Password is required.");
+      return;
+    } else {
+      setEmailError("");
+      setPasswordError("");
     }
 
     if (role === "faculty" && !validateFacultyDomain(email)) {
@@ -209,6 +224,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                   )}
                 </Label>
                 <Input
+                  className={emailError ? "border-destructive focus-visible:ring-destructive" : ""}
                   id="email"
                   type="email"
                   autoComplete="email"
@@ -220,6 +236,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                       : "you@example.com"
                   }
                 />
+                <InlineError errorMessage={emailError} />
               </div>
               <PasswordField
                 id="password"
@@ -228,6 +245,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
                 placeholder="Enter your password"
+                passwordError={passwordError}
               />
               {mode === "signin" && (
                 <div className="text-right text-xs">
