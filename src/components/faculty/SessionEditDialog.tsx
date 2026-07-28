@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Archive, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useClassStore } from "@/lib/stores/classStore";
+import { useCourseStore } from "@/lib/stores/courseStore";
+import { topicsForClass } from "@/lib/hooks/courseLookup";
 import type { Session } from "@/lib/types/types";
 import { ConfirmationDialog, DateTimePicker } from "@/components/faculty";
 import { InlineError, destructiveBorder } from "@/components/common";
@@ -25,9 +33,16 @@ interface SessionEditDialogProps {
 }
 
 export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) {
-  const { updateSession, archiveSession } = useClassStore();
+  const { updateSession, archiveSession, getClass } = useClassStore();
+  const { courses, topics } = useCourseStore();
 
-  const [topic, setTopic] = useState(session.topic);
+  const cls = getClass(session.classId);
+  const availableTopics = useMemo(
+    () => topicsForClass(cls, courses, topics),
+    [cls, courses, topics],
+  );
+
+  const [topicId, setTopicId] = useState(session.topicId ?? "");
   const [startsAt, setStartsAt] = useState(session.startsAt);
   const [endsAt, setEndsAt] = useState(session.endsAt);
   const [saving, setSaving] = useState(false);
@@ -43,8 +58,9 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
     setEndsAtError("");
     setSubmitError("");
 
-    if (!topic.trim()) {
-      setTopicError("Topic is required.");
+    const selected = availableTopics.find((t) => t.id === topicId);
+    if (!selected) {
+      setTopicError("Pick a topic for this session.");
       return;
     }
     if (!startsAt) {
@@ -66,7 +82,13 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
 
     setSaving(true);
     try {
-      await updateSession(session.id, { topic: topic.trim(), startsAt, endsAt });
+      await updateSession(session.id, {
+        topic: selected.title,
+        topicId: selected.id,
+        courseId: selected.courseId,
+        startsAt,
+        endsAt,
+      });
       toast.success("Session updated.");
       onClose();
     } catch (err) {
@@ -100,17 +122,35 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
 
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-topic">Topic</Label>
-              <Input
-                id="edit-topic"
-                value={topic}
-                onChange={(e) => {
-                  setTopic(e.target.value);
+              <Label>Topic</Label>
+              <Select
+                value={topicId}
+                onValueChange={(v) => {
+                  setTopicId(v);
                   setTopicError("");
                 }}
-                placeholder="Session topic"
-                className={topicError ? destructiveBorder : ""}
-              />
+              >
+                <SelectTrigger className={topicError ? destructiveBorder : ""}>
+                  <SelectValue
+                    placeholder={
+                      availableTopics.length === 0 ? "No topics for this course" : "Select a topic"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTopics.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">
+                      No topics for this course — add one in Dashboard → course management hub.
+                    </div>
+                  ) : (
+                    availableTopics.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.title}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
               <InlineError errorMessage={topicError} />
             </div>
             <div className="space-y-1.5">

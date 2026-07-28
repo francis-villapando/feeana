@@ -45,7 +45,7 @@ interface ClassStoreValue {
   }) => Promise<Session>;
   updateSession: (
     id: string,
-    fields: { topic?: string; startsAt?: string; endsAt?: string },
+    fields: { topic?: string; topicId?: string; courseId?: string; startsAt?: string; endsAt?: string },
   ) => Promise<Session>;
   archiveSession: (id: string) => Promise<void>;
   restoreSession: (id: string) => Promise<Session>;

@@ -132,7 +132,7 @@ export async function restoreClass(id: string): Promise<void> {
 
 export async function updateSession(
   id: string,
-  fields: { topic?: string; startsAt?: string; endsAt?: string },
+  fields: { topic?: string; topicId?: string; courseId?: string; startsAt?: string; endsAt?: string },
 ): Promise<Session> {
   if (fields.startsAt !== undefined || fields.endsAt !== undefined) {
     const current = await getSessionById(id);
@@ -143,6 +143,8 @@ export async function updateSession(
   }
   const updateFields: Record<string, unknown> = {};
   if (fields.topic !== undefined) updateFields.topic = fields.topic.trim();
+  if (fields.topicId !== undefined) updateFields.topic_id = fields.topicId || null;
+  if (fields.courseId !== undefined) updateFields.course_id = fields.courseId || null;
   if (fields.startsAt !== undefined) updateFields.starts_at = fields.startsAt;
   if (fields.endsAt !== undefined) updateFields.ends_at = fields.endsAt;
   if (fields.startsAt !== undefined && fields.endsAt !== undefined) {
