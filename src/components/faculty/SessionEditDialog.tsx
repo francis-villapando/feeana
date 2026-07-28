@@ -17,6 +17,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 import type { Session } from "@/lib/types/types";
 import { ConfirmationDialog, DateTimePicker } from "@/components/faculty";
 import { InlineError, destructiveBorder } from "@/components/common";
+import { friendlyError } from "@/lib/hooks/utils";
 
 interface SessionEditDialogProps {
   session: Session;
@@ -69,7 +70,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
       toast.success("Session updated.");
       onClose();
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to update session");
+      setSubmitError(friendlyError(err, "Failed to update session"));
     } finally {
       setSaving(false);
     }
@@ -81,7 +82,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
       toast.success("Session archived.");
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to archive session");
+      toast.error(friendlyError(err, "Failed to archive session"));
     }
   };
 
@@ -94,9 +95,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
               <Pencil className="h-4 w-4 text-primary" />
               Edit session
             </DialogTitle>
-            <DialogDescription>
-              Update the session details below.
-            </DialogDescription>
+            <DialogDescription>Update the session details below.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
@@ -144,10 +143,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
           <Separator />
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost" size="sm"
-              onClick={() => setConfirmArchive(true)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setConfirmArchive(true)}>
               <Archive className="h-3.5 w-3.5 mr-1.5" />
               Archive
             </Button>

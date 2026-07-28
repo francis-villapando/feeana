@@ -65,7 +65,17 @@ export function CrossClassSessionCreator() {
   const updateRow = (classId: string, patch: Partial<PerClass>) => {
     setRowErrors((prev) => {
       const next = { ...prev };
-      delete next[classId];
+      if (next[classId]) {
+        const fieldErrors = { ...next[classId] };
+        if ("topicId" in patch) delete fieldErrors.topic;
+        if ("startsAt" in patch) delete fieldErrors.startsAt;
+        if ("endsAt" in patch) delete fieldErrors.endsAt;
+        if (Object.keys(fieldErrors).length === 0) {
+          delete next[classId];
+        } else {
+          next[classId] = fieldErrors;
+        }
+      }
       return next;
     });
     setRows((prev) => prev.map((r) => (r.classId === classId ? { ...r, ...patch } : r)));
@@ -113,7 +123,7 @@ export function CrossClassSessionCreator() {
       setRowErrors(errorsByClass);
       return;
     }
-    
+
     let count = 0;
     for (const r of rows) {
       const cls = activeClasses.find((c) => c.id === r.classId);
@@ -140,8 +150,7 @@ export function CrossClassSessionCreator() {
           <PlusCircle className="h-4 w-4 text-primary" /> Cross-class session creator
         </CardTitle>
         <CardDescription>
-          Launch a session across multiple classes — each picks its own topic and
-          schedule.
+          Launch a session across multiple classes—each picks its own topic and schedule.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -16,6 +16,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import { topicsForClass } from "@/lib/hooks/courseLookup";
 import { InlineError, destructiveBorder } from "@/components/common";
+import { friendlyError } from "@/lib/hooks/utils";
 
 export function SessionCreator({ classId }: { classId: string }) {
   const { createSession, getClass } = useClassStore();
@@ -42,26 +43,20 @@ export function SessionCreator({ classId }: { classId: string }) {
     setSubmitError("");
 
     const topic = availableTopics.find((t) => t.id === topicId);
-    if (!topic) {
-      setTopicError("Pick a topic for this session.");
-      return;
-    }
-    if (!startsAt) {
-      setStartsAtError("Pick a start date/time.");
-      return;
-    }
-    if (!endsAt) {
-      setEndsAtError("Pick an end date/time.");
-      return;
-    }
-    if (new Date(endsAt) <= new Date(startsAt)) {
+    if (!topic) setTopicError("Pick a topic for this session.");
+    if (!startsAt) setStartsAtError("Pick a start date/time.");
+    if (!endsAt) setEndsAtError("Pick an end date/time.");
+    if (startsAt && endsAt && new Date(endsAt) <= new Date(startsAt))
       setEndsAtError("End must be after start.");
-      return;
-    }
-    if (new Date(endsAt) <= new Date()) {
-      setEndsAtError("End time cannot be in the past.");
-      return;
-    }
+    if (endsAt && new Date(endsAt) <= new Date()) setEndsAtError("End time cannot be in the past.");
+
+    const hasError =
+      !topic ||
+      !startsAt ||
+      !endsAt ||
+      (startsAt !== "" && endsAt !== "" && new Date(endsAt) <= new Date(startsAt)) ||
+      (endsAt !== "" && new Date(endsAt) <= new Date());
+    if (hasError) return;
 
     try {
       const s = await createSession({
@@ -77,7 +72,7 @@ export function SessionCreator({ classId }: { classId: string }) {
       setStartsAt("");
       setEndsAt("");
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to start session");
+      setSubmitError(friendlyError(err));
     }
   };
 

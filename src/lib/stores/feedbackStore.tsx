@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import type { Feedback } from "../types/types";
 import * as feedbackService from "../services/feedbackService";
+import { friendlyError } from "../hooks/utils";
 
 interface FeedbackStoreValue {
   feedback: Feedback[];
@@ -32,7 +33,7 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
       });
       return data;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load feedback");
+      setError(friendlyError(e, "Failed to load feedback"));
       return [];
     } finally {
       setIsLoading(false);
@@ -47,7 +48,7 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
       setFeedback(data);
       return data;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load feedback");
+      setError(friendlyError(e, "Failed to load feedback"));
       return [];
     } finally {
       setIsLoading(false);
@@ -63,7 +64,7 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
       setFeedback(data);
       return data;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load feedback");
+      setError(friendlyError(e, "Failed to load feedback"));
       return [];
     } finally {
       setIsLoading(false);
@@ -89,8 +90,28 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<FeedbackStoreValue>(
-    () => ({ feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, fetchFeedbackBySessions, feedbackForSession, insertRealtimeFeedback }),
-    [feedback, isLoading, error, addFeedback, fetchFeedback, fetchFeedbackByClass, fetchFeedbackBySessions, feedbackForSession, insertRealtimeFeedback],
+    () => ({
+      feedback,
+      isLoading,
+      error,
+      addFeedback,
+      fetchFeedback,
+      fetchFeedbackByClass,
+      fetchFeedbackBySessions,
+      feedbackForSession,
+      insertRealtimeFeedback,
+    }),
+    [
+      feedback,
+      isLoading,
+      error,
+      addFeedback,
+      fetchFeedback,
+      fetchFeedbackByClass,
+      fetchFeedbackBySessions,
+      feedbackForSession,
+      insertRealtimeFeedback,
+    ],
   );
 
   return <FeedbackStoreContext.Provider value={value}>{children}</FeedbackStoreContext.Provider>;

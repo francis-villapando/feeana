@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModelLoaderOverlay, AnalysisTriggerModal } from "@/components/analysis";
 import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
+import { friendlyError } from "@/lib/hooks/utils";
 import {
   AspectDistChart,
   PolarityDistChart,
@@ -57,14 +58,19 @@ export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
 
 function AnalysisPage() {
   const { classId, sessionId } = Route.useParams();
-  const { sessions, getClass, studentCountForClass, refreshStudents, refreshSessions } = useClassStore();
+  const { sessions, getClass, studentCountForClass, refreshStudents, refreshSessions } =
+    useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
   const { feedback, fetchFeedback } = useFeedbackStore();
   const { set: setAnalysisResult } = useAnalysisStore();
   const [loading, setLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [inferenceProgress, setInferenceProgress] = useState<{ current: number; total: number; text: string } | null>(null);
+  const [inferenceProgress, setInferenceProgress] = useState<{
+    current: number;
+    total: number;
+    text: string;
+  } | null>(null);
   const [downloadProgress, setDownloadProgress] = useState(100);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -72,14 +78,16 @@ function AnalysisPage() {
   const isCancelledRef = React.useRef(false);
 
   useEffect(() => {
-    import("@/lib/ml/mlWorkerStore").then(({ setInferenceProgressListener, setDownloadProgressListener }) => {
-      setInferenceProgressListener((payload) => {
-        setInferenceProgress(payload);
-      });
-      setDownloadProgressListener((data) => {
-        setDownloadProgress(data.status === 'done' ? 100 : (data.progress ?? 0));
-      });
-    });
+    import("@/lib/ml/mlWorkerStore").then(
+      ({ setInferenceProgressListener, setDownloadProgressListener }) => {
+        setInferenceProgressListener((payload) => {
+          setInferenceProgress(payload);
+        });
+        setDownloadProgressListener((data) => {
+          setDownloadProgress(data.status === "done" ? 100 : (data.progress ?? 0));
+        });
+      },
+    );
   }, []);
 
   useEffect(() => {
@@ -141,7 +149,7 @@ function AnalysisPage() {
       }
     } catch (err) {
       if (!isCancelledRef.current) {
-        toast.error(err instanceof Error ? err.message : "Analysis failed.");
+        toast.error(friendlyError(err, "Analysis failed."));
       }
     } finally {
       if (!isCancelledRef.current) {
@@ -214,7 +222,11 @@ function AnalysisPage() {
         isVisible={isAnalyzing}
         downloadProgress={downloadProgress}
         inferenceProgress={inferenceProgress}
-        statusText={inferenceProgress ? "Processing feedback entries..." : "Initializing Machine Learning Engine..."}
+        statusText={
+          inferenceProgress
+            ? "Processing feedback entries..."
+            : "Initializing Machine Learning Engine..."
+        }
         onCancel={handleCancel}
       />
 

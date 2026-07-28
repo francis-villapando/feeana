@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "./auth";
+import { friendlyError } from "../hooks/utils";
 import type {
   ActivityAction,
   ActivityEntry,
@@ -28,7 +29,10 @@ interface CourseStoreValue {
   error: string | null;
   currentUserId: string | null;
   createCourse: (input: { code: string; title: string }) => Promise<Course>;
-  updateCourse: (id: string, input: { code: string; title: string; version: number }) => Promise<void>;
+  updateCourse: (
+    id: string,
+    input: { code: string; title: string; version: number },
+  ) => Promise<void>;
   archiveCourse: (id: string) => Promise<void>;
   restoreCourse: (id: string) => Promise<void>;
   createTopic: (input: { courseId: string; title: string }) => Promise<Topic>;
@@ -81,7 +85,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
         setActivity(a);
         setError(null);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load data"))
+      .catch((e) => setError(friendlyError(e, "Failed to load data")))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -118,15 +122,25 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     return crs;
   }, []);
 
-  const updateCourse = useCallback(async (id: string, input: { code: string; title: string; version: number }) => {
-    await courseService.updateCourse(id, input);
-    setCourses((prev) =>
-      prev.map((crs) =>
-        crs.id === id ? { ...crs, code: input.code.trim(), title: input.title.trim(), version: input.version + 1 } : crs,
-      ),
-    );
-    await refreshActivity();
-  }, []);
+  const updateCourse = useCallback(
+    async (id: string, input: { code: string; title: string; version: number }) => {
+      await courseService.updateCourse(id, input);
+      setCourses((prev) =>
+        prev.map((crs) =>
+          crs.id === id
+            ? {
+                ...crs,
+                code: input.code.trim(),
+                title: input.title.trim(),
+                version: input.version + 1,
+              }
+            : crs,
+        ),
+      );
+      await refreshActivity();
+    },
+    [],
+  );
 
   const archiveCourse = useCallback(async (id: string) => {
     await courseService.archiveCourse(id);
@@ -147,18 +161,15 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     return t;
   }, []);
 
-  const updateTopic = useCallback(
-    async (id: string, input: { title: string; version: number }) => {
-      await courseService.updateTopic(id, input);
-      setTopics((prev) =>
-        prev.map((t) =>
-          t.id === id ? { ...t, title: input.title.trim(), version: input.version + 1 } : t,
-        ),
-      );
-      await refreshActivity();
-    },
-    [],
-  );
+  const updateTopic = useCallback(async (id: string, input: { title: string; version: number }) => {
+    await courseService.updateTopic(id, input);
+    setTopics((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, title: input.title.trim(), version: input.version + 1 } : t,
+      ),
+    );
+    await refreshActivity();
+  }, []);
 
   const archiveTopic = useCallback(async (id: string) => {
     await courseService.archiveTopic(id);

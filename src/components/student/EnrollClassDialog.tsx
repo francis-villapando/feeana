@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useClassStore } from "@/lib/stores/classStore";
+import { friendlyError } from "@/lib/hooks/utils";
 import { InlineError, destructiveBorder } from "@/components/common";
 
 export function EnrollClassDialog({
@@ -50,7 +51,7 @@ export function EnrollClassDialog({
       if (e instanceof Error && e.message === "already_enrolled") {
         setCodeError("You're already enrolled in this class.");
       } else {
-        setCodeError("Something went wrong. Try again.");
+        setCodeError(friendlyError(e, "Something went wrong. Try again."));
       }
     } finally {
       setEnrolling(false);

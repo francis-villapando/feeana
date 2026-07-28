@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
+import { friendlyError } from "@/lib/hooks/utils";
 import { supabase } from "@/lib/db/supabase";
 
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
@@ -92,7 +93,7 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
         await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
         handleClose();
       } else {
-        toast.error("Failed to submit feedback. Please try again.");
+        toast.error(friendlyError(e, "Failed to submit feedback. Please try again."));
       }
     } finally {
       setSubmitting(false);

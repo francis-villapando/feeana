@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/stores/auth";
 import { PasswordField } from "./PasswordField";
 import { useNavigate } from "@tanstack/react-router";
 import { InlineError } from "../common";
+import { friendlyError } from "@/lib/hooks/utils";
 
 interface ResetPasswordDialogProps {
   open: boolean;
@@ -55,7 +56,7 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
         navigate({ to: user?.role === "student" ? "/login/student" : "/login/faculty" });
       }
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Something went wrong.");
+      setSubmitError(friendlyError(err));
     } finally {
       setSubmitting(false);
     }
@@ -69,9 +70,7 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
             <Lock className="h-5 w-5 text-primary" />
             Reset password
           </DialogTitle>
-          <DialogDescription>
-            Enter your new password below.
-          </DialogDescription>
+          <DialogDescription>Enter your new password below.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <PasswordField

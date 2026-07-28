@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClassStore } from "@/lib/stores/classStore";
+import { friendlyError } from "@/lib/hooks/utils";
 import * as feedbackService from "@/lib/services/feedbackService";
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
 import { computeSessionDisplayStatus } from "@/lib/utils/sessionStatusUtils";
@@ -34,12 +35,7 @@ interface ClassInfoDialogProps {
   studentId: string;
 }
 
-export function ClassInfoDialog({
-  open,
-  onOpenChange,
-  cls,
-  studentId,
-}: ClassInfoDialogProps) {
+export function ClassInfoDialog({ open, onOpenChange, cls, studentId }: ClassInfoDialogProps) {
   const { sessions: allSessions, refreshSessions, unenrollStudent } = useClassStore();
   const [submittedIds, setSubmittedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -47,14 +43,15 @@ export function ClassInfoDialog({
   const navigate = useNavigate();
 
   const sessions = useMemo(
-    () => allSessions.filter((s) => {
-      if (s.classId !== cls.id) return false;
-      const status = computeSessionDisplayStatus(s);
-      const submitted = submittedIds.has(s.id);
-      if (status === "closed") return true;
-      if (status === "active" && submitted) return true;
-      return false;
-    }),
+    () =>
+      allSessions.filter((s) => {
+        if (s.classId !== cls.id) return false;
+        const status = computeSessionDisplayStatus(s);
+        const submitted = submittedIds.has(s.id);
+        if (status === "closed") return true;
+        if (status === "active" && submitted) return true;
+        return false;
+      }),
     [allSessions, cls.id, submittedIds],
   );
 
@@ -63,18 +60,13 @@ export function ClassInfoDialog({
 
     setIsLoading(true);
 
-    Promise.all([
-      refreshSessions(cls.id),
-      feedbackService.getFeedbackByClass(cls.id),
-    ])
+    Promise.all([refreshSessions(cls.id), feedbackService.getFeedbackByClass(cls.id)])
       .then(([, feedback]) => {
-        const ids = feedback
-          .filter((f) => f.submittedBy === studentId)
-          .map((f) => f.sessionId);
+        const ids = feedback.filter((f) => f.submittedBy === studentId).map((f) => f.sessionId);
         setSubmittedIds(new Set(ids));
       })
-      .catch(() => {
-        toast.error("Failed to load participation data");
+      .catch((e) => {
+        toast.error(friendlyError(e, "Failed to load participation data"));
       })
       .finally(() => {
         setIsLoading(false);
@@ -100,7 +92,8 @@ export function ClassInfoDialog({
         <DialogHeader>
           <DialogTitle>{cls.courseDisplay}</DialogTitle>
           <DialogDescription>
-            {cls.facultyName && <>{cls.facultyName} · </>}{cls.section}
+            {cls.facultyName && <>{cls.facultyName} · </>}
+            {cls.section}
           </DialogDescription>
         </DialogHeader>
 
@@ -144,9 +137,7 @@ export function ClassInfoDialog({
                 ))}
               </div>
             ) : sessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No past sessions yet.
-              </p>
+              <p className="text-sm text-muted-foreground">No past sessions yet.</p>
             ) : (
               <div className="space-y-1">
                 {sessions.map((session) => {
@@ -160,9 +151,7 @@ export function ClassInfoDialog({
                         <span className="text-sm">{session.topic}</span>
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          {formatSessionDate(session.startsAt)}
-                          →
-                          {formatSessionDate(session.endsAt)}
+                          {formatSessionDate(session.startsAt)}→{formatSessionDate(session.endsAt)}
                         </p>
                       </div>
                       {submitted ? (
@@ -188,7 +177,8 @@ export function ClassInfoDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Unenroll from {cls.courseDisplay}?</AlertDialogTitle>
             <AlertDialogDescription>
-              You lose access to this class. Your submitted feedback stays. You can rejoin anytime with the class code.
+              You lose access to this class. Your submitted feedback stays. You can rejoin anytime
+              with the class code.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

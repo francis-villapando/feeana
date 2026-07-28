@@ -12,6 +12,7 @@ import { useAuth } from "./auth";
 import type { Class, Session, Student } from "../types/types";
 import * as classService from "../services/classService";
 import * as feedbackService from "../services/feedbackService";
+import { friendlyError } from "../hooks/utils";
 
 interface ClassStoreValue {
   classes: Class[];
@@ -26,7 +27,12 @@ interface ClassStoreValue {
   sessionsForClass: (classId: string) => Session[];
   studentsForClass: (classId: string) => Student[];
   dismissStudent: (classId: string, studentId: string) => void;
-  createClass: (input: { courseId: string; courseCode: string; courseTitle: string; section: string }) => Promise<Class>;
+  createClass: (input: {
+    courseId: string;
+    courseCode: string;
+    courseTitle: string;
+    section: string;
+  }) => Promise<Class>;
   archiveClass: (id: string) => Promise<void>;
   restoreClass: (id: string) => Promise<void>;
   createSession: (input: {
@@ -37,7 +43,10 @@ interface ClassStoreValue {
     startsAt: string;
     endsAt: string;
   }) => Promise<Session>;
-  updateSession: (id: string, fields: { topic?: string; startsAt?: string; endsAt?: string }) => Promise<Session>;
+  updateSession: (
+    id: string,
+    fields: { topic?: string; startsAt?: string; endsAt?: string },
+  ) => Promise<Session>;
   archiveSession: (id: string) => Promise<void>;
   restoreSession: (id: string) => Promise<Session>;
   enrollClassByCode: (code: string) => Promise<Class | null>;
@@ -73,7 +82,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       setClasses(data);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load classes");
+      setError(friendlyError(e, "Failed to load classes"));
     }
   }, [user]);
 
@@ -85,7 +94,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       setEnrolledClassIds(data.filter((cls) => !cls.archived).map((cls) => cls.id));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load enrolled classes");
+      setError(friendlyError(e, "Failed to load enrolled classes"));
     }
   }, [user]);
 
@@ -100,12 +109,14 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
           });
         } else {
           const allClasses = classes.length > 0 ? classes : [];
-          const results = await Promise.all(allClasses.map((cls) => classService.getSessions(cls.id)));
+          const results = await Promise.all(
+            allClasses.map((cls) => classService.getSessions(cls.id)),
+          );
           setSessions(results.flat());
         }
         setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load sessions");
+        setError(friendlyError(e, "Failed to load sessions"));
       }
     },
     [classes],
@@ -117,7 +128,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       setStudentsByClass((prev) => ({ ...prev, [classId]: data }));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load students");
+      setError(friendlyError(e, "Failed to load students"));
     }
   }, []);
 
@@ -179,10 +190,13 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
             clsData.map((cls) => classService.getStudents(cls.id)),
           );
           setStudentsByClass(
-            clsData.reduce((acc, cls, index) => {
-              acc[cls.id] = studentResults[index];
-              return acc;
-            }, {} as Record<string, Student[]>),
+            clsData.reduce(
+              (acc, cls, index) => {
+                acc[cls.id] = studentResults[index];
+                return acc;
+              },
+              {} as Record<string, Student[]>,
+            ),
           );
         } else {
           setSessions([]);
@@ -194,7 +208,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
 
         setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load class data");
+        setError(friendlyError(e, "Failed to load class data"));
       } finally {
         setIsLoading(false);
       }
@@ -204,7 +218,12 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
   }, [user, refreshSubmissions]);
 
   const createClass = useCallback(
-    async (input: { courseId: string; courseCode: string; courseTitle: string; section: string }) => {
+    async (input: {
+      courseId: string;
+      courseCode: string;
+      courseTitle: string;
+      section: string;
+    }) => {
       if (!user) throw new Error("Not authenticated");
       const cls = await classService.createClass(user.id, input);
       setClasses((prev) => [cls, ...prev]);
@@ -274,7 +293,9 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       const cls = await classService.enrollClassByCode(code, user.id);
       if (cls) {
         setEnrolledClassIds((prev) => (prev.includes(cls.id) ? prev : [...prev, cls.id]));
-        setClasses((prev) => (prev.find((enrolledClass) => enrolledClass.id === cls.id) ? prev : [...prev, cls]));
+        setClasses((prev) =>
+          prev.find((enrolledClass) => enrolledClass.id === cls.id) ? prev : [...prev, cls],
+        );
         const newSessions = await classService.getSessions(cls.id);
         setSessions((prev) => {
           const existing = prev.filter((s) => s.classId === cls.id);
@@ -298,20 +319,24 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       ),
     );
   }, []);
-  const unenrollStudent = useCallback(async (classId: string) => {
-    if (!user) return;
-    await classService.unenrollSelf(classId, user.id);
-    setEnrolledClassIds((prev) => prev.filter((id) => id !== classId));
-    setClasses((prev) => prev.filter((cls) => cls.id !== classId));
-  }, [user]);
-
+  const unenrollStudent = useCallback(
+    async (classId: string) => {
+      if (!user) return;
+      await classService.unenrollSelf(classId, user.id);
+      setEnrolledClassIds((prev) => prev.filter((id) => id !== classId));
+      setClasses((prev) => prev.filter((cls) => cls.id !== classId));
+    },
+    [user],
+  );
 
   const value = useMemo<ClassStoreValue>(() => {
-    const activeClasses = classes.filter((cls) => !cls.archived).sort((a, b) => {
-      const cmp = a.courseCode.localeCompare(b.courseCode);
-      if (cmp !== 0) return cmp;
-      return a.section.localeCompare(b.section);
-    });
+    const activeClasses = classes
+      .filter((cls) => !cls.archived)
+      .sort((a, b) => {
+        const cmp = a.courseCode.localeCompare(b.courseCode);
+        if (cmp !== 0) return cmp;
+        return a.section.localeCompare(b.section);
+      });
     const archivedClasses = classes.filter((cls) => cls.archived);
     const activeSessions = sessions.filter((s) => s.status === "active");
     return {
@@ -379,6 +404,3 @@ export function useClassStore() {
   if (!ctx) throw new Error("useClassStore must be used within ClassStoreProvider");
   return ctx;
 }
-
-
-

@@ -21,6 +21,7 @@ import {
 import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import { InlineError, destructiveBorder } from "@/components/common";
+import { friendlyError } from "@/lib/hooks/utils";
 
 export function CreateClassDialog({
   open,
@@ -67,7 +68,7 @@ export function CreateClassDialog({
       setSection("");
       onOpenChange(false);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to create class");
+      setSubmitError(friendlyError(err, "Failed to create class"));
     }
   };
 
@@ -76,7 +77,9 @@ export function CreateClassDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create a class</DialogTitle>
-          <DialogDescription>A 6-character enroll code is generated automatically.</DialogDescription>
+          <DialogDescription>
+            A 6-character enroll code is generated automatically.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">

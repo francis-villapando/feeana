@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/stores/auth";
 import type { UserRole } from "@/lib/types/types";
+import { friendlyError } from "@/lib/hooks/utils";
 import { InlineError, destructiveBorder } from "../common";
 
 interface ForgotPasswordDialogProps {
@@ -22,7 +23,12 @@ interface ForgotPasswordDialogProps {
   role?: UserRole;
 }
 
-export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }: ForgotPasswordDialogProps) {
+export function ForgotPasswordDialog({
+  open,
+  onOpenChange,
+  defaultEmail,
+  role,
+}: ForgotPasswordDialogProps) {
   const { forgotPassword } = useAuth();
   const [email, setEmail] = useState(defaultEmail ?? "");
   const [submitting, setSubmitting] = useState(false);
@@ -43,15 +49,13 @@ export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }:
     }
     setSubmitting(true);
     try {
-      const redirectTo = role
-        ? `${window.location.origin}/login/${role}`
-        : window.location.origin;
+      const redirectTo = role ? `${window.location.origin}/login/${role}` : window.location.origin;
       await forgotPassword(email, redirectTo);
       toast.success("Check your email for the reset link.");
       setEmail("");
       onOpenChange(false);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Something went wrong.");
+      setSubmitError(friendlyError(err));
     } finally {
       setSubmitting(false);
     }

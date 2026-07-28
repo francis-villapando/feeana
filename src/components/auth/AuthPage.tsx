@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/common";
 import { PasswordField } from "./PasswordField";
 import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
 import { InlineError, destructiveBorder } from "../common";
+import { friendlyError } from "@/lib/hooks/utils";
 
 const ALLOWED_FACULTY_DOMAIN = import.meta.env.VITE_FACULTY_DOMAIN as string | undefined;
 
@@ -91,9 +92,11 @@ export function AuthPage({ role }: { role: UserRole }) {
         setConfirmError("Passwords do not match.");
       }
     }
-    
-    const hasSignupErrors = mode === "signup" && (!name.trim() || password.length < 6 || password !== confirm);
-    const hasRequiredErrors = !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password.trim();
+
+    const hasSignupErrors =
+      mode === "signup" && (!name.trim() || password.length < 6 || password !== confirm);
+    const hasRequiredErrors =
+      !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password.trim();
     if (hasSignupErrors || hasRequiredErrors) return;
 
     if (role === "faculty" && !validateFacultyDomain(email)) {
@@ -137,11 +140,7 @@ export function AuthPage({ role }: { role: UserRole }) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       const friendly =
-        msg === "Invalid login credentials"
-          ? "Invalid email or password."
-          : msg === "Failed to fetch"
-            ? "You appear to be offline. Please check your connection."
-            : msg || "Something went wrong.";
+        msg === "Invalid login credentials" ? "Invalid email or password." : friendlyError(err);
       setSubmitError(friendly);
     } finally {
       setSubmitting(false);
@@ -160,7 +159,7 @@ export function AuthPage({ role }: { role: UserRole }) {
       setPassword("");
       setConfirm("");
     } catch (err) {
-      setResendError(err instanceof Error ? err.message : "Could not send confirmation email.");
+      setResendError(friendlyError(err, "Could not send confirmation email."));
     }
   };
 
@@ -206,10 +205,12 @@ export function AuthPage({ role }: { role: UserRole }) {
             {accountExists ? (
               <div className="space-y-4 text-center">
                 <p className="text-sm text-muted-foreground">
-                  An account with <span className="font-medium text-foreground">{email}</span> already exists.
+                  An account with <span className="font-medium text-foreground">{email}</span>{" "}
+                  already exists.
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  If you haven't confirmed your email yet, check your inbox for the confirmation link.
+                  If you haven't confirmed your email yet, check your inbox for the confirmation
+                  link.
                 </p>
                 <div className="flex flex-col gap-2">
                   <InlineError errorMessage={resendError} />
@@ -222,141 +223,146 @@ export function AuthPage({ role }: { role: UserRole }) {
                 </div>
               </div>
             ) : (
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              {mode === "signup" && (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    className={nameError ? destructiveBorder : ""}
-                    id="name"
-                    autoComplete="name"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      setNameError("");
-                    }}
-                    placeholder="Juan Dela Cruz"
-                  />
-                  <InlineError errorMessage={nameError} />
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  Email
-                  {role === "faculty" && mode === "signup" && ALLOWED_FACULTY_DOMAIN && (
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      (must be @{ALLOWED_FACULTY_DOMAIN})
-                    </span>
-                  )}
-                </Label>
-                <Input
-                  className={emailError ? destructiveBorder : ""}
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setEmailError("");
-                  }}
-                  placeholder={
-                    role === "faculty" && ALLOWED_FACULTY_DOMAIN
-                      ? `you@${ALLOWED_FACULTY_DOMAIN}`
-                      : "you@example.com"
-                  }
-                />
-                <InlineError errorMessage={emailError} />
-              </div>
-              <PasswordField
-                id="password"
-                label="Password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setPasswordError("");
-                }}
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                placeholder="Enter your password"
-                passwordError={passwordError}
-              />
-              {mode === "signin" && (
-                <div className="text-right text-xs">
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-primary hover:underline"
-                    onClick={() => setForgotOpen(true)}
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-              )}
-              {mode === "signup" && (
-                <PasswordField
-                  id="confirm"
-                  label="Confirm password"
-                  value={confirm}
-                  onChange={(e) => {
-                    setConfirm(e.target.value);
-                    setConfirmError("");
-                  }}
-                  autoComplete="new-password"
-                  placeholder="Re-enter your password"
-                  passwordError={confirmError}
-                />
-              )}
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {mode === "signin" ? (
-                  <LogIn className="h-4 w-4" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                {mode === "signup" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      className={nameError ? destructiveBorder : ""}
+                      id="name"
+                      autoComplete="name"
+                      value={name}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        setNameError("");
+                      }}
+                      placeholder="Juan Dela Cruz"
+                    />
+                    <InlineError errorMessage={nameError} />
+                  </div>
                 )}
-                {submitting
-                  ? mode === "signin"
-                    ? "Signing in..."
-                    : "Signing up..."
-                  : mode === "signin"
-                    ? "Sign in"
-                    : "Sign up"}
-              </Button>
-              <InlineError errorMessage={submitError} />
-            </form>
+                <div className="space-y-2">
+                  <Label htmlFor="email">
+                    Email
+                    {role === "faculty" && mode === "signup" && ALLOWED_FACULTY_DOMAIN && (
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        (must be @{ALLOWED_FACULTY_DOMAIN})
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    className={emailError ? destructiveBorder : ""}
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailError("");
+                    }}
+                    placeholder={
+                      role === "faculty" && ALLOWED_FACULTY_DOMAIN
+                        ? `you@${ALLOWED_FACULTY_DOMAIN}`
+                        : "you@example.com"
+                    }
+                  />
+                  <InlineError errorMessage={emailError} />
+                </div>
+                <PasswordField
+                  id="password"
+                  label="Password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError("");
+                  }}
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  placeholder="Enter your password"
+                  passwordError={passwordError}
+                />
+                {mode === "signin" && (
+                  <div className="text-right text-xs">
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-primary hover:underline"
+                      onClick={() => setForgotOpen(true)}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
+                {mode === "signup" && (
+                  <PasswordField
+                    id="confirm"
+                    label="Confirm password"
+                    value={confirm}
+                    onChange={(e) => {
+                      setConfirm(e.target.value);
+                      setConfirmError("");
+                    }}
+                    autoComplete="new-password"
+                    placeholder="Re-enter your password"
+                    passwordError={confirmError}
+                  />
+                )}
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {mode === "signin" ? (
+                    <LogIn className="h-4 w-4" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" />
+                  )}
+                  {submitting
+                    ? mode === "signin"
+                      ? "Signing in..."
+                      : "Signing up..."
+                    : mode === "signin"
+                      ? "Sign in"
+                      : "Sign up"}
+                </Button>
+                <InlineError errorMessage={submitError} />
+              </form>
             )}
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               {mode === "signin" ? (
                 <>
                   New here?{" "}
-                    <button
-                      type="button"
-                      className="text-primary hover:underline"
-                      onClick={() => {
-                        clearAllErrors();
-                        setMode("signup");
-                      }}
-                    >
-                      Sign up
-                    </button>
+                  <button
+                    type="button"
+                    className="text-primary hover:underline"
+                    onClick={() => {
+                      clearAllErrors();
+                      setMode("signup");
+                    }}
+                  >
+                    Sign up
+                  </button>
                 </>
               ) : (
                 <>
                   Already have an account?{" "}
-                    <button
-                      type="button"
-                      className="text-primary hover:underline"
-                      onClick={() => {
-                        clearAllErrors();
-                        setMode("signin");
-                      }}
-                    >
-                      Sign in
-                    </button>
+                  <button
+                    type="button"
+                    className="text-primary hover:underline"
+                    onClick={() => {
+                      clearAllErrors();
+                      setMode("signin");
+                    }}
+                  >
+                    Sign in
+                  </button>
                 </>
               )}
             </div>
 
             <p className="mt-6 text-center text-xs text-muted-foreground">
               By continuing you accept the{" "}
-              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              <a
+                href="/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
                 Privacy policy
               </a>
               .
