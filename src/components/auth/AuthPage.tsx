@@ -49,6 +49,8 @@ export function AuthPage({ role }: { role: UserRole }) {
   const [accountExists, setAccountExists] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
 
   const goHome = (r: UserRole) => {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
@@ -61,23 +63,34 @@ export function AuthPage({ role }: { role: UserRole }) {
   };
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();    
-    if (!email.trim() && password.trim()) {
+    e.preventDefault();
+
+    setNameError("");
+    setEmailError("");
+    setPasswordError("");
+    setConfirmError("");
+
+    if (!email.trim()) {
       setEmailError("Email is required.");
-      setPasswordError("");
-      return;
-    } else if (!password.trim() && email.trim()) {
-      setPasswordError("Password is required.");
-      setEmailError("");
-      return;
-    } else if (!email.trim() && !password.trim()) {
-      setEmailError("Email is required.");
-      setPasswordError("Password is required.");
-      return;
-    } else {
-      setEmailError("");
-      setPasswordError("");
     }
+    if (!password.trim()) {
+      setPasswordError("Password is required.");
+    }
+    
+    if (mode === "signup") {
+      if (!name.trim()) {
+        setNameError("Name is required.");
+      }
+      if (password.length < 6 && password.trim()) {
+        setPasswordError("Password must be at least 6 characters.");
+      } else if (password !== confirm) {
+        setConfirmError("Passwords do not match.");
+      }
+    }
+    
+    const hasSignupErrors = mode === "signup" && (!name.trim() || password.length < 6 || password !== confirm);
+    const hasRequiredErrors = !email.trim() || !password.trim();
+    if (hasSignupErrors || hasRequiredErrors) return;
 
     if (role === "faculty" && !validateFacultyDomain(email)) {
       const domainHint = ALLOWED_FACULTY_DOMAIN
@@ -85,21 +98,6 @@ export function AuthPage({ role }: { role: UserRole }) {
         : "the configured faculty domain";
       toast.error(`Only ${domainHint} emails are allowed for faculty sign-up.`);
       return;
-    }
-
-    if (mode === "signup") {
-      if (!name.trim()) {
-        toast.error("Please enter your name.");
-        return;
-      }
-      if (password.length < 6) {
-        toast.error("Password must be at least 6 characters.");
-        return;
-      }
-      if (password !== confirm) {
-        toast.error("Passwords do not match.");
-        return;
-      }
     }
 
     setSubmitting(true);
@@ -206,12 +204,14 @@ export function AuthPage({ role }: { role: UserRole }) {
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
                   <Input
+                    className={nameError ? "border-destructive focus-visible:ring-destructive" : ""}
                     id="name"
                     autoComplete="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Juan Dela Cruz"
                   />
+                  <InlineError errorMessage={nameError} />
                 </div>
               )}
               <div className="space-y-2">
@@ -266,6 +266,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                   onChange={(e) => setConfirm(e.target.value)}
                   autoComplete="new-password"
                   placeholder="Re-enter your password"
+                  passwordError={confirmError}
                 />
               )}
               <Button type="submit" className="w-full" disabled={submitting}>
