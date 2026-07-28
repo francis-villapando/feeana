@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { useClassStore } from "@/lib/stores/classStore";
 import type { Session } from "@/lib/types/types";
 import { ConfirmationDialog, DateTimePicker } from "@/components/faculty";
+import { InlineError, destructiveBorder } from "@/components/common";
 
 interface SessionEditDialogProps {
   session: Session;
@@ -30,27 +31,45 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
   const [endsAt, setEndsAt] = useState(session.endsAt);
   const [saving, setSaving] = useState(false);
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [topicError, setTopicError] = useState("");
+  const [startsAtError, setStartsAtError] = useState("");
+  const [endsAtError, setEndsAtError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const handleSave = async () => {
+    setTopicError("");
+    setStartsAtError("");
+    setEndsAtError("");
+    setSubmitError("");
+
     if (!topic.trim()) {
-      toast.error("Topic is required.");
+      setTopicError("Topic is required.");
       return;
     }
-    if (!startsAt || !endsAt) {
-      toast.error("Pick a start and end date/time.");
+    if (!startsAt) {
+      setStartsAtError("Pick a start date/time.");
+      return;
+    }
+    if (!endsAt) {
+      setEndsAtError("Pick an end date/time.");
       return;
     }
     if (new Date(endsAt) <= new Date(startsAt)) {
-      toast.error("End must be after start.");
+      setEndsAtError("End must be after start.");
       return;
     }
+    if (new Date(endsAt) <= new Date()) {
+      setEndsAtError("End time cannot be in the past.");
+      return;
+    }
+
     setSaving(true);
     try {
       await updateSession(session.id, { topic: topic.trim(), startsAt, endsAt });
       toast.success("Session updated.");
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update session");
+      setSubmitError(err instanceof Error ? err.message : "Failed to update session");
     } finally {
       setSaving(false);
     }
@@ -83,16 +102,43 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="edit-topic">Topic</Label>
-              <Input id="edit-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Session topic" />
+              <Input
+                id="edit-topic"
+                value={topic}
+                onChange={(e) => {
+                  setTopic(e.target.value);
+                  setTopicError("");
+                }}
+                placeholder="Session topic"
+                className={topicError ? destructiveBorder : ""}
+              />
+              <InlineError errorMessage={topicError} />
             </div>
             <div className="space-y-1.5">
               <Label>Starts</Label>
-              <DateTimePicker value={startsAt} onChange={setStartsAt} />
+              <DateTimePicker
+                value={startsAt}
+                onChange={(v) => {
+                  setStartsAt(v);
+                  setStartsAtError("");
+                }}
+                className={startsAtError ? destructiveBorder : ""}
+              />
+              <InlineError errorMessage={startsAtError} />
             </div>
             <div className="space-y-1.5">
               <Label>Ends</Label>
-              <DateTimePicker value={endsAt} onChange={setEndsAt} />
+              <DateTimePicker
+                value={endsAt}
+                onChange={(v) => {
+                  setEndsAt(v);
+                  setEndsAtError("");
+                }}
+                className={endsAtError ? destructiveBorder : ""}
+              />
+              <InlineError errorMessage={endsAtError} />
             </div>
+            <InlineError errorMessage={submitError} />
           </div>
 
           <Separator />

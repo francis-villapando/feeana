@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/stores/auth";
 import { PasswordField } from "./PasswordField";
 import { useNavigate } from "@tanstack/react-router";
+import { InlineError } from "../common";
 
 interface ResetPasswordDialogProps {
   open: boolean;
@@ -24,15 +25,22 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setPasswordError("");
+    setConfirmError("");
+    setSubmitError("");
+
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
+      setPasswordError("Password must be at least 6 characters.");
       return;
     }
     if (password !== confirm) {
-      toast.error("Passwords do not match.");
+      setConfirmError("Passwords do not match.");
       return;
     }
     setSubmitting(true);
@@ -47,7 +55,7 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
         navigate({ to: user?.role === "student" ? "/login/student" : "/login/faculty" });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong.");
+      setSubmitError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setSubmitting(false);
     }
@@ -65,23 +73,32 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
             Enter your new password below.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <PasswordField
             id="new-password"
             label="Type new password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setPasswordError("");
+            }}
             autoComplete="new-password"
             placeholder="At least 6 characters"
+            passwordError={passwordError}
           />
           <PasswordField
             id="confirm-password"
             label="Confirm new password"
             value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
+            onChange={(e) => {
+              setConfirm(e.target.value);
+              setConfirmError("");
+            }}
             autoComplete="new-password"
             placeholder="Re-enter your new password"
+            passwordError={confirmError}
           />
+          <InlineError errorMessage={submitError} />
           <div className="flex justify-end gap-2">
             <Button
               type="button"

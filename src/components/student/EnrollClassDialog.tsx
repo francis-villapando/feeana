@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useClassStore } from "@/lib/stores/classStore";
+import { InlineError, destructiveBorder } from "@/components/common";
 
 export function EnrollClassDialog({
   open,
@@ -24,18 +25,20 @@ export function EnrollClassDialog({
   const { enrollClassByCode, refreshEnrolledClasses } = useClassStore();
   const [code, setCode] = useState("");
   const [enrolling, setEnrolling] = useState(false);
+  const [codeError, setCodeError] = useState("");
   const navigate = useNavigate();
 
   const handleEnroll = async () => {
+    setCodeError("");
     if (code.trim().length !== 8) {
-      toast.error("Enter the full 8-character class code.");
+      setCodeError("Enter the full 8-character class code.");
       return;
     }
     setEnrolling(true);
     try {
       const cls = await enrollClassByCode(code);
       if (!cls) {
-        toast.error("No class found for that code.");
+        setCodeError("No class found for that code.");
         return;
       }
       toast.success(`Enrolled in ${cls.courseDisplay}`);
@@ -45,9 +48,9 @@ export function EnrollClassDialog({
       navigate({ to: "/student/home" });
     } catch (e) {
       if (e instanceof Error && e.message === "already_enrolled") {
-        toast.error("You're already enrolled in this class.");
+        setCodeError("You're already enrolled in this class.");
       } else {
-        toast.error("Something went wrong. Try again.");
+        setCodeError("Something went wrong. Try again.");
       }
     } finally {
       setEnrolling(false);
@@ -66,11 +69,15 @@ export function EnrollClassDialog({
           <Input
             id="enroll-code"
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onChange={(e) => {
+              setCode(e.target.value.toUpperCase());
+              setCodeError("");
+            }}
             placeholder="87NUM8QU"
             maxLength={8}
-            className="text-center font-mono text-lg tracking-[0.3em]"
+            className={`text-center font-mono text-lg tracking-[0.3em] ${codeError ? destructiveBorder : ""}`}
           />
+          <InlineError errorMessage={codeError} />
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>

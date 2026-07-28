@@ -11,7 +11,7 @@ import type { UserRole } from "@/lib/types/types";
 import { ThemeToggle } from "@/components/common";
 import { PasswordField } from "./PasswordField";
 import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
-import { InlineError } from "../common";
+import { InlineError, destructiveBorder } from "../common";
 
 const ALLOWED_FACULTY_DOMAIN = import.meta.env.VITE_FACULTY_DOMAIN as string | undefined;
 
@@ -51,6 +51,8 @@ export function AuthPage({ role }: { role: UserRole }) {
   const [passwordError, setPasswordError] = useState("");
   const [nameError, setNameError] = useState("");
   const [confirmError, setConfirmError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [resendError, setResendError] = useState("");
 
   const goHome = (r: UserRole) => {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
@@ -69,6 +71,7 @@ export function AuthPage({ role }: { role: UserRole }) {
     setEmailError("");
     setPasswordError("");
     setConfirmError("");
+    setSubmitError("");
 
     if (!email.trim()) {
       setEmailError("Email is required.");
@@ -97,7 +100,7 @@ export function AuthPage({ role }: { role: UserRole }) {
       const domainHint = ALLOWED_FACULTY_DOMAIN
         ? `@${ALLOWED_FACULTY_DOMAIN}`
         : "the configured faculty domain";
-      toast.error(`Only ${domainHint} emails are allowed for faculty sign-up.`);
+      setEmailError(`Only ${domainHint} emails are allowed for faculty sign-up.`);
       return;
     }
 
@@ -132,13 +135,21 @@ export function AuthPage({ role }: { role: UserRole }) {
         }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong.");
+      const msg = err instanceof Error ? err.message : "";
+      const friendly =
+        msg === "Invalid login credentials"
+          ? "Invalid email or password."
+          : msg === "Failed to fetch"
+            ? "You appear to be offline. Please check your connection."
+            : msg || "Something went wrong.";
+      setSubmitError(friendly);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleResend = async () => {
+    setResendError("");
     try {
       await resendConfirmation(email);
       toast.success("Confirmation link sent. Check your email.");
@@ -149,12 +160,22 @@ export function AuthPage({ role }: { role: UserRole }) {
       setPassword("");
       setConfirm("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send confirmation email.");
+      setResendError(err instanceof Error ? err.message : "Could not send confirmation email.");
     }
+  };
+
+  const clearAllErrors = () => {
+    setEmailError("");
+    setPasswordError("");
+    setNameError("");
+    setConfirmError("");
+    setSubmitError("");
+    setResendError("");
   };
 
   const handleSwitchToSignIn = () => {
     setAccountExists(false);
+    clearAllErrors();
     setMode("signin");
   };
 
@@ -191,6 +212,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                   If you haven't confirmed your email yet, check your inbox for the confirmation link.
                 </p>
                 <div className="flex flex-col gap-2">
+                  <InlineError errorMessage={resendError} />
                   <Button onClick={handleSwitchToSignIn} className="w-full">
                     <LogIn className="h-4 w-4" /> Sign in
                   </Button>
@@ -205,7 +227,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
                   <Input
-                    className={nameError ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={nameError ? destructiveBorder : ""}
                     id="name"
                     autoComplete="name"
                     value={name}
@@ -228,7 +250,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                   )}
                 </Label>
                 <Input
-                  className={emailError ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={emailError ? destructiveBorder : ""}
                   id="email"
                   type="email"
                   autoComplete="email"
@@ -296,6 +318,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                     ? "Sign in"
                     : "Sign up"}
               </Button>
+              <InlineError errorMessage={submitError} />
             </form>
             )}
 
@@ -303,24 +326,30 @@ export function AuthPage({ role }: { role: UserRole }) {
               {mode === "signin" ? (
                 <>
                   New here?{" "}
-                  <button
-                    type="button"
-                    className="text-primary hover:underline"
-                    onClick={() => setMode("signup")}
-                  >
-                    Sign up
-                  </button>
+                    <button
+                      type="button"
+                      className="text-primary hover:underline"
+                      onClick={() => {
+                        clearAllErrors();
+                        setMode("signup");
+                      }}
+                    >
+                      Sign up
+                    </button>
                 </>
               ) : (
                 <>
                   Already have an account?{" "}
-                  <button
-                    type="button"
-                    className="text-primary hover:underline"
-                    onClick={() => setMode("signin")}
-                  >
-                    Sign in
-                  </button>
+                    <button
+                      type="button"
+                      className="text-primary hover:underline"
+                      onClick={() => {
+                        clearAllErrors();
+                        setMode("signin");
+                      }}
+                    >
+                      Sign in
+                    </button>
                 </>
               )}
             </div>

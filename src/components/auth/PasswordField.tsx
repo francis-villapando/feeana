@@ -3,7 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { InlineError } from "@/components/common";
+import { InlineError, destructiveBorder } from "@/components/common";
 
 type PasswordFieldProps = {
   id: string;
@@ -39,7 +39,7 @@ export function PasswordField({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`pr-9 ${passwordError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+          className={`pr-9 ${passwordError ? destructiveBorder : ""}`}
           {...props}
         />
         <Button

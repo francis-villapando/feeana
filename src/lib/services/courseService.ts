@@ -174,7 +174,7 @@ export async function updateCourse(
     await handleDuplicateError("courses", { code: input.code.trim() }, "A course with this code already exists.", error.code);
     throw new Error(error.message);
   }
-  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
+  if (!data || data.length === 0) throw new ConflictError("Could not save—this was edited by another faculty member. Please open again and retry.");
   await logActivity(
     "course",
     id,
@@ -237,7 +237,7 @@ export async function updateTopic(
     await handleDuplicateError("topics", { course_id: old.course_id, title: input.title.trim() }, "A topic with this title already exists in this course.", error.code);
     throw new Error(error.message);
   }
-  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
+  if (!data || data.length === 0) throw new ConflictError("Could not save—this was edited by another faculty member. Please open again and retry.");
   await logActivity("topic", id, "updated", old.title, input.title.trim());
 }
 
@@ -308,7 +308,7 @@ export async function updateILO(
     await handleDuplicateError("ilos", { topic_id: old.topic_id, statement: input.statement.trim() }, "An ILO with this statement already exists in this topic.", error.code);
     throw new Error(error.message);
   }
-  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
+  if (!data || data.length === 0) throw new ConflictError("Could not save—this was edited by another faculty member. Please open again and retry.");
   await logActivity(
     "ILO",
     id,

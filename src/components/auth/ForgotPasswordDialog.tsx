@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/stores/auth";
 import type { UserRole } from "@/lib/types/types";
-import { InlineError } from "../common";
+import { InlineError, destructiveBorder } from "../common";
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -27,10 +27,12 @@ export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }:
   const [email, setEmail] = useState(defaultEmail ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setEmailError("");
+    setSubmitError("");
     if (!email.trim()) {
       setEmailError("Email is required.");
       return;
@@ -49,7 +51,7 @@ export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }:
       setEmail("");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong.");
+      setSubmitError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setSubmitting(false);
     }
@@ -71,7 +73,7 @@ export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }:
           <div className="space-y-2">
             <Label htmlFor="reset-email">Email</Label>
             <Input
-              className={emailError ? "border-destructive focus-visible:ring-destructive" : ""}
+              className={emailError ? destructiveBorder : ""}
               id="reset-email"
               type="email"
               autoComplete="email"
@@ -84,6 +86,7 @@ export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }:
             />
             <InlineError errorMessage={emailError} />
           </div>
+          <InlineError errorMessage={submitError} />
           <div className="flex justify-end gap-2">
             <Button
               type="button"
