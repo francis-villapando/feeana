@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/stores/auth";
 import type { UserRole } from "@/lib/types/types";
+import { InlineError } from "../common";
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -25,11 +26,17 @@ export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }:
   const { forgotPassword } = useAuth();
   const [email, setEmail] = useState(defaultEmail ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setEmailError("");
     if (!email.trim()) {
-      toast.error("Please enter your email address.");
+      setEmailError("Email is required.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Enter a valid email address.");
       return;
     }
     setSubmitting(true);
@@ -60,18 +67,22 @@ export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }:
             Enter your email address and we'll send you a link to reset your password.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="reset-email">Email</Label>
             <Input
+              className={emailError ? "border-destructive focus-visible:ring-destructive" : ""}
               id="reset-email"
               type="email"
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError("");
+              }}
               placeholder="you@example.com"
-              required
             />
+            <InlineError errorMessage={emailError} />
           </div>
           <div className="flex justify-end gap-2">
             <Button
