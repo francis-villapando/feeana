@@ -72,11 +72,12 @@ export function AuthPage({ role }: { role: UserRole }) {
 
     if (!email.trim()) {
       setEmailError("Email is required.");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Enter a valid email address.");
     }
     if (!password.trim()) {
       setPasswordError("Password is required.");
     }
-    
     if (mode === "signup") {
       if (!name.trim()) {
         setNameError("Name is required.");
@@ -89,7 +90,7 @@ export function AuthPage({ role }: { role: UserRole }) {
     }
     
     const hasSignupErrors = mode === "signup" && (!name.trim() || password.length < 6 || password !== confirm);
-    const hasRequiredErrors = !email.trim() || !password.trim();
+    const hasRequiredErrors = !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password.trim();
     if (hasSignupErrors || hasRequiredErrors) return;
 
     if (role === "faculty" && !validateFacultyDomain(email)) {
@@ -199,7 +200,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                 </div>
               </div>
             ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               {mode === "signup" && (
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
@@ -208,7 +209,10 @@ export function AuthPage({ role }: { role: UserRole }) {
                     id="name"
                     autoComplete="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setNameError("");
+                    }}
                     placeholder="Juan Dela Cruz"
                   />
                   <InlineError errorMessage={nameError} />
@@ -229,7 +233,10 @@ export function AuthPage({ role }: { role: UserRole }) {
                   type="email"
                   autoComplete="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError("");
+                  }}
                   placeholder={
                     role === "faculty" && ALLOWED_FACULTY_DOMAIN
                       ? `you@${ALLOWED_FACULTY_DOMAIN}`
@@ -242,7 +249,10 @@ export function AuthPage({ role }: { role: UserRole }) {
                 id="password"
                 label="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError("");
+                }}
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
                 placeholder="Enter your password"
                 passwordError={passwordError}
@@ -263,7 +273,10 @@ export function AuthPage({ role }: { role: UserRole }) {
                   id="confirm"
                   label="Confirm password"
                   value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
+                  onChange={(e) => {
+                    setConfirm(e.target.value);
+                    setConfirmError("");
+                  }}
                   autoComplete="new-password"
                   placeholder="Re-enter your password"
                   passwordError={confirmError}
