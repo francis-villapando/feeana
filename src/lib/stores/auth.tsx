@@ -69,12 +69,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const user = useMemo<AuthUser | null>(() => {
     if (!supabaseUser) return null;
-    const meta = supabaseUser.user_metadata;
+    const userMeta = supabaseUser.user_metadata;
     return {
       id: supabaseUser.id,
       email: supabaseUser.email ?? "",
-      name: meta?.full_name ?? meta?.name ?? supabaseUser.email?.split("@")[0] ?? "User",
-      role: normalizeUserRole(meta?.role as string | undefined),
+      name: userMeta?.full_name ?? userMeta?.name ?? supabaseUser.email?.split("@")[0] ?? "User",
+      role: normalizeUserRole(userMeta?.role as string | undefined),
     };
   }, [supabaseUser]);
 
@@ -88,42 +88,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     setSupabaseUser(data.user);
 
-    const meta = data.user.user_metadata;
+    const userMeta = data.user.user_metadata;
     return {
       id: data.user.id,
       email: data.user.email ?? email,
-      name: meta?.full_name ?? meta?.name ?? email.split("@")[0],
-      role: normalizeUserRole(meta?.role as string | undefined),
+      name: userMeta?.full_name ?? userMeta?.name ?? email.split("@")[0],
+      role: normalizeUserRole(userMeta?.role as string | undefined),
     };
   }, []);
 
   const register = useCallback(
     async (email: string, password: string, name: string, role: UserRole) => {
-      // Probe before signUp to avoid duplicate confirmation emails
       const { error: probeError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (!probeError) {
-        // Email exists and confirmed
-        const { data: { user: freshUser } } = await supabase.auth.getUser();
-        if (freshUser) {
-          setSupabaseUser(freshUser);
-        }
-        return {
-          id: freshUser?.id ?? "",
-          email,
-          name,
-          role,
-          needsEmailConfirmation: false,
-          alreadyExists: true,
-          confirmed: true,
-        };
-      }
-
-      if (probeError.message?.includes("Email not confirmed")) {
-        // Email exists and unconfirmed
+      if (probeError?.message?.toLowerCase().includes("email not confirmed")) {
         return {
           id: "",
           email,
@@ -135,7 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      // "Invalid login credentials" — email doesn't exist (or wrong password), proceed with signUp
+      if (!probeError) {
+        throw new Error("EMAIL_ALREADY_EXISTS");
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -146,45 +130,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
         },
       });
-      if (error) throw new Error(error.message);
+
+      if (error) {
+        const msg = error.message?.toLowerCase() ?? "";
+        const isDuplicate =
+          msg.includes("user already registered") ||
+          error.status === 400;
+        if (isDuplicate) {
+          throw new Error("EMAIL_ALREADY_EXISTS");
+        }
+        throw new Error(error.message);
+      }
+
       if (!data.user) throw new Error("Registration failed");
 
       if (data.user.identities?.length === 0) {
-        // Email exists but password didn't match probe
-        const { error: retryError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (!retryError) {
-          const { data: { user: retryUser } } = await supabase.auth.getUser();
-          if (retryUser) {
-            setSupabaseUser(retryUser);
-          }
-          return {
-            id: data.user.id,
-            email: data.user.email ?? email,
-            name,
-            role,
-            needsEmailConfirmation: false,
-            alreadyExists: true,
-            confirmed: true,
-          };
-        }
-
-        const isUnconfirmed = retryError.message?.includes("Email not confirmed");
-        return {
-          id: data.user.id,
-          email: data.user.email ?? email,
-          name,
-          role,
-          needsEmailConfirmation: false,
-          alreadyExists: true,
-          confirmed: !isUnconfirmed,
-        };
+        throw new Error("EMAIL_ALREADY_EXISTS");
       }
 
-      // New user created successfully
       if (data.session?.user) {
         setSupabaseUser(data.session.user);
       }

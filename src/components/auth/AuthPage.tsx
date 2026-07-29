@@ -37,8 +37,8 @@ type Mode = "signin" | "signup";
 export function AuthPage({ role }: { role: UserRole }) {
   const { login, register, resendConfirmation } = useAuth();
   const navigate = useNavigate();
-  const meta = ROLE_META[role];
-  const Icon = meta.icon;
+  const roleMeta = ROLE_META[role];
+  const Icon = roleMeta.icon;
 
   const [mode, setMode] = useState<Mode>("signin");
   const [name, setName] = useState("");
@@ -110,22 +110,17 @@ export function AuthPage({ role }: { role: UserRole }) {
     setSubmitting(true);
     try {
       if (mode === "signin") {
-        const u = await login(email, password);
-        if (u.role !== role) {
+        const authUser = await login(email, password);
+        if (authUser.role !== role) {
           throw new Error("Invalid email or password.");
         }
-        toast.success(`Welcome, ${u.name}`);
-        goHome(u.role);
+        toast.success(`Welcome, ${authUser.name}`);
+        goHome(authUser.role);
       } else {
-        const u = await register(email, password, name, role);
-        if (u.alreadyExists) {
-          if (u.confirmed) {
-            toast.success(`Welcome back, ${u.name}`);
-            goHome(u.role);
-          } else {
-            setAccountExists(true);
-          }
-        } else if (u.needsEmailConfirmation) {
+        const regResult = await register(email, password, name, role);
+        if (regResult.alreadyExists && !regResult.confirmed) {
+          setAccountExists(true);
+        } else if (regResult.needsEmailConfirmation) {
           toast.success("Check your email to confirm your account.");
           setMode("signin");
           setName("");
@@ -133,15 +128,24 @@ export function AuthPage({ role }: { role: UserRole }) {
           setPassword("");
           setConfirm("");
         } else {
-          toast.success(`Account created — welcome, ${u.name}`);
-          goHome(u.role);
+          toast.success(`Account created — welcome, ${regResult.name}`);
+          goHome(regResult.role);
         }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
-      const friendly =
-        msg === "Invalid login credentials" ? "Invalid email or password." : friendlyError(err);
-      setSubmitError(friendly);
+      const msgLower = msg.toLowerCase();
+      if (msg === "EMAIL_ALREADY_EXISTS") {
+        setSubmitError("This email is already registered. Please sign in instead.");
+      } else if (msgLower.includes("email not confirmed")) {
+        setSubmitError("Please confirm your email before signing in. Check your inbox for the confirmation link.");
+      } else {
+        const friendly =
+          msgLower.includes("invalid login credentials") || msgLower.includes("invalid email or password")
+          ? "Invalid email or password."
+          : friendlyError(err);
+        setSubmitError(friendly);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -194,8 +198,8 @@ export function AuthPage({ role }: { role: UserRole }) {
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
-                  <CardTitle className="text-xl">{meta.title}</CardTitle>
-                  <CardDescription>{meta.description}</CardDescription>
+                  <CardTitle className="text-xl">{roleMeta.title}</CardTitle>
+                  <CardDescription>{roleMeta.description}</CardDescription>
                 </div>
               </div>
               <ThemeToggle />
@@ -213,13 +217,13 @@ export function AuthPage({ role }: { role: UserRole }) {
                   link.
                 </p>
                 <div className="flex flex-col gap-2">
-                  <InlineError errorMessage={resendError} />
                   <Button onClick={handleSwitchToSignIn} className="w-full">
                     <LogIn className="h-4 w-4" /> Sign in
                   </Button>
                   <Button onClick={handleResend} variant="outline" className="w-full">
                     <Mail className="h-4 w-4" /> Resend confirmation email
                   </Button>
+                  <InlineError errorMessage={resendError} />
                 </div>
               </div>
             ) : (
