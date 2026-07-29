@@ -12,6 +12,7 @@ export function LayoutSkeleton() {
           </div>
           <div className="flex items-center gap-3">
             <Skeleton className="hidden h-7 w-7 rounded-md md:block" />
+            <Skeleton className="hidden h-7 w-7 rounded-md md:block" />
             <Skeleton className="hidden h-7 w-14 rounded-md md:block" />
             <Skeleton className="hidden h-7 w-24 rounded-full md:block" />
             <Skeleton className="h-8 w-8 rounded-full md:hidden" />

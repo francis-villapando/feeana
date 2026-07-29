@@ -28,7 +28,12 @@ export function AppHeader({ role, userName, onSignOut, contained = false, sideba
             onClick={onSidebarTriggerClick}
           />
         )}
-        <Link to={homeRoute} className={`flex items-center gap-2${sidebarTrigger ? " md:ml-8" : ""}`}>
+        <Link 
+          to={homeRoute} 
+          className={`flex items-center gap-2${
+            sidebarTrigger ? " md:fixed md:left-[4.25rem] md:top-4 md:z-[61]" : ""
+          }`}
+        >
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/30">
             <Activity className="h-4 w-4 text-primary" />
           </span>
