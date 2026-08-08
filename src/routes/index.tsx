@@ -68,14 +68,14 @@ function LandingPage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asChild>
-                <Link to="/login/faculty">
+                <Link to="/auth/faculty">
                   <GraduationCap className="h-4 w-4" />
                   Faculty portal
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/login/student">
+                <Link to="/auth/student">
                   <BookOpenCheck className="h-4 w-4" />
                   Student portal
                   <ArrowRight className="h-4 w-4" />

@@ -49,7 +49,7 @@ export function ForgotPasswordDialog({
     }
     setSubmitting(true);
     try {
-      const redirectTo = role ? `${window.location.origin}/login/${role}` : window.location.origin;
+      const redirectTo = role ? `${window.location.origin}/auth/${role}` : window.location.origin;
       await forgotPassword(email, redirectTo);
       toast.success("Check your email for the reset link.");
       setEmail("");

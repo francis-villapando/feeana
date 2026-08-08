@@ -18,7 +18,7 @@ function StudentLayout() {
   useEffect(() => {
     if (isLoading) return;
     if (!user || user.role !== "student") {
-      navigate({ to: "/login/student" });
+      navigate({ to: "/auth/student" });
     }
   }, [isLoading, user, navigate]);
 
@@ -33,7 +33,7 @@ function StudentLayout() {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-[60] border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <AppHeader role="student" userName={user.name} onSignOut={async () => { await logout(); navigate({ to: "/login/student" }); }} contained />
+        <AppHeader role="student" userName={user.name} onSignOut={async () => { await logout(); navigate({ to: "/auth/student" }); }} contained />
       </header>
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <Outlet />

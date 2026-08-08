@@ -53,7 +53,7 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
       onOpenChange(false);
       if (isPasswordRecovery) {
         clearPasswordRecovery();
-        navigate({ to: user?.role === "student" ? "/login/student" : "/login/faculty" });
+        navigate({ to: user?.role === "student" ? "/auth/student" : "/auth/faculty" });
       }
     } catch (err) {
       setSubmitError(friendlyError(err));

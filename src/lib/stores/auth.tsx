@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resendConfirmation = useCallback(async (email: string) => {
-    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/login/student` : undefined;
+    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/student` : undefined;
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,

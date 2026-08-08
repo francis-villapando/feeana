@@ -18,7 +18,7 @@ function FacultyLayout() {
   }
 
   if (!user || user.role !== "faculty") {
-    navigate({ to: "/login/faculty" });
+    navigate({ to: "/auth/faculty" });
     return null;
   }
 
@@ -44,7 +44,7 @@ function FacultyLayoutInner({ user, logout }: { user: { name: string }; logout: 
         <AppHeader
           role="faculty"
           userName={user.name}
-          onSignOut={async () => { await logout(); navigate({ to: "/login/faculty" }); }}
+          onSignOut={async () => { await logout(); navigate({ to: "/auth/faculty" }); }}
           sidebarTrigger
           onSidebarTriggerClick={handleSidebarTriggerClick}
         />
