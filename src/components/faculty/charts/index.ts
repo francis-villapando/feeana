@@ -10,4 +10,4 @@ export { AnalysisCard } from "./AnalysisCard";
 export { InterpretationBlock } from "./InterpretationBlock";
 export { TrendLineCard } from "./TrendLineCard";
 export { TrendBarCard } from "./TrendBarCard";
-export { UnclassifiedNotice } from "./UnclassifiedNotice";
+export { UncategorizedNotice } from "./UncategorizedNotice";

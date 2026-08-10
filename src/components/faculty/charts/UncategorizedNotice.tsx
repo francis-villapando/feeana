@@ -2,7 +2,7 @@ import { Info } from "lucide-react";
 import type { DistEntry } from "@/lib/types/types";
 import { AccentLabel } from "./AccentLabel";
 
-interface UnclassifiedNoticeProps {
+interface UncategorizedNoticeProps {
   rbtDist: DistEntry[];
   cltDist: DistEntry[];
 }
@@ -11,7 +11,7 @@ function countUncategorized(entries: DistEntry[]): number {
   return entries.find((e) => e.label === "Uncategorized")?.value ?? 0;
 }
 
-export function UnclassifiedNotice({ rbtDist, cltDist }: UnclassifiedNoticeProps) {
+export function UncategorizedNotice({ rbtDist, cltDist }: UncategorizedNoticeProps) {
   const total = countUncategorized(rbtDist) + countUncategorized(cltDist);
   if (total === 0) return null;
 
