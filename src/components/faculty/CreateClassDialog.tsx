@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
+import { InlineError, destructiveBorder } from "@/components/common";
+import { friendlyError } from "@/lib/hooks/utils";
 
 export function CreateClassDialog({
   open,
@@ -32,14 +34,28 @@ export function CreateClassDialog({
   const { courses } = useCourseStore();
   const [courseId, setCourseId] = useState("");
   const [section, setSection] = useState("");
+  const [courseError, setCourseError] = useState("");
+  const [sectionError, setSectionError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const selectedCourse = courses.find((crs) => crs.id === courseId);
 
   const handleCreate = async () => {
-    if (!courseId || !section.trim()) {
-      toast.error("Course and section are required.");
-      return;
+    setCourseError("");
+    setSectionError("");
+    setSubmitError("");
+
+    let hasError = false;
+    if (!courseId) {
+      setCourseError("Course is required.");
+      hasError = true;
     }
+    if (!section.trim()) {
+      setSectionError("Section is required.");
+      hasError = true;
+    }
+    if (hasError) return;
+
     try {
       const cls = await createClass({
         courseId,
@@ -52,7 +68,7 @@ export function CreateClassDialog({
       setSection("");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create class");
+      setSubmitError(friendlyError(err, "Failed to create class"));
     }
   };
 
@@ -61,13 +77,21 @@ export function CreateClassDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create a class</DialogTitle>
-          <DialogDescription>A 6-character enroll code is generated automatically.</DialogDescription>
+          <DialogDescription>
+            A 6-character enroll code is generated automatically.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="class-course">Course</Label>
-            <Select value={courseId} onValueChange={setCourseId}>
-              <SelectTrigger id="class-course">
+            <Select
+              value={courseId}
+              onValueChange={(v) => {
+                setCourseId(v);
+                setCourseError("");
+              }}
+            >
+              <SelectTrigger id="class-course" className={courseError ? destructiveBorder : ""}>
                 <SelectValue placeholder="Select a course" />
               </SelectTrigger>
               <SelectContent>
@@ -86,16 +110,23 @@ export function CreateClassDialog({
                 )}
               </SelectContent>
             </Select>
+            <InlineError errorMessage={courseError} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="class-section">Section</Label>
             <Input
               id="class-section"
               value={section}
-              onChange={(e) => setSection(e.target.value)}
+              onChange={(e) => {
+                setSection(e.target.value);
+                setSectionError("");
+              }}
               placeholder="e.g. 1CS-A, 2CS-B"
+              className={sectionError ? destructiveBorder : ""}
             />
+            <InlineError errorMessage={sectionError} />
           </div>
+          <InlineError errorMessage={submitError} />
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>

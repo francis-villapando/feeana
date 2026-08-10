@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, Circle, CircleCheck, PlusCircle, Trash2 } from "lucide-react";
+import { ChevronsUpDown, Circle, CircleCheck, PlusCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import { topicsForClass } from "@/lib/hooks/courseLookup";
 import { cn } from "@/lib/hooks/utils";
+import { InlineError, destructiveBorder } from "@/components/common";
 
 interface PerClass {
   classId: string;
@@ -33,13 +34,27 @@ interface PerClass {
   endsAt: string;
 }
 
+type RowFieldErrors = {
+  topic?: string;
+  startsAt?: string;
+  endsAt?: string;
+};
+
 export function CrossClassSessionCreator() {
   const { activeClasses, createSession } = useClassStore();
   const { courses, topics } = useCourseStore();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<PerClass[]>([]);
+  const [launchError, setLaunchError] = useState("");
+  const [rowErrors, setRowErrors] = useState<Record<string, RowFieldErrors>>({});
 
   const toggleClass = (classId: string) => {
+    setLaunchError("");
+    setRowErrors((prev) => {
+      const next = { ...prev };
+      delete next[classId];
+      return next;
+    });
     setRows((prev) =>
       prev.some((r) => r.classId === classId)
         ? prev.filter((r) => r.classId !== classId)
@@ -48,34 +63,70 @@ export function CrossClassSessionCreator() {
   };
 
   const updateRow = (classId: string, patch: Partial<PerClass>) => {
+    setRowErrors((prev) => {
+      const next = { ...prev };
+      if (next[classId]) {
+        const fieldErrors = { ...next[classId] };
+        if ("topicId" in patch) delete fieldErrors.topic;
+        if ("startsAt" in patch) delete fieldErrors.startsAt;
+        if ("endsAt" in patch) delete fieldErrors.endsAt;
+        if (Object.keys(fieldErrors).length === 0) {
+          delete next[classId];
+        } else {
+          next[classId] = fieldErrors;
+        }
+      }
+      return next;
+    });
     setRows((prev) => prev.map((r) => (r.classId === classId ? { ...r, ...patch } : r)));
   };
 
   const handleLaunch = () => {
+    setLaunchError("");
+    setRowErrors({});
+
     if (rows.length === 0) {
-      toast.error("Pick at least one class.");
+      setLaunchError("Pick at least one class.");
       return;
     }
+
+    const errorsByClass: Record<string, RowFieldErrors> = {};
+
     for (const r of rows) {
-      const cls = activeClasses.find((cls) => cls.id === r.classId);
+      const cls = activeClasses.find((c) => c.id === r.classId);
       const crsTopics = topicsForClass(cls, courses, topics);
       const topic = crsTopics.find((t) => t.id === r.topicId);
+      const errors: RowFieldErrors = {};
+
       if (!topic) {
-        toast.error(`Pick a topic for ${cls?.courseDisplay} · ${cls?.section}.`);
-        return;
+        errors.topic = "Pick a topic.";
       }
-      if (!r.startsAt || !r.endsAt) {
-        toast.error("Every class needs a start and end time.");
-        return;
+      if (!r.startsAt) {
+        errors.startsAt = "Pick a start date/time.";
       }
-      if (new Date(r.endsAt) <= new Date(r.startsAt)) {
-        toast.error("End must be after start for each class.");
-        return;
+      if (!r.endsAt) {
+        errors.endsAt = "Pick an end date/time.";
+      }
+      if (r.startsAt && r.endsAt && new Date(r.endsAt) <= new Date(r.startsAt)) {
+        errors.endsAt = "End must be after start.";
+      }
+      if (r.endsAt && new Date(r.endsAt) <= new Date()) {
+        errors.endsAt = "End time cannot be in the past.";
+      }
+
+      if (Object.keys(errors).length > 0) {
+        errorsByClass[r.classId] = errors;
       }
     }
+
+    if (Object.keys(errorsByClass).length > 0) {
+      setRowErrors(errorsByClass);
+      return;
+    }
+
     let count = 0;
     for (const r of rows) {
-      const cls = activeClasses.find((cls) => cls.id === r.classId);
+      const cls = activeClasses.find((c) => c.id === r.classId);
       const crsTopics = topicsForClass(cls, courses, topics);
       const topic = crsTopics.find((t) => t.id === r.topicId);
       if (!topic) continue;
@@ -99,8 +150,7 @@ export function CrossClassSessionCreator() {
           <PlusCircle className="h-4 w-4 text-primary" /> Cross-class session creator
         </CardTitle>
         <CardDescription>
-          Launch a session across multiple classes — each picks its own topic and
-          schedule.
+          Launch a session across multiple classes—each picks its own topic and schedule.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -111,7 +161,10 @@ export function CrossClassSessionCreator() {
               <Button
                 variant="outline"
                 role="combobox"
-                className="w-full justify-between font-normal sm:w-[320px]"
+                className={cn(
+                  "w-full justify-between font-normal sm:w-[320px]",
+                  launchError && destructiveBorder,
+                )}
               >
                 {rows.length > 0
                   ? `${rows.length} class${rows.length === 1 ? "" : "es"} selected`
@@ -147,6 +200,7 @@ export function CrossClassSessionCreator() {
               </Command>
             </PopoverContent>
           </Popover>
+          <InlineError errorMessage={launchError} />
         </div>
 
         {rows.length > 0 && (
@@ -155,68 +209,101 @@ export function CrossClassSessionCreator() {
               Per-class topic & schedule
             </Label>
             {rows.map((r) => {
-              const cls = activeClasses.find((cls) => cls.id === r.classId);
+              const cls = activeClasses.find((c) => c.id === r.classId);
               const crsTopics = topicsForClass(cls, courses, topics);
+              const fieldErrors = rowErrors[r.classId];
               return (
                 <div
                   key={r.classId}
-                  className="grid items-end gap-2 rounded-md border border-border/60 bg-background/40 p-3 lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_auto]"
+                  className="space-y-2 rounded-md border border-border/60 bg-background/40 p-3"
                 >
-                  <div className="text-sm">
-                    <p className="font-medium">
-                      {cls?.courseCode} · {cls?.section}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{courses.find((crs) => crs.code === cls?.courseCode)?.title}</p>
+                  <div className="grid gap-2 lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_auto]">
+                    <div />
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Topic
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Starts
+                    </div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Ends
+                    </div>
+                    <div />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase tracking-wider">Topic</Label>
-                    <Select
-                      value={r.topicId}
-                      onValueChange={(v) => updateRow(r.classId, { topicId: v })}
+                  <div className="grid items-start gap-2 lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_auto]">
+                    <div className="text-sm">
+                      <p className="font-medium">
+                        {cls?.courseCode} · {cls?.section}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {courses.find((crs) => crs.code === cls?.courseCode)?.title}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <Select
+                        value={r.topicId}
+                        onValueChange={(v) => updateRow(r.classId, { topicId: v })}
+                      >
+                        <SelectTrigger className={fieldErrors?.topic ? destructiveBorder : ""}>
+                          <SelectValue
+                            placeholder={crsTopics.length === 0 ? "No topics" : "Select topic"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {crsTopics.length === 0 ? (
+                            <div className="px-3 py-2 text-xs text-muted-foreground">
+                              No topics for this course.
+                            </div>
+                          ) : (
+                            crsTopics.map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.title}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <DateTimePicker
+                        value={r.startsAt}
+                        onChange={(iso) => updateRow(r.classId, { startsAt: iso })}
+                        className={fieldErrors?.startsAt ? destructiveBorder : ""}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <DateTimePicker
+                        value={r.endsAt}
+                        onChange={(iso) => updateRow(r.classId, { endsAt: iso })}
+                        className={fieldErrors?.endsAt ? destructiveBorder : ""}
+                      />
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      onClick={() => toggleClass(r.classId)}
+                      aria-label="Remove"
+                      className="justify-self-end"
                     >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={crsTopics.length === 0 ? "No topics" : "Select topic"}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {crsTopics.length === 0 ? (
-                          <div className="px-3 py-2 text-xs text-muted-foreground">
-                            No topics for this course.
-                          </div>
-                        ) : (
-                          crsTopics.map((t) => (
-                            <SelectItem key={t.id} value={t.id}>
-                              {t.title}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase tracking-wider">Starts</Label>
-                    <DateTimePicker
-                      value={r.startsAt}
-                      onChange={(iso) => updateRow(r.classId, { startsAt: iso })}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase tracking-wider">Ends</Label>
-                    <DateTimePicker
-                      value={r.endsAt}
-                      onChange={(iso) => updateRow(r.classId, { endsAt: iso })}
-                    />
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    onClick={() => toggleClass(r.classId)}
-                    aria-label="Remove"
-                    className="justify-self-end"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+
+                  {fieldErrors && (
+                    <div className="grid gap-2 justify-items-stretch lg:grid-cols-[1.2fr_1.2fr_1fr_1fr_auto]">
+                      <div />
+                      <div className="w-full">
+                        <InlineError errorMessage={fieldErrors?.topic} />
+                      </div>
+                      <div className="w-full">
+                        <InlineError errorMessage={fieldErrors?.startsAt} />
+                      </div>
+                      <div className="w-full">
+                        <InlineError errorMessage={fieldErrors?.endsAt} />
+                      </div>
+                      <div className="w-full min-w-[36px]" />
+                    </div>
+                  )}
                 </div>
               );
             })}

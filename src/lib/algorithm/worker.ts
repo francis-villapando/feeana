@@ -5,7 +5,7 @@ import * as Comlink from "comlink";
 import { env } from "@huggingface/transformers";
 import { Preprocess } from "./preprocess";
 import { ExtractPID, getClassifier } from "./informationExtraction";
-import { map_tti, map_rbt, map_clt } from "./pedagogicalDiagnosticMapping";
+import { buildDiagnosticRecord } from "./pedagogicalDiagnosticMapping";
 import type { FeedbackInput, DiagnosticRecord } from "./types";
 
 env.allowLocalModels = true;
@@ -50,18 +50,9 @@ const api = {
         end: `extract:entry-${i}-end`,
         detail: { targetMs: 8000 },
       });
-      const tti = map_tti(extraction.issue);
-      const rbt = map_rbt(extraction.issue);
-      const clt = map_clt(extraction.issue);
-      results.push({
-        feedbackId: feedback.id,
-        issue: extraction.issue,
-        polarity: extraction.polarity,
-        tti,
-        rbt,
-        clt,
-        isGap: extraction.issue !== "Uncategorized",
-      });
+      results.push(
+        buildDiagnosticRecord(extraction.issue, extraction.polarity, _targetIloRbt, feedback.id),
+      );
     }
 
     return results;

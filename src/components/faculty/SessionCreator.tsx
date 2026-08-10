@@ -15,6 +15,8 @@ import { DateTimePicker } from "@/components/faculty";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import { topicsForClass } from "@/lib/hooks/courseLookup";
+import { InlineError, destructiveBorder } from "@/components/common";
+import { friendlyError } from "@/lib/hooks/utils";
 
 export function SessionCreator({ classId }: { classId: string }) {
   const { createSession, getClass } = useClassStore();
@@ -29,21 +31,33 @@ export function SessionCreator({ classId }: { classId: string }) {
   const [topicId, setTopicId] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
+  const [topicError, setTopicError] = useState("");
+  const [startsAtError, setStartsAtError] = useState("");
+  const [endsAtError, setEndsAtError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const handleStart = async () => {
+    setTopicError("");
+    setStartsAtError("");
+    setEndsAtError("");
+    setSubmitError("");
+
     const topic = availableTopics.find((t) => t.id === topicId);
-    if (!topic) {
-      toast.error("Pick a topic for this session.");
-      return;
-    }
-    if (!startsAt || !endsAt) {
-      toast.error("Pick a start and end date/time.");
-      return;
-    }
-    if (new Date(endsAt) <= new Date(startsAt)) {
-      toast.error("End must be after start.");
-      return;
-    }
+    if (!topic) setTopicError("Pick a topic for this session.");
+    if (!startsAt) setStartsAtError("Pick a start date/time.");
+    if (!endsAt) setEndsAtError("Pick an end date/time.");
+    if (startsAt && endsAt && new Date(endsAt) <= new Date(startsAt))
+      setEndsAtError("End must be after start.");
+    if (endsAt && new Date(endsAt) <= new Date()) setEndsAtError("End time cannot be in the past.");
+
+    const hasError =
+      !topic ||
+      !startsAt ||
+      !endsAt ||
+      (startsAt !== "" && endsAt !== "" && new Date(endsAt) <= new Date(startsAt)) ||
+      (endsAt !== "" && new Date(endsAt) <= new Date());
+    if (hasError) return;
+
     try {
       const s = await createSession({
         classId,
@@ -58,7 +72,7 @@ export function SessionCreator({ classId }: { classId: string }) {
       setStartsAt("");
       setEndsAt("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to start session");
+      setSubmitError(friendlyError(err));
     }
   };
 
@@ -75,8 +89,14 @@ export function SessionCreator({ classId }: { classId: string }) {
       <CardContent className="space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="topic">Topic</Label>
-          <Select value={topicId} onValueChange={setTopicId}>
-            <SelectTrigger id="topic">
+          <Select
+            value={topicId}
+            onValueChange={(v) => {
+              setTopicId(v);
+              setTopicError("");
+            }}
+          >
+            <SelectTrigger id="topic" className={topicError ? destructiveBorder : ""}>
               <SelectValue
                 placeholder={
                   availableTopics.length === 0 ? "No topics for this course" : "Select a topic"
@@ -97,15 +117,33 @@ export function SessionCreator({ classId }: { classId: string }) {
               )}
             </SelectContent>
           </Select>
+          <InlineError errorMessage={topicError} />
         </div>
         <div className="space-y-1.5">
           <Label>Starts</Label>
-          <DateTimePicker value={startsAt} onChange={setStartsAt} />
+          <DateTimePicker
+            value={startsAt}
+            onChange={(v) => {
+              setStartsAt(v);
+              setStartsAtError("");
+            }}
+            className={startsAtError ? destructiveBorder : ""}
+          />
+          <InlineError errorMessage={startsAtError} />
         </div>
         <div className="space-y-1.5">
           <Label>Ends</Label>
-          <DateTimePicker value={endsAt} onChange={setEndsAt} />
+          <DateTimePicker
+            value={endsAt}
+            onChange={(v) => {
+              setEndsAt(v);
+              setEndsAtError("");
+            }}
+            className={endsAtError ? destructiveBorder : ""}
+          />
+          <InlineError errorMessage={endsAtError} />
         </div>
+        <InlineError errorMessage={submitError} />
         <Button onClick={handleStart} className="w-full">
           Start session
         </Button>

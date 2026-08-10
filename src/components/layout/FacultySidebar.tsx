@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Archive, ChevronDown, GraduationCap, Home, LayoutDashboard, Plus } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -8,7 +8,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -16,7 +15,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -24,11 +22,21 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { CreateClassDialog } from "@/components/faculty";
 import { Button } from "@/components/ui/button";
 
-export function FacultySidebar() {
+export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean }) {
   const { activeClasses, isLoading } = useClassStore();
-  const { setOpenMobile } = useSidebar();
+  const { setOpenMobile, isMobile, setOpen } = useSidebar();
   const location = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
+
+  const handleMouseEnter = useCallback(() => {
+    if (isMobile || !hoverEnabled) return;
+    setOpen(true);
+  }, [isMobile, setOpen, hoverEnabled]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (isMobile || !hoverEnabled) return;
+    setOpen(false);
+  }, [isMobile, setOpen, hoverEnabled]);
 
   const inClass = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.test(
     location.pathname,
@@ -40,16 +48,13 @@ export function FacultySidebar() {
 
   return (
     <>
-      <Sidebar side="left" collapsible="icon" variant="floating">
-        <SidebarHeader className="px-3 py-3 group-data-[collapsible=icon]:px-1.5">
-          <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-            <SidebarTrigger className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30" />
-            <span className="text-sm font-semibold group-data-[collapsible=icon]:hidden">
-              Workspace
-            </span>
-          </div>
-        </SidebarHeader>
-
+      <Sidebar
+        side="left"
+        collapsible="icon"
+        variant="floating"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>Navigate</SidebarGroupLabel>
@@ -58,7 +63,6 @@ export function FacultySidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Home"
                     isActive={location.pathname === "/home"}
                   >
                     <Link to="/home" onClick={() => setOpenMobile(false)}>
@@ -71,7 +75,6 @@ export function FacultySidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Dashboard"
                     isActive={location.pathname === "/dashboard"}
                   >
                     <Link to="/dashboard" onClick={() => setOpenMobile(false)}>
@@ -84,7 +87,7 @@ export function FacultySidebar() {
                 <Collapsible open={classesOpen} onOpenChange={setClassesOpen} className="group/cls">
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip="Classes" isActive={inClass}>
+                      <SidebarMenuButton isActive={inClass}>
                         <GraduationCap />
                         <span>Classes</span>
                         <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/cls:rotate-180 group-data-[collapsible=icon]:hidden" />
@@ -143,7 +146,6 @@ export function FacultySidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Archived"
                     isActive={location.pathname === "/archived"}
                   >
                     <Link to="/archived" onClick={() => setOpenMobile(false)}>

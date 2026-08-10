@@ -3,6 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { InlineError, destructiveBorder } from "@/components/common";
 
 type PasswordFieldProps = {
   id: string;
@@ -11,6 +12,7 @@ type PasswordFieldProps = {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   autoComplete: string;
   placeholder?: string;
+  passwordError?: string;
 } & Omit<ComponentProps<typeof Input>, "id" | "type" | "value" | "onChange" | "autoComplete" | "placeholder">;
 
 export function PasswordField({
@@ -21,6 +23,7 @@ export function PasswordField({
   autoComplete,
   placeholder,
   className,
+  passwordError,
   ...props
 }: PasswordFieldProps) {
   const [show, setShow] = useState(false);
@@ -36,7 +39,7 @@ export function PasswordField({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className="pr-9"
+          className={`pr-9 ${passwordError ? destructiveBorder : ""}`}
           {...props}
         />
         <Button
@@ -51,6 +54,7 @@ export function PasswordField({
           <span className="sr-only">{show ? "Hide password" : "Show password"}</span>
         </Button>
       </div>
+        <InlineError errorMessage={passwordError} />
     </div>
   );
 }

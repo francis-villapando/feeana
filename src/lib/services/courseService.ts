@@ -82,23 +82,6 @@ async function toggleEntityArchived(
   await logActivity(entityKind, id, action, makeLabel(data as Record<string, unknown>));
 }
 
-async function deleteEntity(
-  table: "courses" | "topics" | "ilos",
-  entityKind: EntityKind,
-  id: string,
-  makeLabel: (row: Record<string, unknown>) => string,
-): Promise<void> {
-  const { data, error: fetchError } = await supabase
-    .from(table)
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (fetchError) throw new Error(fetchError.message);
-  const { error } = await supabase.from(table).delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  await logActivity(entityKind, id, "deleted", makeLabel(data as Record<string, unknown>));
-}
-
 function fromDbCourse(row: Record<string, unknown>): Course {
   return {
     id: row.id as string,
@@ -191,7 +174,7 @@ export async function updateCourse(
     await handleDuplicateError("courses", { code: input.code.trim() }, "A course with this code already exists.", error.code);
     throw new Error(error.message);
   }
-  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
+  if (!data || data.length === 0) throw new ConflictError("Could not save—this was edited by another faculty member. Please open again and retry.");
   await logActivity(
     "course",
     id,
@@ -254,7 +237,7 @@ export async function updateTopic(
     await handleDuplicateError("topics", { course_id: old.course_id, title: input.title.trim() }, "A topic with this title already exists in this course.", error.code);
     throw new Error(error.message);
   }
-  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
+  if (!data || data.length === 0) throw new ConflictError("Could not save—this was edited by another faculty member. Please open again and retry.");
   await logActivity("topic", id, "updated", old.title, input.title.trim());
 }
 
@@ -325,7 +308,7 @@ export async function updateILO(
     await handleDuplicateError("ilos", { topic_id: old.topic_id, statement: input.statement.trim() }, "An ILO with this statement already exists in this topic.", error.code);
     throw new Error(error.message);
   }
-  if (!data || data.length === 0) throw new ConflictError("Could not save — this was edited by another faculty member. Please open again and retry.");
+  if (!data || data.length === 0) throw new ConflictError("Could not save—this was edited by another faculty member. Please open again and retry.");
   await logActivity(
     "ILO",
     id,
@@ -343,18 +326,6 @@ export async function restoreILO(id: string): Promise<void> {
   await toggleEntityArchived("ilos", "ILO", id, "restored", (r) => `${(r.statement as string).slice(0, 40)}`, async (row, code) => {
     await handleDuplicateError("ilos", { topic_id: row.topic_id as string, statement: (row.statement as string).trim() }, "An ILO with this statement already exists in this topic.", code);
   });
-}
-
-export async function deleteCourse(id: string): Promise<void> {
-  await deleteEntity("courses", "course", id, (r) => `${r.code} — ${r.title}`);
-}
-
-export async function deleteTopic(id: string): Promise<void> {
-  await deleteEntity("topics", "topic", id, (r) => r.title as string);
-}
-
-export async function deleteILO(id: string): Promise<void> {
-  await deleteEntity("ilos", "ILO", id, (r) => `${(r.statement as string).slice(0, 40)}`);
 }
 
 async function logActivity(

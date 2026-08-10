@@ -1,0 +1,44 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check for unprotected .delete() calls on protected tables
+        run: |
+          PROTECTED_TABLES="classes|sessions|courses|topics|ilos|feedback|enrollments"
+          MATCHES=$(grep -rn "\.delete()" src/lib/ --include='*.ts' \
+            | grep -v '__tests__' \
+            | grep -E "$PROTECTED_TABLES" || true)
+          if [ -n "$MATCHES" ]; then
+            echo "ERROR: Found .delete() on protected tables in application code:"
+            echo "$MATCHES"
+            echo "Use connectAdmin() from src/lib/db/adminSql.ts for DELETE operations."
+            exit 1
+          fi
+          echo "OK: No unprotected .delete() calls on protected tables."
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --run

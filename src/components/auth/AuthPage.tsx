@@ -11,6 +11,8 @@ import type { UserRole } from "@/lib/types/types";
 import { ThemeToggle } from "@/components/common";
 import { PasswordField } from "./PasswordField";
 import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
+import { InlineError, destructiveBorder } from "../common";
+import { friendlyError } from "@/lib/hooks/utils";
 
 const ALLOWED_FACULTY_DOMAIN = import.meta.env.VITE_FACULTY_DOMAIN as string | undefined;
 
@@ -35,8 +37,8 @@ type Mode = "signin" | "signup";
 export function AuthPage({ role }: { role: UserRole }) {
   const { login, register, resendConfirmation } = useAuth();
   const navigate = useNavigate();
-  const meta = ROLE_META[role];
-  const Icon = meta.icon;
+  const roleMeta = ROLE_META[role];
+  const Icon = roleMeta.icon;
 
   const [mode, setMode] = useState<Mode>("signin");
   const [name, setName] = useState("");
@@ -46,6 +48,12 @@ export function AuthPage({ role }: { role: UserRole }) {
   const [submitting, setSubmitting] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [accountExists, setAccountExists] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [resendError, setResendError] = useState("");
 
   const goHome = (r: UserRole) => {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
@@ -59,53 +67,60 @@ export function AuthPage({ role }: { role: UserRole }) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
-      toast.error("Email and password are required.");
-      return;
+
+    setNameError("");
+    setEmailError("");
+    setPasswordError("");
+    setConfirmError("");
+    setSubmitError("");
+
+    if (!email.trim()) {
+      setEmailError("Email is required.");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Enter a valid email address.");
     }
+    if (!password.trim()) {
+      setPasswordError("Password is required.");
+    }
+    if (mode === "signup") {
+      if (!name.trim()) {
+        setNameError("Name is required.");
+      }
+      if (password.length < 6 && password.trim()) {
+        setPasswordError("Password must be at least 6 characters.");
+      } else if (password !== confirm) {
+        setConfirmError("Passwords do not match.");
+      }
+    }
+
+    const hasSignupErrors =
+      mode === "signup" && (!name.trim() || password.length < 6 || password !== confirm);
+    const hasRequiredErrors =
+      !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password.trim();
+    if (hasSignupErrors || hasRequiredErrors) return;
 
     if (role === "faculty" && !validateFacultyDomain(email)) {
       const domainHint = ALLOWED_FACULTY_DOMAIN
         ? `@${ALLOWED_FACULTY_DOMAIN}`
         : "the configured faculty domain";
-      toast.error(`Only ${domainHint} emails are allowed for faculty sign-up.`);
+      setEmailError(`Only ${domainHint} emails are allowed for faculty sign-up.`);
       return;
-    }
-
-    if (mode === "signup") {
-      if (!name.trim()) {
-        toast.error("Please enter your name.");
-        return;
-      }
-      if (password.length < 6) {
-        toast.error("Password must be at least 6 characters.");
-        return;
-      }
-      if (password !== confirm) {
-        toast.error("Passwords do not match.");
-        return;
-      }
     }
 
     setSubmitting(true);
     try {
       if (mode === "signin") {
-        const u = await login(email, password);
-        if (u.role !== role) {
+        const authUser = await login(email, password);
+        if (authUser.role !== role) {
           throw new Error("Invalid email or password.");
         }
-        toast.success(`Welcome, ${u.name}`);
-        goHome(u.role);
+        toast.success(`Welcome, ${authUser.name}`);
+        goHome(authUser.role);
       } else {
-        const u = await register(email, password, name, role);
-        if (u.alreadyExists) {
-          if (u.confirmed) {
-            toast.success(`Welcome back, ${u.name}`);
-            goHome(u.role);
-          } else {
-            setAccountExists(true);
-          }
-        } else if (u.needsEmailConfirmation) {
+        const regResult = await register(email, password, name, role);
+        if (regResult.alreadyExists && !regResult.confirmed) {
+          setAccountExists(true);
+        } else if (regResult.needsEmailConfirmation) {
           toast.success("Check your email to confirm your account.");
           setMode("signin");
           setName("");
@@ -113,18 +128,31 @@ export function AuthPage({ role }: { role: UserRole }) {
           setPassword("");
           setConfirm("");
         } else {
-          toast.success(`Account created — welcome, ${u.name}`);
-          goHome(u.role);
+          toast.success(`Account created — welcome, ${regResult.name}`);
+          goHome(regResult.role);
         }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong.");
+      const msg = err instanceof Error ? err.message : "";
+      const msgLower = msg.toLowerCase();
+      if (msg === "EMAIL_ALREADY_EXISTS") {
+        setSubmitError("This email is already registered. Please sign in instead.");
+      } else if (msgLower.includes("email not confirmed")) {
+        setSubmitError("Please confirm your email before signing in. Check your inbox for the confirmation link.");
+      } else {
+        const friendly =
+          msgLower.includes("invalid login credentials") || msgLower.includes("invalid email or password")
+          ? "Invalid email or password."
+          : friendlyError(err);
+        setSubmitError(friendly);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleResend = async () => {
+    setResendError("");
     try {
       await resendConfirmation(email);
       toast.success("Confirmation link sent. Check your email.");
@@ -135,12 +163,22 @@ export function AuthPage({ role }: { role: UserRole }) {
       setPassword("");
       setConfirm("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send confirmation email.");
+      setResendError(friendlyError(err, "Could not send confirmation email."));
     }
+  };
+
+  const clearAllErrors = () => {
+    setEmailError("");
+    setPasswordError("");
+    setNameError("");
+    setConfirmError("");
+    setSubmitError("");
+    setResendError("");
   };
 
   const handleSwitchToSignIn = () => {
     setAccountExists(false);
+    clearAllErrors();
     setMode("signin");
   };
 
@@ -160,8 +198,8 @@ export function AuthPage({ role }: { role: UserRole }) {
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
-                  <CardTitle className="text-xl">{meta.title}</CardTitle>
-                  <CardDescription>{meta.description}</CardDescription>
+                  <CardTitle className="text-xl">{roleMeta.title}</CardTitle>
+                  <CardDescription>{roleMeta.description}</CardDescription>
                 </div>
               </div>
               <ThemeToggle />
@@ -171,10 +209,12 @@ export function AuthPage({ role }: { role: UserRole }) {
             {accountExists ? (
               <div className="space-y-4 text-center">
                 <p className="text-sm text-muted-foreground">
-                  An account with <span className="font-medium text-foreground">{email}</span> already exists.
+                  An account with <span className="font-medium text-foreground">{email}</span>{" "}
+                  already exists.
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  If you haven't confirmed your email yet, check your inbox for the confirmation link.
+                  If you haven't confirmed your email yet, check your inbox for the confirmation
+                  link.
                 </p>
                 <div className="flex flex-col gap-2">
                   <Button onClick={handleSwitchToSignIn} className="w-full">
@@ -183,88 +223,108 @@ export function AuthPage({ role }: { role: UserRole }) {
                   <Button onClick={handleResend} variant="outline" className="w-full">
                     <Mail className="h-4 w-4" /> Resend confirmation email
                   </Button>
+                  <InlineError errorMessage={resendError} />
                 </div>
               </div>
             ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {mode === "signup" && (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    autoComplete="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Juan Dela Cruz"
-                  />
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  Email
-                  {role === "faculty" && mode === "signup" && ALLOWED_FACULTY_DOMAIN && (
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      (must be @{ALLOWED_FACULTY_DOMAIN})
-                    </span>
-                  )}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={
-                    role === "faculty" && ALLOWED_FACULTY_DOMAIN
-                      ? `you@${ALLOWED_FACULTY_DOMAIN}`
-                      : "you@example.com"
-                  }
-                />
-              </div>
-              <PasswordField
-                id="password"
-                label="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                placeholder="Enter your password"
-              />
-              {mode === "signin" && (
-                <div className="text-right text-xs">
-                  <button
-                    type="button"
-                    className="text-muted-foreground hover:text-primary hover:underline"
-                    onClick={() => setForgotOpen(true)}
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-              )}
-              {mode === "signup" && (
-                <PasswordField
-                  id="confirm"
-                  label="Confirm password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  autoComplete="new-password"
-                  placeholder="Re-enter your password"
-                />
-              )}
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {mode === "signin" ? (
-                  <LogIn className="h-4 w-4" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                {mode === "signup" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      className={nameError ? destructiveBorder : ""}
+                      id="name"
+                      autoComplete="name"
+                      value={name}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        setNameError("");
+                      }}
+                      placeholder="Juan Dela Cruz"
+                    />
+                    <InlineError errorMessage={nameError} />
+                  </div>
                 )}
-                {submitting
-                  ? mode === "signin"
-                    ? "Signing in..."
-                    : "Signing up..."
-                  : mode === "signin"
-                    ? "Sign in"
-                    : "Sign up"}
-              </Button>
-            </form>
+                <div className="space-y-2">
+                  <Label htmlFor="email">
+                    Email
+                    {role === "faculty" && mode === "signup" && ALLOWED_FACULTY_DOMAIN && (
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        (must be @{ALLOWED_FACULTY_DOMAIN})
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    className={emailError ? destructiveBorder : ""}
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailError("");
+                    }}
+                    placeholder={
+                      role === "faculty" && ALLOWED_FACULTY_DOMAIN
+                        ? `you@${ALLOWED_FACULTY_DOMAIN}`
+                        : "you@example.com"
+                    }
+                  />
+                  <InlineError errorMessage={emailError} />
+                </div>
+                <PasswordField
+                  id="password"
+                  label="Password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError("");
+                  }}
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  placeholder="Enter your password"
+                  passwordError={passwordError}
+                />
+                {mode === "signin" && (
+                  <div className="text-right text-xs">
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-primary hover:underline"
+                      onClick={() => setForgotOpen(true)}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
+                {mode === "signup" && (
+                  <PasswordField
+                    id="confirm"
+                    label="Confirm password"
+                    value={confirm}
+                    onChange={(e) => {
+                      setConfirm(e.target.value);
+                      setConfirmError("");
+                    }}
+                    autoComplete="new-password"
+                    placeholder="Re-enter your password"
+                    passwordError={confirmError}
+                  />
+                )}
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {mode === "signin" ? (
+                    <LogIn className="h-4 w-4" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" />
+                  )}
+                  {submitting
+                    ? mode === "signin"
+                      ? "Signing in..."
+                      : "Signing up..."
+                    : mode === "signin"
+                      ? "Sign in"
+                      : "Sign up"}
+                </Button>
+                <InlineError errorMessage={submitError} />
+              </form>
             )}
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
@@ -274,7 +334,10 @@ export function AuthPage({ role }: { role: UserRole }) {
                   <button
                     type="button"
                     className="text-primary hover:underline"
-                    onClick={() => setMode("signup")}
+                    onClick={() => {
+                      clearAllErrors();
+                      setMode("signup");
+                    }}
                   >
                     Sign up
                   </button>
@@ -285,7 +348,10 @@ export function AuthPage({ role }: { role: UserRole }) {
                   <button
                     type="button"
                     className="text-primary hover:underline"
-                    onClick={() => setMode("signin")}
+                    onClick={() => {
+                      clearAllErrors();
+                      setMode("signin");
+                    }}
                   >
                     Sign in
                   </button>
@@ -295,7 +361,12 @@ export function AuthPage({ role }: { role: UserRole }) {
 
             <p className="mt-6 text-center text-xs text-muted-foreground">
               By continuing you accept the{" "}
-              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              <a
+                href="/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
                 Privacy policy
               </a>
               .

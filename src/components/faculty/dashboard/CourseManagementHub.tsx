@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from "react";
-import { Archive, Pencil, Plus, RotateCcw, Search, BookOpen, ListChecks, Target, Trash2 } from "lucide-react";
+import { Archive, Pencil, Plus, RotateCcw, Search, BookOpen, ListChecks, Target } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,13 +41,10 @@ export function CourseManagementHub() {
     ilos,
     archiveCourse,
     restoreCourse,
-    deleteCourse,
     archiveTopic,
     restoreTopic,
-    deleteTopic,
     archiveILO,
     restoreILO,
-    deleteILO,
     refreshAll } = useCourseStore();
 
   const [showArchived, setShowArchived] = useState(() => {
@@ -224,20 +221,6 @@ export function CourseManagementHub() {
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAction(
-                              "Delete course",
-                              `Delete the "${course.code}" course? This will also delete its topics and ILOs. This action is irreversible.`,
-                              () => deleteCourse(course.id).then(() => toast.success("Course deleted")),
-                              "delete"
-                            );
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
                       </>
                     ) : (
                       <>
@@ -320,19 +303,7 @@ export function CourseManagementHub() {
                               >
                                 {topic.archived ? <RotateCcw className="h-3 w-3" /> : <Archive className="h-3 w-3" />}
                               </Button>
-                              {topic.archived && (
-                                <Button
-                                  variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleAction(
-                                    "Delete topic",
-                                    `Delete the "${topic.title}" topic? This action is irreversible.`,
-                                    () => deleteTopic(topic.id).then(() => toast.success("Topic deleted")),
-                                    "delete"
-                                  )}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              )}
+
                               {!topic.archived && (
                                 <Button
                                   variant="ghost" size="icon" className="h-6 w-6 text-primary"
@@ -396,22 +367,7 @@ export function CourseManagementHub() {
                                   >
                                     {ilo.archived ? <RotateCcw className="h-2.5 w-2.5" /> : <Archive className="h-2.5 w-2.5" />}
                                   </Button>
-                                  {ilo.archived && (
-                                    <Button
-                                      variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                      onClick={() => {
-                                        const label = ilo.statement.length > 50 ? ilo.statement.slice(0, 50) + "..." : ilo.statement;
-                                        handleAction(
-                                          "Delete ILO",
-                                          `Delete the "${label}" ILO? This is action irreversible.`,
-                                          () => deleteILO(ilo.id).then(() => toast.success("ILO deleted")),
-                                          "delete"
-                                        );
-                                      }}
-                                    >
-                                      <Trash2 className="h-2.5 w-2.5" />
-                                    </Button>
-                                  )}
+
                                 </div>
                               </div>
                             ))}

@@ -1,18 +1,19 @@
 import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
-import { supabaseAdmin } from "./supabase-admin";
-import type { DiagnosticRecord } from "../lib/algorithm/types";
+import { supabaseAdmin } from "../helpers/supabaseAdmin";
+import { adminExec, closeAdminSqlClient } from "../../lib/db/adminSql";
+import type { DiagnosticRecord } from "../../lib/algorithm/types";
 
 /* Constants */
 const TEST_SESSION_ID = "f1234567-1234-4321-abcd-000000000001";
 const FACULTY_EMAIL = "faculty@test.com";
 const FACULTY_PASSWORD = "faculty123";
 
-/* Mock — intercepts getMLWorker() so runAnalysisPipeline() uses fake output */
+/* Mock — intercepts getMLWorkerAsync() so runAnalysisPipeline() uses fake output */
 const mockRunInference = vi.fn();
 const mockPreload = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("../lib/ml/mlWorkerStore", () => ({
-  getMLWorker: vi.fn(() => ({
+vi.mock("../../lib/ml/mlWorkerStore", () => ({
+  getMLWorkerAsync: vi.fn(async () => ({
     api: {
       preloadModel: mockPreload,
       runInference: mockRunInference,
@@ -21,8 +22,8 @@ vi.mock("../lib/ml/mlWorkerStore", () => ({
 }));
 
 // above mock must be hoisted above the subject import
-import { runAnalysisPipeline, fetchComputedResult } from "../lib/algorithm/pipeline";
-import { supabase } from "../lib/db/supabase";
+import { runAnalysisPipeline, fetchComputedResult } from "../../lib/algorithm/pipeline";
+import { supabase } from "../../lib/db/supabase";
 
 /* Suite-level state */
 let testFeedbackIds: string[] = [];
@@ -30,17 +31,43 @@ let testFeedbackIds: string[] = [];
 /* Helpers */
 function buildMockOutput(feedbackIds: string[]): DiagnosticRecord[] {
   return [
-    { feedbackId: feedbackIds[0], issue: "clarity deficit", polarity: "neg", tti: "Instructional Learning Formats", rbt: 5, clt: "Extraneous", isGap: false },
-    { feedbackId: feedbackIds[1], issue: "clarity deficit", polarity: "neg", tti: "Instructional Learning Formats", rbt: 5, clt: "Extraneous", isGap: false },
-    { feedbackId: feedbackIds[2], issue: "instructional cadence", polarity: "neu", tti: "Productivity", rbt: 2, clt: "Extraneous", isGap: false },
+    {
+      feedbackId: feedbackIds[0],
+      issue: "clarity deficit",
+      polarity: "neg",
+      tti: "Instructional Learning Formats",
+      rbt: 5,
+      clt: "Extraneous",
+      isGap: false,
+    },
+    {
+      feedbackId: feedbackIds[1],
+      issue: "clarity deficit",
+      polarity: "neg",
+      tti: "Instructional Learning Formats",
+      rbt: 5,
+      clt: "Extraneous",
+      isGap: false,
+    },
+    {
+      feedbackId: feedbackIds[2],
+      issue: "instructional cadence",
+      polarity: "neu",
+      tti: "Productivity",
+      rbt: 2,
+      clt: "Extraneous",
+      isGap: false,
+    },
   ];
 }
 
 async function cleanCreatedData(): Promise<void> {
-  await supabaseAdmin.from("feedback_diagnostics").delete().eq("session_id", TEST_SESSION_ID);
-  await supabaseAdmin.from("analysis_results").delete().eq("session_id", TEST_SESSION_ID);
-  await supabaseAdmin.from("feedback").delete().eq("session_id", TEST_SESSION_ID);
-  await supabaseAdmin.from("sessions").delete().eq("id", TEST_SESSION_ID);
+  await adminExec([
+    { text: "DELETE FROM feedback_diagnostics WHERE session_id = $1", params: [TEST_SESSION_ID] },
+    { text: "DELETE FROM analysis_results WHERE session_id = $1", params: [TEST_SESSION_ID] },
+    { text: "DELETE FROM feedback WHERE session_id = $1", params: [TEST_SESSION_ID] },
+    { text: "DELETE FROM sessions WHERE id = $1", params: [TEST_SESSION_ID] },
+  ]);
 }
 
 /* Suite */
@@ -67,7 +94,7 @@ describe("Pipeline Integration Tests", () => {
       .eq("course_id", classRow.course_id)
       .eq("archived", false);
 
-    const iloIds = (ilos ?? []).map(i => i.id);
+    const iloIds = (ilos ?? []).map((i) => i.id);
 
     const { data: courseRow } = await supabaseAdmin
       .from("courses")
@@ -76,15 +103,18 @@ describe("Pipeline Integration Tests", () => {
       .single();
 
     /* create an isolated test session */
-    const { error: sessionErr } = await supabaseAdmin.from("sessions").insert({
-      id: TEST_SESSION_ID,
-      class_id: classRow.id,
-      course_id: classRow.course_id,
-      topic: "Pipeline Integration Test Session",
-      status: "active",
-      ilo_ids: iloIds,
-      last_analyzed_at: null,
-    });
+    const { error: sessionErr } = await supabaseAdmin.from("sessions").upsert(
+      {
+        id: TEST_SESSION_ID,
+        class_id: classRow.id,
+        course_id: classRow.course_id,
+        topic: "Pipeline Integration Test Session",
+        status: "active",
+        ilo_ids: iloIds,
+        last_analyzed_at: null,
+      },
+      { onConflict: "id" },
+    );
 
     if (sessionErr) {
       throw new Error(`Failed to create test session: ${sessionErr.message}`);
@@ -94,7 +124,10 @@ describe("Pipeline Integration Tests", () => {
     const feedbackEntries = [
       { session_id: TEST_SESSION_ID, content: "The lesson was too fast and I couldn't follow." },
       { session_id: TEST_SESSION_ID, content: "More examples please, the topic is confusing." },
-      { session_id: TEST_SESSION_ID, content: "The seatwork was manageable but the lecture part was hard." },
+      {
+        session_id: TEST_SESSION_ID,
+        content: "The seatwork was manageable but the lecture part was hard.",
+      },
     ];
 
     const { data: insertedFeedback, error: fbErr } = await supabaseAdmin
@@ -106,7 +139,7 @@ describe("Pipeline Integration Tests", () => {
       throw new Error(`Failed to insert test feedback: ${fbErr?.message}`);
     }
 
-    testFeedbackIds = insertedFeedback.map(f => f.id);
+    testFeedbackIds = insertedFeedback.map((f) => f.id);
 
     /* config the mock to return raw diagnostics referencing our feedback IDs */
     mockRunInference.mockResolvedValue(buildMockOutput(testFeedbackIds));
@@ -124,6 +157,7 @@ describe("Pipeline Integration Tests", () => {
   afterAll(async () => {
     await supabase.auth.signOut();
     await cleanCreatedData();
+    await closeAdminSqlClient();
   });
 
   /* Tests */

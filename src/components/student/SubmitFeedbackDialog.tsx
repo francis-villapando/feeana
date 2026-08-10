@@ -13,10 +13,12 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
+import { friendlyError } from "@/lib/hooks/utils";
 import { supabase } from "@/lib/db/supabase";
 
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
 import type { Session } from "@/lib/types/types";
+import { InlineError, destructiveBorder } from "@/components/common";
 
 interface SubmitFeedbackDialogProps {
   session: Session | null;
@@ -29,10 +31,12 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
   const { classes, refreshEnrolledClasses, refreshSessions, addSubmittedSession } = useClassStore();
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
 
   useEffect(() => {
     if (!open || !session) return;
     setText("");
+    setFeedbackError("");
   }, [open, session?.id]);
 
   if (!session) return null;
@@ -41,12 +45,14 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
 
   const handleClose = () => {
     setText("");
+    setFeedbackError("");
     onOpenChange(false);
   };
 
   const handleSubmit = async () => {
+    setFeedbackError("");
     if (text.trim().length < 4) {
-      toast.error("Feedback must be at least a few characters.");
+      setFeedbackError("Feedback must be at least a few characters.");
       return;
     }
 
@@ -87,7 +93,7 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
         await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
         handleClose();
       } else {
-        toast.error("Failed to submit feedback. Please try again.");
+        toast.error(friendlyError(e, "Failed to submit feedback. Please try again."));
       }
     } finally {
       setSubmitting(false);
@@ -126,11 +132,15 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
           <div className="space-y-2">
             <Textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                setText(e.target.value);
+                setFeedbackError("");
+              }}
               placeholder="e.g. Sir mabilis po yung discussion sa typecasting, hirap mahabol…"
-              className="min-h-[120px] resize-none"
+              className={`min-h-[120px] resize-none ${feedbackError ? destructiveBorder : ""}`}
               maxLength={500}
             />
+            <InlineError errorMessage={feedbackError} />
             <p className="text-right text-[11px] text-muted-foreground">{text.length} / 500</p>
           </div>
           <div className="space-y-3">

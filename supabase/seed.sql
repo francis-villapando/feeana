@@ -1,4 +1,4 @@
-﻿-- Seed Script: 40 Taglish Classroom Feedback Entries
+-- Seed Script: 40 Taglish Classroom Feedback Entries
 -- Target  : Session "Introduction to Game Programming" (CSEG2)
 -- Course  : CSEG2 — Game Programming 1
 -- Section : 3CS-C
@@ -23,11 +23,13 @@ WHERE session_id = '3da770a1-ca05-422c-9b6b-c85f2f92dc4e';
 -- In the hosted project these users likely already exist — the INSERT
 -- is silently skipped.
 INSERT INTO profiles (id, email, full_name, role)
-SELECT gen_random_uuid(), 'faculty@test.com', 'Test Faculty', 'faculty'
+SELECT COALESCE(au.id, gen_random_uuid()), 'faculty@test.com', 'Test Faculty', 'faculty'
+FROM (SELECT 1) d LEFT JOIN auth.users au ON au.email = 'faculty@test.com'
 WHERE NOT EXISTS (SELECT 1 FROM profiles WHERE email = 'faculty@test.com');
 
 INSERT INTO profiles (id, email, full_name, role)
-SELECT gen_random_uuid(), 'student@test.com', 'Test Student', 'student'
+SELECT COALESCE(au.id, gen_random_uuid()), 'student@test.com', 'Test Student', 'student'
+FROM (SELECT 1) d LEFT JOIN auth.users au ON au.email = 'student@test.com'
 WHERE NOT EXISTS (SELECT 1 FROM profiles WHERE email = 'student@test.com');
 
 -- 2. COURSE (CSEG2 — Game Programming 1)

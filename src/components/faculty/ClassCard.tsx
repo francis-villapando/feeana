@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Copy, MessageSquare, RotateCcw, Trash2, Users } from "lucide-react";
+import { ArrowRight, Copy, MessageSquare, RotateCcw, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,9 @@ import { useLiveNow } from "@/lib/hooks/useLiveNow";
 export function ClassCard({
   cls,
   onRestore,
-  onDelete,
 }: {
   cls: Class;
   onRestore?: (id: string) => void;
-  onDelete?: (id: string) => void;
 }) {
   const { sessionsForClass, studentCountForClass } = useClassStore();
   const sessions = sessionsForClass(cls.id);
@@ -66,14 +64,6 @@ export function ClassCard({
               onClick={() => onRestore?.(cls.id)}
             >
               <RotateCcw className="h-4 w-4" /> Restore
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => onDelete?.(cls.id)}
-            >
-              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </CardContent>

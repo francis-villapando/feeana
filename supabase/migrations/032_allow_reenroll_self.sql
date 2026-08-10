@@ -1,4 +1,4 @@
-﻿-- Migration 032: Allow students to re-enroll after soft-unenrolling
+-- Migration 032: Allow students to re-enroll after soft-unenrolling
 
 DROP POLICY IF EXISTS "Students can update their own enrollment" ON enrollments;
 

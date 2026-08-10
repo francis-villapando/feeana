@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildIloGapItems } from "../lib/algorithm/dashboardOutput";
-import type { DiagnosticRecord } from "../lib/algorithm/types";
+import { buildIloGapItems } from "../../lib/algorithm/dashboardOutput";
+import type { DiagnosticRecord } from "../../lib/algorithm/types";
 
 describe("gap cascade logic", () => {
   it("flags ILOs at the same level or above the diagnostic RBT level", () => {

@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/stores/auth";
 import type { UserRole } from "@/lib/types/types";
+import { friendlyError } from "@/lib/hooks/utils";
+import { InlineError, destructiveBorder } from "../common";
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -21,28 +23,39 @@ interface ForgotPasswordDialogProps {
   role?: UserRole;
 }
 
-export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }: ForgotPasswordDialogProps) {
+export function ForgotPasswordDialog({
+  open,
+  onOpenChange,
+  defaultEmail,
+  role,
+}: ForgotPasswordDialogProps) {
   const { forgotPassword } = useAuth();
   const [email, setEmail] = useState(defaultEmail ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setEmailError("");
+    setSubmitError("");
     if (!email.trim()) {
-      toast.error("Please enter your email address.");
+      setEmailError("Email is required.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Enter a valid email address.");
       return;
     }
     setSubmitting(true);
     try {
-      const redirectTo = role
-        ? `${window.location.origin}/login/${role}`
-        : window.location.origin;
+      const redirectTo = role ? `${window.location.origin}/auth/${role}` : window.location.origin;
       await forgotPassword(email, redirectTo);
       toast.success("Check your email for the reset link.");
       setEmail("");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong.");
+      setSubmitError(friendlyError(err));
     } finally {
       setSubmitting(false);
     }
@@ -60,19 +73,24 @@ export function ForgotPasswordDialog({ open, onOpenChange, defaultEmail, role }:
             Enter your email address and we'll send you a link to reset your password.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="reset-email">Email</Label>
             <Input
+              className={emailError ? destructiveBorder : ""}
               id="reset-email"
               type="email"
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError("");
+              }}
               placeholder="you@example.com"
-              required
             />
+            <InlineError errorMessage={emailError} />
           </div>
+          <InlineError errorMessage={submitError} />
           <div className="flex justify-end gap-2">
             <Button
               type="button"

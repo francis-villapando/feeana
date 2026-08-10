@@ -10,7 +10,11 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "vitest"
+    "test": "vitest",
+    "db:reset": "supabase db reset && npx tsx --env-file .env scripts/seed/seedDashboard.ts",
+    "db:seed": "npx tsx scripts/seed/seedSql.ts",
+    "db:seed:dashboard": "npx tsx --env-file .env scripts/seed/seedDashboard.ts",
+    "db:smoke": "npx tsx --env-file=.env scripts/dev/pipelineSmoke.ts"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
@@ -76,9 +80,11 @@
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^1.4.0",
     "@types/node": "^22.16.5",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "dotenv": "^17.4.2",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
@@ -86,6 +92,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "onnxruntime-node": "^1.24.3",
+    "pg": "^8.22.0",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",

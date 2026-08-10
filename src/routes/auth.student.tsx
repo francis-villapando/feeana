@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AuthPage } from "@/components/auth";
 
-export const Route = createFileRoute("/login/student")({
+export const Route = createFileRoute("/auth/student")({
   head: () => ({
     meta: [
       { title: "Student sign in — Feeana" },

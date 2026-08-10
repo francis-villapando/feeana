@@ -6,6 +6,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { ClassCard } from "@/components/faculty/ClassCard";
 import { ConfirmationDialog } from "@/components/faculty";
 import { ArchivedClassCardSkeleton } from "@/components/skeletons";
+import { friendlyError } from "@/lib/hooks/utils";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_faculty/archived")({
@@ -22,20 +23,8 @@ export const Route = createFileRoute("/_faculty/archived")({
 });
 
 function ArchivedPage() {
-  const { archivedClasses, isLoading, restoreClass, deleteClass } = useClassStore();
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { archivedClasses, isLoading, restoreClass } = useClassStore();
   const [restoringId, setRestoringId] = useState<string | null>(null);
-
-  const handleDelete = async () => {
-    if (!deletingId) return;
-    try {
-      await deleteClass(deletingId);
-      setDeletingId(null);
-      toast.success("Class deleted");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete class");
-    }
-  };
 
   const handleRestore = async () => {
     if (!restoringId) return;
@@ -44,7 +33,7 @@ function ArchivedPage() {
       setRestoringId(null);
       toast.success("Class restored");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to restore class");
+      toast.error(friendlyError(err, "Failed to restore class"));
     }
   };
 
@@ -71,12 +60,7 @@ function ArchivedPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {archivedClasses.map((cls) => (
-            <ClassCard
-              key={cls.id}
-              cls={cls}
-              onRestore={(id) => setRestoringId(id)}
-              onDelete={(id) => setDeletingId(id)}
-            />
+            <ClassCard key={cls.id} cls={cls} onRestore={(id) => setRestoringId(id)} />
           ))}
         </div>
       )}
@@ -86,17 +70,8 @@ function ArchivedPage() {
         onClose={() => setRestoringId(null)}
         onConfirm={handleRestore}
         title="Restore class"
-        description={`Restore the "${archivedClasses.find(cls => cls.id === restoringId)?.courseCode} · ${archivedClasses.find(cls => cls.id === restoringId)?.section}" class? This will move it back to your active dashboard.`}
+        description={`Restore the "${archivedClasses.find((cls) => cls.id === restoringId)?.courseCode} · ${archivedClasses.find((cls) => cls.id === restoringId)?.section}" class? This will move it back to your active dashboard.`}
         actionType="restore"
-      />
-
-      <ConfirmationDialog
-        isOpen={!!deletingId}
-        onClose={() => setDeletingId(null)}
-        onConfirm={handleDelete}
-        title="Delete class"
-        description={`Delete the "${archivedClasses.find(cls => cls.id === deletingId)?.courseCode} · ${archivedClasses.find(cls => cls.id === deletingId)?.section}" class? This will delete all sessions and feedback associated with this class. This action cannot be undone.`}
-        actionType="delete"
       />
     </div>
   );

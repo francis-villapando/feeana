@@ -1,14 +1,29 @@
-import { createFileRoute, Link, notFound, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  notFound,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ClassDetailsCard, ConfirmationDialog, ClassStudentsTab, KeyMetricsRow, SessionCreator, SessionCard as FacultySessionCard } from "@/components/faculty";
+import {
+  ClassDetailsCard,
+  ConfirmationDialog,
+  ClassStudentsTab,
+  KeyMetricsRow,
+  SessionCreator,
+  SessionCard as FacultySessionCard,
+} from "@/components/faculty";
 import { TrendLineCard, TrendBarCard } from "@/components/faculty/charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
+import { friendlyError } from "@/lib/hooks/utils";
 
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
 import { useClassStore } from "@/lib/stores/classStore";
@@ -47,7 +62,14 @@ export const Route = createFileRoute("/_faculty/$classId")({
 
 function ClassLayout() {
   const { classId } = Route.useParams();
-  const { getClass, sessionsForClass, studentCountForClass, isLoading, archiveClass, refreshStudents } = useClassStore();
+  const {
+    getClass,
+    sessionsForClass,
+    studentCountForClass,
+    isLoading,
+    archiveClass,
+    refreshStudents,
+  } = useClassStore();
   const { feedback, fetchFeedbackByClass, insertRealtimeFeedback } = useFeedbackStore();
   const { results, fetchForSessions } = useAnalysisStore();
   const location = useLocation();
@@ -111,10 +133,7 @@ function ClassLayout() {
     () => computeClassSubmissionRate(sessions, cls, feedback),
     [sessions, cls, feedback],
   );
-  const iloRate = useMemo(
-    () => computeClassIloAchievement(sessions, results),
-    [sessions, results],
-  );
+  const iloRate = useMemo(() => computeClassIloAchievement(sessions, results), [sessions, results]);
   const trend = useMemo(
     () => classTrendData(sessions, results, cls, feedback),
     [sessions, results, cls, feedback],
@@ -145,7 +164,7 @@ function ClassLayout() {
       setArchiveOpen(false);
       navigate({ to: "/home" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to archive");
+      toast.error(friendlyError(err, "Failed to archive"));
     }
   };
 
@@ -294,5 +313,3 @@ function ClassLoadingSkeleton() {
     </div>
   );
 }
-
-
