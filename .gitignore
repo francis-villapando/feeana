@@ -37,3 +37,6 @@ __pycache__/
 *.pyc
 
 plans
+scripts/
+training/
+checkpoints/*.pt
