@@ -32,4 +32,8 @@ dist-ssr
 *.sw?
 .env
 
+# Python
+__pycache__/
+*.pyc
+
 plans
