@@ -37,6 +37,6 @@ __pycache__/
 *.pyc
 
 plans
-scripts/
-training/
-checkpoints/*.pt
+
+# PyTorch
+scripts/training/checkpoints/*.pt
