@@ -25,7 +25,7 @@ jobs:
           PROTECTED_TABLES="classes|sessions|courses|topics|ilos|feedback|enrollments"
           MATCHES=$(grep -rn "\.delete()" src/lib/ --include='*.ts' \
             | grep -v '__tests__' \
-            | grep -E "$PROTECTED_TABLES" || true)
+            | grep -w -E "$PROTECTED_TABLES" || true)
           if [ -n "$MATCHES" ]; then
             echo "ERROR: Found .delete() on protected tables in application code:"
             echo "$MATCHES"
