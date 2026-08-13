@@ -32,4 +32,17 @@ dist-ssr
 *.sw?
 .env
 
+# Python
+__pycache__/
+*.pyc
+
 plans
+
+# PyTorch
+scripts/training/checkpoints/*.pt
+
+# ONNX export staging directory (intermediate artifacts; copy to public/models/finetuned/ manually)
+scripts/training/exports/
+
+# FP32 intermediate ONNX (only the INT8 version is committed, via Git LFS)
+public/models/finetuned/*-fp32.onnx

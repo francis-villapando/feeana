@@ -24,7 +24,9 @@ describe("Preprocess (Module 2: Preprocessing)", () => {
     it("should handle mixed repeated vowels", () => {
       const input = { id: "test-3", rawText: "heeeey" };
       const result = Preprocess(input);
-      expect(result).toBe("heey");
+      // "heey" is not a dictionary word, so the fixed normalizeVowels collapses
+      // the repetition to a single "e" ("hey") instead of keeping two.
+      expect(result).toBe("hey");
     });
 
     it("should preserve normal vowel usage", () => {
