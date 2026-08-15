@@ -20,7 +20,7 @@ async function initOrt() {
     }
   } else {
     ort = await import("onnxruntime-web");
-    ort.env.wasm.wasmPaths = "/";
+    ort.env.wasm.wasmPaths = "/onnxruntime/";
   }
   return ort;
 }

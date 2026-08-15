@@ -71,7 +71,7 @@ function AnalysisPage() {
     total: number;
     text: string;
   } | null>(null);
-  const [loadProgress, setLoadProgress] = useState(100);
+  const [loadProgress, setLoadProgress] = useState<{ progress: number; phase?: string }>({ progress: 100 });
   const [modalOpen, setModalOpen] = useState(false);
 
   // Track cancellation to prevent error toasts when worker is terminated
@@ -84,7 +84,7 @@ function AnalysisPage() {
           setInferenceProgress(payload);
         });
         setLoadProgressListener((data) => {
-          setLoadProgress(data.status === "done" ? 100 : (data.progress ?? 0));
+          setLoadProgress(data);
         });
       },
     );
@@ -136,7 +136,7 @@ function AnalysisPage() {
     setIsAnalyzing(true);
     isCancelledRef.current = false;
     setInferenceProgress(null);
-    setLoadProgress(0);
+    setLoadProgress({ progress: 0 });
     try {
       const data = await runAnalysisPipeline(session.id);
       if (!isCancelledRef.current) {

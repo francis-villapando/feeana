@@ -24,7 +24,7 @@ async function initOrt() {
 
   try {
     ort = await import("onnxruntime-web");
-    ort.env.wasm.wasmPaths = "/";
+    ort.env.wasm.wasmPaths = "/onnxruntime/";
   } catch (e: any) {
     console.error("Failed to load onnxruntime-web:", e.message);
     throw e;
@@ -77,7 +77,7 @@ export class DistilXlmrAdapter implements ModelAdapter {
       if (!response.ok) throw new Error(`Failed to load model (HTTP ${response.status})`);
       const total = Number(response.headers.get("content-length") ?? 0);
       if (!response.body || total === 0) {
-        this.progressHook?.({ status: "loading" });
+        this.progressHook?.({ status: "loading", progress: 0 });
         return response.arrayBuffer().then((buf) => new Uint8Array(buf));
       }
       const reader = response.body.getReader();
@@ -100,7 +100,7 @@ export class DistilXlmrAdapter implements ModelAdapter {
             loaded += value.length;
             this.progressHook?.({
               status: "progress",
-              progress: Math.min(99, (loaded / total) * 100),
+              progress: Math.min(60, (loaded / total) * 100),
             });
             readChunk();
           });
@@ -116,10 +116,22 @@ export class DistilXlmrAdapter implements ModelAdapter {
 
     env.allowLocalModels = true;
 
+    // Phase 1: Model download (0-60%)
     const modelBuffer = await this.readModelWithProgress(`${dir}/${INT8_MODEL}`);
+    
+    // Phase 2: Session creation (60-70%)
+    this.progressHook?.({ status: "progress", progress: 60, phase: "session" });
     this.session = await runtime.InferenceSession.create(modelBuffer);
+    
+    // Phase 3: Tokenizer loading (70-95%) - this is the heaviest step
+    this.progressHook?.({ status: "progress", progress: 70, phase: "tokenizer" });
     this.tokenizer = await AutoTokenizer.from_pretrained(dir, { local_files_only: true });
+    this.progressHook?.({ status: "progress", progress: 95, phase: "tokenizer" });
+    
+    // Phase 4: Label mappings (95-99%)
+    this.progressHook?.({ status: "progress", progress: 95, phase: "labels" });
     this.labelMap = await loadLabelMappings(dir);
+    this.progressHook?.({ status: "progress", progress: 99, phase: "labels" });
 
     console.log("[distilXlmr] Loaded fine-tuned DistilXLM-R model");
 

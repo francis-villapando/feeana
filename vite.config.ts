@@ -25,8 +25,12 @@ function onnxWasmDevPlugin() {
         const url = new URL(req.url || "", "http://localhost");
         const filename = path.basename(url.pathname);
         if (filename.startsWith("ort") && filename.endsWith(".mjs")) {
-          const filePath = path.join(__dirname, "public", filename);
-          if (fs.existsSync(filePath)) {
+          const candidates = [
+            path.join(__dirname, "public", "onnxruntime", filename),
+            path.join(__dirname, "public", filename),
+          ];
+          const filePath = candidates.find((p) => fs.existsSync(p));
+          if (filePath) {
             res.setHeader("Content-Type", "application/javascript");
             // Set security headers to allow WASM multi-threading
             res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
@@ -48,6 +52,7 @@ export default defineConfig({
   nitro: false,
   plugins: [!(isVitest) ? nitro() : null, onnxWasmDevPlugin()].filter(Boolean),
   vite: {
+    assetsInclude: ["**/*.wasm"],
     optimizeDeps: {
       exclude: ["onnxruntime-node"],
     },

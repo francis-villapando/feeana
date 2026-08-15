@@ -2,7 +2,7 @@ import { existsSync, copyFileSync } from "fs";
 import { join } from "path";
 
 const DIST_DIR = join(process.cwd(), "node_modules", "onnxruntime-web", "dist");
-const PUBLIC_DIR = join(process.cwd(), "public");
+const PUBLIC_DIR = join(process.cwd(), "public", "onnxruntime");
 
 const WASM_FILES = [
   "ort-wasm-simd-threaded.asyncify.mjs",

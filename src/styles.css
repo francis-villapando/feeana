@@ -2,6 +2,24 @@
 @import "tw-animate-css";
 @custom-variant dark (&:is(.dark *));
 
+@keyframes indeterminate-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@layer utilities {
+  .animate-indeterminate {
+    animation: indeterminate-slide 1.5s ease-in-out infinite;
+  }
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

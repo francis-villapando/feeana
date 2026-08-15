@@ -20,10 +20,6 @@ try {
 let lastProgressTime = 0;
 const THROTTLE_MS = 66;
 
-if (env.backends.onnx.wasm) {
-  env.backends.onnx.wasm.wasmPaths = "/";
-}
-
 const api = {
   async runInference(
     feedbackStream: FeedbackInput[],
