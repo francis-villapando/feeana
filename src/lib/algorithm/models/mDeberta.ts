@@ -21,20 +21,29 @@ const CANDIDATE_LABELS = [
   "notation struggle",
 ];
 
+type ZeroShotClassifier = (
+  text: string,
+  labels: string[],
+  options: { multi_label: boolean },
+) => Promise<{ labels: string[]; scores: number[] }>;
+
 export class MDebertaAdapter implements ModelAdapter {
   readonly name = "mdeberta";
-  private classifier: any = null;
+  private classifier: ZeroShotClassifier | null = null;
 
   async load(): Promise<void> {
-    this.classifier = await pipeline(
+    this.classifier = (await pipeline(
       "zero-shot-classification" as PipelineType,
       "Xenova/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
-    );
+    )) as unknown as ZeroShotClassifier;
   }
 
   async predict(text: string): Promise<Prediction> {
     const t0 = performance.now();
     const cleanText = Preprocess({ id: "", rawText: text });
+    if (!this.classifier) {
+      throw new Error("[mdeberta] Adapter not loaded — call load() first.");
+    }
     const result = await this.classifier(cleanText, CANDIDATE_LABELS, {
       multi_label: false,
     });

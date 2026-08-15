@@ -14,7 +14,7 @@
  *   feedback_diagnostics → cached computed result per session (JSONB + rules_version)
  */
 
-import type { AnalysisResult, DistEntry } from "../types/types";
+import type { AnalysisResult, DistEntry, RecommendationTerm, Theory } from "../types/types";
 import { supabase as defaultSupabase } from "../db/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getMLWorkerAsync } from "../ml/mlWorkerStore";
@@ -71,7 +71,7 @@ async function fetchSessionData(sessionId: string, db: SupabaseClient) {
     throw new Error(sessionErr?.message || "Session not found.");
   }
 
-  const courseId = session.course_id || (session.classes as any)?.course_id;
+  const courseId = session.course_id || (session.classes as { course_id?: string } | null)?.course_id;
   if (!courseId) throw new Error("Course context not found for this session.");
 
   // Fire remaining 3 queries in parallel (ILOs, feedback, course)
@@ -84,7 +84,7 @@ async function fetchSessionData(sessionId: string, db: SupabaseClient) {
   if (ilosResult.error) throw new Error(ilosResult.error.message);
   if (feedbackResult.error) throw new Error(feedbackResult.error.message);
 
-  const courseName = courseResult.data?.title || (session.classes as any)?.course || "Unknown Course";
+  const courseName = courseResult.data?.title || (session.classes as { course?: string } | null)?.course || "Unknown Course";
 
   return {
     session,
@@ -122,7 +122,7 @@ export async function runAnalysisPipeline(sessionId: string, client?: SupabaseCl
   });
 
   const sessionIloIds = Array.isArray(session.ilo_ids) ? session.ilo_ids : [];
-  const activeIlos = ilosData.filter((ilo: any) => sessionIloIds.includes(ilo.id));
+  const activeIlos = ilosData.filter((ilo) => sessionIloIds.includes(ilo.id));
 
   const { sessionContext, feedbackStream } = collectPipelineData(
     courseName,
@@ -297,15 +297,15 @@ export async function runAnalysisPipeline(sessionId: string, client?: SupabaseCl
     recommendations: recommendationList.map((r) => ({
       id: r.id,
       paragraph: r.paragraph,
-      terms: r.terms as any[],
-      theories: r.theories as any[],
+      terms: r.terms as RecommendationTerm[],
+      theories: r.theories as Theory[],
       priority: r.priority,
     })),
     warnings: warningList.map((recommendationItem) => ({
       id: recommendationItem.id,
       issue: recommendationItem.issue,
-      terms: recommendationItem.terms as any[],
-      theories: recommendationItem.theories as any[],
+      terms: recommendationItem.terms as RecommendationTerm[],
+      theories: recommendationItem.theories as Theory[],
       priority: recommendationItem.priority,
       count: recommendationItem.priority,
       isGap: recommendationItem.isGap,

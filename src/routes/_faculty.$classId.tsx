@@ -83,7 +83,7 @@ function ClassLayout() {
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
 
   useEffect(() => {
-    const promises: Promise<any>[] = [];
+    const promises: Promise<unknown>[] = [];
 
     if (classId) {
       promises.push(fetchFeedbackByClass(classId));

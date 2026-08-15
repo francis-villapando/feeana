@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WelcomeHero } from "@/components/common";
-import { ClassInfoDialog, EnrollClassDialog, ActiveSessionAccordion, SubmitFeedbackDialog } from "@/components/student";
+import {
+  ClassInfoDialog,
+  EnrollClassDialog,
+  ActiveSessionAccordion,
+  SubmitFeedbackDialog,
+} from "@/components/student";
 import { ListItemSkeleton } from "@/components/skeletons";
 import { useAuth } from "@/lib/stores/auth";
 import { useClassStore } from "@/lib/stores/classStore";
@@ -40,10 +45,7 @@ function LoadingSkeleton() {
 
       <div className="space-y-2">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div
-            key={i}
-            className="border border-border/60 rounded-lg bg-background/40 px-1"
-          >
+          <div key={i} className="border border-border/60 rounded-lg bg-background/40 px-1">
             <ListItemSkeleton width={i % 2 === 0 ? "w-56" : "w-48"} />
           </div>
         ))}
@@ -98,7 +100,9 @@ function StudentHome() {
       {classInfo && user && (
         <ClassInfoDialog
           open={classInfo !== null}
-          onOpenChange={(open) => { if (!open) setClassInfo(null); }}
+          onOpenChange={(open) => {
+            if (!open) setClassInfo(null);
+          }}
           cls={classInfo}
           studentId={user.id}
         />
@@ -107,7 +111,9 @@ function StudentHome() {
       <SubmitFeedbackDialog
         session={submitSession}
         open={submitSession !== null}
-        onOpenChange={(open) => { if (!open) setSubmitSession(null); }}
+        onOpenChange={(open) => {
+          if (!open) setSubmitSession(null);
+        }}
       />
     </div>
   );

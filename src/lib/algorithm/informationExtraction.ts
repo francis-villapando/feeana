@@ -3,7 +3,7 @@
 // Intended to run inside the Web Worker.
 
 import { createModel } from "./models/adapter";
-import type { DistilXlmrAdapter } from "./models/distilXlmr";
+import type { DistilXlmrAdapter, LoadProgress } from "./models/distilXlmr";
 import type { IssueExtractionResult } from "./types";
 
 // Singleton adapter instance inside the worker
@@ -12,7 +12,7 @@ let adapter: DistilXlmrAdapter | null = null;
 let loadPromise: Promise<void> | null = null;
 
 // Initializes or returns the existing DistilXLM-R adapter.
-export async function getClassifier(progress_callback?: (info: any) => void) {
+export async function getClassifier(progress_callback?: (info: LoadProgress) => void) {
   if (!adapter) {
     console.log("[informationExtraction] Initializing DistilXLM-R adapter...");
     adapter = createModel("distilxlmr") as DistilXlmrAdapter;

@@ -39,10 +39,7 @@ export function ActiveSessionAccordion({
     >
       {classes.map((cls) => {
         const activeSessions = sessions.filter(
-          (s) =>
-            s.classId === cls.id &&
-            isSessionActive(s) &&
-            !submittedSessionIds.has(s.id),
+          (s) => s.classId === cls.id && isSessionActive(s) && !submittedSessionIds.has(s.id),
         );
 
         return (
@@ -86,9 +83,7 @@ export function ActiveSessionAccordion({
               {activeSessions.length === 0 ? (
                 <Card className="border-dashed border-border/60 bg-card/40">
                   <CardContent className="px-4 py-6 text-center">
-                    <p className="text-xs text-muted-foreground">
-                      No active sessions
-                    </p>
+                    <p className="text-xs text-muted-foreground">No active sessions</p>
                   </CardContent>
                 </Card>
               ) : (

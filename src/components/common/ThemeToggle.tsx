@@ -1,15 +1,15 @@
-import { Moon, Sun, Monitor } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useTheme } from '@/lib/providers/themeProvider'
+import { Moon, Sun, Monitor } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useTheme } from "@/lib/providers/themeProvider";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 
 export function ThemeToggle({ size = "icon" }: { size?: "default" | "sm" | "icon" }) {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme();
 
   return (
     <DropdownMenu>
@@ -22,24 +22,24 @@ export function ThemeToggle({ size = "icon" }: { size?: "default" | "sm" | "icon
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem
-          onClick={() => setTheme('light')}
-          className={theme === 'light' ? 'bg-accent font-semibold text-primary' : ''}
+          onClick={() => setTheme("light")}
+          className={theme === "light" ? "bg-accent font-semibold text-primary" : ""}
         >
           <Sun className="mr-2 h-4 w-4" /> Light
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => setTheme('dark')}
-          className={theme === 'dark' ? 'bg-accent font-semibold text-primary' : ''}
+          onClick={() => setTheme("dark")}
+          className={theme === "dark" ? "bg-accent font-semibold text-primary" : ""}
         >
           <Moon className="mr-2 h-4 w-4" /> Dark
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => setTheme('system')}
-          className={theme === 'system' ? 'bg-accent font-semibold text-primary' : ''}
+          onClick={() => setTheme("system")}
+          className={theme === "system" ? "bg-accent font-semibold text-primary" : ""}
         >
           <Monitor className="mr-2 h-4 w-4" /> System
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

@@ -22,7 +22,7 @@ describe("gap cascade logic", () => {
       { id: "ilo-3", statement: "Recall the steps", bloomLevel: "Remember" as const },
     ];
 
-    const gaps = buildIloGapItems(diagnostics, ilos as any);
+    const gaps = buildIloGapItems(diagnostics, ilos);
 
     expect(gaps.map((gap) => gap.iloId)).toEqual(["ilo-1", "ilo-2"]);
   });
@@ -45,7 +45,7 @@ describe("gap cascade logic", () => {
       { id: "ilo-2", statement: "Evaluate a design", bloomLevel: "Evaluate" as const },
     ];
 
-    const gaps = buildIloGapItems(diagnostics, ilos as any);
+    const gaps = buildIloGapItems(diagnostics, ilos);
 
     expect(gaps.map((gap) => gap.iloId)).toEqual(["ilo-1"]);
   });

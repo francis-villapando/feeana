@@ -27,7 +27,9 @@ describe("DistilXlmrAdapter", () => {
   it("normalizes the uncategorized label to capitalized form", async () => {
     const adapter = new DistilXlmrAdapter();
     await adapter.load();
-    const pred = await adapter.predict("The seatwork was manageable but the lecture part was hard.");
+    const pred = await adapter.predict(
+      "The seatwork was manageable but the lecture part was hard.",
+    );
     if (pred.issue.toLowerCase() === "uncategorized") {
       expect(pred.issue).toBe("Uncategorized");
     }

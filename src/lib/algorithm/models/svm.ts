@@ -1,20 +1,38 @@
-import type { InferenceSession, Tensor } from "onnxruntime-web";
+import type { Tensor } from "onnxruntime-web";
 import type { ModelAdapter, Prediction } from "./types";
 
 function isNode(): boolean {
   return typeof process !== "undefined" && process.versions?.node !== undefined;
 }
 
-let ort: any = null;
+interface OrtSession {
+  run(feeds: Record<string, Tensor>): Promise<Record<string, { data: unknown }>>;
+  release(): Promise<void>;
+}
 
-async function initOrt() {
+interface OrtRuntime {
+  env: { wasm: { wasmPaths?: string | { wasm?: string | URL; mjs?: string | URL } } };
+  InferenceSession: {
+    create(source: string | Uint8Array): Promise<OrtSession>;
+  };
+  Tensor: new (
+    type: string,
+    data: ArrayLike<number | bigint> | string[],
+    dims?: number[],
+  ) => Tensor;
+}
+
+let ort: OrtRuntime | null = null;
+
+async function initOrt(): Promise<OrtRuntime> {
   if (ort) return ort;
-  
+
   if (isNode()) {
     try {
       ort = await import(/* @vite-ignore */ "onnxruntime-node");
-    } catch (e: any) {
-      console.error("Failed to load onnxruntime-node:", e.message);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.error("Failed to load onnxruntime-node:", message);
       console.log("Please run 'npm install onnxruntime-node'");
       throw e;
     }
@@ -27,7 +45,7 @@ async function initOrt() {
 
 export class SvmAdapter implements ModelAdapter {
   readonly name = "svm";
-  private session: InferenceSession | null = null;
+  private session: OrtSession | null = null;
 
   async load(): Promise<void> {
     const runtime = await initOrt();

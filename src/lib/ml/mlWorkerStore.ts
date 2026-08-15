@@ -1,10 +1,11 @@
 import * as Comlink from "comlink";
-import type { WorkerApi } from "../algorithm/worker";
+import type { WorkerApi, InferenceProgress } from "../algorithm/worker";
+import type { LoadProgress } from "../algorithm/models/distilXlmr";
 
 let workerInstance: Worker | null = null;
 let comlinkProxy: Comlink.Remote<WorkerApi> | null = null;
-let progressCallback: ((data: any) => void) | null = null;
-let loadProgressCallback: ((data: any) => void) | null = null;
+let progressCallback: ((data: InferenceProgress) => void) | null = null;
+let loadProgressCallback: ((data: LoadProgress) => void) | null = null;
 
 export const setInferenceProgressListener = (callback: typeof progressCallback) => {
   progressCallback = callback;
@@ -33,8 +34,7 @@ async function getNodeApi(): Promise<WorkerApi> {
       _targetIloRbt: number,
     ) {
       console.debug("[mlWorkerStore:node] Running Modules 2-3-4 inline (no Web Worker).");
-      await getClassifier((info: any) => {
-        progressCallback?.(info);
+      await getClassifier((info) => {
         loadProgressCallback?.(info);
       });
       const results: {
@@ -71,8 +71,7 @@ async function getNodeApi(): Promise<WorkerApi> {
     },
     async preloadModel() {
       console.log("[mlWorkerStore:node] Preloading model inline...");
-      await getClassifier((info: any) => {
-        progressCallback?.(info);
+      await getClassifier((info) => {
         loadProgressCallback?.(info);
       });
     },

@@ -67,8 +67,8 @@ async function runBenchmark(kind: ModelKind, testSet: TestCase[]) {
   try {
     model = createModel(kind);
     await model.load();
-  } catch (err: any) {
-    console.error(`Failed to load model ${kind}:`, err.message);
+  } catch (err) {
+    console.error(`Failed to load model ${kind}:`, err instanceof Error ? err.message : String(err));
     if (kind === "svm") {
       console.log("-> Make sure you ran 'python scripts/training/export_svm_pipeline.py' first.");
     }

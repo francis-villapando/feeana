@@ -6,6 +6,12 @@ import type { ModelAdapter, Prediction } from "./types";
 const MAX_LEN = 256;
 const INT8_MODEL = "distilxlmr-pidabsa-int8.onnx";
 
+export interface LoadProgress {
+  status: "loading" | "progress" | "done";
+  progress: number;
+  phase?: string;
+}
+
 function isNode(): boolean {
   return typeof process !== "undefined" && process.versions?.node !== undefined;
 }
@@ -17,16 +23,19 @@ function getModelDir(): string {
   return "/models/finetuned";
 }
 
-let ort: any = null;
+let ort: typeof import("onnxruntime-web") | null = null;
 
-async function initOrt() {
+async function initOrt(): Promise<typeof import("onnxruntime-web")> {
   if (ort) return ort;
 
   try {
     ort = await import("onnxruntime-web");
-    ort.env.wasm.wasmPaths = "/onnxruntime/";
-  } catch (e: any) {
-    console.error("Failed to load onnxruntime-web:", e.message);
+    if (!isNode()) {
+      ort.env.wasm.wasmPaths = "/onnxruntime/";
+    }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    console.error("Failed to load onnxruntime-web:", message);
     throw e;
   }
   return ort;
@@ -64,9 +73,9 @@ function argmax(probs: number[]): number {
 export class DistilXlmrAdapter implements ModelAdapter {
   readonly name = "distilxlmr";
   session: InferenceSession | null = null;
-  tokenizer: any = null;
+  tokenizer: Awaited<ReturnType<typeof AutoTokenizer.from_pretrained>> | null = null;
   labelMap: LabelMappings | null = null;
-  progressHook?: (info: any) => void;
+  progressHook?: (info: LoadProgress) => void;
 
   private async readModelWithProgress(url: string): Promise<Uint8Array> {
     if (isNode()) {

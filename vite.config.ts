@@ -5,7 +5,9 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import type { ViteDevServer } from "vite";
 import { nitro } from "nitro/vite";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -20,8 +22,8 @@ function onnxWasmDevPlugin() {
   return {
     name: "onnx-wasm-dev-server",
     apply: "serve" as const, // Only runs in development (dev server)
-    configureServer(server: any) {
-      server.middlewares.use((req: any, res: any, next: any) => {
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => {
         const url = new URL(req.url || "", "http://localhost");
         const filename = path.basename(url.pathname);
         if (filename.startsWith("ort") && filename.endsWith(".mjs")) {
@@ -53,6 +55,9 @@ export default defineConfig({
   plugins: [!(isVitest) ? nitro() : null, onnxWasmDevPlugin()].filter(Boolean),
   vite: {
     assetsInclude: ["**/*.wasm"],
+    worker: {
+      format: "es",
+    },
     optimizeDeps: {
       exclude: ["onnxruntime-node"],
     },
