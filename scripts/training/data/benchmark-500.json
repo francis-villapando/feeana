@@ -1,0 +1,52 @@
+[
+  {
+    "id": "bench-1",
+    "text": "The way the professor writes the database schema definitions with all those underlines and dashed lines makes it so hard to figure out which one is the foreign key. I know how inheritance works pero hindi ko sure kung kailan ko siya dapat gamitin. I was unable to identify the exact basis for the final evaluation, and I'm still unsure what feature should come next. Conditionals were introduced with no connection to what we learned before, and the schema diagrams look like pure gibberish.",
+    "expectedIssue": "notation struggle"
+  },
+  {
+    "id": "bench-2",
+    "text": "Akala ko lahat ng sorting algorithms same lang yung performance, pero akala ko din na dynamic programming is only about storing values in arrays. Nagsstruggle ako sa notation ng primary at foreign keys sa diagrams, kaya ngayon mas lalo akong na-confuse kung paano ito hinahandle ng stack memory. Hindi ko rin makita kung paano kumokonekta ang API sa frontend. Akala ko sapat na ang isang table para sa buong database, sapat na rin ang primary key kahit walang foreign key.",
+    "expectedIssue": "conceptual misalignment"
+  },
+  {
+    "id": "bench-3",
+    "text": "I was unable to identify the exact basis for the final evaluation. There is no way to understand the last two assignments, and we were never told how our work would be scored. Waiting for my turn to recite makes me anxious, and I feel that my questions about the course content were never really answered by the teaching staff. We keep asking when the checked outputs will be returned and the answer is always next week, even after the semester ended. Emails also go unanswered for weeks at a time.",
+    "expectedIssue": "feedback latency"
+  },
+  {
+    "id": "bench-4",
+    "text": "Nahihirapan akong makisali dahil tila walang bukas na komunikasyon. Bihira kaming magkaroon ng makabuluhang pag-uusap tungkol sa aming mga proyekto, at hindi gaanong pinapansin ang aking mga mungkahi sa pagbuo ng sistema. Wala kaming idea kung ano yung dapat i-improve dahil walang natatanggap na komento sa outputs namin kahit na humingi na kami. Hindi masyadong napapansin yung questions ng students kaya nawawalan ako ng gana mag-participate sa klase. Parang wala kaming boses sa mga desisyon.",
+    "expectedIssue": "perceived marginalization"
+  },
+  {
+    "id": "bench-5",
+    "text": "Gets ko naman yung assigned task ko pero nalilito ako kung paano ko ito sisimulan. Di ko alam kung dapat bang unahin ang player movement o ang game mechanics, at hindi ko alam kung alin yung unang feature na dapat kong gawin. Akala ko automatic nang organized yung code basta gumagamit ng classes, pero hindi pala kaya na-stuck ako sa umpisa pa lang. Minsan kailangan kong ulitin yung buong activity kasi mali pala yung order, at nahihirapan akong i-convert ang pseudocode into actual code.",
+    "expectedIssue": "procedural bottleneck"
+  },
+  {
+    "id": "bench-6",
+    "text": "Although you had to write a fair amount of SQL queries which could be tough for someone new to it, the professor never explained how the pieces connect together. I know how inheritance works pero hindi ko sure kung kailan ko siya dapat gamitin. The way the database tables are drawn makes it hard to tell which column is the primary key of each table, and there is a missing part between the two ideas that should connect together properly, and the professor rarely offers examples to bridge the gap.",
+    "expectedIssue": "clarity deficit"
+  },
+  {
+    "id": "bench-7",
+    "text": "Siya ang pinakapangit na propesor na naranasan ko. Straight A student ako pero nakakuha ako ng unang C ko dahil sa kanya. Hirap gawin ng project pag yung main matrix operations ay di man lang ipinaliwanag nang maayos ng instructor, at kulang ang detalye bago pumunta sa mas kumplikadong bahagi ng paksa kaya nawalan na ako ng gana sa subject. Nahihirapan din akong maunawaan kung bakit mahalaga ang lahat ng ito para sa totoong trabaho. Wala ring gabay sa pagbuo ng requirements.",
+    "expectedIssue": "subject alienation"
+  },
+  {
+    "id": "bench-8",
+    "text": "Anlala, akala ko may time pa tas biglang ieelaborate na lang daw next meeting. Need ko na malaman yon today para maapply ko sa pinapagawa samin. Akala ko may schedule na sila para sa releasing ng scores pero same na naman lagi ang sagot na soon. Di na alam kung aling function ang kabilang, sobrang confusing talaga at wala nang nagpapaliwanag. Bumalik siya sa dating topic pero hindi naman na-relate properly sa current lesson namin. Kaya tuloy nalilito ako sa mga susunod pang hakbang.",
+    "expectedIssue": "instructional cadence"
+  },
+  {
+    "id": "bench-9",
+    "text": "He goes way too fast for you to even ask questions, and when you do ask questions you get looked at like you're a total idiot, and then he never really ends up helping you. Waiting for my turn to recite makes me anxious. There is no feedback given after each attempt so you waste time guessing which part of the problem you got wrong. The first half of this course is mostly review but after the midterm it gets pretty difficult and it is important to keep up. The pacing really needs to slow down.",
+    "expectedIssue": "instructional cadence"
+  },
+  {
+    "id": "bench-10",
+    "text": "Naiintindihan ko yung concept ng API pero hindi ko makita kung paano siya kumokonekta sa frontend. Kaya ngayon mas lalo akong na-confuse kung paano ito hinahandle ng stack memory, mas naguluhan pa ako. Di ko na alam kung aling function ang kabilang, at nagsstruggle ako sa notation ng primary at foreign keys sa diagrams ng database namin. Akala ko objects and classes are created the same way, pero magkaiba pala ang approach sa bawat isa. Mas okay sana kung may examples bago tayo magpatuloy.",
+    "expectedIssue": "conceptual misalignment"
+  }
+]

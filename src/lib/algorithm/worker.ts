@@ -20,6 +20,12 @@ try {
 let lastProgressTime = 0;
 const THROTTLE_MS = 66;
 
+export interface InferenceProgress {
+  current: number;
+  total: number;
+  text: string;
+}
+
 const api = {
   async runInference(
     feedbackStream: FeedbackInput[],
@@ -47,7 +53,7 @@ const api = {
       performance.measure(`Entry inference #${i}`, {
         start: `extract:entry-${i}-start`,
         end: `extract:entry-${i}-end`,
-        detail: { targetMs: 8000 },
+        detail: { targetMs: 2000 },
       });
       results.push(
         buildDiagnosticRecord(extraction.issue, extraction.polarity, _targetIloRbt, feedback.id),
@@ -59,7 +65,7 @@ const api = {
 
   async preloadModel(): Promise<void> {
     console.log("[worker] Preloading model...");
-    await getClassifier((info: any) => {
+    await getClassifier((info) => {
       const now = performance.now();
       if (info.status === "done" || now - lastProgressTime > THROTTLE_MS) {
         lastProgressTime = now;
