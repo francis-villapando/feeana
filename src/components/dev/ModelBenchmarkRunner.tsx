@@ -170,7 +170,7 @@ export function useModelBenchmark() {
   const [progress, setProgress] = useState({ stage: "", current: 0, total: 0 });
 
   const runAll = useCallback(async (testSet: TestCase[]) => {
-    const kinds: ModelKind[] = ["mdeberta", "mbert", "svm"];
+    const kinds: ModelKind[] = ["distilxlmr", "mdeberta", "mbert", "svm"];
     const allResults: ModelBenchmarkResult[] = [];
     setLoading(true);
 

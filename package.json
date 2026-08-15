@@ -14,7 +14,9 @@
     "db:reset": "supabase db reset && npx tsx --env-file .env scripts/seed/seedDashboard.ts",
     "db:seed": "npx tsx scripts/seed/seedSql.ts",
     "db:seed:dashboard": "npx tsx --env-file .env scripts/seed/seedDashboard.ts",
-    "db:smoke": "npx tsx --env-file=.env scripts/dev/pipelineSmoke.ts"
+    "db:smoke": "npx tsx --env-file=.env scripts/dev/pipelineSmoke.ts",
+  "sync:ort": "npx tsx scripts/dev/syncOrtWasm.ts",
+  "postinstall": "npm run sync:ort"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

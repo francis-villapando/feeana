@@ -4,14 +4,14 @@ import type { WorkerApi } from "../algorithm/worker";
 let workerInstance: Worker | null = null;
 let comlinkProxy: Comlink.Remote<WorkerApi> | null = null;
 let progressCallback: ((data: any) => void) | null = null;
-let downloadProgressCallback: ((data: any) => void) | null = null;
+let loadProgressCallback: ((data: any) => void) | null = null;
 
 export const setInferenceProgressListener = (callback: typeof progressCallback) => {
   progressCallback = callback;
 };
 
-export const setDownloadProgressListener = (callback: typeof downloadProgressCallback) => {
-  downloadProgressCallback = callback;
+export const setLoadProgressListener = (callback: typeof loadProgressCallback) => {
+  loadProgressCallback = callback;
 };
 
 const isBrowser = typeof Worker !== "undefined";
@@ -28,11 +28,14 @@ async function getNodeApi(): Promise<WorkerApi> {
   const { map_tti, map_rbt, map_clt } = await import("../algorithm/pedagogicalDiagnosticMapping");
 
   nodeApi = {
-    async runInference(feedbackStream: { id: string; rawText: string; createdAt?: string }[], _targetIloRbt: number) {
+    async runInference(
+      feedbackStream: { id: string; rawText: string; createdAt?: string }[],
+      _targetIloRbt: number,
+    ) {
       console.debug("[mlWorkerStore:node] Running Modules 2-3-4 inline (no Web Worker).");
       await getClassifier((info: any) => {
         progressCallback?.(info);
-        downloadProgressCallback?.(info);
+        loadProgressCallback?.(info);
       });
       const results: {
         feedbackId?: string;
@@ -70,7 +73,7 @@ async function getNodeApi(): Promise<WorkerApi> {
       console.log("[mlWorkerStore:node] Preloading model inline...");
       await getClassifier((info: any) => {
         progressCallback?.(info);
-        downloadProgressCallback?.(info);
+        loadProgressCallback?.(info);
       });
     },
   } as WorkerApi;
@@ -111,11 +114,11 @@ export function getMLWorker(): {
       type: "module",
     });
 
-    workerInstance.addEventListener('message', (event) => {
-      if (event.data?.type === 'INFERENCE_PROGRESS') {
+    workerInstance.addEventListener("message", (event) => {
+      if (event.data?.type === "INFERENCE_PROGRESS") {
         progressCallback?.(event.data.payload);
-      } else if (event.data?.type === 'progress') {
-        downloadProgressCallback?.(event.data.data);
+      } else if (event.data?.type === "LOAD_PROGRESS") {
+        loadProgressCallback?.(event.data.data);
       }
     });
 

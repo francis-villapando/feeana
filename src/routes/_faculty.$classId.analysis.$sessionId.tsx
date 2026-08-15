@@ -71,7 +71,7 @@ function AnalysisPage() {
     total: number;
     text: string;
   } | null>(null);
-  const [downloadProgress, setDownloadProgress] = useState(100);
+  const [loadProgress, setLoadProgress] = useState(100);
   const [modalOpen, setModalOpen] = useState(false);
 
   // Track cancellation to prevent error toasts when worker is terminated
@@ -79,12 +79,12 @@ function AnalysisPage() {
 
   useEffect(() => {
     import("@/lib/ml/mlWorkerStore").then(
-      ({ setInferenceProgressListener, setDownloadProgressListener }) => {
+      ({ setInferenceProgressListener, setLoadProgressListener }) => {
         setInferenceProgressListener((payload) => {
           setInferenceProgress(payload);
         });
-        setDownloadProgressListener((data) => {
-          setDownloadProgress(data.status === "done" ? 100 : (data.progress ?? 0));
+        setLoadProgressListener((data) => {
+          setLoadProgress(data.status === "done" ? 100 : (data.progress ?? 0));
         });
       },
     );
@@ -136,7 +136,7 @@ function AnalysisPage() {
     setIsAnalyzing(true);
     isCancelledRef.current = false;
     setInferenceProgress(null);
-    setDownloadProgress(0);
+    setLoadProgress(0);
     try {
       const data = await runAnalysisPipeline(session.id);
       if (!isCancelledRef.current) {
@@ -220,7 +220,7 @@ function AnalysisPage() {
 
       <ModelLoaderOverlay
         isVisible={isAnalyzing}
-        downloadProgress={downloadProgress}
+        loadProgress={loadProgress}
         inferenceProgress={inferenceProgress}
         statusText={
           inferenceProgress

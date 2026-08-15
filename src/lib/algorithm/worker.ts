@@ -12,7 +12,7 @@ env.allowLocalModels = true;
 
 // Attempt GPU (WebGL) acceleration; fallback to CPU (WASM) if unavailable
 try {
-  env.backends.onnx.backend = 'webgl';
+  env.backends.onnx.backend = "webgl";
 } catch {
   // WebGL not supported — WASM fallback is automatic
 }
@@ -21,11 +21,14 @@ let lastProgressTime = 0;
 const THROTTLE_MS = 66;
 
 if (env.backends.onnx.wasm) {
-  env.backends.onnx.wasm.wasmPaths = '/';
+  env.backends.onnx.wasm.wasmPaths = "/";
 }
 
 const api = {
-  async runInference(feedbackStream: FeedbackInput[], _targetIloRbt: number): Promise<DiagnosticRecord[]> {
+  async runInference(
+    feedbackStream: FeedbackInput[],
+    _targetIloRbt: number,
+  ): Promise<DiagnosticRecord[]> {
     console.debug("[worker] Running Modules 2-3-4 per-feedback loop.");
     const results: DiagnosticRecord[] = [];
 
@@ -33,7 +36,7 @@ const api = {
       const feedback = feedbackStream[i];
 
       self.postMessage({
-        type: 'INFERENCE_PROGRESS',
+        type: "INFERENCE_PROGRESS",
         payload: {
           current: i + 1,
           total: feedbackStream.length,
@@ -62,12 +65,12 @@ const api = {
     console.log("[worker] Preloading model...");
     await getClassifier((info: any) => {
       const now = performance.now();
-      if (info.status === 'done' || now - lastProgressTime > THROTTLE_MS) {
+      if (info.status === "done" || now - lastProgressTime > THROTTLE_MS) {
         lastProgressTime = now;
-        self.postMessage({ type: 'progress', data: info });
+        self.postMessage({ type: "LOAD_PROGRESS", data: info });
       }
     });
-    self.postMessage({ type: 'progress', data: { status: 'done', progress: 100 } });
+    self.postMessage({ type: "LOAD_PROGRESS", data: { status: "done", progress: 100 } });
   },
 };
 

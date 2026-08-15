@@ -115,7 +115,7 @@ async function runBenchmark(kind: ModelKind, testSet: TestCase[]) {
 
 async function main() {
   const testSet = await loadTestSet();
-  const modelsToTest: ModelKind[] = ["mdeberta", "mbert", "svm"];
+  const modelsToTest: ModelKind[] = ["distilxlmr", "mdeberta", "mbert", "svm"];
   
   for (const kind of modelsToTest) {
     await runBenchmark(kind, testSet);

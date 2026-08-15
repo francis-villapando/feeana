@@ -1,69 +1,45 @@
 // Module 3: Information Extraction
-// Zero-shot classification for pedagogical issue extraction.
+// Fine-tuned DistilXLM-R PID-ABSA classification via onnxruntime-web.
 // Intended to run inside the Web Worker.
 
-import { pipeline, type PipelineType } from "@huggingface/transformers";
+import { createModel } from "./models/adapter";
+import type { DistilXlmrAdapter } from "./models/distilXlmr";
 import type { IssueExtractionResult } from "./types";
 
-// 14 pedagogical issue tags
-const CANDIDATE_LABELS = [
-  "relational coldness",
-  "classroom tension",
-  "evaluation unfairness",
-  "perceived marginalization",
-  "subject alienation",
-  "peer distraction",
-  "instructional cadence",
-  "clarity deficit",
-  "abstract logic gap",
-  "procedural bottleneck",
-  "conceptual misalignment",
-  "design synthesis failure",
-  "feedback latency",
-  "notation struggle",
-];
+// Singleton adapter instance inside the worker
+let adapter: DistilXlmrAdapter | null = null;
+// Cached load promise to prevent race conditions during concurrent calls.
+let loadPromise: Promise<void> | null = null;
 
-// Singleton classifier instance inside the worker
-let classifierPromise: Promise<any> | null = null;
-
-// Initializes or returns the existing zero-shot classification pipeline.
+// Initializes or returns the existing DistilXLM-R adapter.
 export async function getClassifier(progress_callback?: (info: any) => void) {
-  if (!classifierPromise) {
-    console.log("[informationExtraction] Initializing zero-shot-classification pipeline...");
-    // Fallback model or explicit model selection can be made here.
-    classifierPromise = pipeline(
-      "zero-shot-classification" as PipelineType,
-      "Xenova/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
-      progress_callback ? { progress_callback } : undefined
-    );
+  if (!adapter) {
+    console.log("[informationExtraction] Initializing DistilXLM-R adapter...");
+    adapter = createModel("distilxlmr") as DistilXlmrAdapter;
+    if (progress_callback) {
+      adapter.progressHook = progress_callback;
+    }
+    loadPromise = adapter.load();
+    await loadPromise;
+    loadPromise = null;
+  } else if (loadPromise) {
+    // A load is in progress — await the same promise to avoid a race
+    // where predictCleaned runs before load() finishes.
+    await loadPromise;
   }
-  return classifierPromise;
+  return adapter;
 }
 
-// Asynchronously extracts the pedagogical issue from text.
-// Mapped implicitly to negative polarity per system design.
+// Asynchronously extracts the pedagogical issue from preprocessed text.
 export async function ExtractPID(cleanText: string): Promise<IssueExtractionResult> {
-  console.debug("[informationExtraction] Extracting PID via Zero-Shot ML", {
+  console.debug("[informationExtraction] Extracting PID via DistilXLM-R", {
     cleanTextLength: cleanText.length,
   });
 
   try {
-    const classifier = await getClassifier();
-
-    // We pass multi_label: false so the scores sum to 1.
-    const result = await classifier(cleanText, CANDIDATE_LABELS, {
-      multi_label: false,
-    });
-
-    console.debug("[informationExtraction] Zero-Shot ML Result", {
-      topLabel: result.labels[0],
-      topScore: result.scores[0],
-    });
-
-    return {
-      issue: result.labels[0],
-      polarity: "neg", // By design, all matched issues represent negative pedagogical gaps
-    };
+    const model = await getClassifier();
+    const { issue, polarity } = await model.predictCleaned(cleanText);
+    return { issue, polarity };
   } catch (error) {
     console.error("[informationExtraction] Classification failed, falling back", error);
     return {

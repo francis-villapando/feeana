@@ -45,7 +45,7 @@ function onnxWasmDevPlugin() {
 const isVitest = process.env.VITEST === "true";
 
 export default defineConfig({
-  cloudflare: false,
+  nitro: false,
   plugins: [!(isVitest) ? nitro() : null, onnxWasmDevPlugin()].filter(Boolean),
   vite: {
     optimizeDeps: {
@@ -59,6 +59,10 @@ export default defineConfig({
     server: {
       hmr: {
         overlay: false,
+      },
+      headers: {
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Embedder-Policy": "require-corp",
       },
     },
   },
