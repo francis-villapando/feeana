@@ -40,6 +40,7 @@ export function ClassInfoDialog({ open, onOpenChange, cls, studentId }: ClassInf
   const [submittedIds, setSubmittedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [confirmUnenroll, setConfirmUnenroll] = useState(false);
+  const [unenrolling, setUnenrolling] = useState(false);
   const navigate = useNavigate();
 
   const sessions = useMemo(
@@ -79,11 +80,16 @@ export function ClassInfoDialog({ open, onOpenChange, cls, studentId }: ClassInf
   };
 
   const handleUnenroll = async () => {
-    await unenrollStudent(cls.id);
-    setConfirmUnenroll(false);
-    onOpenChange(false);
-    toast.success("You have left the class");
-    navigate({ to: "/student/home" });
+    setUnenrolling(true);
+    try {
+      await unenrollStudent(cls.id);
+      setConfirmUnenroll(false);
+      onOpenChange(false);
+      toast.success("You have left the class");
+      navigate({ to: "/student/home" });
+    } finally {
+      setUnenrolling(false);
+    }
   };
 
   return (
@@ -185,9 +191,10 @@ export function ClassInfoDialog({ open, onOpenChange, cls, studentId }: ClassInf
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={unenrolling}
               onClick={handleUnenroll}
             >
-              Unenroll
+              {unenrolling ? "Unenrolling…" : "Unenroll"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

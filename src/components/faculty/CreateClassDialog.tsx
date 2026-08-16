@@ -37,6 +37,7 @@ export function CreateClassDialog({
   const [courseError, setCourseError] = useState("");
   const [sectionError, setSectionError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const selectedCourse = courses.find((crs) => crs.id === courseId);
 
@@ -56,6 +57,7 @@ export function CreateClassDialog({
     }
     if (hasError) return;
 
+    setCreating(true);
     try {
       const cls = await createClass({
         courseId,
@@ -69,6 +71,8 @@ export function CreateClassDialog({
       onOpenChange(false);
     } catch (err) {
       setSubmitError(friendlyError(err, "Failed to create class"));
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -132,7 +136,9 @@ export function CreateClassDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleCreate}>Create class</Button>
+          <Button onClick={handleCreate} disabled={creating}>
+            {creating ? "Creating…" : "Create class"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

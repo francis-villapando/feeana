@@ -25,6 +25,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import { topicsForClass } from "@/lib/hooks/courseLookup";
 import { cn } from "@/lib/hooks/utils";
+import { friendlyError } from "@/lib/hooks/utils";
 import { InlineError, destructiveBorder } from "@/components/common";
 
 interface PerClass {
@@ -47,6 +48,7 @@ export function CrossClassSessionCreator() {
   const [rows, setRows] = useState<PerClass[]>([]);
   const [launchError, setLaunchError] = useState("");
   const [rowErrors, setRowErrors] = useState<Record<string, RowFieldErrors>>({});
+  const [launching, setLaunching] = useState(false);
 
   const toggleClass = (classId: string) => {
     setLaunchError("");
@@ -81,7 +83,7 @@ export function CrossClassSessionCreator() {
     setRows((prev) => prev.map((r) => (r.classId === classId ? { ...r, ...patch } : r)));
   };
 
-  const handleLaunch = () => {
+  const handleLaunch = async () => {
     setLaunchError("");
     setRowErrors({});
 
@@ -124,23 +126,30 @@ export function CrossClassSessionCreator() {
       return;
     }
 
-    let count = 0;
-    for (const r of rows) {
-      const cls = activeClasses.find((c) => c.id === r.classId);
-      const crsTopics = topicsForClass(cls, courses, topics);
-      const topic = crsTopics.find((t) => t.id === r.topicId);
-      if (!topic) continue;
-      createSession({
-        classId: r.classId,
-        topic: topic.title,
-        topicId: topic.id,
-        startsAt: r.startsAt,
-        endsAt: r.endsAt,
-      });
-      count++;
+    setLaunching(true);
+    try {
+      await Promise.all(
+        rows.map((r) => {
+          const cls = activeClasses.find((c) => c.id === r.classId);
+          const crsTopics = topicsForClass(cls, courses, topics);
+          const topic = crsTopics.find((t) => t.id === r.topicId);
+          if (!topic) return Promise.resolve();
+          return createSession({
+            classId: r.classId,
+            topic: topic.title,
+            topicId: topic.id,
+            startsAt: r.startsAt,
+            endsAt: r.endsAt,
+          });
+        }),
+      );
+      toast.success(`Launched ${rows.length} session(s).`);
+      setRows([]);
+    } catch (err) {
+      setLaunchError(friendlyError(err, "Failed to launch sessions"));
+    } finally {
+      setLaunching(false);
     }
-    toast.success(`Launched ${count} session(s).`);
-    setRows([]);
   };
 
   return (
@@ -310,8 +319,8 @@ export function CrossClassSessionCreator() {
           </div>
         )}
 
-        <Button onClick={handleLaunch} className="w-full">
-          Start session
+        <Button onClick={handleLaunch} className="w-full" disabled={launching}>
+          {launching ? "Starting…" : "Start session"}
         </Button>
       </CardContent>
     </Card>

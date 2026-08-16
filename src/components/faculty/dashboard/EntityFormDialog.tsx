@@ -82,6 +82,8 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
     state.kind === "ILO" ? (state.entity?.bloomLevel ?? "Remember") : "Remember",
   );
 
+  const [saving, setSaving] = useState(false);
+
   const [codeError, setCodeError] = useState("");
   const [titleError, setTitleError] = useState("");
   const [topicTitleError, setTopicTitleError] = useState("");
@@ -146,6 +148,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
       }
     }
 
+    setSaving(true);
     try {
       if (state.kind === "course") {
         if (state.entity) {
@@ -197,6 +200,8 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
       } else {
         setSubmitError(friendlyError(err, "Could not save."));
       }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -396,7 +401,9 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>{isEdit ? "Save" : "Create"}</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : isEdit ? "Save" : "Create"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

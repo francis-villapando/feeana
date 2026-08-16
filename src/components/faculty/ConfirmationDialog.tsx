@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +16,7 @@ export type ActionType = "archive" | "restore" | "confirm";
 interface ConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title: string;
   description: string;
   actionType: ActionType;
@@ -34,10 +34,18 @@ export function ConfirmationDialog({
   confirmLabel,
   errorMessage,
 }: ConfirmationDialogProps) {
+  const [busy, setBusy] = useState(false);
+
   // Default labels if not provided
   const label =
     confirmLabel ||
     (actionType === "archive" ? "Archive" : actionType === "restore" ? "Restore" : "Confirm");
+
+  const PROGRESSIVE: Record<string, string> = {
+    Archive: "Archiving",
+    Restore: "Restoring",
+    Confirm: "Confirming",
+  };
 
   const renderDescription = (text: string) => {
     const first = text.indexOf('"');
@@ -65,14 +73,22 @@ export function ConfirmationDialog({
         </AlertDialogHeader>
         <InlineError errorMessage={errorMessage} />
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onClose} disabled={busy}>
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction
-            onClick={(e) => {
+            disabled={busy}
+            onClick={async (e) => {
               e.preventDefault();
-              onConfirm();
+              setBusy(true);
+              try {
+                await onConfirm();
+              } finally {
+                setBusy(false);
+              }
             }}
           >
-            {label}
+            {busy ? `${PROGRESSIVE[label] ?? label}…` : label}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

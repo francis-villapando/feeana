@@ -54,6 +54,7 @@ export function AuthPage({ role }: { role: UserRole }) {
   const [confirmError, setConfirmError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [resendError, setResendError] = useState("");
+  const [resending, setResending] = useState(false);
 
   const goHome = (r: UserRole) => {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
@@ -138,12 +139,15 @@ export function AuthPage({ role }: { role: UserRole }) {
       if (msg === "EMAIL_ALREADY_EXISTS") {
         setSubmitError("This email is already registered. Please sign in instead.");
       } else if (msgLower.includes("email not confirmed")) {
-        setSubmitError("Please confirm your email before signing in. Check your inbox for the confirmation link.");
+        setSubmitError(
+          "Please confirm your email before signing in. Check your inbox for the confirmation link.",
+        );
       } else {
         const friendly =
-          msgLower.includes("invalid login credentials") || msgLower.includes("invalid email or password")
-          ? "Invalid email or password."
-          : friendlyError(err);
+          msgLower.includes("invalid login credentials") ||
+          msgLower.includes("invalid email or password")
+            ? "Invalid email or password."
+            : friendlyError(err);
         setSubmitError(friendly);
       }
     } finally {
@@ -153,6 +157,7 @@ export function AuthPage({ role }: { role: UserRole }) {
 
   const handleResend = async () => {
     setResendError("");
+    setResending(true);
     try {
       await resendConfirmation(email);
       toast.success("Confirmation link sent. Check your email.");
@@ -164,6 +169,8 @@ export function AuthPage({ role }: { role: UserRole }) {
       setConfirm("");
     } catch (err) {
       setResendError(friendlyError(err, "Could not send confirmation email."));
+    } finally {
+      setResending(false);
     }
   };
 
@@ -220,8 +227,14 @@ export function AuthPage({ role }: { role: UserRole }) {
                   <Button onClick={handleSwitchToSignIn} className="w-full">
                     <LogIn className="h-4 w-4" /> Sign in
                   </Button>
-                  <Button onClick={handleResend} variant="outline" className="w-full">
-                    <Mail className="h-4 w-4" /> Resend confirmation email
+                  <Button
+                    onClick={handleResend}
+                    variant="outline"
+                    className="w-full"
+                    disabled={resending}
+                  >
+                    <Mail className="h-4 w-4" />
+                    {resending ? "Sending…" : "Resend confirmation email"}
                   </Button>
                   <InlineError errorMessage={resendError} />
                 </div>

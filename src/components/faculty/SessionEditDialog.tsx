@@ -203,7 +203,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving\u2026" : "Save"}
+              {saving ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
