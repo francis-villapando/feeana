@@ -237,7 +237,10 @@ function ClassLayout() {
             cls={cls}
             studentCount={studentCountForClass(classId)}
             onCopy={copy}
-            onArchive={() => { setArchiveError(""); setArchiveOpen(true); }}
+            onArchive={() => {
+              setArchiveError("");
+              setArchiveOpen(true);
+            }}
           />
 
           <SessionCreator classId={cls.id} />

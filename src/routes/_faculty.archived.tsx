@@ -62,7 +62,14 @@ function ArchivedPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {archivedClasses.map((cls) => (
-            <ClassCard key={cls.id} cls={cls} onRestore={(id) => { setRestoreError(""); setRestoringId(id); }} />
+            <ClassCard
+              key={cls.id}
+              cls={cls}
+              onRestore={(id) => {
+                setRestoreError("");
+                setRestoringId(id);
+              }}
+            />
           ))}
         </div>
       )}

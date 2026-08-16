@@ -185,7 +185,14 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
           <Separator />
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => { setArchiveError(""); setConfirmArchive(true); }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setArchiveError("");
+                setConfirmArchive(true);
+              }}
+            >
               <Archive className="h-3.5 w-3.5 mr-1.5" />
               Archive
             </Button>

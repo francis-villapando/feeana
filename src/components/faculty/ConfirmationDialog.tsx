@@ -34,12 +34,10 @@ export function ConfirmationDialog({
   confirmLabel,
   errorMessage,
 }: ConfirmationDialogProps) {
-  
   // Default labels if not provided
-  const label = confirmLabel || (
-    actionType === "archive" ? "Archive" :
-    actionType === "restore" ? "Restore" : "Confirm"
-  );
+  const label =
+    confirmLabel ||
+    (actionType === "archive" ? "Archive" : actionType === "restore" ? "Restore" : "Confirm");
 
   const renderDescription = (text: string) => {
     const first = text.indexOf('"');
@@ -68,7 +66,7 @@ export function ConfirmationDialog({
         <InlineError errorMessage={errorMessage} />
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
+          <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();
               onConfirm();

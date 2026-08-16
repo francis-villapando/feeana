@@ -33,8 +33,17 @@ type State =
 const BLOOMS: BloomLevel[] = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
 
 export function EntityFormDialog({ state, onClose }: { state: State; onClose: () => void }) {
-  const { courses, topics, createCourse, updateCourse, createTopic, updateTopic, createILO, updateILO, refreshAll } =
-    useCourseStore();
+  const {
+    courses,
+    topics,
+    createCourse,
+    updateCourse,
+    createTopic,
+    updateTopic,
+    createILO,
+    updateILO,
+    refreshAll,
+  } = useCourseStore();
 
   const isEdit = !!state.entity;
   const labels: Record<EntityKind, string> = {
@@ -82,9 +91,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
   const [iloTopicError, setIloTopicError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  const availableTopics = topics.filter(
-    (t) => t.courseId === iloCourseId && !t.archived,
-  );
+  const availableTopics = topics.filter((t) => t.courseId === iloCourseId && !t.archived);
 
   const clearErrors = () => {
     setCodeError("");
@@ -157,7 +164,11 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           toast.success("Topic created.");
         }
       } else if (state.entity) {
-        await updateILO(state.entity.id, { statement: iloStatement, bloomLevel: iloBloom, version: state.entity.version });
+        await updateILO(state.entity.id, {
+          statement: iloStatement,
+          bloomLevel: iloBloom,
+          version: state.entity.version,
+        });
         toast.success("ILO updated.");
       } else {
         await createILO({
@@ -325,8 +336,8 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                         !iloCourseId
                           ? "Select a course first"
                           : availableTopics.length === 0
-                          ? "No topics for this course"
-                          : "Select a topic"
+                            ? "No topics for this course"
+                            : "Select a topic"
                       }
                     />
                   </SelectTrigger>

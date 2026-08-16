@@ -99,7 +99,10 @@ export function SessionCard({ session }: { session: Session }) {
                   variant="secondary"
                   size="icon"
                   className="h-8 w-8"
-                  onClick={() => { setRestoreError(""); setConfirmRestore(true); }}
+                  onClick={() => {
+                    setRestoreError("");
+                    setConfirmRestore(true);
+                  }}
                 >
                   <RotateCcw className="h-4 w-4" />
                 </Button>
