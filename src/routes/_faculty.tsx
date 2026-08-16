@@ -52,7 +52,7 @@ function FacultyLayoutInner({ user, logout }: { user: { name: string }; logout: 
       <div className="flex min-h-0 flex-1">
         <FacultySidebar hoverEnabled={hoverEnabled} />
         <SidebarInset className="bg-transparent">
-          <main className="w-full flex-1 overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8">
+          <main className="mx-auto w-full max-w-7xl flex-1 overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8">
             <Outlet />
           </main>
         </SidebarInset>
