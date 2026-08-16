@@ -11,6 +11,7 @@ import { CountBadge } from "@/components/common";
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
 import { useSessionDisplayStatus } from "@/lib/hooks/useSessionDisplayStatus";
 import { SessionEditDialog, ConfirmationDialog } from "@/components/faculty";
+import { friendlyError } from "@/lib/hooks/utils";
 import type { Session } from "@/lib/types/types";
 
 const STATUS_BADGE: Record<string, { variant: "default" | "secondary"; className: string }> = {
@@ -46,12 +47,15 @@ export function SessionCard({ session }: { session: Session }) {
   const isArchived = displayStatus === "archived";
   const [editing, setEditing] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
+  const [restoreError, setRestoreError] = useState("");
 
   const handleRestore = async () => {
+    setRestoreError("");
     try {
       await restoreSession(session.id);
+      setConfirmRestore(false);
     } catch (err) {
-      console.error(err);
+      setRestoreError(friendlyError(err, "Failed to restore session"));
     }
   };
 
@@ -93,7 +97,7 @@ export function SessionCard({ session }: { session: Session }) {
                   variant="secondary"
                   size="icon"
                   className="h-8 w-8"
-                  onClick={() => setConfirmRestore(true)}
+                  onClick={() => { setRestoreError(""); setConfirmRestore(true); }}
                 >
                   <RotateCcw className="h-4 w-4" />
                 </Button>
@@ -147,6 +151,7 @@ export function SessionCard({ session }: { session: Session }) {
           description={`Restore the "${session.topic}" session?`}
           actionType="restore"
           confirmLabel="Restore"
+          errorMessage={restoreError}
         />
       )}
     </>

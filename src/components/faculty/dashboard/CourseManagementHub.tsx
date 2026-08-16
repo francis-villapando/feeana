@@ -18,6 +18,7 @@ import type { Course, ILO, Topic } from "@/lib/types/types";
 import { EntityFormDialog } from "./EntityFormDialog";
 import { useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/hooks/utils";
 import { ConfirmationDialog, type ActionType } from "@/components/faculty";
 
 type EditState =
@@ -60,6 +61,7 @@ export function CourseManagementHub() {
   const [edit, setEdit] = useState<EditState>(null);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
+  const [confirmError, setConfirmError] = useState("");
   const [focusedId, setFocusedId] = useState<string | undefined>(undefined);
 
   const search = useSearch({ strict: false }) as { focus?: string; t?: number };
@@ -130,6 +132,7 @@ export function CourseManagementHub() {
   }, [courses, topics, ilos, query, showArchived]);
 
   const handleAction = (title: string, description: string, onConfirm: () => void, actionType: ActionType, confirmLabel?: string) => {
+    setConfirmError("");
     setConfirm({ title, description, onConfirm, actionType, confirmLabel });
   };
 
@@ -390,26 +393,27 @@ export function CourseManagementHub() {
           isOpen={!!confirm}
           onClose={() => setConfirm(null)}
           onConfirm={async () => {
+            setConfirmError("");
             try {
               await confirm.onConfirm();
+              setConfirm(null);
             } catch (e) {
               if (e instanceof DuplicateError) {
-                toast.error(e.message);
+                setConfirmError(e.message);
                 await refreshAll();
               } else if (e instanceof ConflictError) {
-                toast.error(e.message);
+                setConfirmError(e.message);
                 await refreshAll();
               } else {
-                toast.error(e instanceof Error ? e.message : "Action failed");
+                setConfirmError(friendlyError(e, "Action failed"));
               }
-            } finally {
-              setConfirm(null);
             }
           }}
           title={confirm.title}
           description={confirm.description}
           actionType={confirm.actionType}
           confirmLabel={confirm.confirmLabel}
+          errorMessage={confirmError}
         />
       )}
     </Card>

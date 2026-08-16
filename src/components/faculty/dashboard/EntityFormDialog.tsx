@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { InlineError, destructiveBorder } from "@/components/common";
+import { friendlyError } from "@/lib/hooks/utils";
 
 type State =
   | { kind: "course"; entity?: Course }
@@ -183,8 +184,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
         refreshAll();
         onClose();
       } else {
-        toast.error("Could not save.");
-        onClose();
+        setSubmitError(friendlyError(err, "Could not save."));
       }
     }
   };

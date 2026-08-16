@@ -75,6 +75,7 @@ function ClassLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveError, setArchiveError] = useState("");
   const [isDataFresh, setIsDataFresh] = useState(false);
 
   const cls = getClass(classId);
@@ -158,13 +159,14 @@ function ClassLayout() {
 
   const handleArchive = async () => {
     if (!cls) return;
+    setArchiveError("");
     try {
       await archiveClass(cls.id);
       toast.success("Class archived");
       setArchiveOpen(false);
       navigate({ to: "/home" });
     } catch (err) {
-      toast.error(friendlyError(err, "Failed to archive"));
+      setArchiveError(friendlyError(err, "Failed to archive"));
     }
   };
 
@@ -235,7 +237,7 @@ function ClassLayout() {
             cls={cls}
             studentCount={studentCountForClass(classId)}
             onCopy={copy}
-            onArchive={() => setArchiveOpen(true)}
+            onArchive={() => { setArchiveError(""); setArchiveOpen(true); }}
           />
 
           <SessionCreator classId={cls.id} />
@@ -262,6 +264,7 @@ function ClassLayout() {
         title="Archive class"
         description={`Archive the "${cls.courseCode} · ${cls.section}" class? This class will be hidden from your dashboard but can be restored later.`}
         actionType="archive"
+        errorMessage={archiveError}
       />
     </div>
   );

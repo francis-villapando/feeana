@@ -51,6 +51,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
   const [startsAtError, setStartsAtError] = useState("");
   const [endsAtError, setEndsAtError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [archiveError, setArchiveError] = useState("");
 
   const handleSave = async () => {
     setTopicError("");
@@ -99,12 +100,13 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
   };
 
   const handleArchive = async () => {
+    setArchiveError("");
     try {
       await archiveSession(session.id);
       toast.success("Session archived.");
       onClose();
     } catch (err) {
-      toast.error(friendlyError(err, "Failed to archive session"));
+      setArchiveError(friendlyError(err, "Failed to archive session"));
     }
   };
 
@@ -183,7 +185,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
           <Separator />
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setConfirmArchive(true)}>
+            <Button variant="ghost" size="sm" onClick={() => { setArchiveError(""); setConfirmArchive(true); }}>
               <Archive className="h-3.5 w-3.5 mr-1.5" />
               Archive
             </Button>
@@ -209,6 +211,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
           description={`Archive the "${session.topic}" session?`}
           actionType="archive"
           confirmLabel="Archive"
+          errorMessage={archiveError}
         />
       )}
     </>

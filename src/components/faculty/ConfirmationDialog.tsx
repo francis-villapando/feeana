@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { InlineError } from "@/components/common";
 
 export type ActionType = "archive" | "restore" | "confirm";
 
@@ -20,6 +21,7 @@ interface ConfirmationDialogProps {
   description: string;
   actionType: ActionType;
   confirmLabel?: string;
+  errorMessage?: string;
 }
 
 export function ConfirmationDialog({
@@ -30,6 +32,7 @@ export function ConfirmationDialog({
   description,
   actionType,
   confirmLabel,
+  errorMessage,
 }: ConfirmationDialogProps) {
   
   // Default labels if not provided
@@ -62,10 +65,14 @@ export function ConfirmationDialog({
             {renderDescription(description)}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        <InlineError errorMessage={errorMessage} />
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onConfirm}
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+            }}
           >
             {label}
           </AlertDialogAction>
