@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Calendar, MessageSquare, Pencil, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +54,7 @@ export function SessionCard({ session }: { session: Session }) {
     setRestoreError("");
     try {
       await restoreSession(session.id);
+      toast.success("Session restored.");
       setConfirmRestore(false);
     } catch (err) {
       setRestoreError(friendlyError(err, "Failed to restore session"));

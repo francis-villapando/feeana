@@ -35,6 +35,13 @@ type ConfirmState = {
   confirmLabel?: string;
 } | null;
 
+function confirmSuccessLabel(title: string): string {
+  const [verb, ...rest] = title.split(" ");
+  const past = verb === "Archive" ? "archived" : verb === "Restore" ? "restored" : verb.toLowerCase();
+  const label = `${rest.join(" ")} ${past}.`;
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 export function CourseManagementHub() {
   const {
     courses,
@@ -396,6 +403,7 @@ export function CourseManagementHub() {
             setConfirmError("");
             try {
               await confirm.onConfirm();
+              toast.success(confirmSuccessLabel(confirm.title));
               setConfirm(null);
             } catch (e) {
               if (e instanceof DuplicateError) {
