@@ -25,7 +25,7 @@ import { topicsForClass } from "@/lib/hooks/courseLookup";
 import type { Session } from "@/lib/types/types";
 import { ConfirmationDialog, DateTimePicker } from "@/components/faculty";
 import { InlineError, destructiveBorder } from "@/components/common";
-import { friendlyError } from "@/lib/hooks/utils";
+import { friendlyError, unchangedFields, noChangesMessage } from "@/lib/hooks/utils";
 
 interface SessionEditDialogProps {
   session: Session;
@@ -78,6 +78,16 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
     }
     if (new Date(endsAt) <= new Date()) {
       setEndsAtError("End time cannot be in the past.");
+      return;
+    }
+
+    const unchanged = unchangedFields([
+      { label: "topic", oldValue: session.topicId ?? "", newValue: topicId },
+      { label: "start time", oldValue: session.startsAt, newValue: startsAt },
+      { label: "end time", oldValue: session.endsAt, newValue: endsAt },
+    ]);
+    if (unchanged.length === 3) {
+      setSubmitError(noChangesMessage(unchanged));
       return;
     }
 

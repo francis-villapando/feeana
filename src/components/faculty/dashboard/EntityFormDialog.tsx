@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { InlineError, destructiveBorder } from "@/components/common";
-import { friendlyError } from "@/lib/hooks/utils";
+import { friendlyError, unchangedFields, noChangesMessage } from "@/lib/hooks/utils";
 
 type State =
   | { kind: "course"; entity?: Course }
@@ -145,6 +145,30 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           hasError = true;
         }
         if (hasError) return;
+      }
+    }
+
+    if (state.entity) {
+      const fields =
+        state.kind === "course"
+          ? [
+              { label: "code", oldValue: state.entity.code, newValue: code },
+              { label: "title", oldValue: state.entity.title, newValue: title },
+            ]
+          : state.kind === "topic"
+            ? [{ label: "title", oldValue: state.entity.title, newValue: topicTitle }]
+            : [
+                { label: "statement", oldValue: state.entity.statement, newValue: iloStatement },
+                { label: "Bloom level", oldValue: state.entity.bloomLevel, newValue: iloBloom },
+              ];
+      const unchanged = unchangedFields(fields);
+      if (unchanged.length === fields.length) {
+        if (state.kind === "topic") {
+          setTopicTitleError(noChangesMessage(unchanged));
+        } else {
+          setSubmitError(noChangesMessage(unchanged));
+        }
+        return;
       }
     }
 
