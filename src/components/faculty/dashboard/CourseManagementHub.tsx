@@ -194,7 +194,7 @@ export function CourseManagementHub() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search courses, topics, or ILOs..."
+            placeholder="Search courses, topics, or ILOs…"
             className="h-8 pl-7 text-xs"
           />
         </div>
@@ -447,7 +447,7 @@ export function CourseManagementHub() {
                                         onClick={() => {
                                           const label =
                                             ilo.statement.length > 50
-                                              ? ilo.statement.slice(0, 50) + "..."
+                                              ? ilo.statement.slice(0, 50) + "…"
                                               : ilo.statement;
                                           if (ilo.archived) {
                                             handleAction(

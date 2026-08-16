@@ -330,8 +330,8 @@ export function AuthPage({ role }: { role: UserRole }) {
                   )}
                   {submitting
                     ? mode === "signin"
-                      ? "Signing in..."
-                      : "Signing up..."
+                      ? "Signing in…"
+                      : "Signing up…"
                     : mode === "signin"
                       ? "Sign in"
                       : "Sign up"}

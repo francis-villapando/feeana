@@ -224,8 +224,8 @@ function AnalysisPage() {
         inferenceProgress={inferenceProgress}
         statusText={
           inferenceProgress
-            ? "Processing feedback entries..."
-            : "Initializing Machine Learning Engine..."
+            ? "Processing feedback entries…"
+            : "Initializing Machine Learning Engine…"
         }
         onCancel={handleCancel}
       />

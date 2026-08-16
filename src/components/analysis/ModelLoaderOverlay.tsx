@@ -44,13 +44,13 @@ export function ModelLoaderOverlay({
   const getPhaseLabel = (phase?: string) => {
     switch (phase) {
       case "session":
-        return "Initializing inference engine...";
+        return "Initializing inference engine";
       case "tokenizer":
-        return "Loading tokenizer...";
+        return "Loading tokenizer";
       case "labels":
-        return "Loading label mappings...";
+        return "Loading label mappings";
       default:
-        return "Loading NLP model...";
+        return "Loading NLP model";
     }
   };
 
@@ -71,7 +71,7 @@ export function ModelLoaderOverlay({
 
         <h3 className="mb-2 text-lg font-semibold tracking-tight text-card-foreground">
           {isClassifying
-            ? "Classifying feedback"
+            ? "Classifying feedback…"
             : isCached
               ? "Engine ready"
               : isLoading
@@ -96,7 +96,7 @@ export function ModelLoaderOverlay({
               className="h-2 w-full bg-primary/20 [&>div]:bg-gradient-to-r [&>div]:from-primary/40 [&>div]:to-primary"
             />
             <div className="rounded-md bg-muted/50 p-3 text-left text-xs italic text-muted-foreground line-clamp-2 border border-border/50 shadow-sm">
-              "{inferenceProgress.text}..."
+              "{inferenceProgress.text}…"
             </div>
             {onCancel && (
               <Button

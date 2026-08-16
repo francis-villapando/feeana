@@ -104,7 +104,7 @@ async function runModelBenchmark(
 
   const baselineMem = await measureMemory();
 
-  onProgress?.("Loading model...", 0, testSet.length + 2);
+  onProgress?.("Loading model…", 0, testSet.length + 2);
   const loadStart = performance.now();
   await model.load();
   const loadTimeMs = performance.now() - loadStart;
@@ -112,19 +112,19 @@ async function runModelBenchmark(
   const afterLoadMem = await measureMemory();
   const loadMemoryMB = (afterLoadMem - baselineMem) / 1024 / 1024;
 
-  onProgress?.("Warming up...", 0, testSet.length + 2);
+  onProgress?.("Warming up…", 0, testSet.length + 2);
   for (let i = 0; i < Math.min(3, testSet.length); i++) {
     await model.predict(testSet[i].text);
   }
 
-  onProgress?.("Running inference...", 0, testSet.length);
+  onProgress?.("Running inference…", 0, testSet.length);
   const latencies: number[] = [];
   const predictions: string[] = [];
   const expected: string[] = [];
   const predictionDetails: PredictionDetail[] = [];
 
   for (let i = 0; i < testSet.length; i++) {
-    onProgress?.(`Running inference...`, i + 1, testSet.length);
+    onProgress?.(`Running inference…`, i + 1, testSet.length);
     const t0 = performance.now();
     const result = await model.predict(testSet[i].text);
     latencies.push(performance.now() - t0);
@@ -141,7 +141,7 @@ async function runModelBenchmark(
   const afterInferenceMem = await measureMemory();
   const inferenceMemoryMB = (afterInferenceMem - afterLoadMem) / 1024 / 1024;
 
-  onProgress?.("Disposing model...", testSet.length, testSet.length);
+  onProgress?.("Disposing model…", testSet.length, testSet.length);
   await model.dispose();
   terminateMLWorker();
   await sleep(1500);
@@ -185,7 +185,7 @@ export function useModelBenchmark() {
 
     for (const kind of kinds) {
       setCurrentModel(kind);
-      setProgress({ stage: `Loading ${kind}...`, current: 0, total: testSet.length + 2 });
+      setProgress({ stage: `Loading ${kind}…`, current: 0, total: testSet.length + 2 });
       const result = await runModelBenchmark(kind, testSet, (stage, current, total) => {
         setProgress({ stage, current, total });
       });

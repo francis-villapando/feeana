@@ -41,7 +41,7 @@ export function CompareModelsPage() {
   if (testSet.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Loading test set...</p>
+        <p className="text-muted-foreground">Loading test set…</p>
       </div>
     );
   }
@@ -57,7 +57,7 @@ export function CompareModelsPage() {
             <h1 className="text-3xl font-bold">Model Comparison Benchmark</h1>
           </div>
           <Button onClick={() => runAll(testSet)} disabled={loading}>
-            {loading ? `Running: ${currentModel}...` : "Run All Benchmarks"}
+            {loading ? `Running: ${currentModel}…` : "Run All Benchmarks"}
           </Button>
         </div>
 

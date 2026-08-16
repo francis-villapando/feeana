@@ -187,27 +187,8 @@ function ClassLayout() {
             submissionHint="Across sessions in this class"
             iloHint="Across sessions in this class"
           />
-
           <TrendLineCard trend={trend} />
-
           <TrendBarCard trend={trend} />
-
-          {/* Trend interpretation */}
-          {/* <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle className="text-base">Trend interpretation</CardTitle>
-              <CardDescription>AI-generated insights from class performance data.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border border-border/60 bg-background/40 p-4 text-sm text-muted-foreground">
-                {trend.length === 0 ? (
-                  <p>Trend interpretation will appear once you have enough analyzed sessions.</p>
-                ) : (
-                  <p>Interpreting class trends over time...</p>
-                )}
-              </div>
-            </CardContent>
-          </Card> */}
         </>
       ) : (
         <>

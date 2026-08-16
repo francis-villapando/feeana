@@ -85,7 +85,7 @@ export function EnrollClassDialog({
             Cancel
           </Button>
           <Button onClick={handleEnroll} disabled={enrolling}>
-            {enrolling ? "Enrolling..." : "Enroll"}
+            {enrolling ? "Enrolling…" : "Enroll"}
           </Button>
         </DialogFooter>
       </DialogContent>
