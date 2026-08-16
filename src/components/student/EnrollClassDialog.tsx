@@ -71,7 +71,7 @@ export function EnrollClassDialog({
             id="enroll-code"
             value={code}
             onChange={(e) => {
-              setCode(e.target.value.toUpperCase());
+              setCode(e.target.value.toUpperCase().trim());
               setCodeError("");
             }}
             placeholder="87NUM8QU"

@@ -209,7 +209,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                 id="course-code"
                 value={code}
                 onChange={(e) => {
-                  setCode(e.target.value);
+                  setCode(e.target.value.toUpperCase().trim());
                   setCodeError("");
                 }}
                 placeholder="CSEG2"
