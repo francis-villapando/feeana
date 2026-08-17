@@ -71,7 +71,9 @@ function AnalysisPage() {
     total: number;
     text: string;
   } | null>(null);
-  const [loadProgress, setLoadProgress] = useState<{ progress: number; phase?: string }>({ progress: 100 });
+  const [loadProgress, setLoadProgress] = useState<{ progress: number; phase?: string }>({
+    progress: 100,
+  });
   const [modalOpen, setModalOpen] = useState(false);
 
   // Track cancellation to prevent error toasts when worker is terminated
@@ -88,6 +90,21 @@ function AnalysisPage() {
         });
       },
     );
+  }, []);
+
+  // Eagerly preload the ML model in the background so that when the faculty
+  // member triggers analysis, the engine is already warm in memory. Non-blocking.
+  useEffect(() => {
+    let cancelled = false;
+    import("@/lib/ml/mlWorkerStore")
+      .then(({ getMLWorkerAsync }) => getMLWorkerAsync())
+      .then(({ api }) => {
+        if (!cancelled) api.preloadModel().catch(() => {});
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

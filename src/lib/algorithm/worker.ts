@@ -10,13 +10,6 @@ import type { FeedbackInput, DiagnosticRecord } from "./types";
 
 env.allowLocalModels = true;
 
-// Attempt GPU (WebGL) acceleration; fallback to CPU (WASM) if unavailable
-try {
-  env.backends.onnx.backend = "webgl";
-} catch {
-  // WebGL not supported — WASM fallback is automatic
-}
-
 let lastProgressTime = 0;
 const THROTTLE_MS = 66;
 
