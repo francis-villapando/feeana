@@ -11,6 +11,11 @@ export interface LoadProgress {
   status: "loading" | "progress" | "done";
   progress: number;
   phase?: string;
+  source?: "cache" | "network";
+  bytes?: {
+    loaded: number;
+    total: number;
+  };
 }
 
 function isNode(): boolean {
@@ -120,18 +125,26 @@ export class DistilXlmrAdapter implements ModelAdapter {
       return Promise.resolve(readFileSync(url));
     }
 
-    // Cache Storage hit: serve the bytes with zero network overhead.
+    // Serve from Cache Storage
     const cached = await cachedFetch(url);
     if (cached) {
-      this.progressHook?.({ status: "progress", progress: 60, phase: "download" });
+      this.progressHook?.({
+        status: "progress",
+        progress: 60,
+        phase: "download",
+        source: "cache",
+      });
       return new Uint8Array(await cached.arrayBuffer());
     }
 
+    // Expected ONNX model size (~118 MB) fallback for servers omitting Content-Length
+    const KNOWN_MODEL_SIZE = 118_052_968;
+
     return fetch(url).then(async (response) => {
       if (!response.ok) throw new Error(`Failed to load model (HTTP ${response.status})`);
-      const total = Number(response.headers.get("content-length") ?? 0);
-      if (!response.body || total === 0) {
-        this.progressHook?.({ status: "loading", progress: 0 });
+      const total = Number(response.headers.get("content-length") ?? 0) || KNOWN_MODEL_SIZE;
+      if (!response.body) {
+        this.progressHook?.({ status: "loading", progress: 0, source: "network" });
         const buf = new Uint8Array(await response.arrayBuffer());
         await cachePut(url, buf);
         return buf;
@@ -157,7 +170,10 @@ export class DistilXlmrAdapter implements ModelAdapter {
             loaded += value.length;
             this.progressHook?.({
               status: "progress",
-              progress: Math.min(60, (loaded / total) * 100),
+              progress: Math.min(60, (loaded / total) * 60),
+              phase: "download",
+              source: "network",
+              bytes: { loaded, total },
             });
             readChunk();
           });
@@ -167,8 +183,7 @@ export class DistilXlmrAdapter implements ModelAdapter {
     });
   }
 
-  // Best-effort background warm of the ORT WASM binaries so a cold load after
-  // the first visit doesn't have to re-fetch them. Non-blocking; failures are ignored.
+  // Pre-cache ORT WASM binaries in the background
   private async warmAuxCache(): Promise<void> {
     if (isNode()) return;
     const wasmUrls = [
@@ -193,7 +208,6 @@ export class DistilXlmrAdapter implements ModelAdapter {
     env.allowLocalModels = true;
 
     // Phase 1: Model download / cache-read (0-60%)
-    this.progressHook?.({ status: "progress", progress: 5, phase: "download" });
     const modelBuffer = await this.readModelWithProgress(`${dir}/${INT8_MODEL}`);
 
     // Phase 2: Session creation (60-70%) — WASM execution provider
@@ -202,7 +216,7 @@ export class DistilXlmrAdapter implements ModelAdapter {
       executionProviders: ["wasm"],
     });
 
-    // Phase 3: Tokenizer loading (70-95%) - this is the heaviest step
+    // Phase 3: Tokenizer loading (70-95%)
     this.progressHook?.({ status: "progress", progress: 70, phase: "tokenizer" });
     this.tokenizer = await AutoTokenizer.from_pretrained(dir, { local_files_only: true });
     this.progressHook?.({ status: "progress", progress: 95, phase: "tokenizer" });
@@ -212,14 +226,13 @@ export class DistilXlmrAdapter implements ModelAdapter {
     this.labelMap = await loadLabelMappings(dir);
     this.progressHook?.({ status: "progress", progress: 99, phase: "labels" });
 
-    // JIT warmup: compile WebGPU shaders / WASM kernels ahead of real workload.
+    // JIT warmup: compile WASM kernels ahead of workload
     try {
       await this.runCleaned("warmup");
     } catch (e) {
       console.warn("[distilXlmr] Warmup inference failed (non-fatal):", e);
     }
 
-    // Fire-and-forget cache of WASM binaries (non-blocking).
     void this.warmAuxCache();
 
     console.log("[distilXlmr] Loaded fine-tuned DistilXLM-R model");

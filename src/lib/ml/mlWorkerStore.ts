@@ -9,10 +9,16 @@ let loadProgressCallback: ((data: LoadProgress) => void) | null = null;
 
 export const setInferenceProgressListener = (callback: typeof progressCallback) => {
   progressCallback = callback;
+  return () => {
+    if (progressCallback === callback) progressCallback = null;
+  };
 };
 
 export const setLoadProgressListener = (callback: typeof loadProgressCallback) => {
   loadProgressCallback = callback;
+  return () => {
+    if (loadProgressCallback === callback) loadProgressCallback = null;
+  };
 };
 
 const isBrowser = typeof Worker !== "undefined";

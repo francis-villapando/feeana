@@ -23,9 +23,15 @@ export async function getClassifier(progress_callback?: (info: LoadProgress) => 
     await loadPromise;
     loadPromise = null;
   } else if (loadPromise) {
-    // A load is in progress — await the same promise to avoid a race
-    // where predictCleaned runs before load() finishes.
+    // Re-attach callback to in-flight load and await completion
+    if (progress_callback) {
+      adapter.progressHook = progress_callback;
+    }
     await loadPromise;
+  } else if (progress_callback) {
+    // Rebind callback and emit ready state for warm adapter
+    adapter.progressHook = progress_callback;
+    progress_callback({ status: "done", progress: 100 });
   }
   return adapter;
 }

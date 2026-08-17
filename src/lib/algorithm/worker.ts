@@ -11,6 +11,8 @@ import type { FeedbackInput, DiagnosticRecord } from "./types";
 env.allowLocalModels = true;
 
 let lastProgressTime = 0;
+let lastPhase: string | undefined;
+let lastSource: "cache" | "network" | undefined;
 const THROTTLE_MS = 66;
 
 export interface InferenceProgress {
@@ -18,6 +20,8 @@ export interface InferenceProgress {
   total: number;
   text: string;
 }
+
+let preloadPromise: Promise<void> | null = null;
 
 const api = {
   async runInference(
@@ -57,15 +61,33 @@ const api = {
   },
 
   async preloadModel(): Promise<void> {
-    console.log("[worker] Preloading model...");
-    await getClassifier((info) => {
-      const now = performance.now();
-      if (info.status === "done" || now - lastProgressTime > THROTTLE_MS) {
-        lastProgressTime = now;
-        self.postMessage({ type: "LOAD_PROGRESS", data: info });
-      }
+    if (preloadPromise) {
+      return preloadPromise;
+    }
+    preloadPromise = (async () => {
+      console.log("[worker] Preloading model...");
+      await getClassifier((info) => {
+        const now = performance.now();
+        const phaseChanged = info.phase !== lastPhase;
+        const sourceChanged = info.source !== lastSource;
+        // Throttle progress events while preserving phase/source transitions and completion
+        if (
+          info.status === "done" ||
+          phaseChanged ||
+          sourceChanged ||
+          now - lastProgressTime > THROTTLE_MS
+        ) {
+          lastProgressTime = now;
+          lastPhase = info.phase;
+          lastSource = info.source;
+          self.postMessage({ type: "LOAD_PROGRESS", data: info });
+        }
+      });
+      self.postMessage({ type: "LOAD_PROGRESS", data: { status: "done", progress: 100 } });
+    })().finally(() => {
+      preloadPromise = null;
     });
-    self.postMessage({ type: "LOAD_PROGRESS", data: { status: "done", progress: 100 } });
+    return preloadPromise;
   },
 };
 
