@@ -14,4 +14,4 @@ export interface ModelAdapter {
   dispose(): Promise<void>;
 }
 
-export type ModelKind = "mdeberta" | "mbert" | "svm";
+export type ModelKind = "distilxlmr" | "mdeberta" | "mbert" | "svm";

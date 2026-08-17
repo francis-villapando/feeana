@@ -35,6 +35,7 @@ export function SessionCreator({ classId }: { classId: string }) {
   const [startsAtError, setStartsAtError] = useState("");
   const [endsAtError, setEndsAtError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [starting, setStarting] = useState(false);
 
   const handleStart = async () => {
     setTopicError("");
@@ -58,6 +59,7 @@ export function SessionCreator({ classId }: { classId: string }) {
       (endsAt !== "" && new Date(endsAt) <= new Date());
     if (hasError) return;
 
+    setStarting(true);
     try {
       const s = await createSession({
         classId,
@@ -73,6 +75,8 @@ export function SessionCreator({ classId }: { classId: string }) {
       setEndsAt("");
     } catch (err) {
       setSubmitError(friendlyError(err));
+    } finally {
+      setStarting(false);
     }
   };
 
@@ -144,8 +148,8 @@ export function SessionCreator({ classId }: { classId: string }) {
           <InlineError errorMessage={endsAtError} />
         </div>
         <InlineError errorMessage={submitError} />
-        <Button onClick={handleStart} className="w-full">
-          Start session
+        <Button onClick={handleStart} className="w-full" disabled={starting}>
+          {starting ? "Starting…" : "Start session"}
         </Button>
       </CardContent>
     </Card>

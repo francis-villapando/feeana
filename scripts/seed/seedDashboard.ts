@@ -19,7 +19,7 @@ import type {
   BufferedDiagnostic,
   RecommendationItem,
 } from "../../src/lib/algorithm/types";
-import type { DistEntry, AnalysisResult, GapItem } from "../../src/lib/types/types";
+import type { DistEntry, AnalysisResult, GapItem, RecommendationTerm, Theory } from "../../src/lib/types/types";
 
 // Dashboard Test Seed — 3 Classes, 60 Students, 9 Sessions, ~159 Feedback
 //
@@ -904,10 +904,7 @@ async function createFeedback(
 
 // Phase 6: Analysis Results and Diagnostics
 
-interface TopicIloMap extends Map<
-  string,
-  { id: string; statement: string; bloomLevel: string }[]
-> {}
+type TopicIloMap = Map<string, { id: string; statement: string; bloomLevel: string }[]>;
 
 async function createAnalysisResults(
   supabase: SeedSupabase,
@@ -1107,15 +1104,15 @@ async function createAnalysisResults(
       recommendations: recommendationList.map((r) => ({
         id: seedId("recommendation", session.id, r.issue),
         paragraph: r.paragraph,
-        terms: r.terms as any[],
-        theories: r.theories as any[],
+        terms: r.terms as RecommendationTerm[],
+        theories: r.theories as Theory[],
         priority: r.priority,
       })),
       warnings: warningList.map((recommendationItem) => ({
         id: seedId("warning", session.id, recommendationItem.issue),
         issue: recommendationItem.issue,
-        terms: recommendationItem.terms as any[],
-        theories: recommendationItem.theories as any[],
+        terms: recommendationItem.terms as RecommendationTerm[],
+        theories: recommendationItem.theories as Theory[],
         priority: recommendationItem.priority,
         count: recommendationItem.priority,
         isGap: recommendationItem.isGap,

@@ -71,7 +71,7 @@ export function EnrollClassDialog({
             id="enroll-code"
             value={code}
             onChange={(e) => {
-              setCode(e.target.value.toUpperCase());
+              setCode(e.target.value.toUpperCase().trim());
               setCodeError("");
             }}
             placeholder="87NUM8QU"
@@ -85,7 +85,7 @@ export function EnrollClassDialog({
             Cancel
           </Button>
           <Button onClick={handleEnroll} disabled={enrolling}>
-            {enrolling ? "Enrolling..." : "Enroll"}
+            {enrolling ? "Enrolling…" : "Enroll"}
           </Button>
         </DialogFooter>
       </DialogContent>

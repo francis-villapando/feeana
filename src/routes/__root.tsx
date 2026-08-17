@@ -106,8 +106,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function ToasterWithTheme() {
-  const { theme } = useTheme()
-  return <Toaster richColors position="top-right" theme={theme as 'light' | 'dark' | undefined} />
+  const { theme } = useTheme();
+  return <Toaster richColors position="top-right" theme={theme as "light" | "dark" | undefined} />;
 }
 
 function RecoveryDialogHandler() {

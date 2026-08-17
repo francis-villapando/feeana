@@ -26,7 +26,7 @@ interface ClassStoreValue {
   getClass: (id: string) => Class | undefined;
   sessionsForClass: (classId: string) => Session[];
   studentsForClass: (classId: string) => Student[];
-  dismissStudent: (classId: string, studentId: string) => void;
+  dismissStudent: (classId: string, studentId: string) => Promise<void>;
   createClass: (input: {
     courseId: string;
     courseCode: string;
@@ -45,7 +45,13 @@ interface ClassStoreValue {
   }) => Promise<Session>;
   updateSession: (
     id: string,
-    fields: { topic?: string; topicId?: string; courseId?: string; startsAt?: string; endsAt?: string },
+    fields: {
+      topic?: string;
+      topicId?: string;
+      courseId?: string;
+      startsAt?: string;
+      endsAt?: string;
+    },
   ) => Promise<Session>;
   archiveSession: (id: string) => Promise<void>;
   restoreSession: (id: string) => Promise<Session>;

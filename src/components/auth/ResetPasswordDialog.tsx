@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/stores/auth";
 import { PasswordField } from "./PasswordField";
 import { useNavigate } from "@tanstack/react-router";
 import { InlineError } from "../common";
-import { friendlyError } from "@/lib/hooks/utils";
+import { unchangedFields } from "@/lib/hooks/utils";
 
 interface ResetPasswordDialogProps {
   open: boolean;
@@ -23,25 +23,39 @@ interface ResetPasswordDialogProps {
 export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogProps) {
   const { user, isPasswordRecovery, updatePassword, clearPasswordRecovery } = useAuth();
   const navigate = useNavigate();
+  const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [currentError, setCurrentError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmError, setConfirmError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setCurrentError("");
     setPasswordError("");
     setConfirmError("");
     setSubmitError("");
 
+    if (!isPasswordRecovery && !current) {
+      setCurrentError("Enter your current password.");
+      return;
+    }
     if (password.length < 6) {
       setPasswordError("Password must be at least 6 characters.");
       return;
     }
     if (password !== confirm) {
       setConfirmError("Passwords do not match.");
+      return;
+    }
+    if (
+      !isPasswordRecovery &&
+      unchangedFields([{ label: "password", oldValue: current, newValue: password }]).length === 1
+    ) {
+      setPasswordError("New password can't be the same as your old password.");
       return;
     }
     setSubmitting(true);
@@ -56,7 +70,16 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
         navigate({ to: user?.role === "student" ? "/auth/student" : "/auth/faculty" });
       }
     } catch (err) {
-      setSubmitError(friendlyError(err));
+      const msg = err instanceof Error ? err.message : "";
+      const isNetwork =
+        !navigator.onLine ||
+        msg.toLowerCase().includes("failed to fetch") ||
+        msg.toLowerCase().includes("network error");
+      setSubmitError(
+        isNetwork
+          ? "Could not connect to the server. Please check your internet connection or try again later."
+          : msg || "Something went wrong.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -73,6 +96,20 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
           <DialogDescription>Enter your new password below.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          {!isPasswordRecovery && (
+            <PasswordField
+              id="current-password"
+              label="Current password"
+              value={current}
+              onChange={(e) => {
+                setCurrent(e.target.value);
+                setCurrentError("");
+              }}
+              autoComplete="current-password"
+              placeholder="Your current password"
+              passwordError={currentError}
+            />
+          )}
           <PasswordField
             id="new-password"
             label="Type new password"

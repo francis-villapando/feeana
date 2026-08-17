@@ -25,7 +25,7 @@ import { topicsForClass } from "@/lib/hooks/courseLookup";
 import type { Session } from "@/lib/types/types";
 import { ConfirmationDialog, DateTimePicker } from "@/components/faculty";
 import { InlineError, destructiveBorder } from "@/components/common";
-import { friendlyError } from "@/lib/hooks/utils";
+import { friendlyError, unchangedFields, noChangesMessage } from "@/lib/hooks/utils";
 
 interface SessionEditDialogProps {
   session: Session;
@@ -51,6 +51,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
   const [startsAtError, setStartsAtError] = useState("");
   const [endsAtError, setEndsAtError] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [archiveError, setArchiveError] = useState("");
 
   const handleSave = async () => {
     setTopicError("");
@@ -80,6 +81,16 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
       return;
     }
 
+    const unchanged = unchangedFields([
+      { label: "topic", oldValue: session.topicId ?? "", newValue: topicId },
+      { label: "start time", oldValue: session.startsAt, newValue: startsAt },
+      { label: "end time", oldValue: session.endsAt, newValue: endsAt },
+    ]);
+    if (unchanged.length === 3) {
+      setSubmitError(noChangesMessage(unchanged));
+      return;
+    }
+
     setSaving(true);
     try {
       await updateSession(session.id, {
@@ -99,12 +110,13 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
   };
 
   const handleArchive = async () => {
+    setArchiveError("");
     try {
       await archiveSession(session.id);
       toast.success("Session archived.");
       onClose();
     } catch (err) {
-      toast.error(friendlyError(err, "Failed to archive session"));
+      setArchiveError(friendlyError(err, "Failed to archive session"));
     }
   };
 
@@ -183,7 +195,14 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
           <Separator />
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setConfirmArchive(true)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setArchiveError("");
+                setConfirmArchive(true);
+              }}
+            >
               <Archive className="h-3.5 w-3.5 mr-1.5" />
               Archive
             </Button>
@@ -194,7 +213,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Saving\u2026" : "Save"}
+              {saving ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -209,6 +228,7 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
           description={`Archive the "${session.topic}" session?`}
           actionType="archive"
           confirmLabel="Archive"
+          errorMessage={archiveError}
         />
       )}
     </>

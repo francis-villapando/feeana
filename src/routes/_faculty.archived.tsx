@@ -25,15 +25,17 @@ export const Route = createFileRoute("/_faculty/archived")({
 function ArchivedPage() {
   const { archivedClasses, isLoading, restoreClass } = useClassStore();
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState("");
 
   const handleRestore = async () => {
     if (!restoringId) return;
+    setRestoreError("");
     try {
       await restoreClass(restoringId);
       setRestoringId(null);
       toast.success("Class restored");
     } catch (err) {
-      toast.error(friendlyError(err, "Failed to restore class"));
+      setRestoreError(friendlyError(err, "Failed to restore class"));
     }
   };
 
@@ -60,7 +62,14 @@ function ArchivedPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {archivedClasses.map((cls) => (
-            <ClassCard key={cls.id} cls={cls} onRestore={(id) => setRestoringId(id)} />
+            <ClassCard
+              key={cls.id}
+              cls={cls}
+              onRestore={(id) => {
+                setRestoreError("");
+                setRestoringId(id);
+              }}
+            />
           ))}
         </div>
       )}
@@ -72,6 +81,7 @@ function ArchivedPage() {
         title="Restore class"
         description={`Restore the "${archivedClasses.find((cls) => cls.id === restoringId)?.courseCode} · ${archivedClasses.find((cls) => cls.id === restoringId)?.section}" class? This will move it back to your active dashboard.`}
         actionType="restore"
+        errorMessage={restoreError}
       />
     </div>
   );

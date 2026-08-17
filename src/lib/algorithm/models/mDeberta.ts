@@ -1,7 +1,9 @@
-import { getClassifier } from "../informationExtraction";
+import { pipeline, type PipelineType } from "@huggingface/transformers";
 import { Preprocess } from "../preprocess";
 import type { ModelAdapter, Prediction } from "./types";
 
+// @deprecated — benchmark-only comparison model. Not used in production;
+// the DistilXlmrAdapter is the production model.
 const CANDIDATE_LABELS = [
   "relational coldness",
   "classroom tension",
@@ -19,18 +21,30 @@ const CANDIDATE_LABELS = [
   "notation struggle",
 ];
 
+type ZeroShotClassifier = (
+  text: string,
+  labels: string[],
+  options: { multi_label: boolean },
+) => Promise<{ labels: string[]; scores: number[] }>;
+
 export class MDebertaAdapter implements ModelAdapter {
   readonly name = "mdeberta";
+  private classifier: ZeroShotClassifier | null = null;
 
   async load(): Promise<void> {
-    await getClassifier();
+    this.classifier = (await pipeline(
+      "zero-shot-classification" as PipelineType,
+      "Xenova/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
+    )) as unknown as ZeroShotClassifier;
   }
 
   async predict(text: string): Promise<Prediction> {
     const t0 = performance.now();
     const cleanText = Preprocess({ id: "", rawText: text });
-    const classifier = await getClassifier();
-    const result = await classifier(cleanText, CANDIDATE_LABELS, {
+    if (!this.classifier) {
+      throw new Error("[mdeberta] Adapter not loaded — call load() first.");
+    }
+    const result = await this.classifier(cleanText, CANDIDATE_LABELS, {
       multi_label: false,
     });
     return {
@@ -42,7 +56,6 @@ export class MDebertaAdapter implements ModelAdapter {
   }
 
   async dispose(): Promise<void> {
-    /* The singleton classifier is managed by informationExtraction.ts.
-       ModelBenchmarkRunner handles isolation by terminating the Web Worker. */
+    this.classifier = null;
   }
 }

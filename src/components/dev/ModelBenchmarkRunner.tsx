@@ -30,19 +30,24 @@ export interface PredictionDetail {
   correct: boolean;
 }
 
+interface PerformanceWithMemory extends Performance {
+  measureUserAgentSpecificMemory?: () => Promise<{ bytes: number }>;
+  memory?: { usedJSHeapSize: number };
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function measureMemory(): Promise<number> {
+  const perf = performance as PerformanceWithMemory;
   try {
-    const mem = await (performance as any).measureUserAgentSpecificMemory?.();
+    const mem = await perf.measureUserAgentSpecificMemory?.();
     if (mem) return mem.bytes;
   } catch {
     // ignore
   }
-  const mem = (performance as any).memory?.usedJSHeapSize;
-  return mem ?? 0;
+  return perf.memory?.usedJSHeapSize ?? 0;
 }
 
 function percentile(arr: number[], p: number): number {
@@ -55,14 +60,16 @@ function percentile(arr: number[], p: number): number {
 function calculateMacroMetrics(
   predictions: string[],
   expected: string[],
-  labels: string[]
+  labels: string[],
 ): { macroPrecision: number; macroRecall: number; macroF1: number } {
   let macroPrecision = 0;
   let macroRecall = 0;
   let macroF1 = 0;
 
   for (const label of labels) {
-    let tp = 0, fp = 0, fn = 0;
+    let tp = 0,
+      fp = 0,
+      fn = 0;
     for (let i = 0; i < predictions.length; i++) {
       if (predictions[i] === label && expected[i] === label) tp++;
       else if (predictions[i] === label) fp++;
@@ -70,7 +77,7 @@ function calculateMacroMetrics(
     }
     const precision = tp / (tp + fp) || 0;
     const recall = tp / (tp + fn) || 0;
-    const f1 = precision && recall ? 2 * precision * recall / (precision + recall) : 0;
+    const f1 = precision && recall ? (2 * precision * recall) / (precision + recall) : 0;
     macroPrecision += precision;
     macroRecall += recall;
     macroF1 += f1;
@@ -91,33 +98,33 @@ interface ProgressCallback {
 async function runModelBenchmark(
   kind: ModelKind,
   testSet: TestCase[],
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
 ): Promise<ModelBenchmarkResult> {
   const model = createModel(kind);
-  
+
   const baselineMem = await measureMemory();
-  
-  onProgress?.("Loading model...", 0, testSet.length + 2);
+
+  onProgress?.("Loading model…", 0, testSet.length + 2);
   const loadStart = performance.now();
   await model.load();
   const loadTimeMs = performance.now() - loadStart;
-  
+
   const afterLoadMem = await measureMemory();
   const loadMemoryMB = (afterLoadMem - baselineMem) / 1024 / 1024;
 
-  onProgress?.("Warming up...", 0, testSet.length + 2);
+  onProgress?.("Warming up…", 0, testSet.length + 2);
   for (let i = 0; i < Math.min(3, testSet.length); i++) {
     await model.predict(testSet[i].text);
   }
 
-  onProgress?.("Running inference...", 0, testSet.length);
+  onProgress?.("Running inference…", 0, testSet.length);
   const latencies: number[] = [];
   const predictions: string[] = [];
   const expected: string[] = [];
   const predictionDetails: PredictionDetail[] = [];
 
   for (let i = 0; i < testSet.length; i++) {
-    onProgress?.(`Running inference...`, i + 1, testSet.length);
+    onProgress?.(`Running inference…`, i + 1, testSet.length);
     const t0 = performance.now();
     const result = await model.predict(testSet[i].text);
     latencies.push(performance.now() - t0);
@@ -134,7 +141,7 @@ async function runModelBenchmark(
   const afterInferenceMem = await measureMemory();
   const inferenceMemoryMB = (afterInferenceMem - afterLoadMem) / 1024 / 1024;
 
-  onProgress?.("Disposing model...", testSet.length, testSet.length);
+  onProgress?.("Disposing model…", testSet.length, testSet.length);
   await model.dispose();
   terminateMLWorker();
   await sleep(1500);
@@ -144,7 +151,9 @@ async function runModelBenchmark(
 
   const uniqueLabels = Array.from(new Set([...predictions, ...expected]));
   const { macroPrecision, macroRecall, macroF1 } = calculateMacroMetrics(
-    predictions, expected, uniqueLabels
+    predictions,
+    expected,
+    uniqueLabels,
   );
 
   return {
@@ -170,13 +179,13 @@ export function useModelBenchmark() {
   const [progress, setProgress] = useState({ stage: "", current: 0, total: 0 });
 
   const runAll = useCallback(async (testSet: TestCase[]) => {
-    const kinds: ModelKind[] = ["mdeberta", "mbert", "svm"];
+    const kinds: ModelKind[] = ["distilxlmr", "mdeberta", "mbert", "svm"];
     const allResults: ModelBenchmarkResult[] = [];
     setLoading(true);
 
     for (const kind of kinds) {
       setCurrentModel(kind);
-      setProgress({ stage: `Loading ${kind}...`, current: 0, total: testSet.length + 2 });
+      setProgress({ stage: `Loading ${kind}…`, current: 0, total: testSet.length + 2 });
       const result = await runModelBenchmark(kind, testSet, (stage, current, total) => {
         setProgress({ stage, current, total });
       });

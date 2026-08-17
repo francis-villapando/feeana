@@ -27,13 +27,12 @@ import { classParticipation } from "@/lib/hooks/metrics";
 export function ClassStudentsTab({ classId }: { classId: string }) {
   const { studentsForClass, dismissStudent, getClass, sessionsForClass } = useClassStore();
   const { feedback } = useFeedbackStore();
-  const students = [...studentsForClass(classId)].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
+  const students = [...studentsForClass(classId)].sort((a, b) => a.name.localeCompare(b.name));
   const cls = getClass(classId);
   const sessions = sessionsForClass(classId);
   const participation = cls ? classParticipation(cls, sessions, feedback) : 0;
   const [pending, setPending] = useState<{ id: string; name: string } | null>(null);
+  const [dismissing, setDismissing] = useState(false);
 
   if (!cls) return null;
 
@@ -90,22 +89,28 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Dismiss {pending?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              They lose access to this class. Their submitted feedback stays. They can rejoin anytime.
+              They lose access to this class. Their submitted feedback stays. They can rejoin
+              anytime.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (pending) {
-                  dismissStudent(classId, pending.id);
+              disabled={dismissing}
+              onClick={async () => {
+                if (!pending) return;
+                setDismissing(true);
+                try {
+                  await dismissStudent(classId, pending.id);
                   toast.success(`${pending.name} dismissed.`);
                   setPending(null);
+                } finally {
+                  setDismissing(false);
                 }
               }}
             >
-              Dismiss
+              {dismissing ? "Dismissing…" : "Dismiss"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -113,5 +118,3 @@ export function ClassStudentsTab({ classId }: { classId: string }) {
     </div>
   );
 }
-
-

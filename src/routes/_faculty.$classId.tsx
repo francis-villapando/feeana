@@ -75,6 +75,7 @@ function ClassLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveError, setArchiveError] = useState("");
   const [isDataFresh, setIsDataFresh] = useState(false);
 
   const cls = getClass(classId);
@@ -83,7 +84,7 @@ function ClassLayout() {
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
 
   useEffect(() => {
-    const promises: Promise<any>[] = [];
+    const promises: Promise<unknown>[] = [];
 
     if (classId) {
       promises.push(fetchFeedbackByClass(classId));
@@ -158,13 +159,14 @@ function ClassLayout() {
 
   const handleArchive = async () => {
     if (!cls) return;
+    setArchiveError("");
     try {
       await archiveClass(cls.id);
       toast.success("Class archived");
       setArchiveOpen(false);
       navigate({ to: "/home" });
     } catch (err) {
-      toast.error(friendlyError(err, "Failed to archive"));
+      setArchiveError(friendlyError(err, "Failed to archive"));
     }
   };
 
@@ -185,27 +187,8 @@ function ClassLayout() {
             submissionHint="Across sessions in this class"
             iloHint="Across sessions in this class"
           />
-
           <TrendLineCard trend={trend} />
-
           <TrendBarCard trend={trend} />
-
-          {/* Trend interpretation */}
-          {/* <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-            <CardHeader>
-              <CardTitle className="text-base">Trend interpretation</CardTitle>
-              <CardDescription>AI-generated insights from class performance data.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border border-border/60 bg-background/40 p-4 text-sm text-muted-foreground">
-                {trend.length === 0 ? (
-                  <p>Trend interpretation will appear once you have enough analyzed sessions.</p>
-                ) : (
-                  <p>Interpreting class trends over time...</p>
-                )}
-              </div>
-            </CardContent>
-          </Card> */}
         </>
       ) : (
         <>
@@ -235,7 +218,10 @@ function ClassLayout() {
             cls={cls}
             studentCount={studentCountForClass(classId)}
             onCopy={copy}
-            onArchive={() => setArchiveOpen(true)}
+            onArchive={() => {
+              setArchiveError("");
+              setArchiveOpen(true);
+            }}
           />
 
           <SessionCreator classId={cls.id} />
@@ -262,6 +248,7 @@ function ClassLayout() {
         title="Archive class"
         description={`Archive the "${cls.courseCode} · ${cls.section}" class? This class will be hidden from your dashboard but can be restored later.`}
         actionType="archive"
+        errorMessage={archiveError}
       />
     </div>
   );

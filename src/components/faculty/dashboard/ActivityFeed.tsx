@@ -121,7 +121,7 @@ export function ActivityRow({
       className="flex items-start gap-3 rounded-md border border-border/60 bg-background/30 px-3 py-2 cursor-pointer hover:bg-background/50 hover:border-primary/30 transition-colors group"
       onClick={() => {
         const now = Date.now();
-        if (now - lastClickRef.current < 500) toast.info("Navigating...");
+        if (now - lastClickRef.current < 500) toast.info("Navigating…");
         lastClickRef.current = now;
         onClick?.();
         navigate({ to: "/dashboard", search: { focus: entry.entityId, t: now }, resetScroll: false });

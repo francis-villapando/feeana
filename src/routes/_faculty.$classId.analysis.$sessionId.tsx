@@ -24,6 +24,7 @@ import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
+import type { LoadProgress } from "@/lib/algorithm/models/distilXlmr";
 import { iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
 import { computeIloStatuses } from "@/lib/hooks/iloStatus";
 import type { AnalysisResult } from "@/lib/types/types";
@@ -71,23 +72,51 @@ function AnalysisPage() {
     total: number;
     text: string;
   } | null>(null);
-  const [downloadProgress, setDownloadProgress] = useState(100);
+  const [loadProgress, setLoadProgress] = useState<LoadProgress>({
+    status: "done",
+    progress: 100,
+  });
   const [modalOpen, setModalOpen] = useState(false);
 
   // Track cancellation to prevent error toasts when worker is terminated
   const isCancelledRef = React.useRef(false);
+  const abortRef = React.useRef<AbortController | null>(null);
 
   useEffect(() => {
+    let active = true;
+    let unsubInference: (() => void) | undefined;
+    let unsubLoad: (() => void) | undefined;
     import("@/lib/ml/mlWorkerStore").then(
-      ({ setInferenceProgressListener, setDownloadProgressListener }) => {
-        setInferenceProgressListener((payload) => {
+      ({ setInferenceProgressListener, setLoadProgressListener }) => {
+        if (!active) return;
+        unsubInference = setInferenceProgressListener((payload) => {
           setInferenceProgress(payload);
         });
-        setDownloadProgressListener((data) => {
-          setDownloadProgress(data.status === "done" ? 100 : (data.progress ?? 0));
+        unsubLoad = setLoadProgressListener((data) => {
+          setLoadProgress(data);
         });
       },
     );
+    return () => {
+      active = false;
+      unsubInference?.();
+      unsubLoad?.();
+    };
+  }, []);
+
+  // Eagerly preload the ML model in the background so that when the faculty
+  // member triggers analysis, the engine is already warm in memory. Non-blocking.
+  useEffect(() => {
+    let cancelled = false;
+    import("@/lib/ml/mlWorkerStore")
+      .then(({ getMLWorkerAsync }) => getMLWorkerAsync())
+      .then(({ api }) => {
+        if (!cancelled) api.preloadModel().catch(() => {});
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -125,6 +154,7 @@ function AnalysisPage() {
 
   const handleCancel = async () => {
     isCancelledRef.current = true;
+    abortRef.current?.abort();
     const { terminateMLWorker } = await import("@/lib/ml/mlWorkerStore");
     terminateMLWorker();
     setIsAnalyzing(false);
@@ -133,12 +163,25 @@ function AnalysisPage() {
 
   const handleTrigger = async () => {
     if (!session) return;
+    const sessionFeedback = feedback.filter((f) => f.sessionId === session.id);
+    if (sessionFeedback.length === 0) {
+      toast.warning("No student feedback yet — add feedback before running analysis.");
+      return;
+    }
+    const wasCancelled = isCancelledRef.current;
     setIsAnalyzing(true);
     isCancelledRef.current = false;
+    const controller = new AbortController();
+    abortRef.current = controller;
     setInferenceProgress(null);
-    setDownloadProgress(0);
+    // Reset progress only if interrupted or incomplete
+    setLoadProgress((prev) =>
+      wasCancelled || prev.progress !== 100
+        ? { status: "progress", progress: 0, phase: "download" }
+        : prev,
+    );
     try {
-      const data = await runAnalysisPipeline(session.id);
+      const data = await runAnalysisPipeline(session.id, undefined, controller.signal);
       if (!isCancelledRef.current) {
         setResult(data);
         setAnalysisResult(session.id, data);
@@ -220,13 +263,8 @@ function AnalysisPage() {
 
       <ModelLoaderOverlay
         isVisible={isAnalyzing}
-        downloadProgress={downloadProgress}
+        loadProgress={loadProgress}
         inferenceProgress={inferenceProgress}
-        statusText={
-          inferenceProgress
-            ? "Processing feedback entries..."
-            : "Initializing Machine Learning Engine..."
-        }
         onCancel={handleCancel}
       />
 

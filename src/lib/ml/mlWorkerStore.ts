@@ -1,17 +1,24 @@
 import * as Comlink from "comlink";
-import type { WorkerApi } from "../algorithm/worker";
+import type { WorkerApi, InferenceProgress } from "../algorithm/worker";
+import type { LoadProgress } from "../algorithm/models/distilXlmr";
 
 let workerInstance: Worker | null = null;
 let comlinkProxy: Comlink.Remote<WorkerApi> | null = null;
-let progressCallback: ((data: any) => void) | null = null;
-let downloadProgressCallback: ((data: any) => void) | null = null;
+let progressCallback: ((data: InferenceProgress) => void) | null = null;
+let loadProgressCallback: ((data: LoadProgress) => void) | null = null;
 
 export const setInferenceProgressListener = (callback: typeof progressCallback) => {
   progressCallback = callback;
+  return () => {
+    if (progressCallback === callback) progressCallback = null;
+  };
 };
 
-export const setDownloadProgressListener = (callback: typeof downloadProgressCallback) => {
-  downloadProgressCallback = callback;
+export const setLoadProgressListener = (callback: typeof loadProgressCallback) => {
+  loadProgressCallback = callback;
+  return () => {
+    if (loadProgressCallback === callback) loadProgressCallback = null;
+  };
 };
 
 const isBrowser = typeof Worker !== "undefined";
@@ -28,11 +35,13 @@ async function getNodeApi(): Promise<WorkerApi> {
   const { map_tti, map_rbt, map_clt } = await import("../algorithm/pedagogicalDiagnosticMapping");
 
   nodeApi = {
-    async runInference(feedbackStream: { id: string; rawText: string; createdAt?: string }[], _targetIloRbt: number) {
+    async runInference(
+      feedbackStream: { id: string; rawText: string; createdAt?: string }[],
+      _targetIloRbt: number,
+    ) {
       console.debug("[mlWorkerStore:node] Running Modules 2-3-4 inline (no Web Worker).");
-      await getClassifier((info: any) => {
-        progressCallback?.(info);
-        downloadProgressCallback?.(info);
+      await getClassifier((info) => {
+        loadProgressCallback?.(info);
       });
       const results: {
         feedbackId?: string;
@@ -68,9 +77,8 @@ async function getNodeApi(): Promise<WorkerApi> {
     },
     async preloadModel() {
       console.log("[mlWorkerStore:node] Preloading model inline...");
-      await getClassifier((info: any) => {
-        progressCallback?.(info);
-        downloadProgressCallback?.(info);
+      await getClassifier((info) => {
+        loadProgressCallback?.(info);
       });
     },
   } as WorkerApi;
@@ -111,11 +119,11 @@ export function getMLWorker(): {
       type: "module",
     });
 
-    workerInstance.addEventListener('message', (event) => {
-      if (event.data?.type === 'INFERENCE_PROGRESS') {
+    workerInstance.addEventListener("message", (event) => {
+      if (event.data?.type === "INFERENCE_PROGRESS") {
         progressCallback?.(event.data.payload);
-      } else if (event.data?.type === 'progress') {
-        downloadProgressCallback?.(event.data.data);
+      } else if (event.data?.type === "LOAD_PROGRESS") {
+        loadProgressCallback?.(event.data.data);
       }
     });
 

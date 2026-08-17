@@ -12,6 +12,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - uses: actions/setup-node@v4
         with:
@@ -41,4 +43,6 @@ jobs:
         run: npm run build
 
       - name: Test
-        run: npm test -- --run
+        # Unit tests only — integration tests (src/tests/integration) require live Supabase
+        # credentials + seeded data, which CI does not have.
+        run: npm test -- --run src/tests/unit

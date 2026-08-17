@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,17 +9,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { InlineError } from "@/components/common";
 
 export type ActionType = "archive" | "restore" | "confirm";
 
 interface ConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title: string;
   description: string;
   actionType: ActionType;
   confirmLabel?: string;
+  errorMessage?: string;
 }
 
 export function ConfirmationDialog({
@@ -30,13 +32,20 @@ export function ConfirmationDialog({
   description,
   actionType,
   confirmLabel,
+  errorMessage,
 }: ConfirmationDialogProps) {
-  
+  const [busy, setBusy] = useState(false);
+
   // Default labels if not provided
-  const label = confirmLabel || (
-    actionType === "archive" ? "Archive" :
-    actionType === "restore" ? "Restore" : "Confirm"
-  );
+  const label =
+    confirmLabel ||
+    (actionType === "archive" ? "Archive" : actionType === "restore" ? "Restore" : "Confirm");
+
+  const PROGRESSIVE: Record<string, string> = {
+    Archive: "Archiving",
+    Restore: "Restoring",
+    Confirm: "Confirming",
+  };
 
   const renderDescription = (text: string) => {
     const first = text.indexOf('"');
@@ -62,12 +71,24 @@ export function ConfirmationDialog({
             {renderDescription(description)}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        <InlineError errorMessage={errorMessage} />
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={onConfirm}
+          <AlertDialogCancel onClick={onClose} disabled={busy}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            disabled={busy}
+            onClick={async (e) => {
+              e.preventDefault();
+              setBusy(true);
+              try {
+                await onConfirm();
+              } finally {
+                setBusy(false);
+              }
+            }}
           >
-            {label}
+            {busy ? `${PROGRESSIVE[label] ?? label}…` : label}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

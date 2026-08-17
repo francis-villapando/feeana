@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Calendar, MessageSquare, Pencil, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,13 +12,26 @@ import { CountBadge } from "@/components/common";
 import { formatSessionDate } from "@/lib/utils/formatSessionDate";
 import { useSessionDisplayStatus } from "@/lib/hooks/useSessionDisplayStatus";
 import { SessionEditDialog, ConfirmationDialog } from "@/components/faculty";
+import { friendlyError } from "@/lib/hooks/utils";
 import type { Session } from "@/lib/types/types";
 
 const STATUS_BADGE: Record<string, { variant: "default" | "secondary"; className: string }> = {
-  active:   { variant: "default",    className: "bg-[var(--color-chart-1)]/15 text-[var(--color-chart-1)] hover:bg-[var(--color-chart-1)]/25" },
-  upcoming: { variant: "default",    className: "bg-[var(--color-chart-3)]/15 text-[var(--color-chart-3)] hover:bg-[var(--color-chart-3)]/25" },
-  closed:   { variant: "default",    className: "bg-[var(--color-chart-4)]/15 text-[var(--color-chart-4)] hover:bg-[var(--color-chart-4)]/25" },
-  archived: { variant: "secondary",  className: "" },
+  active: {
+    variant: "default",
+    className:
+      "bg-[var(--color-chart-1)]/15 text-[var(--color-chart-1)] hover:bg-[var(--color-chart-1)]/25",
+  },
+  upcoming: {
+    variant: "default",
+    className:
+      "bg-[var(--color-chart-3)]/15 text-[var(--color-chart-3)] hover:bg-[var(--color-chart-3)]/25",
+  },
+  closed: {
+    variant: "default",
+    className:
+      "bg-[var(--color-chart-4)]/15 text-[var(--color-chart-4)] hover:bg-[var(--color-chart-4)]/25",
+  },
+  archived: { variant: "secondary", className: "" },
 };
 
 export function SessionCard({ session }: { session: Session }) {
@@ -27,31 +41,41 @@ export function SessionCard({ session }: { session: Session }) {
   const sessionFeedback = feedback.filter((f) => f.sessionId === session.id);
   const responses = sessionFeedback.length;
   const displayStatus = useSessionDisplayStatus(session);
-  const badge = useMemo(() => STATUS_BADGE[displayStatus] ?? STATUS_BADGE.archived, [displayStatus]);
+  const badge = useMemo(
+    () => STATUS_BADGE[displayStatus] ?? STATUS_BADGE.archived,
+    [displayStatus],
+  );
   const isArchived = displayStatus === "archived";
   const [editing, setEditing] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
+  const [restoreError, setRestoreError] = useState("");
 
   const handleRestore = async () => {
+    setRestoreError("");
     try {
       await restoreSession(session.id);
+      toast.success("Session restored.");
+      setConfirmRestore(false);
     } catch (err) {
-      console.error(err);
+      setRestoreError(friendlyError(err, "Failed to restore session"));
     }
   };
 
   return (
     <>
-      <Card className={`border-border/60 backdrop-blur-xl transition hover:border-primary/40 bg-card/70 ${
-        isArchived ? "bg-[image:repeating-linear-gradient(135deg,transparent,transparent_8px,color-mix(in_oklab,var(--foreground)_8%,transparent)_8px,color-mix(in_oklab,var(--foreground)_8%,transparent)_10px)]" : ""
-        }`}>
+      <Card
+        className={`border-border/60 backdrop-blur-xl transition hover:border-primary/40 bg-card/70 ${
+          isArchived
+            ? "bg-[image:repeating-linear-gradient(135deg,transparent,transparent_8px,color-mix(in_oklab,var(--foreground)_8%,transparent)_8px,color-mix(in_oklab,var(--foreground)_8%,transparent)_10px)]"
+            : ""
+        }`}
+      >
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
-            <CardTitle className="line-clamp-2 min-h-[2.75rem] text-base">{session.topic}</CardTitle>
-            <Badge
-              variant={badge.variant}
-              className={`capitalize ${badge.className}`}
-            >
+            <CardTitle className="line-clamp-2 min-h-[2.75rem] text-base">
+              {session.topic}
+            </CardTitle>
+            <Badge variant={badge.variant} className={`capitalize ${badge.className}`}>
               {displayStatus}
             </Badge>
           </div>
@@ -71,7 +95,15 @@ export function SessionCard({ session }: { session: Session }) {
           <div className="flex gap-2">
             {isArchived ? (
               <>
-                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setConfirmRestore(true)}>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    setRestoreError("");
+                    setConfirmRestore(true);
+                  }}
+                >
                   <RotateCcw className="h-4 w-4" />
                 </Button>
                 <div className="relative flex-1">
@@ -80,9 +112,7 @@ export function SessionCard({ session }: { session: Session }) {
                       to="/$classId/analysis/$sessionId"
                       params={{ classId: session.classId, sessionId: session.id }}
                     >
-                      <span className="inline-flex items-center">
-                        Open analysis
-                      </span>
+                      <span className="inline-flex items-center">Open analysis</span>
                     </Link>
                   </Button>
                   <CountBadge count={feedbackStatus.newCount} />
@@ -90,7 +120,12 @@ export function SessionCard({ session }: { session: Session }) {
               </>
             ) : (
               <>
-                <Button variant="secondary" size="icon" className="shrink-0 h-8 w-8" onClick={() => setEditing(true)}>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="shrink-0 h-8 w-8"
+                  onClick={() => setEditing(true)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
                 <div className="relative flex-1">
@@ -99,9 +134,7 @@ export function SessionCard({ session }: { session: Session }) {
                       to="/$classId/analysis/$sessionId"
                       params={{ classId: session.classId, sessionId: session.id }}
                     >
-                      <span className="inline-flex items-center">
-                        Open analysis
-                      </span>
+                      <span className="inline-flex items-center">Open analysis</span>
                     </Link>
                   </Button>
                   <CountBadge count={feedbackStatus.newCount} />
@@ -112,9 +145,7 @@ export function SessionCard({ session }: { session: Session }) {
         </CardContent>
       </Card>
 
-      {editing && (
-        <SessionEditDialog session={session} onClose={() => setEditing(false)} />
-      )}
+      {editing && <SessionEditDialog session={session} onClose={() => setEditing(false)} />}
 
       {confirmRestore && (
         <ConfirmationDialog
@@ -125,6 +156,7 @@ export function SessionCard({ session }: { session: Session }) {
           description={`Restore the "${session.topic}" session?`}
           actionType="restore"
           confirmLabel="Restore"
+          errorMessage={restoreError}
         />
       )}
     </>

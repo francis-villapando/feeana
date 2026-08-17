@@ -14,7 +14,7 @@
  *   feedback_diagnostics → cached computed result per session (JSONB + rules_version)
  */
 
-import type { AnalysisResult, DistEntry } from "../types/types";
+import type { AnalysisResult, DistEntry, RecommendationTerm, Theory } from "../types/types";
 import { supabase as defaultSupabase } from "../db/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getMLWorkerAsync } from "../ml/mlWorkerStore";
@@ -34,12 +34,23 @@ import type {
 
 const PRIORITY_THRESHOLD = 0.3;
 
+// Throws an AbortError if the pipeline has been cancelled. Call at every
+// safe interruption point so cancellation never corrupts a write transaction.
+function assertNotAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw new DOMException("Analysis was cancelled.", "AbortError");
+  }
+}
+
 // Read path
 
 // Loads a previously computed result from the cache.
 // Returns null if no result exists or the cache is stale (rules_version mismatch).
 
-export async function fetchComputedResult(sessionId: string, client?: SupabaseClient): Promise<AnalysisResult | null> {
+export async function fetchComputedResult(
+  sessionId: string,
+  client?: SupabaseClient,
+): Promise<AnalysisResult | null> {
   const db = client ?? defaultSupabase;
   const { data, error } = await db
     .from("feedback_diagnostics")
@@ -71,7 +82,8 @@ async function fetchSessionData(sessionId: string, db: SupabaseClient) {
     throw new Error(sessionErr?.message || "Session not found.");
   }
 
-  const courseId = session.course_id || (session.classes as any)?.course_id;
+  const courseId =
+    session.course_id || (session.classes as { course_id?: string } | null)?.course_id;
   if (!courseId) throw new Error("Course context not found for this session.");
 
   // Fire remaining 3 queries in parallel (ILOs, feedback, course)
@@ -84,7 +96,10 @@ async function fetchSessionData(sessionId: string, db: SupabaseClient) {
   if (ilosResult.error) throw new Error(ilosResult.error.message);
   if (feedbackResult.error) throw new Error(feedbackResult.error.message);
 
-  const courseName = courseResult.data?.title || (session.classes as any)?.course || "Unknown Course";
+  const courseName =
+    courseResult.data?.title ||
+    (session.classes as { course?: string } | null)?.course ||
+    "Unknown Course";
 
   return {
     session,
@@ -107,7 +122,11 @@ async function fetchSessionData(sessionId: string, db: SupabaseClient) {
  *   7. SAVE computed result to feedback_diagnostics
  *   8. UPDATE sessions.last_analyzed_at
  */
-export async function runAnalysisPipeline(sessionId: string, client?: SupabaseClient): Promise<AnalysisResult> {
+export async function runAnalysisPipeline(
+  sessionId: string,
+  client?: SupabaseClient,
+  signal?: AbortSignal,
+): Promise<AnalysisResult> {
   const db = client ?? defaultSupabase;
   console.debug("[pipeline] Starting analysis pipeline for session", { sessionId });
 
@@ -120,9 +139,10 @@ export async function runAnalysisPipeline(sessionId: string, client?: SupabaseCl
     end: "pipeline:fetch-end",
     detail: { targetMs: 2500 },
   });
+  assertNotAborted(signal);
 
   const sessionIloIds = Array.isArray(session.ilo_ids) ? session.ilo_ids : [];
-  const activeIlos = ilosData.filter((ilo: any) => sessionIloIds.includes(ilo.id));
+  const activeIlos = ilosData.filter((ilo) => sessionIloIds.includes(ilo.id));
 
   const { sessionContext, feedbackStream } = collectPipelineData(
     courseName,
@@ -133,11 +153,18 @@ export async function runAnalysisPipeline(sessionId: string, client?: SupabaseCl
     feedbackData ?? [],
   );
 
+  // Guard against empty feedback stream
+  if (feedbackStream.length === 0) {
+    throw new Error("No student feedback to analyze in this session.");
+  }
+
   // Modules 2-3-4: per-feedback loop in Web Worker (preprocess → extract → map)
   const { api } = await getMLWorkerAsync();
   performance.mark("pipeline:model-load-start");
+  assertNotAborted(signal);
   await api.preloadModel();
   performance.mark("pipeline:model-load-end");
+  assertNotAborted(signal);
   performance.measure("Model init (warm)", {
     start: "pipeline:model-load-start",
     end: "pipeline:model-load-end",
@@ -147,6 +174,7 @@ export async function runAnalysisPipeline(sessionId: string, client?: SupabaseCl
   performance.mark("pipeline:inference-start");
   const buffer: DiagnosticRecord[] = await api.runInference(feedbackStream, 1);
   performance.mark("pipeline:inference-end");
+  assertNotAborted(signal);
   performance.measure("Pipeline total", {
     start: "pipeline:inference-start",
     end: "pipeline:inference-end",
@@ -155,6 +183,8 @@ export async function runAnalysisPipeline(sessionId: string, client?: SupabaseCl
 
   // Save raw ML output to analysis_results
   performance.mark("pipeline:write-start");
+  // Atomic cancel-aware write checkpoint
+  assertNotAborted(signal);
   await db.from("analysis_results").delete().eq("session_id", sessionId);
   if (buffer.length > 0) {
     const { error: insertErr } = await db.from("analysis_results").insert(
@@ -297,15 +327,15 @@ export async function runAnalysisPipeline(sessionId: string, client?: SupabaseCl
     recommendations: recommendationList.map((r) => ({
       id: r.id,
       paragraph: r.paragraph,
-      terms: r.terms as any[],
-      theories: r.theories as any[],
+      terms: r.terms as RecommendationTerm[],
+      theories: r.theories as Theory[],
       priority: r.priority,
     })),
     warnings: warningList.map((recommendationItem) => ({
       id: recommendationItem.id,
       issue: recommendationItem.issue,
-      terms: recommendationItem.terms as any[],
-      theories: recommendationItem.theories as any[],
+      terms: recommendationItem.terms as RecommendationTerm[],
+      theories: recommendationItem.theories as Theory[],
       priority: recommendationItem.priority,
       count: recommendationItem.priority,
       isGap: recommendationItem.isGap,
@@ -313,6 +343,7 @@ export async function runAnalysisPipeline(sessionId: string, client?: SupabaseCl
   };
 
   // Save computed result to feedback_diagnostics
+  assertNotAborted(signal);
   await db.from("feedback_diagnostics").delete().eq("session_id", sessionId);
   const { error: cacheErr } = await db.from("feedback_diagnostics").insert({
     session_id: sessionId,
@@ -328,6 +359,7 @@ export async function runAnalysisPipeline(sessionId: string, client?: SupabaseCl
   });
 
   // Update sessions.last_analyzed_at
+  assertNotAborted(signal);
   const { error: updateErr } = await db
     .from("sessions")
     .update({ last_analyzed_at: new Date().toISOString() })

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { InlineError, destructiveBorder } from "@/components/common";
+import { friendlyError, unchangedFields, noChangesMessage } from "@/lib/hooks/utils";
 
 type State =
   | { kind: "course"; entity?: Course }
@@ -32,8 +33,17 @@ type State =
 const BLOOMS: BloomLevel[] = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
 
 export function EntityFormDialog({ state, onClose }: { state: State; onClose: () => void }) {
-  const { courses, topics, createCourse, updateCourse, createTopic, updateTopic, createILO, updateILO, refreshAll } =
-    useCourseStore();
+  const {
+    courses,
+    topics,
+    createCourse,
+    updateCourse,
+    createTopic,
+    updateTopic,
+    createILO,
+    updateILO,
+    refreshAll,
+  } = useCourseStore();
 
   const isEdit = !!state.entity;
   const labels: Record<EntityKind, string> = {
@@ -72,6 +82,8 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
     state.kind === "ILO" ? (state.entity?.bloomLevel ?? "Remember") : "Remember",
   );
 
+  const [saving, setSaving] = useState(false);
+
   const [codeError, setCodeError] = useState("");
   const [titleError, setTitleError] = useState("");
   const [topicTitleError, setTopicTitleError] = useState("");
@@ -81,9 +93,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
   const [iloTopicError, setIloTopicError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  const availableTopics = topics.filter(
-    (t) => t.courseId === iloCourseId && !t.archived,
-  );
+  const availableTopics = topics.filter((t) => t.courseId === iloCourseId && !t.archived);
 
   const clearErrors = () => {
     setCodeError("");
@@ -138,6 +148,31 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
       }
     }
 
+    if (state.entity) {
+      const fields =
+        state.kind === "course"
+          ? [
+              { label: "code", oldValue: state.entity.code, newValue: code },
+              { label: "title", oldValue: state.entity.title, newValue: title },
+            ]
+          : state.kind === "topic"
+            ? [{ label: "title", oldValue: state.entity.title, newValue: topicTitle }]
+            : [
+                { label: "statement", oldValue: state.entity.statement, newValue: iloStatement },
+                { label: "Bloom level", oldValue: state.entity.bloomLevel, newValue: iloBloom },
+              ];
+      const unchanged = unchangedFields(fields);
+      if (unchanged.length === fields.length) {
+        if (state.kind === "topic") {
+          setTopicTitleError(noChangesMessage(unchanged));
+        } else {
+          setSubmitError(noChangesMessage(unchanged));
+        }
+        return;
+      }
+    }
+
+    setSaving(true);
     try {
       if (state.kind === "course") {
         if (state.entity) {
@@ -156,7 +191,11 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           toast.success("Topic created.");
         }
       } else if (state.entity) {
-        await updateILO(state.entity.id, { statement: iloStatement, bloomLevel: iloBloom, version: state.entity.version });
+        await updateILO(state.entity.id, {
+          statement: iloStatement,
+          bloomLevel: iloBloom,
+          version: state.entity.version,
+        });
         toast.success("ILO updated.");
       } else {
         await createILO({
@@ -183,9 +222,10 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
         refreshAll();
         onClose();
       } else {
-        toast.error("Could not save.");
-        onClose();
+        setSubmitError(friendlyError(err, "Could not save."));
       }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -209,7 +249,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                 id="course-code"
                 value={code}
                 onChange={(e) => {
-                  setCode(e.target.value);
+                  setCode(e.target.value.toUpperCase().trim());
                   setCodeError("");
                 }}
                 placeholder="CSEG2"
@@ -325,8 +365,8 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                         !iloCourseId
                           ? "Select a course first"
                           : availableTopics.length === 0
-                          ? "No topics for this course"
-                          : "Select a topic"
+                            ? "No topics for this course"
+                            : "Select a topic"
                       }
                     />
                   </SelectTrigger>
@@ -385,7 +425,9 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>{isEdit ? "Save" : "Create"}</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : isEdit ? "Save" : "Create"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
