@@ -1,18 +1,18 @@
 import type { ModelAdapter, ModelKind } from "./types";
 import { DistilXlmrAdapter } from "./distilXlmr";
-import { MDebertaAdapter } from "./mDeberta";
-import { MBertAdapter } from "./mBert";
+import { MBertFinetunedAdapter } from "./mBert";
 import { SvmAdapter } from "./svm";
+import { MDebertaAdapter } from "./mDeberta";
 
 export function createModel(kind: ModelKind): ModelAdapter {
   switch (kind) {
     case "distilxlmr":
       return new DistilXlmrAdapter();
-    case "mdeberta":
-      return new MDebertaAdapter();
     case "mbert":
-      return new MBertAdapter();
+      return new MBertFinetunedAdapter();
     case "svm":
       return new SvmAdapter();
+    case "mdeberta":
+      return new MDebertaAdapter();
   }
 }

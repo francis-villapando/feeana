@@ -1,7 +1,12 @@
 """
-Phase 2 — Fine-tuning Script for PID-ABSA Dual-Head DistilXLM-R
+Fine-tuning Script for PID-ABSA Dual-Head Model
 
-Base model:  nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large
+Model-agnostic: the base model is resolved from the FEEANA_MODEL_NAME
+environment variable (or --model-name flag), so the same script fine-tunes
+DistilXLM-R, mBERT, or any future base model.
+
+Base model (default):  nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large
+                       (override with FEEANA_MODEL_NAME or --model-name)
 Task:        Dual-head classification
              - issue  (15-way): 14 taxonomy tags + Uncategorized
              - polarity (3-way): neg / neu / pos
@@ -11,7 +16,7 @@ Compute:     Google Colab T4 (primary) → Kaggle free (fallback) → local CPU 
 Usage:
   # Colab/Kaggle (GPU):
   !pip install peft datasets evaluate
-  !python finetune.py
+  !python finetune.py --model-name bert-base-multilingual-cased
 
   # Local CPU (no GPU):
   python finetune.py --device cpu
@@ -40,7 +45,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
-# Reproducibility — pin every source of randomness
 GLOBAL_SEED = 42
 
 
@@ -62,6 +66,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DATA_DIR = SCRIPT_DIR / "data"
 REPORTS_DIR = SCRIPT_DIR / "reports"
 CHECKPOINTS_DIR = SCRIPT_DIR / "checkpoints"
+
+from checkpoint_paths import resolve_tag
 
 TRAIN_CSV = DATA_DIR / "train.csv"
 VAL_CSV = DATA_DIR / "val.csv"
@@ -115,17 +121,27 @@ def save_label_mappings() -> None:
             "num_labels": NUM_POLARITIES,
         },
     }
-    path = CHECKPOINTS_DIR / "label_mappings.json"
+    ckpt_dir = CHECKPOINTS_DIR / TAG
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    path = ckpt_dir / "label_mappings.json"
     with open(path, "w", encoding="utf-8") as f:
         json.dump(mapping, f, indent=2, ensure_ascii=False)
     print(f"[INFO] Label mappings saved → {path}")
 
 
-# Dataset
 from transformers import AutoTokenizer  # noqa: E402
 
-MODEL_NAME = "nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large"
+DEFAULT_MODEL_NAME = "nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large"
 MAX_LEN = 256  # 100% coverage verified in EDA (max token len = 100)
+
+
+def resolve_model_name(cli_value: str | None = None) -> str:
+    """Resolve base model: --model-name flag > FEEANA_MODEL_NAME env > default."""
+    return cli_value or os.environ.get("FEEANA_MODEL_NAME", DEFAULT_MODEL_NAME)
+
+
+MODEL_NAME = resolve_model_name()
+TAG = resolve_tag(MODEL_NAME)
 
 
 class FeedbackDataset(Dataset):
@@ -190,7 +206,7 @@ class DualHeadModel(nn.Module):
     ) -> dict[str, torch.Tensor]:
         outputs = self.encoder(input_ids=input_ids, attention_mask=attention_mask)
 
-        # Mean Pooling over non-padded tokens (required for SentenceTransformers models like mMiniLMv2)
+        # Mean pooling over non-padded tokens (consistent across base models)
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(outputs.last_hidden_state.size()).float()
         sum_embeddings = torch.sum(outputs.last_hidden_state * input_mask_expanded, dim=1)
         sum_mask = torch.clamp(input_mask_expanded.sum(dim=1), min=1e-9)
@@ -219,7 +235,7 @@ def apply_lora(model: DualHeadModel) -> DualHeadModel:
         r=16,
         lora_alpha=32,
         lora_dropout=0.05,
-        # Target modules: XLM-R attention q/k/v and output dense layers
+        # Target modules: attention q/k/v and output dense layers
         target_modules=["query", "key", "value", "output.dense"],
         bias="none",
     )
@@ -406,7 +422,9 @@ def evaluate(
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Fine-tune DistilXLM-R for PID-ABSA")
+    p = argparse.ArgumentParser(description="Fine-tune a dual-head PID-ABSA model")
+    p.add_argument("--model-name", type=str, default=None,
+                   help="Hugging Face base model. Defaults to FEEANA_MODEL_NAME env or DistilXLM-R.")
     p.add_argument("--device", type=str, default="auto",
                    help="'cuda', 'cpu', or 'auto' (default: auto-detect)")
     p.add_argument("--epochs", type=int, default=5)
@@ -432,7 +450,10 @@ def main() -> None:
     args = parse_args()
     seed_everything(args.seed)
 
-    # Device
+    global MODEL_NAME
+    MODEL_NAME = resolve_model_name(args.model_name)
+    print(f"[CONFIG] Base model: {MODEL_NAME}")
+
     if args.device == "auto":
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     else:
@@ -519,7 +540,6 @@ def main() -> None:
 
     scaler = torch.amp.GradScaler() if use_amp else None
 
-    # Save label mappings
     save_label_mappings()
 
     # Training loop with early stopping
@@ -583,7 +603,9 @@ def main() -> None:
         if val_metrics["issue_macro_f1"] > best_val_f1:
             best_val_f1 = val_metrics["issue_macro_f1"]
             patience_counter = 0
-            ckpt_path = CHECKPOINTS_DIR / "best_model.pt"
+            ckpt_dir = CHECKPOINTS_DIR / TAG
+            ckpt_dir.mkdir(parents=True, exist_ok=True)
+            ckpt_path = ckpt_dir / "best_model.pt"
             torch.save({
                 "epoch": epoch,
                 "model_state_dict": model.state_dict(),

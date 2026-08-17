@@ -35,6 +35,7 @@ from finetune import (
     NUM_POLARITIES,
     ISSUE_LABEL2ID,
 )
+from checkpoint_paths import resolve_checkpoint_paths, resolve_tag
 
 
 def evaluate_dataset(model, loader, device):
@@ -80,7 +81,7 @@ def main():
     model = DualHeadModel(MODEL_NAME, NUM_ISSUES, NUM_POLARITIES)
     model = apply_lora(model)
 
-    ckpt_path = CHECKPOINTS_DIR / "best_model.pt"
+    ckpt_path, label_map_path = resolve_checkpoint_paths(resolve_tag(MODEL_NAME))
     if not ckpt_path.exists():
         raise FileNotFoundError(f"Checkpoint not found at {ckpt_path}")
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
@@ -89,7 +90,6 @@ def main():
     model.eval()
 
     # Load label mappings (required for completeness; not used directly)
-    label_map_path = CHECKPOINTS_DIR / "label_mappings.json"
     if label_map_path.exists():
         with open(label_map_path, "r", encoding="utf-8") as f:
             _ = json.load(f)

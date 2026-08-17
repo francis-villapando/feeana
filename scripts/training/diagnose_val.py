@@ -44,6 +44,7 @@ from finetune import (
     NUM_ISSUES,
     NUM_POLARITIES,
 )
+from checkpoint_paths import resolve_checkpoint_paths, resolve_tag
 
 
 def run_diagnostics(checkpoint_path: Path | None = None) -> None:
@@ -231,5 +232,5 @@ def run_diagnostics(checkpoint_path: Path | None = None) -> None:
 
 
 if __name__ == "__main__":
-    ckpt = CHECKPOINTS_DIR / "best_model.pt"
+    ckpt, _ = resolve_checkpoint_paths(resolve_tag(MODEL_NAME))
     run_diagnostics(ckpt if ckpt.exists() else None)

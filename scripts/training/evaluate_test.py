@@ -40,6 +40,7 @@ from finetune import (
     NUM_ISSUES,
     NUM_POLARITIES,
 )
+from checkpoint_paths import resolve_checkpoint_paths, resolve_tag
 
 
 def evaluate_dataset(model, loader, dataset, device):
@@ -81,17 +82,17 @@ def evaluate_dataset(model, loader, dataset, device):
 
 
 def run_phase_3_evaluation():
-    ckpt_path = CHECKPOINTS_DIR / "best_model.pt"
-    json_path = CHECKPOINTS_DIR / "label_mappings.json"
+    tag = resolve_tag(MODEL_NAME)
+    ckpt_path, json_path = resolve_checkpoint_paths(tag)
 
     if not ckpt_path.exists():
         print(f"Error: Checkpoint file not found at {ckpt_path}")
-        print("Please copy best_model.pt to scripts/training/checkpoints/")
+        print(f"Please copy the checkpoint to scripts/training/checkpoints/{tag}/best_model.pt")
         return
 
     if not json_path.exists():
         print(f"Error: Label mappings file not found at {json_path}")
-        print("Please copy label_mappings.json to scripts/training/checkpoints/")
+        print(f"Please copy label_mappings.json to scripts/training/checkpoints/{tag}/label_mappings.json")
         return
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -201,7 +202,7 @@ def run_phase_3_evaluation():
         "test_issue_accuracy": float(issue_acc),
         "num_test_samples": len(test_df),
     }
-    out_file = REPORTS_DIR / "test_evaluation_report.json"
+    out_file = REPORTS_DIR / f"test_evaluation_report_{tag}.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
     print(f"\n[INFO] Evaluation report saved to {out_file}")

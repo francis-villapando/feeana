@@ -1,5 +1,9 @@
 """
-Smoke test validation script for exported DistilXLM-R ONNX model.
+Smoke test validation script for an exported PID-ABSA dual-head ONNX model.
+
+Model-agnostic: the default ONNX path and tokenizer fallback are derived from
+the FEEANA_MODEL_NAME environment variable (same convention as
+export_model_onnx.py), so the script serves DistilXLM-R, mBERT, or any model.
 
 Runs inference on sample text inputs to verify output tensor shapes
 and label mapping decoding logic.
@@ -9,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -17,10 +22,18 @@ import onnxruntime as ort
 from transformers import AutoTokenizer
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_ONNX = SCRIPT_DIR / "exports" / "distilxlmr-pidabsa-int8.onnx"
-DEFAULT_TOKENIZER_DIR = SCRIPT_DIR / "exports"
-LABEL_MAPPINGS = SCRIPT_DIR / "exports" / "label_mappings.json"
-FALLBACK_MODEL_NAME = "nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large"
+
+from checkpoint_paths import DEFAULT_MODEL_NAME, TAG_BY_MODEL_NAME, resolve_tag
+
+
+def resolve_model_name() -> str:
+    return os.environ.get("FEEANA_MODEL_NAME", DEFAULT_MODEL_NAME)
+
+
+TAG = resolve_tag(resolve_model_name())
+DEFAULT_ONNX = SCRIPT_DIR / "exports" / TAG / "int8.onnx"
+DEFAULT_TOKENIZER_DIR = SCRIPT_DIR / "exports" / TAG
+LABEL_MAPPINGS = SCRIPT_DIR / "exports" / TAG / "label_mappings.json"
 
 MAX_LEN = 256
 NUM_ISSUES = 15
@@ -72,8 +85,8 @@ def get_tokenizer(tokenizer_dir: Path) -> AutoTokenizer:
         print(f"[INFO] Loading tokenizer from local directory: {tokenizer_dir}")
         return AutoTokenizer.from_pretrained(str(tokenizer_dir))
     
-    print(f"[INFO] Local tokenizer not found; loading fallback: {FALLBACK_MODEL_NAME}")
-    return AutoTokenizer.from_pretrained(FALLBACK_MODEL_NAME)
+    print(f"[INFO] Local tokenizer not found; loading fallback: {resolve_model_name()}")
+    return AutoTokenizer.from_pretrained(resolve_model_name())
 
 
 def main() -> None:

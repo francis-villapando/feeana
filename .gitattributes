@@ -1,2 +1,2 @@
 # Git LFS tracking configuration for fine-tuned ONNX assets
-public/models/finetuned/*.onnx filter=lfs diff=lfs merge=lfs -text
+public/models/finetuned/**/*.onnx filter=lfs diff=lfs merge=lfs -text
