@@ -132,7 +132,7 @@ def save_label_mappings() -> None:
 from transformers import AutoTokenizer  # noqa: E402
 
 DEFAULT_MODEL_NAME = "nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large"
-MAX_LEN = 256  # 100% coverage verified in EDA (max token len = 100)
+MAX_LEN = 256  # 256 → max observed token length (~100)
 
 
 def resolve_model_name(cli_value: str | None = None) -> str:
@@ -644,7 +644,7 @@ def main() -> None:
         "epoch_logs": run_log,
     }
 
-    report_path = REPORTS_DIR / f"training_run_{timestamp}.json"
+    report_path = REPORTS_DIR / f"{TAG}_training_run_{timestamp}.json"
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     print(f"\n[INFO] Run report saved → {report_path}")
