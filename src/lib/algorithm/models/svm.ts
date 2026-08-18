@@ -1,4 +1,5 @@
 import type { Tensor } from "onnxruntime-web";
+import { Preprocess } from "../preprocess";
 import type { ModelAdapter, Prediction } from "./types";
 
 function isNode(): boolean {
@@ -22,6 +23,11 @@ interface OrtRuntime {
   ) => Tensor;
 }
 
+interface SvmLabelMappings {
+  issue: { id2label: Record<string, string> };
+  polarity: { id2label: Record<string, string> };
+}
+
 let ort: OrtRuntime | null = null;
 
 async function initOrt(): Promise<OrtRuntime> {
@@ -43,42 +49,92 @@ async function initOrt(): Promise<OrtRuntime> {
   return ort;
 }
 
+function getSvmModelDir(): string {
+  if (isNode()) {
+    return `${process.cwd()}/public/models/trained/svm`;
+  }
+  return "/models/trained/svm";
+}
+
+async function loadLabelMappings(dir: string): Promise<SvmLabelMappings> {
+  if (isNode()) {
+    const fs = await import("fs");
+    const raw = fs.readFileSync(`${dir}/label_mappings.json`, "utf-8");
+    return JSON.parse(raw) as SvmLabelMappings;
+  }
+  const res = await fetch(`${dir}/label_mappings.json`);
+  if (!res.ok) {
+    throw new Error(`Failed to load SVM label mappings (HTTP ${res.status})`);
+  }
+  return (await res.json()) as SvmLabelMappings;
+}
+
+function softmax(values: Float32Array): number[] {
+  const exp = Array.from(values).map((v) => Math.exp(v));
+  const sum = exp.reduce((a, b) => a + b, 0);
+  return exp.map((v) => v / sum);
+}
+
 export class SvmAdapter implements ModelAdapter {
   readonly name = "svm";
-  private session: OrtSession | null = null;
+  private issueSession: OrtSession | null = null;
+  private polaritySession: OrtSession | null = null;
+  private labelMap: SvmLabelMappings | null = null;
 
   async load(): Promise<void> {
     const runtime = await initOrt();
-    const modelPath = getModelPath();
-    this.session = await runtime.InferenceSession.create(modelPath);
+    const dir = getSvmModelDir();
+    [this.issueSession, this.polaritySession] = await Promise.all([
+      runtime.InferenceSession.create(`${dir}/issue.onnx`),
+      runtime.InferenceSession.create(`${dir}/polarity.onnx`),
+    ]);
+    this.labelMap = await loadLabelMappings(dir);
+
+    // JIT warmup: compile WASM kernels ahead of workload
+    try {
+      const feeds: Record<string, Tensor> = {
+        string_input: new runtime.Tensor("string", ["warmup"], [1, 1]),
+      };
+      await Promise.all([this.issueSession.run(feeds), this.polaritySession.run(feeds)]);
+    } catch (e) {
+      console.warn("[svm] Warmup inference failed (non-fatal):", e);
+    }
   }
 
   async predict(text: string): Promise<Prediction> {
     const t0 = performance.now();
+    if (!this.issueSession || !this.polaritySession || !this.labelMap) {
+      throw new Error("[svm] Adapter not loaded — call load() first.");
+    }
+
     const runtime = await initOrt();
+    const cleanText = Preprocess({ id: "", rawText: text });
     const feeds: Record<string, Tensor> = {
-      string_input: new runtime.Tensor("string", [text], [1, 1]),
+      string_input: new runtime.Tensor("string", [cleanText], [1, 1]),
     };
-    const results = await this.session!.run(feeds);
-    const probs = results["probabilities"].data as Float32Array;
-    const label = results["output_label"].data as string[];
+
+    const issueResult = await this.issueSession.run(feeds);
+    const polarityResult = await this.polaritySession.run(feeds);
+
+    const issueIdx = Number((issueResult["label"].data as ArrayLike<number | bigint>)[0]);
+    const polarityIdx = Number((polarityResult["label"].data as ArrayLike<number | bigint>)[0]);
+
+    const issue = this.labelMap.issue.id2label[String(issueIdx)] ?? "uncategorized";
+    const polarity = (this.labelMap.polarity.id2label[String(polarityIdx)] ??
+      "neu") as Prediction["polarity"];
+    const probs = issueResult["probabilities"].data as Float32Array;
+
     return {
-      issue: label[0],
-      polarity: "neg",
-      confidence: Math.max(...probs),
+      issue,
+      polarity,
+      confidence: Math.max(...softmax(probs)),
       latencyMs: performance.now() - t0,
     };
   }
 
   async dispose(): Promise<void> {
-    await this.session?.release();
-    this.session = null;
+    await Promise.all([this.issueSession?.release(), this.polaritySession?.release()]);
+    this.issueSession = null;
+    this.polaritySession = null;
   }
-}
-
-function getModelPath(): string {
-  if (!isNode()) {
-    return "/models/svm-pipeline.onnx";
-  }
-  return `${process.cwd()}/public/models/svm-pipeline.onnx`;
 }
