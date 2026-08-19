@@ -1,44 +1,44 @@
 model,task,label,precision,recall,f1
-distilxlmr,issue,abstract logic gap,0.3495,0.4675,0.4
-distilxlmr,issue,clarity deficit,0.6667,0.0755,0.1356
-distilxlmr,issue,classroom tension,0.3165,0.4902,0.3846
-distilxlmr,issue,conceptual misalignment,0.5393,0.6761,0.6
-distilxlmr,issue,design synthesis failure,0.4737,0.5844,0.5233
-distilxlmr,issue,evaluation unfairness,0.4375,0.2979,0.3544
-distilxlmr,issue,feedback latency,0.4571,0.3404,0.3902
-distilxlmr,issue,instructional cadence,0.5429,0.38,0.4471
-distilxlmr,issue,notation struggle,0.7206,0.5904,0.649
-distilxlmr,issue,peer distraction,0.8,0.4898,0.6076
-distilxlmr,issue,perceived marginalization,0.259,0.6429,0.3692
-distilxlmr,issue,procedural bottleneck,0.3415,0.1944,0.2478
-distilxlmr,issue,relational coldness,0.2885,0.2941,0.2913
-distilxlmr,issue,subject alienation,0.25,0.4,0.3077
-distilxlmr,issue,uncategorized,0.8912,0.665,0.7616
-distilxlmr,issue,macro,0.4889,0.4392,0.4313
-distilxlmr,polarity,neg,0.9727,0.9376,0.9548
-distilxlmr,polarity,neu,0.7313,0.7903,0.7597
-distilxlmr,polarity,pos,0.4881,0.7321,0.5857
-distilxlmr,polarity,macro,0.7307,0.82,0.7667
-mbert,issue,abstract logic gap,0.8158,0.4026,0.5391
-mbert,issue,clarity deficit,0.3,0.5094,0.3776
-mbert,issue,classroom tension,0.4211,0.1569,0.2286
-mbert,issue,conceptual misalignment,0.5972,0.6056,0.6014
-mbert,issue,design synthesis failure,0.8065,0.6494,0.7194
-mbert,issue,evaluation unfairness,0.7917,0.4043,0.5352
-mbert,issue,feedback latency,0.3571,0.5319,0.4274
-mbert,issue,instructional cadence,0.5625,0.72,0.6316
-mbert,issue,notation struggle,0.8082,0.7108,0.7564
-mbert,issue,peer distraction,0.3387,0.8571,0.4855
-mbert,issue,perceived marginalization,0.4783,0.3929,0.4314
-mbert,issue,procedural bottleneck,0.8,0.5,0.6154
-mbert,issue,relational coldness,0.3889,0.4118,0.4
-mbert,issue,subject alienation,0.5806,0.36,0.4444
-mbert,issue,uncategorized,0.7489,0.8325,0.7885
-mbert,issue,macro,0.5864,0.5363,0.5321
-mbert,polarity,neg,0.9838,0.8631,0.9195
-mbert,polarity,neu,0.5052,0.7903,0.6164
-mbert,polarity,pos,0.3609,0.8571,0.5079
-mbert,polarity,macro,0.6166,0.8369,0.6813
+distilxlmr,issue,abstract logic gap,0.6203,0.6364,0.6282
+distilxlmr,issue,clarity deficit,0.5965,0.6415,0.6182
+distilxlmr,issue,classroom tension,0.5263,0.5882,0.5556
+distilxlmr,issue,conceptual misalignment,0.7241,0.8873,0.7975
+distilxlmr,issue,design synthesis failure,0.6854,0.7922,0.7349
+distilxlmr,issue,evaluation unfairness,0.6038,0.6809,0.64
+distilxlmr,issue,feedback latency,0.8,0.4255,0.5556
+distilxlmr,issue,instructional cadence,0.8966,0.52,0.6582
+distilxlmr,issue,notation struggle,0.9104,0.7349,0.8133
+distilxlmr,issue,peer distraction,0.9062,0.5918,0.716
+distilxlmr,issue,perceived marginalization,0.381,0.7143,0.4969
+distilxlmr,issue,procedural bottleneck,0.7966,0.6528,0.7176
+distilxlmr,issue,relational coldness,0.5273,0.5686,0.5472
+distilxlmr,issue,subject alienation,0.3924,0.62,0.4806
+distilxlmr,issue,uncategorized,0.962,0.7716,0.8563
+distilxlmr,issue,macro,0.6886,0.6551,0.6544
+distilxlmr,polarity,neg,0.9844,0.9682,0.9763
+distilxlmr,polarity,neu,0.7714,0.871,0.8182
+distilxlmr,polarity,pos,0.7778,0.875,0.8235
+distilxlmr,polarity,macro,0.8445,0.9047,0.8727
+mbert,issue,abstract logic gap,0.75,0.8571,0.8
+mbert,issue,clarity deficit,0.6029,0.7736,0.6777
+mbert,issue,classroom tension,0.6481,0.6863,0.6667
+mbert,issue,conceptual misalignment,0.8824,0.8451,0.8633
+mbert,issue,design synthesis failure,0.7654,0.8052,0.7848
+mbert,issue,evaluation unfairness,0.78,0.8298,0.8041
+mbert,issue,feedback latency,0.7872,0.7872,0.7872
+mbert,issue,instructional cadence,0.7679,0.86,0.8113
+mbert,issue,notation struggle,0.9,0.759,0.8235
+mbert,issue,peer distraction,0.7857,0.898,0.8381
+mbert,issue,perceived marginalization,0.7,0.625,0.6604
+mbert,issue,procedural bottleneck,0.9016,0.7639,0.8271
+mbert,issue,relational coldness,0.7568,0.549,0.6364
+mbert,issue,subject alienation,0.6034,0.7,0.6481
+mbert,issue,uncategorized,0.9305,0.8832,0.9062
+mbert,issue,macro,0.7708,0.7748,0.769
+mbert,polarity,neg,0.9823,0.9748,0.9786
+mbert,polarity,neu,0.7576,0.8065,0.7812
+mbert,polarity,pos,0.8305,0.875,0.8522
+mbert,polarity,macro,0.8568,0.8854,0.8707
 svm,issue,abstract logic gap,0.75,0.8961,0.8166
 svm,issue,clarity deficit,0.814,0.6604,0.7292
 svm,issue,classroom tension,0.7143,0.7843,0.7477

@@ -333,7 +333,6 @@ def save_run_report(
         "seed": None,
         "device": "cpu",
         "use_amp": False,
-        "lora": False,
         "hyperparameters": {
             "pipeline": "shared TfidfVectorizer + dual LinearSVC heads (single ONNX)",
             "best_config": {

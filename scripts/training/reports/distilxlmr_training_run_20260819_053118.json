@@ -1,0 +1,540 @@
+{
+  "run_id": "run_20260819_053118",
+  "model": "nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large",
+  "seed": 42,
+  "device": "cuda",
+  "use_amp": true,
+  "lora": false,
+  "hyperparameters": {
+    "epochs_planned": 5,
+    "epochs_completed": 5,
+    "batch_size": 16,
+    "lr": 2e-05,
+    "warmup_ratio": 0.1,
+    "max_len": 256,
+    "patience": 2
+  },
+  "best_val_issue_macro_f1": 0.7382816103933736,
+  "epoch_logs": [
+    {
+      "epoch": 1,
+      "train_loss": 7.5995,
+      "train_issue_loss": 2.288,
+      "train_polarity_loss": 0.7355,
+      "val_loss": 5.0513,
+      "val_issue_macro_f1": 0.4399,
+      "val_polarity_macro_f1": 0.7727,
+      "val_unique_issue_classes_predicted": 15,
+      "val_issue_class_diagnostics": {
+        "abstract logic gap": {
+          "predicted": 36,
+          "predicted_pct": 3.59,
+          "true": 78,
+          "f1": 0.2456
+        },
+        "clarity deficit": {
+          "predicted": 5,
+          "predicted_pct": 0.5,
+          "true": 43,
+          "f1": 0.0833
+        },
+        "classroom tension": {
+          "predicted": 33,
+          "predicted_pct": 3.29,
+          "true": 48,
+          "f1": 0.2469
+        },
+        "conceptual misalignment": {
+          "predicted": 62,
+          "predicted_pct": 6.19,
+          "true": 77,
+          "f1": 0.5612
+        },
+        "design synthesis failure": {
+          "predicted": 127,
+          "predicted_pct": 12.67,
+          "true": 68,
+          "f1": 0.4718
+        },
+        "evaluation unfairness": {
+          "predicted": 61,
+          "predicted_pct": 6.09,
+          "true": 58,
+          "f1": 0.2857
+        },
+        "feedback latency": {
+          "predicted": 23,
+          "predicted_pct": 2.3,
+          "true": 49,
+          "f1": 0.2222
+        },
+        "instructional cadence": {
+          "predicted": 100,
+          "predicted_pct": 9.98,
+          "true": 52,
+          "f1": 0.5789
+        },
+        "notation struggle": {
+          "predicted": 86,
+          "predicted_pct": 8.58,
+          "true": 76,
+          "f1": 0.6173
+        },
+        "peer distraction": {
+          "predicted": 66,
+          "predicted_pct": 6.59,
+          "true": 52,
+          "f1": 0.8305
+        },
+        "perceived marginalization": {
+          "predicted": 97,
+          "predicted_pct": 9.68,
+          "true": 39,
+          "f1": 0.3676
+        },
+        "procedural bottleneck": {
+          "predicted": 49,
+          "predicted_pct": 4.89,
+          "true": 71,
+          "f1": 0.5
+        },
+        "relational coldness": {
+          "predicted": 72,
+          "predicted_pct": 7.19,
+          "true": 44,
+          "f1": 0.4138
+        },
+        "subject alienation": {
+          "predicted": 23,
+          "predicted_pct": 2.3,
+          "true": 48,
+          "f1": 0.3099
+        },
+        "uncategorized": {
+          "predicted": 162,
+          "predicted_pct": 16.17,
+          "true": 199,
+          "f1": 0.8643
+        }
+      },
+      "lr": 1.7777777777777895e-05,
+      "elapsed_s": 66.4
+    },
+    {
+      "epoch": 2,
+      "train_loss": 4.5454,
+      "train_issue_loss": 1.407,
+      "train_polarity_loss": 0.3243,
+      "val_loss": 3.5718,
+      "val_issue_macro_f1": 0.6306,
+      "val_polarity_macro_f1": 0.7781,
+      "val_unique_issue_classes_predicted": 15,
+      "val_issue_class_diagnostics": {
+        "abstract logic gap": {
+          "predicted": 82,
+          "predicted_pct": 8.18,
+          "true": 78,
+          "f1": 0.65
+        },
+        "clarity deficit": {
+          "predicted": 21,
+          "predicted_pct": 2.1,
+          "true": 43,
+          "f1": 0.2812
+        },
+        "classroom tension": {
+          "predicted": 21,
+          "predicted_pct": 2.1,
+          "true": 48,
+          "f1": 0.3188
+        },
+        "conceptual misalignment": {
+          "predicted": 61,
+          "predicted_pct": 6.09,
+          "true": 77,
+          "f1": 0.7971
+        },
+        "design synthesis failure": {
+          "predicted": 88,
+          "predicted_pct": 8.78,
+          "true": 68,
+          "f1": 0.6667
+        },
+        "evaluation unfairness": {
+          "predicted": 79,
+          "predicted_pct": 7.88,
+          "true": 58,
+          "f1": 0.4526
+        },
+        "feedback latency": {
+          "predicted": 67,
+          "predicted_pct": 6.69,
+          "true": 49,
+          "f1": 0.6552
+        },
+        "instructional cadence": {
+          "predicted": 43,
+          "predicted_pct": 4.29,
+          "true": 52,
+          "f1": 0.8
+        },
+        "notation struggle": {
+          "predicted": 75,
+          "predicted_pct": 7.49,
+          "true": 76,
+          "f1": 0.7417
+        },
+        "peer distraction": {
+          "predicted": 49,
+          "predicted_pct": 4.89,
+          "true": 52,
+          "f1": 0.8713
+        },
+        "perceived marginalization": {
+          "predicted": 57,
+          "predicted_pct": 5.69,
+          "true": 39,
+          "f1": 0.5417
+        },
+        "procedural bottleneck": {
+          "predicted": 78,
+          "predicted_pct": 7.78,
+          "true": 71,
+          "f1": 0.698
+        },
+        "relational coldness": {
+          "predicted": 50,
+          "predicted_pct": 4.99,
+          "true": 44,
+          "f1": 0.617
+        },
+        "subject alienation": {
+          "predicted": 56,
+          "predicted_pct": 5.59,
+          "true": 48,
+          "f1": 0.4808
+        },
+        "uncategorized": {
+          "predicted": 175,
+          "predicted_pct": 17.47,
+          "true": 199,
+          "f1": 0.8877
+        }
+      },
+      "lr": 1.3333333333333543e-05,
+      "elapsed_s": 65.9
+    },
+    {
+      "epoch": 3,
+      "train_loss": 3.2138,
+      "train_issue_loss": 0.9839,
+      "train_polarity_loss": 0.262,
+      "val_loss": 2.8753,
+      "val_issue_macro_f1": 0.7103,
+      "val_polarity_macro_f1": 0.7888,
+      "val_unique_issue_classes_predicted": 15,
+      "val_issue_class_diagnostics": {
+        "abstract logic gap": {
+          "predicted": 69,
+          "predicted_pct": 6.89,
+          "true": 78,
+          "f1": 0.6531
+        },
+        "clarity deficit": {
+          "predicted": 55,
+          "predicted_pct": 5.49,
+          "true": 43,
+          "f1": 0.4694
+        },
+        "classroom tension": {
+          "predicted": 58,
+          "predicted_pct": 5.79,
+          "true": 48,
+          "f1": 0.6604
+        },
+        "conceptual misalignment": {
+          "predicted": 64,
+          "predicted_pct": 6.39,
+          "true": 77,
+          "f1": 0.7943
+        },
+        "design synthesis failure": {
+          "predicted": 98,
+          "predicted_pct": 9.78,
+          "true": 68,
+          "f1": 0.7229
+        },
+        "evaluation unfairness": {
+          "predicted": 51,
+          "predicted_pct": 5.09,
+          "true": 58,
+          "f1": 0.5505
+        },
+        "feedback latency": {
+          "predicted": 40,
+          "predicted_pct": 3.99,
+          "true": 49,
+          "f1": 0.6517
+        },
+        "instructional cadence": {
+          "predicted": 55,
+          "predicted_pct": 5.49,
+          "true": 52,
+          "f1": 0.8411
+        },
+        "notation struggle": {
+          "predicted": 70,
+          "predicted_pct": 6.99,
+          "true": 76,
+          "f1": 0.7945
+        },
+        "peer distraction": {
+          "predicted": 55,
+          "predicted_pct": 5.49,
+          "true": 52,
+          "f1": 0.8972
+        },
+        "perceived marginalization": {
+          "predicted": 40,
+          "predicted_pct": 3.99,
+          "true": 39,
+          "f1": 0.6582
+        },
+        "procedural bottleneck": {
+          "predicted": 68,
+          "predicted_pct": 6.79,
+          "true": 71,
+          "f1": 0.777
+        },
+        "relational coldness": {
+          "predicted": 51,
+          "predicted_pct": 5.09,
+          "true": 44,
+          "f1": 0.6737
+        },
+        "subject alienation": {
+          "predicted": 43,
+          "predicted_pct": 4.29,
+          "true": 48,
+          "f1": 0.6154
+        },
+        "uncategorized": {
+          "predicted": 185,
+          "predicted_pct": 18.46,
+          "true": 199,
+          "f1": 0.8958
+        }
+      },
+      "lr": 8.888888888888944e-06,
+      "elapsed_s": 65.6
+    },
+    {
+      "epoch": 4,
+      "train_loss": 2.5064,
+      "train_issue_loss": 0.7664,
+      "train_polarity_loss": 0.2072,
+      "val_loss": 2.7135,
+      "val_issue_macro_f1": 0.7269,
+      "val_polarity_macro_f1": 0.8254,
+      "val_unique_issue_classes_predicted": 15,
+      "val_issue_class_diagnostics": {
+        "abstract logic gap": {
+          "predicted": 83,
+          "predicted_pct": 8.28,
+          "true": 78,
+          "f1": 0.6584
+        },
+        "clarity deficit": {
+          "predicted": 59,
+          "predicted_pct": 5.89,
+          "true": 43,
+          "f1": 0.5294
+        },
+        "classroom tension": {
+          "predicted": 47,
+          "predicted_pct": 4.69,
+          "true": 48,
+          "f1": 0.6316
+        },
+        "conceptual misalignment": {
+          "predicted": 66,
+          "predicted_pct": 6.59,
+          "true": 77,
+          "f1": 0.7692
+        },
+        "design synthesis failure": {
+          "predicted": 70,
+          "predicted_pct": 6.99,
+          "true": 68,
+          "f1": 0.7681
+        },
+        "evaluation unfairness": {
+          "predicted": 48,
+          "predicted_pct": 4.79,
+          "true": 58,
+          "f1": 0.6226
+        },
+        "feedback latency": {
+          "predicted": 52,
+          "predicted_pct": 5.19,
+          "true": 49,
+          "f1": 0.7327
+        },
+        "instructional cadence": {
+          "predicted": 53,
+          "predicted_pct": 5.29,
+          "true": 52,
+          "f1": 0.8381
+        },
+        "notation struggle": {
+          "predicted": 69,
+          "predicted_pct": 6.89,
+          "true": 76,
+          "f1": 0.7724
+        },
+        "peer distraction": {
+          "predicted": 57,
+          "predicted_pct": 5.69,
+          "true": 52,
+          "f1": 0.8991
+        },
+        "perceived marginalization": {
+          "predicted": 49,
+          "predicted_pct": 4.89,
+          "true": 39,
+          "f1": 0.7045
+        },
+        "procedural bottleneck": {
+          "predicted": 92,
+          "predicted_pct": 9.18,
+          "true": 71,
+          "f1": 0.7239
+        },
+        "relational coldness": {
+          "predicted": 42,
+          "predicted_pct": 4.19,
+          "true": 44,
+          "f1": 0.6512
+        },
+        "subject alienation": {
+          "predicted": 41,
+          "predicted_pct": 4.09,
+          "true": 48,
+          "f1": 0.6966
+        },
+        "uncategorized": {
+          "predicted": 174,
+          "predicted_pct": 17.37,
+          "true": 199,
+          "f1": 0.9062
+        }
+      },
+      "lr": 4.444444444444473e-06,
+      "elapsed_s": 66.0
+    },
+    {
+      "epoch": 5,
+      "train_loss": 2.1754,
+      "train_issue_loss": 0.6651,
+      "train_polarity_loss": 0.1802,
+      "val_loss": 2.5914,
+      "val_issue_macro_f1": 0.7383,
+      "val_polarity_macro_f1": 0.8231,
+      "val_unique_issue_classes_predicted": 15,
+      "val_issue_class_diagnostics": {
+        "abstract logic gap": {
+          "predicted": 74,
+          "predicted_pct": 7.39,
+          "true": 78,
+          "f1": 0.6447
+        },
+        "clarity deficit": {
+          "predicted": 59,
+          "predicted_pct": 5.89,
+          "true": 43,
+          "f1": 0.549
+        },
+        "classroom tension": {
+          "predicted": 52,
+          "predicted_pct": 5.19,
+          "true": 48,
+          "f1": 0.66
+        },
+        "conceptual misalignment": {
+          "predicted": 65,
+          "predicted_pct": 6.49,
+          "true": 77,
+          "f1": 0.7746
+        },
+        "design synthesis failure": {
+          "predicted": 78,
+          "predicted_pct": 7.78,
+          "true": 68,
+          "f1": 0.7808
+        },
+        "evaluation unfairness": {
+          "predicted": 44,
+          "predicted_pct": 4.39,
+          "true": 58,
+          "f1": 0.6275
+        },
+        "feedback latency": {
+          "predicted": 47,
+          "predicted_pct": 4.69,
+          "true": 49,
+          "f1": 0.7292
+        },
+        "instructional cadence": {
+          "predicted": 54,
+          "predicted_pct": 5.39,
+          "true": 52,
+          "f1": 0.8679
+        },
+        "notation struggle": {
+          "predicted": 70,
+          "predicted_pct": 6.99,
+          "true": 76,
+          "f1": 0.7945
+        },
+        "peer distraction": {
+          "predicted": 59,
+          "predicted_pct": 5.89,
+          "true": 52,
+          "f1": 0.9189
+        },
+        "perceived marginalization": {
+          "predicted": 51,
+          "predicted_pct": 5.09,
+          "true": 39,
+          "f1": 0.6889
+        },
+        "procedural bottleneck": {
+          "predicted": 81,
+          "predicted_pct": 8.08,
+          "true": 71,
+          "f1": 0.7632
+        },
+        "relational coldness": {
+          "predicted": 46,
+          "predicted_pct": 4.59,
+          "true": 44,
+          "f1": 0.6889
+        },
+        "subject alienation": {
+          "predicted": 43,
+          "predicted_pct": 4.29,
+          "true": 48,
+          "f1": 0.6813
+        },
+        "uncategorized": {
+          "predicted": 179,
+          "predicted_pct": 17.86,
+          "true": 199,
+          "f1": 0.9048
+        }
+      },
+      "lr": 0.0,
+      "elapsed_s": 69.8
+    }
+  ]
+}

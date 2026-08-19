@@ -3,3 +3,10 @@ public/models/finetuned/**/*.onnx filter=lfs diff=lfs merge=lfs -text
 
 # Git LFS tracking configuration for trained (baseline) ONNX assets (svm)
 public/models/trained/**/*.onnx filter=lfs diff=lfs merge=lfs -text
+
+# Normalize line endings to LF for text files in the training pipeline and app
+*.py text eol=lf
+*.tsx text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.ipynb text eol=lf

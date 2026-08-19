@@ -1,7 +1,6 @@
 # Core requirements for Phase 2 fine-tuning (Feeana PID-ABSA)
 torch>=2.1.0
 torchao>=0.16.0
-peft>=0.14.0
 transformers>=4.38.0
 datasets>=2.18.0
 evaluate>=0.4.0

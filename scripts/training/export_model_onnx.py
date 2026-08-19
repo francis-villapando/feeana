@@ -89,21 +89,8 @@ class DualHeadModel(nn.Module):
         return self.issue_head(pooled), self.polarity_head(pooled)
 
 
-def merge_lora_if_present(model: DualHeadModel) -> DualHeadModel:
-    """Merge PEFT LoRA weights into base model if present."""
-    try:
-        from peft import PeftModel  # type: ignore
-
-        if isinstance(model.encoder, PeftModel):
-            print("[INFO] Merging LoRA adapter weights into base encoder...")
-            model.encoder = model.encoder.merge_and_unload()
-    except ImportError:
-        print("[INFO] peft module not loaded; skipping adapter merge.")
-    return model
-
-
 def load_checkpoint(ckpt_path: Path, device: torch.device, model_name: str) -> DualHeadModel:
-    """Load trained checkpoint into DualHeadModel."""
+    """Load a full fine-tuned checkpoint into DualHeadModel."""
     print(f"[INFO] Loading base model architecture: {model_name}")
     model = DualHeadModel(model_name, NUM_ISSUES, NUM_POLARITIES)
 
@@ -116,28 +103,13 @@ def load_checkpoint(ckpt_path: Path, device: torch.device, model_name: str) -> D
         sys.exit(1)
 
     state_dict = ckpt["model_state_dict"] if isinstance(ckpt, dict) and "model_state_dict" in ckpt else ckpt
+    try:
+        model.load_state_dict(state_dict)
+    except Exception as err:
+        print(f"\n[ERROR] Failed to apply state dict: {err}")
+        print(f"        Expected a full fine-tuned checkpoint for {model_name}.")
+        sys.exit(1)
 
-    missing, unexpected = model.load_state_dict(state_dict, strict=False)
-    if missing or unexpected:
-        print("[INFO] Attempting PEFT-aware checkpoint load...")
-        try:
-            from peft import LoraConfig, TaskType, get_peft_model  # type: ignore
-
-            lora_config = LoraConfig(
-                task_type=TaskType.FEATURE_EXTRACTION,
-                r=16,
-                lora_alpha=32,
-                lora_dropout=0.05,
-                target_modules=["query", "key", "value", "output.dense"],
-                bias="none",
-            )
-            model.encoder = get_peft_model(model.encoder, lora_config)
-            model.load_state_dict(state_dict, strict=True)
-        except Exception as err:
-            print(f"[ERROR] Failed to apply state dict: {err}")
-            sys.exit(1)
-
-    model = merge_lora_if_present(model)
     model = model.float()
     model.eval()
     return model.to(device)

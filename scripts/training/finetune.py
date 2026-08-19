@@ -10,12 +10,12 @@ Base model (default):  nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large
 Task:        Dual-head classification
              - issue  (15-way): 14 taxonomy tags + Uncategorized
              - polarity (3-way): neg / neu / pos
-Architecture: Shared encoder + two separate classification heads, LoRA on q/k/v/output
-Compute:     Google Colab T4 (primary) → Kaggle free (fallback) → local CPU LoRA
+Architecture: Shared encoder + two separate classification heads (full fine-tune)
+Compute:     Google Colab T4 (primary) → Kaggle free (fallback) → local CPU
 
 Usage:
   # Colab/Kaggle (GPU):
-  !pip install peft datasets evaluate
+  !pip install datasets evaluate
   !python finetune.py --model-name bert-base-multilingual-cased
 
   # Local CPU (no GPU):
@@ -23,7 +23,7 @@ Usage:
 
 Pinned versions (tested):
   torch>=2.1           transformers>=4.38
-  peft>=0.9            datasets>=2.18
+  datasets>=2.18
   evaluate>=0.4        scikit-learn>=1.3
   accelerate>=0.27
 """
@@ -34,7 +34,6 @@ import argparse
 import json
 import os
 import random
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -189,7 +188,7 @@ class DualHeadModel(nn.Module):
 
     def __init__(self, model_name: str, num_issues: int, num_polarities: int) -> None:
         super().__init__()
-        self.encoder = AutoModel.from_pretrained(model_name)
+        self.encoder = AutoModel.from_pretrained(model_name, torch_dtype=torch.float32)
         hidden = self.encoder.config.hidden_size  # 384 for mMiniLMv2
 
         self.issue_head = nn.Linear(hidden, num_issues)
@@ -222,26 +221,6 @@ class DualHeadModel(nn.Module):
             "issue_logits": issue_logits,
             "polarity_logits": polarity_logits,
         }
-
-
-# LoRA — apply to q, k, v, and output projections
-from peft import LoraConfig, get_peft_model, TaskType  # noqa: E402
-
-
-def apply_lora(model: DualHeadModel) -> DualHeadModel:
-    """Wrap the encoder with LoRA adapters on attention projections."""
-    lora_config = LoraConfig(
-        task_type=TaskType.FEATURE_EXTRACTION,  # encoder-only, heads stay full-rank
-        r=16,
-        lora_alpha=32,
-        lora_dropout=0.05,
-        # Target modules: attention q/k/v and output dense layers
-        target_modules=["query", "key", "value", "output.dense"],
-        bias="none",
-    )
-    model.encoder = get_peft_model(model.encoder, lora_config)
-    model.encoder.print_trainable_parameters()
-    return model
 
 
 # Class weights — handle polarity imbalance (~87% neg) and issue imbalance
@@ -431,7 +410,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--batch-size", type=int, default=16,
                    help="Per-device batch size (16 for T4 16GB, 32 if memory allows)")
     p.add_argument("--lr", type=float, default=2e-5,
-                   help="Learning rate for encoder/LoRA parameters (default: 2e-5)")
+                   help="Learning rate for encoder parameters (default: 2e-5)")
     p.add_argument("--head-lr", type=float, default=1e-3,
                    help="Learning rate for classification heads (default: 1e-3)")
     p.add_argument("--issue-loss-weight", type=float, default=3.0,
@@ -441,8 +420,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--patience", type=int, default=2,
                    help="Early stopping patience (epochs without val macro-F1 improvement)")
     p.add_argument("--seed", type=int, default=GLOBAL_SEED)
-    p.add_argument("--no-lora", action="store_true",
-                   help="Full fine-tune (no LoRA). Only use with ample VRAM.")
     return p.parse_args()
 
 
@@ -450,8 +427,9 @@ def main() -> None:
     args = parse_args()
     seed_everything(args.seed)
 
-    global MODEL_NAME
+    global MODEL_NAME, TAG
     MODEL_NAME = resolve_model_name(args.model_name)
+    TAG = resolve_tag(MODEL_NAME)
     print(f"[CONFIG] Base model: {MODEL_NAME}")
 
     if args.device == "auto":
@@ -483,12 +461,6 @@ def main() -> None:
     print(f"[INFO] Building dual-head model on {MODEL_NAME}")
     model = DualHeadModel(MODEL_NAME, NUM_ISSUES, NUM_POLARITIES)
 
-    if not args.no_lora:
-        print("[INFO] Applying LoRA adapters to encoder (q/k/v/output.dense)...")
-        model = apply_lora(model)
-    else:
-        print("[INFO] Full fine-tune mode (no LoRA)")
-
     model.to(device)
 
     # Class weights
@@ -502,7 +474,7 @@ def main() -> None:
     polarity_criterion = nn.CrossEntropyLoss(weight=polarity_weights)
 
     # Optimizer + scheduler
-    # Differential learning rates: higher LR for newly initialized heads, standard LR for encoder/LoRA
+    # Differential learning rates: higher LR for newly initialized heads, standard LR for encoder
     head_params = list(model.issue_head.parameters()) + list(model.polarity_head.parameters())
     encoder_params = [p for n, p in model.named_parameters() if p.requires_grad and 'head' not in n]
 
@@ -630,7 +602,6 @@ def main() -> None:
         "seed": args.seed,
         "device": str(device),
         "use_amp": use_amp,
-        "lora": not args.no_lora,
         "hyperparameters": {
             "epochs_planned": args.epochs,
             "epochs_completed": len(run_log),
