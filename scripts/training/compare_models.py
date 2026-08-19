@@ -182,6 +182,50 @@ def compute_metrics(y_true: list[str], y_pred: list[str], labels: list[str]) -> 
     return pd.DataFrame(rows, columns=["label", "precision", "recall", "f1"])
 
 
+def compute_metrics_by_group(
+    y_true: list[str],
+    y_pred: list[str],
+    labels: list[str],
+    group_values: list[str],
+    group_name: str,
+) -> pd.DataFrame:
+    """Returns per-group per-label + macro precision/recall/F1 rows with an n column."""
+    group_array = np.asarray(group_values)
+    rows: list[dict] = []
+    for group in sorted(set(group_values)):
+        mask = group_array == group
+        true, pred = np.asarray(y_true)[mask], np.asarray(y_pred)[mask]
+        precision, recall, f1, _ = precision_recall_fscore_support(
+            true, pred, labels=labels, average=None, zero_division=0
+        )
+        macro_precision, macro_recall, macro_f1, _ = precision_recall_fscore_support(
+            true, pred, labels=labels, average="macro", zero_division=0
+        )
+        n = int(mask.sum())
+        rows.extend(
+            {
+                group_name: group,
+                "label": label,
+                "precision": round(float(p), 4),
+                "recall": round(float(r), 4),
+                "f1": round(float(f), 4),
+                "n": n,
+            }
+            for label, p, r, f in zip(labels, precision, recall, f1)
+        )
+        rows.append({
+            group_name: group,
+            "label": "macro",
+            "precision": round(float(macro_precision), 4),
+            "recall": round(float(macro_recall), 4),
+            "f1": round(float(macro_f1), 4),
+            "n": n,
+        })
+    return pd.DataFrame(
+        rows, columns=[group_name, "label", "precision", "recall", "f1", "n"]
+    )
+
+
 def save_confusion_matrix(
     y_true: list[str],
     y_pred: list[str],
@@ -207,6 +251,14 @@ def main() -> None:
     texts = test_df["cleaned_text"].tolist()
     y_true = {task: test_df[task].tolist() for task in TASKS}
     print(f"[INFO] Test rows: {len(test_df)}")
+
+    group_columns = ["source", "language"]
+    by_group_frames: dict[str, list[pd.DataFrame]] = {
+        col: [] for col in group_columns
+    }
+    for group_col in group_columns:
+        counts = test_df[group_col].value_counts().sort_index()
+        print(f"[INFO] {group_col} distribution: {dict(counts)}")
 
     comparison_frames: list[pd.DataFrame] = []
     for model_name, model_cfg in MODELS.items():
@@ -248,6 +300,18 @@ def main() -> None:
                 f"recall={macro['recall']:.4f} f1={macro['f1']:.4f}"
             )
 
+            for group_col in group_columns:
+                group_frame = compute_metrics_by_group(
+                    y_true[task],
+                    predictions[task],
+                    labels_by_task[task],
+                    test_df[group_col].tolist(),
+                    group_col,
+                )
+                group_frame.insert(0, "task", task)
+                group_frame.insert(0, "model", model_name)
+                by_group_frames[group_col].append(group_frame)
+
     comparison_df = pd.concat(comparison_frames, ignore_index=True)
     comparison_path = REPORTS_DIR / OUTPUT_BASE
     comparison_path.parent.mkdir(parents=True, exist_ok=True)
@@ -261,6 +325,23 @@ def main() -> None:
         columns=TASKS, index=list(MODELS)
     )
     print(macro_summary.to_string())
+
+    for group_col in group_columns:
+        group_path = REPORTS_DIR / f"model_comparison_by_{group_col}.csv"
+        group_df = pd.concat(by_group_frames[group_col], ignore_index=True)
+        group_df.to_csv(group_path, index=False)
+        print(f"\n[EXPORT] Model comparison by {group_col} -> {group_path}")
+
+        print(f"\n[SUMMARY] Macro F1 by model/{group_col}/task:")
+        macro_only = group_df[group_df["label"] == "macro"]
+        for task in TASKS:
+            pivot = (
+                macro_only[macro_only["task"] == task]
+                .pivot(index="model", columns=group_col, values="f1")
+                .reindex(index=list(MODELS))
+            )
+            print(f"  {task}:")
+            print(pivot.to_string())
 
     print("\n[DONE] SOP 5.1 evaluation complete.")
 
