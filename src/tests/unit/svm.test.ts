@@ -2,11 +2,10 @@ import { describe, it, expect } from "vitest";
 import { SvmAdapter } from "../../lib/algorithm/models/svm";
 
 describe("SvmAdapter", () => {
-  it("loads the issue/polarity sessions and label mappings", async () => {
+  it("loads the dual-head session and label mappings", async () => {
     const adapter = new SvmAdapter();
     await adapter.load();
-    expect(adapter["issueSession"]).toBeTruthy();
-    expect(adapter["polaritySession"]).toBeTruthy();
+    expect(adapter["session"]).toBeTruthy();
     expect(adapter["labelMap"]).toBeTruthy();
     await adapter.dispose();
   });

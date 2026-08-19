@@ -1,12 +1,12 @@
 {
-  "run_id": "run_20260818_043236",
+  "run_id": "run_20260819_023137",
   "model": "svm",
   "seed": null,
   "device": "cpu",
   "use_amp": false,
   "lora": false,
   "hyperparameters": {
-    "pipeline": "TfidfVectorizer + LinearSVC",
+    "pipeline": "shared TfidfVectorizer + dual LinearSVC heads (single ONNX)",
     "best_config": {
       "ngram_range": "(1, 2)",
       "min_df": 1,
@@ -14,7 +14,8 @@
     },
     "tfidf": {
       "lowercase": true,
-      "stop_words": null
+      "stop_words": null,
+      "shared": true
     },
     "linear_svc": {
       "class_weight": "balanced",
@@ -150,8 +151,7 @@
       "C:\\Users\\Francis Villapando\\web projects\\feeana\\scripts\\training\\checkpoints\\svm\\polarity_pipeline.pkl"
     ],
     "onnx": [
-      "C:\\Users\\Francis Villapando\\web projects\\feeana\\public\\models\\trained\\svm\\issue.onnx",
-      "C:\\Users\\Francis Villapando\\web projects\\feeana\\public\\models\\trained\\svm\\polarity.onnx"
+      "C:\\Users\\Francis Villapando\\web projects\\feeana\\public\\models\\trained\\svm\\svm.onnx"
     ],
     "label_mappings": [
       "C:\\Users\\Francis Villapando\\web projects\\feeana\\scripts\\training\\checkpoints\\svm\\label_mappings.json",

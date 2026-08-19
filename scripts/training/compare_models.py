@@ -5,9 +5,9 @@ Runs the three browser-deployed ONNX artifacts through onnxruntime on CPU:
   - DistilXLM-R / mBERT: dual-head transformers consuming tokenizer
     input_ids/attention_mask (int64 [N, 256]) and emitting issue_logits /
     polarity_logits, decoded via softmax argmax against label_mappings.json.
-  - SVM baseline: two single-output pipelines consuming string_input and
-    emitting label (int64 index) + probabilities, decoded via
-    label_mappings.json.
+  - SVM baseline: a single dual-head ONNX consuming string_input and emitting
+    issue_label/polarity_label (int64 index) + issue_probabilities/
+    polarity_probabilities from one run, decoded via label_mappings.json.
 
 All three consume the same parity-cleaned text (cleaned_text from test.csv),
 matching the training-time input contract. For each model and each head
@@ -19,9 +19,7 @@ Outputs (fixed filenames, appended to reports/):
                                        plus a macro row per model/task
   - <model>_cm_<task>.csv             : square label x label counts
 
-Environment (verified 2026-08-18):
-  Python 3.13.7, onnxruntime 1.28.0, transformers 5.3.0,
-  numpy 2.4.1, pandas 2.3.3, scikit-learn 1.8.0
+Library versions are printed at runtime by main().
 
 Usage:
   python compare_models.py
@@ -76,8 +74,7 @@ MODELS = {
     },
     "svm": {
         "kind": "svm",
-        "issue_onnx": public_model("trained/svm/issue.onnx"),
-        "polarity_onnx": public_model("trained/svm/polarity.onnx"),
+        "onnx": public_model("trained/svm/svm.onnx"),
         "label_mappings": public_model("trained/svm/label_mappings.json"),
     },
 }
@@ -138,16 +135,24 @@ def run_transformer_inference(
 def run_svm_inference(
     model_cfg: dict,
     texts: list[str],
-    sessions: dict[str, ort.InferenceSession],
+    session: ort.InferenceSession,
     labels_by_task: dict,
 ) -> dict[str, list[str]]:
-    """Runs both single-output SVM pipelines and decodes label indices."""
-    predictions: dict[str, list[str]] = {task: [] for task in TASKS}
+    """Runs the dual-head SVM ONNX once and decodes both heads' label indices."""
     feeds = {"string_input": np.array([[text] for text in texts], dtype=object)}
-    for task in TASKS:
-        label, _ = sessions[task].run(None, feeds)
-        predictions[task] = decode_indices(label, labels_by_task[task])
-    return predictions
+    issue_label, _, polarity_label, _ = session.run(
+        [
+            "issue_label",
+            "issue_probabilities",
+            "polarity_label",
+            "polarity_probabilities",
+        ],
+        feeds,
+    )
+    return {
+        "issue": decode_indices(issue_label, labels_by_task["issue"]),
+        "polarity": decode_indices(polarity_label, labels_by_task["polarity"]),
+    }
 
 
 def compute_metrics(y_true: list[str], y_pred: list[str], labels: list[str]) -> pd.DataFrame:
@@ -219,13 +224,10 @@ def main() -> None:
                 model_cfg, texts, tokenizer, session, labels_by_task
             )
         else:
-            sessions = {
-                task: ort.InferenceSession(
-                    str(model_cfg[f"{task}_onnx"]), providers=["CPUExecutionProvider"]
-                )
-                for task in TASKS
-            }
-            predictions = run_svm_inference(model_cfg, texts, sessions, labels_by_task)
+            session = ort.InferenceSession(
+                str(model_cfg["onnx"]), providers=["CPUExecutionProvider"]
+            )
+            predictions = run_svm_inference(model_cfg, texts, session, labels_by_task)
 
         for task in TASKS:
             task_frame = compute_metrics(

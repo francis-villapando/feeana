@@ -77,17 +77,13 @@ function softmax(values: Float32Array): number[] {
 
 export class SvmAdapter implements ModelAdapter {
   readonly name = "svm";
-  private issueSession: OrtSession | null = null;
-  private polaritySession: OrtSession | null = null;
+  private session: OrtSession | null = null;
   private labelMap: SvmLabelMappings | null = null;
 
   async load(): Promise<void> {
     const runtime = await initOrt();
     const dir = getSvmModelDir();
-    [this.issueSession, this.polaritySession] = await Promise.all([
-      runtime.InferenceSession.create(`${dir}/issue.onnx`),
-      runtime.InferenceSession.create(`${dir}/polarity.onnx`),
-    ]);
+    this.session = await runtime.InferenceSession.create(`${dir}/svm.onnx`);
     this.labelMap = await loadLabelMappings(dir);
 
     // JIT warmup: compile WASM kernels ahead of workload
@@ -95,7 +91,7 @@ export class SvmAdapter implements ModelAdapter {
       const feeds: Record<string, Tensor> = {
         string_input: new runtime.Tensor("string", ["warmup"], [1, 1]),
       };
-      await Promise.all([this.issueSession.run(feeds), this.polaritySession.run(feeds)]);
+      await this.session.run(feeds);
     } catch (e) {
       console.warn("[svm] Warmup inference failed (non-fatal):", e);
     }
@@ -103,7 +99,7 @@ export class SvmAdapter implements ModelAdapter {
 
   async predict(text: string): Promise<Prediction> {
     const t0 = performance.now();
-    if (!this.issueSession || !this.polaritySession || !this.labelMap) {
+    if (!this.session || !this.labelMap) {
       throw new Error("[svm] Adapter not loaded — call load() first.");
     }
 
@@ -113,16 +109,15 @@ export class SvmAdapter implements ModelAdapter {
       string_input: new runtime.Tensor("string", [cleanText], [1, 1]),
     };
 
-    const issueResult = await this.issueSession.run(feeds);
-    const polarityResult = await this.polaritySession.run(feeds);
+    const result = await this.session.run(feeds);
 
-    const issueIdx = Number((issueResult["label"].data as ArrayLike<number | bigint>)[0]);
-    const polarityIdx = Number((polarityResult["label"].data as ArrayLike<number | bigint>)[0]);
+    const issueIdx = Number((result["issue_label"].data as ArrayLike<number | bigint>)[0]);
+    const polarityIdx = Number((result["polarity_label"].data as ArrayLike<number | bigint>)[0]);
 
     const issue = this.labelMap.issue.id2label[String(issueIdx)] ?? "uncategorized";
     const polarity = (this.labelMap.polarity.id2label[String(polarityIdx)] ??
       "neu") as Prediction["polarity"];
-    const probs = issueResult["probabilities"].data as Float32Array;
+    const probs = result["issue_probabilities"].data as Float32Array;
 
     return {
       issue,
@@ -133,8 +128,7 @@ export class SvmAdapter implements ModelAdapter {
   }
 
   async dispose(): Promise<void> {
-    await Promise.all([this.issueSession?.release(), this.polaritySession?.release()]);
-    this.issueSession = null;
-    this.polaritySession = null;
+    await this.session?.release();
+    this.session = null;
   }
 }
