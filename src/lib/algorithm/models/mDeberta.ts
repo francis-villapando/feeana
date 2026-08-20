@@ -2,7 +2,7 @@ import { pipeline, type PipelineType } from "@huggingface/transformers";
 import { Preprocess } from "../preprocess";
 import type { ModelAdapter, Prediction } from "./types";
 
-// @deprecated — benchmark-only comparison model. Not used in production;
+// @deprecated — tracer bullet-only model. Not used in production;
 // the DistilXlmrAdapter is the production model.
 const CANDIDATE_LABELS = [
   "relational coldness",

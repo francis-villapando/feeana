@@ -1,4 +1,5 @@
 import { OnnxPidAbsaAdapter } from "./finetuned";
+import { MODEL_SIZES_BYTES } from "./sizes";
 
 export class MBertFinetunedAdapter extends OnnxPidAbsaAdapter {
   constructor() {
@@ -7,6 +8,7 @@ export class MBertFinetunedAdapter extends OnnxPidAbsaAdapter {
       modelDir: "mbert",
       onnxFile: "int8.onnx",
       cacheKey: "feeana-model-cache-mbert-v1",
+      knownModelSize: MODEL_SIZES_BYTES.mbert,
     });
   }
 }

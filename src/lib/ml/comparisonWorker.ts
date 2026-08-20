@@ -10,15 +10,26 @@ const WARMUP_COUNT = 3;
 
 let model: ModelAdapter | null = null;
 
-async function loadModel(kind: ModelKind): Promise<{ coldStartMs: number }> {
+async function loadModel(
+  kind: ModelKind,
+  onDownloadProgress?: (loaded: number, total: number) => void,
+  coldMode = false,
+): Promise<{ coldStartMs: number }> {
   if (model) await disposeModel();
   const t0 = performance.now();
-  model = createModel(kind);
+  const adapter = createModel(kind);
+  adapter.setProgressHook?.((info) => {
+    if (info.bytes && info.source === "network") {
+      onDownloadProgress?.(info.bytes.loaded, info.bytes.total);
+    }
+  });
+  adapter.setColdMode?.(coldMode);
+  model = adapter;
   await model.load();
   return { coldStartMs: performance.now() - t0 };
 }
 
-async function runBenchmark(
+async function runComparison(
   texts: string[],
   onProgress?: (current: number, total: number) => void,
 ): Promise<{
@@ -26,7 +37,7 @@ async function runBenchmark(
   latencies: number[];
 }> {
   if (!model) {
-    throw new Error("[benchmarkWorker] No model loaded — call loadModel() first.");
+    throw new Error("[comparisonWorker] No model loaded — call loadModel() first.");
   }
 
   for (let i = 0; i < Math.min(WARMUP_COUNT, texts.length); i++) {
@@ -50,8 +61,8 @@ async function disposeModel(): Promise<void> {
   model = null;
 }
 
-const api = { loadModel, runBenchmark, disposeModel };
+const api = { loadModel, runComparison, disposeModel };
 
-export type BenchmarkWorkerApi = typeof api;
+export type ComparisonWorkerApi = typeof api;
 
 Comlink.expose(api);

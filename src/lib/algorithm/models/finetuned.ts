@@ -1,20 +1,13 @@
 import type { InferenceSession, Tensor } from "onnxruntime-web";
 import { AutoTokenizer, env } from "@huggingface/transformers";
 import { Preprocess } from "../preprocess";
-import type { ModelAdapter, Prediction } from "./types";
+import type { ModelLoadProgress, ModelAdapter, Prediction } from "./types";
+import { MODEL_SIZES_BYTES } from "./sizes";
+import { cachedFetch, cachePut } from "./modelCache";
 
 const MAX_LEN = 256;
 
-export interface LoadProgress {
-  status: "loading" | "progress" | "done";
-  progress: number;
-  phase?: string;
-  source?: "cache" | "network";
-  bytes?: {
-    loaded: number;
-    total: number;
-  };
-}
+export type { ModelLoadProgress as LoadProgress } from "./types";
 
 export interface FinetunedModelConfig {
   name: string;
@@ -55,45 +48,12 @@ async function initOrt(): Promise<typeof import("onnxruntime-web")> {
 
 // Persistent offline cache (Cache Storage API)
 
-async function getModelCache(cacheKey: string): Promise<Cache | null> {
-  if (isNode() || typeof caches === "undefined") return null;
-  try {
-    return await caches.open(cacheKey);
-  } catch {
-    return null;
-  }
-}
-
-async function cachedFetch(url: string, cacheKey: string): Promise<Response | null> {
-  const cache = await getModelCache(cacheKey);
-  if (!cache) return null;
-  try {
-    return (await cache.match(url)) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-async function cachePut(url: string, data: ArrayBuffer | Uint8Array, cacheKey: string): Promise<void> {
-  const cache = await getModelCache(cacheKey);
-  if (!cache) return;
-  try {
-    const body: BodyInit = data instanceof ArrayBuffer ? data : new Uint8Array(data).buffer;
-    await cache.put(url, new Response(body));
-  } catch (e) {
-    console.warn(`[finetuned] Unable to cache "${url}":`, e);
-  }
-}
-
 interface LabelMappings {
   issue: { id2label: Record<string, string> };
   polarity: { id2label: Record<string, string> };
 }
 
-async function loadLabelMappings(
-  dir: string,
-  cacheKey: string,
-): Promise<LabelMappings> {
+async function loadLabelMappings(dir: string, cacheKey: string): Promise<LabelMappings> {
   if (isNode()) {
     const fs = await import("fs");
     const file = `${dir}/label_mappings.json`;
@@ -126,7 +86,16 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
   session: InferenceSession | null = null;
   tokenizer: Awaited<ReturnType<typeof AutoTokenizer.from_pretrained>> | null = null;
   labelMap: LabelMappings | null = null;
-  progressHook?: (info: LoadProgress) => void;
+  progressHook?: (info: ModelLoadProgress) => void;
+  private coldMode = false;
+
+  setProgressHook(hook: (info: ModelLoadProgress) => void): void {
+    this.progressHook = hook;
+  }
+
+  setColdMode(enabled: boolean): void {
+    this.coldMode = enabled;
+  }
 
   protected readonly config: Required<FinetunedModelConfig>;
 
@@ -135,7 +104,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     this.config = {
       onnxFile: "int8.onnx",
       cacheKey: "feeana-model-cache-v1",
-      knownModelSize: 118_052_968,
+      knownModelSize: MODEL_SIZES_BYTES.distilxlmr,
       ...config,
     };
   }
@@ -154,19 +123,21 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
       return Promise.resolve(readFileSync(url));
     }
 
-    // Serve from Cache Storage
-    const cached = await cachedFetch(url, this.config.cacheKey);
-    if (cached) {
-      this.progressHook?.({
-        status: "progress",
-        progress: 60,
-        phase: "download",
-        source: "cache",
-      });
-      return new Uint8Array(await cached.arrayBuffer());
+    // Serve from Cache Storage (unless measuring a true cold start)
+    if (!this.coldMode) {
+      const cached = await cachedFetch(url, this.config.cacheKey);
+      if (cached) {
+        this.progressHook?.({
+          status: "progress",
+          progress: 60,
+          phase: "download",
+          source: "cache",
+        });
+        return new Uint8Array(await cached.arrayBuffer());
+      }
     }
 
-    return fetch(url).then(async (response) => {
+    return fetch(url, this.coldMode ? { cache: "no-store" } : undefined).then(async (response) => {
       if (!response.ok) throw new Error(`Failed to load model (HTTP ${response.status})`);
       const total =
         Number(response.headers.get("content-length") ?? 0) || this.config.knownModelSize;
