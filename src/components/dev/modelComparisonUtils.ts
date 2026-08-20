@@ -114,7 +114,7 @@ export interface ModelComparisonResult {
   peakJSHeapMB: number;
 }
 
-interface RestMetrics {
+export interface RestMetrics {
   warmStartMs: number;
   avgLatencyMs: number;
   p50LatencyMs: number;
@@ -149,16 +149,6 @@ interface MemoryAttribution {
 }
 
 type MeasureUserAgentSpecificMemory = () => Promise<MemoryAttribution>;
-
-if (typeof PerformanceObserver !== "undefined") {
-  try {
-    new PerformanceObserver(() => {}).observe({
-      type: "memory",
-    } as unknown as PerformanceObserverInit);
-  } catch {
-    // ignore if not supported
-  }
-}
 
 const MEMORY_SAMPLE_INTERVAL_MS = 50;
 
@@ -257,7 +247,7 @@ function withAbort<T>(
   return Promise.race([promise, abortPromise]);
 }
 
-async function runColdStart(
+export async function runColdStart(
   kind: ModelKind,
   signal?: AbortSignal,
   onDownloadProgress?: (loaded: number, total: number) => void,
@@ -280,7 +270,7 @@ async function runColdStart(
   }
 }
 
-async function runRest(
+export async function runRest(
   kind: ModelKind,
   texts: string[],
   onProgress?: ProgressCallback,

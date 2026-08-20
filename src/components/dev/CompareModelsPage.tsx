@@ -5,6 +5,7 @@ import {
   loadTestSet,
   MODEL_KINDS,
   type TestCase,
+  type ModelComparisonResult,
 } from "./ModelComparisonRunner";
 import { MODEL_SIZES_BYTES } from "@/lib/algorithm/models/sizes";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,27 @@ function formatBytesMB(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+type MetricRow = {
+  label: string;
+  key?: keyof ModelComparisonResult;
+  format?: (v: number) => string;
+  getValue?: (kind: (typeof MODEL_KINDS)[number]) => string;
+};
+
+const METRICS: MetricRow[] = [
+  {
+    label: "Model Size",
+    getValue: (kind) => formatBytesMB(MODEL_SIZES_BYTES[kind]),
+  },
+  { label: "Cold Start (ms)", key: "coldStartMs", format: formatMs },
+  { label: "Cold Peak JS Heap (MB)", key: "coldPeakJSHeapMB", format: formatMB },
+  { label: "Warm Start (ms)", key: "warmStartMs", format: formatMs },
+  { label: "Avg Latency (ms)", key: "avgLatencyMs", format: formatMs },
+  { label: "P50 Latency (ms)", key: "p50LatencyMs", format: formatMs },
+  { label: "P95 Latency (ms)", key: "p95LatencyMs", format: formatMs },
+  { label: "Peak JS Heap (MB)", key: "peakJSHeapMB", format: formatMB },
+];
+
 export function CompareModelsPage() {
   const [testSet, setTestSet] = useState<TestCase[]>([]);
   const { results, loading, currentModel, progress, runComparison, cancel } = useModelComparison();
@@ -56,7 +78,12 @@ export function CompareModelsPage() {
   const done = results.length === MODEL_KINDS.length;
 
   const handleRun = async () => {
-    await runComparison(testSet);
+    try {
+      await runComparison(testSet);
+    } catch (err) {
+      console.error("[CompareModelsPage] Comparison failed:", err);
+      alert(`Comparison failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   const handleCancel = () => {
@@ -78,17 +105,32 @@ export function CompareModelsPage() {
 
   const resultsByModel = new Map(results.map((r) => [r.modelName, r]));
 
-  const renderCell = (
+  const renderMetricCell = (
     kind: (typeof MODEL_KINDS)[number],
-    value: number | undefined,
-    format: (v: number) => string,
+    metric: MetricRow,
   ) => {
-    if (value !== undefined) {
-      return <TableCell className="px-4 py-3 whitespace-nowrap">{format(value)}</TableCell>;
+    if (metric.getValue) {
+      return (
+        <TableCell key={kind} className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+          {metric.getValue(kind)}
+        </TableCell>
+      );
     }
+
+    const result = resultsByModel.get(kind);
+    const value = metric.key ? (result?.[metric.key] as number | undefined) : undefined;
+
+    if (value !== undefined && metric.format) {
+      return (
+        <TableCell key={kind} className="px-4 py-3 whitespace-nowrap">
+          {metric.format(value)}
+        </TableCell>
+      );
+    }
+
     if (loading && currentModel === kind) {
       return (
-        <TableCell className="px-4 py-3 whitespace-nowrap">
+        <TableCell key={kind} className="px-4 py-3 whitespace-nowrap">
           <span className="inline-flex items-center gap-1 text-muted-foreground">
             <Loader2 className="h-3 w-3 animate-spin" />
             Pending…
@@ -96,7 +138,12 @@ export function CompareModelsPage() {
         </TableCell>
       );
     }
-    return <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap">—</TableCell>;
+
+    return (
+      <TableCell key={kind} className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+        —
+      </TableCell>
+    );
   };
 
   return (
@@ -151,38 +198,24 @@ export function CompareModelsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="px-4 whitespace-nowrap">Model</TableHead>
-                  <TableHead className="px-4 whitespace-nowrap">Model Size</TableHead>
-                  <TableHead className="px-4 whitespace-nowrap">Cold Start (ms)</TableHead>
-                  <TableHead className="px-4 whitespace-nowrap">Cold Peak JS Heap (MB)</TableHead>
-                  <TableHead className="px-4 whitespace-nowrap">Warm Start (ms)</TableHead>
-                  <TableHead className="px-4 whitespace-nowrap">Avg Latency (ms)</TableHead>
-                  <TableHead className="px-4 whitespace-nowrap">P50 Latency (ms)</TableHead>
-                  <TableHead className="px-4 whitespace-nowrap">P95 Latency (ms)</TableHead>
-                  <TableHead className="px-4 whitespace-nowrap">Peak JS Heap (MB)</TableHead>
+                  <TableHead className="px-4 whitespace-nowrap">Metric</TableHead>
+                  {MODEL_KINDS.map((kind) => (
+                    <TableHead key={kind} className="px-4 whitespace-nowrap">
+                      {MODEL_LABELS[kind]}
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
+
               <TableBody>
-                {MODEL_KINDS.map((kind) => {
-                  const r = resultsByModel.get(kind);
-                  return (
-                    <TableRow key={kind}>
-                      <TableCell className="px-4 py-3 font-medium whitespace-nowrap">
-                        {MODEL_LABELS[kind]}
-                      </TableCell>
-                      <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                        {formatBytesMB(MODEL_SIZES_BYTES[kind])}
-                      </TableCell>
-                      {renderCell(kind, r?.coldStartMs, formatMs)}
-                      {renderCell(kind, r?.coldPeakJSHeapMB, formatMB)}
-                      {renderCell(kind, r?.warmStartMs, formatMs)}
-                      {renderCell(kind, r?.avgLatencyMs, formatMs)}
-                      {renderCell(kind, r?.p50LatencyMs, formatMs)}
-                      {renderCell(kind, r?.p95LatencyMs, formatMs)}
-                      {renderCell(kind, r?.peakJSHeapMB, formatMB)}
-                    </TableRow>
-                  );
-                })}
+                {METRICS.map((metric) => (
+                  <TableRow key={metric.label}>
+                    <TableCell className="px-4 py-3 font-medium whitespace-nowrap">
+                      {metric.label}
+                    </TableCell>
+                    {MODEL_KINDS.map((kind) => renderMetricCell(kind, metric))}
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>

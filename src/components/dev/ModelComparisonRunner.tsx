@@ -6,6 +6,9 @@ import {
   persistComparisonState,
   loadTestSet,
   clearModelCaches,
+  runColdStart,
+  runRest,
+  type RestMetrics,
   type TestCase,
   type ModelComparisonResult,
   type ComparisonProgress,
@@ -33,47 +36,51 @@ export function useModelComparison() {
     setLoading(true);
     setResults([]);
 
-    await clearModelCaches();
+    try {
+      await clearModelCaches();
 
-    for (let i = 0; i < kinds.length; i++) {
-      if (controller.signal.aborted) break;
-      const kind = kinds[i];
-      setCurrentModel(kind);
-      setProgress({ stage: `Downloading ${kind}…`, current: 0, total: 0, bytes: undefined });
-      let cold: { coldStartMs: number; coldPeakJSHeapMB: number };
-      try {
-        cold = await runColdStart(kind, controller.signal, (loaded: number, total: number) => {
-          setProgress((prev) => ({ ...prev, bytes: { loaded, total } }));
-        });
-      } catch {
+      for (let i = 0; i < kinds.length; i++) {
         if (controller.signal.aborted) break;
-        throw new Error(`Cold start failed for ${kind}`);
-      }
+        const kind = kinds[i];
+        setCurrentModel(kind);
+        setProgress({ stage: `Downloading ${kind}…`, current: 0, total: 0, bytes: undefined });
+        let cold: { coldStartMs: number; coldPeakJSHeapMB: number };
+        try {
+          cold = await runColdStart(kind, controller.signal, (loaded: number, total: number) => {
+            setProgress((prev) => ({ ...prev, bytes: { loaded, total } }));
+          });
+        } catch (err) {
+          if (controller.signal.aborted) break;
+          console.error(`[ModelComparison] Cold start failed for ${kind}:`, err);
+          throw new Error(`Cold start failed for ${kind}: ${err instanceof Error ? err.message : String(err)}`);
+        }
 
-      setProgress({ stage: `Loading ${kind}…`, current: 0, total: 0 });
-      let rest: RestMetrics;
-      try {
-        rest = await runRest(
-          kind,
-          texts,
-          (stage, current, total) => {
-            setProgress({ stage, current, total });
-          },
-          controller.signal,
-        );
-      } catch {
-        if (controller.signal.aborted) break;
-        throw new Error(`Remaining comparison failed for ${kind}`);
-      }
+        setProgress({ stage: `Loading ${kind}…`, current: 0, total: 0 });
+        let rest: RestMetrics;
+        try {
+          rest = await runRest(
+            kind,
+            texts,
+            (stage, current, total) => {
+              setProgress({ stage, current, total });
+            },
+            controller.signal,
+          );
+        } catch (err) {
+          if (controller.signal.aborted) break;
+          console.error(`[ModelComparison] Remaining comparison failed for ${kind}:`, err);
+          throw new Error(`Remaining comparison failed for ${kind}: ${err instanceof Error ? err.message : String(err)}`);
+        }
 
-      partial.push({ modelName: kind, ...cold, ...rest });
-      setResults([...partial]);
+        partial.push({ modelName: kind, ...cold, ...rest });
+        setResults([...partial]);
+      }
+    } finally {
+      cancelRef.current = null;
+      setLoading(false);
+      setCurrentModel(null);
+      setProgress(IDLE_PROGRESS);
     }
-
-    cancelRef.current = null;
-    setLoading(false);
-    setCurrentModel(null);
-    setProgress(IDLE_PROGRESS);
   }, []);
 
   const cancel = useCallback(async () => {
