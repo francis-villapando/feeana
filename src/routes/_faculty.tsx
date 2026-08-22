@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { AppHeader, FacultySidebar } from "@/components/layout";
 import { useAuth } from "@/lib/stores/auth";
@@ -13,23 +13,35 @@ function FacultyLayout() {
   const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user || user.role !== "faculty") {
+      navigate({ to: "/auth/faculty" });
+    }
+  }, [isLoading, user, navigate]);
+
   if (isLoading) {
     return <LayoutSkeleton />;
   }
 
   if (!user || user.role !== "faculty") {
-    navigate({ to: "/auth/faculty" });
     return null;
   }
 
   return (
-    <SidebarProvider defaultOpen={false} style={{ '--sidebar-top': '4rem' } as React.CSSProperties}>
+    <SidebarProvider defaultOpen={false} style={{ "--sidebar-top": "4rem" } as React.CSSProperties}>
       <FacultyLayoutInner user={user} logout={logout} />
     </SidebarProvider>
   );
 }
 
-function FacultyLayoutInner({ user, logout }: { user: { name: string }; logout: () => Promise<void> }) {
+function FacultyLayoutInner({
+  user,
+  logout,
+}: {
+  user: { name: string };
+  logout: () => Promise<void>;
+}) {
   const navigate = useNavigate();
   const { open } = useSidebar();
   const [hoverEnabled, setHoverEnabled] = useState(true);
@@ -44,7 +56,10 @@ function FacultyLayoutInner({ user, logout }: { user: { name: string }; logout: 
         <AppHeader
           role="faculty"
           userName={user.name}
-          onSignOut={async () => { await logout(); navigate({ to: "/auth/faculty" }); }}
+          onSignOut={async () => {
+            await logout();
+            navigate({ to: "/auth/faculty" });
+          }}
           sidebarTrigger
           onSidebarTriggerClick={handleSidebarTriggerClick}
         />

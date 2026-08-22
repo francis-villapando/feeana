@@ -5,6 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function isRateLimitError(err: unknown): boolean {
+  if (!err) return false;
+  if (typeof err === "object" && "status" in err && (err as { status?: number }).status === 429) {
+    return true;
+  }
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    msg.includes("rate limit") ||
+    msg.includes("too many requests") ||
+    msg.includes("429") ||
+    msg.includes("security purposes") ||
+    msg.includes("over_email_send_rate_limit")
+  );
+}
+
 export function friendlyError(err: unknown, fallback = "Something went wrong."): string {
   const msg = err instanceof Error ? err.message : String(err ?? "");
   const isNetworkError =

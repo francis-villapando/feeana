@@ -12,7 +12,8 @@ import { ThemeToggle } from "@/components/common";
 import { PasswordField } from "./PasswordField";
 import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
 import { InlineError, destructiveBorder } from "../common";
-import { friendlyError } from "@/lib/hooks/utils";
+import { friendlyError, isRateLimitError } from "@/lib/hooks/utils";
+import { useCooldown } from "@/lib/hooks/useCooldown";
 
 const ALLOWED_FACULTY_DOMAIN = import.meta.env.VITE_FACULTY_DOMAIN as string | undefined;
 
@@ -55,6 +56,11 @@ export function AuthPage({ role }: { role: UserRole }) {
   const [submitError, setSubmitError] = useState("");
   const [resendError, setResendError] = useState("");
   const [resending, setResending] = useState(false);
+  const {
+    secondsLeft: resendSeconds,
+    isActive: resendActive,
+    startCooldown,
+  } = useCooldown("cooldown_resend_confirmation", 60);
 
   const goHome = (r: UserRole) => {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
@@ -122,10 +128,10 @@ export function AuthPage({ role }: { role: UserRole }) {
         if (regResult.alreadyExists && !regResult.confirmed) {
           setAccountExists(true);
         } else if (regResult.needsEmailConfirmation) {
+          startCooldown();
           toast.success("Check your email to confirm your account.");
           setMode("signin");
           setName("");
-          setEmail("");
           setPassword("");
           setConfirm("");
         } else {
@@ -160,15 +166,15 @@ export function AuthPage({ role }: { role: UserRole }) {
     setResending(true);
     try {
       await resendConfirmation(email);
+      startCooldown();
       toast.success("Confirmation link sent. Check your email.");
-      setAccountExists(false);
-      setMode("signin");
-      setName("");
-      setEmail("");
-      setPassword("");
-      setConfirm("");
     } catch (err) {
-      setResendError(friendlyError(err, "Could not send confirmation email."));
+      if (isRateLimitError(err)) {
+        startCooldown();
+        setResendError("Too many requests. Please wait a minute before trying again.");
+      } else {
+        setResendError(friendlyError(err, "Could not send confirmation email."));
+      }
     } finally {
       setResending(false);
     }
@@ -231,10 +237,14 @@ export function AuthPage({ role }: { role: UserRole }) {
                     onClick={handleResend}
                     variant="outline"
                     className="w-full"
-                    disabled={resending}
+                    disabled={resending || resendActive}
                   >
                     <Mail className="h-4 w-4" />
-                    {resending ? "Sending…" : "Resend confirmation email"}
+                    {resending
+                      ? "Sending…"
+                      : resendActive
+                        ? `Resend in ${resendSeconds}s`
+                        : "Resend confirmation email"}
                   </Button>
                   <InlineError errorMessage={resendError} />
                 </div>
@@ -348,6 +358,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                     type="button"
                     className="text-primary hover:underline"
                     onClick={() => {
+                      setAccountExists(false);
                       clearAllErrors();
                       setMode("signup");
                     }}
@@ -362,6 +373,7 @@ export function AuthPage({ role }: { role: UserRole }) {
                     type="button"
                     className="text-primary hover:underline"
                     onClick={() => {
+                      setAccountExists(false);
                       clearAllErrors();
                       setMode("signin");
                     }}
