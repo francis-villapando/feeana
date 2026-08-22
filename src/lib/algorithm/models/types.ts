@@ -1,4 +1,5 @@
-import type { Polarity } from "../types";
+import type { Polarity, FeedbackEncoding } from "../types";
+import type { MachineTokenizer } from "../preprocess";
 
 export interface Prediction {
   issue: string;
@@ -22,6 +23,11 @@ export interface ModelAdapter {
   dispose(): Promise<void>;
   setProgressHook?(hook: (info: ModelLoadProgress) => void): void;
   setColdMode?(enabled: boolean): void;
+}
+
+export interface EncodedModelAdapter extends ModelAdapter {
+  readonly tokenizer: MachineTokenizer | null;
+  predictEncoded(encoding: FeedbackEncoding): Promise<Prediction>;
 }
 
 export type ModelKind = "distilxlmr" | "mdeberta" | "mbert" | "svm";

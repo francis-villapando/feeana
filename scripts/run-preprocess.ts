@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Preprocess } from "../src/lib/algorithm/preprocess";
+import { CleanFeedback } from "../src/lib/algorithm/preprocess";
 
 function parseCSV(content: string): { headers: string[]; rows: Record<string, string>[] } {
   const rows: string[][] = [];
@@ -113,18 +113,16 @@ export function runPreprocessDataset(): void {
     throw new Error("Could not find feedback text column in CSV headers.");
   }
 
-  console.log(`[run-preprocess] Found text column '${textColumnName}'. Processing ${rows.length} rows...`);
+  console.log(
+    `[run-preprocess] Found text column '${textColumnName}'. Processing ${rows.length} rows...`,
+  );
 
   const outputLines: string[] = [];
   outputLines.push(headers.map(escapeCSVField).join(","));
 
   let processedCount = 0;
   for (const row of rows) {
-    const rawText = row[textColumnName] || "";
-    const feedbackId = row.id || String(processedCount + 1);
-
-    const cleanedText = Preprocess({ id: feedbackId, rawText });
-    row[textColumnName] = cleanedText;
+    row[textColumnName] = CleanFeedback(row[textColumnName] || "");
 
     const rowLine = headers.map((h) => escapeCSVField(row[h] || "")).join(",");
     outputLines.push(rowLine);
@@ -132,7 +130,9 @@ export function runPreprocessDataset(): void {
   }
 
   fs.writeFileSync(outputCsvPath, outputLines.join("\n"), "utf-8");
-  console.log(`[run-preprocess] Successfully wrote ${processedCount} cleaned rows to: ${outputCsvPath}`);
+  console.log(
+    `[run-preprocess] Successfully wrote ${processedCount} cleaned rows to: ${outputCsvPath}`,
+  );
 }
 
 if (process.argv[1] && process.argv[1].includes("run-preprocess")) {

@@ -1,5 +1,5 @@
 import type { Tensor } from "onnxruntime-web";
-import { Preprocess } from "../preprocess";
+import { CleanFeedback } from "../preprocess";
 import type { ModelLoadProgress, ModelAdapter, Prediction } from "./types";
 import { MODEL_SIZES_BYTES } from "./sizes";
 import { cachedFetch, cachePut } from "./modelCache";
@@ -210,7 +210,7 @@ export class SvmAdapter implements ModelAdapter {
     }
 
     const runtime = await initOrt();
-    const cleanText = Preprocess({ id: "", rawText: text });
+    const cleanText = CleanFeedback(text);
     const feeds: Record<string, Tensor> = {
       string_input: new runtime.Tensor("string", [cleanText], [1, 1]),
     };

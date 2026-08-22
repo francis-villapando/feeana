@@ -31,6 +31,13 @@ const api = {
     console.debug("[worker] Running Modules 2-3-4 per-feedback loop.");
     const results: DiagnosticRecord[] = [];
 
+    // Invariant: the classifier and its tokenizer must be fully initialized
+    // before the loop; a failed cold-start aborts before any feedback runs.
+    const classifier = await getClassifier();
+    if (!classifier.tokenizer) {
+      throw new Error("[worker] Tokenizer unavailable — model failed to load.");
+    }
+
     for (let i = 0; i < feedbackStream.length; i++) {
       const feedback = feedbackStream[i];
 
@@ -43,9 +50,12 @@ const api = {
         },
       });
 
-      const cleanText = Preprocess(feedback);
+      // Module 2: Preprocessing (algorithm.pseudo L9)
+      const preprocessResult = Preprocess(feedback, classifier.tokenizer);
+
+      // Module 3: Information Extraction (algorithm.pseudo L10)
       performance.mark(`extract:entry-${i}-start`);
-      const extraction = await ExtractPID(cleanText);
+      const extraction = await ExtractPID(preprocessResult.encoding);
       performance.mark(`extract:entry-${i}-end`);
       performance.measure(`Entry inference #${i}`, {
         start: `extract:entry-${i}-start`,

@@ -20,8 +20,14 @@ export interface FeedbackInput {
   createdAt?: string;
 }
 
+export interface FeedbackEncoding {
+  inputIds: BigInt64Array;
+  attentionMask: BigInt64Array;
+}
+
 export interface PreprocessResult {
   cleanedText: string;
+  encoding: FeedbackEncoding;
 }
 
 export interface IssueExtractionResult {

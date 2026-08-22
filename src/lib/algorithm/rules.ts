@@ -1,3 +1,5 @@
+// Pedagogical rule tables shared by Modules 4-6 (rules_version = "1.2")
+
 import type { CltCategory } from "./types";
 
 export const RULES_VERSION = "1.2";

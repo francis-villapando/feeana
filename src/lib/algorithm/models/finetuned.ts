@@ -1,11 +1,10 @@
 import type { InferenceSession, Tensor } from "onnxruntime-web";
 import { AutoTokenizer, env } from "@huggingface/transformers";
-import { Preprocess } from "../preprocess";
+import { CleanFeedback, EncodeFeedback, MAX_SEQ_LEN, type MachineTokenizer } from "../preprocess";
+import type { FeedbackEncoding } from "../types";
 import type { ModelLoadProgress, ModelAdapter, Prediction } from "./types";
 import { MODEL_SIZES_BYTES } from "./sizes";
 import { cachedFetch, cachePut } from "./modelCache";
-
-const MAX_LEN = 256;
 
 export type { ModelLoadProgress as LoadProgress } from "./types";
 
@@ -84,7 +83,7 @@ function argmax(probs: number[]): number {
 export class OnnxPidAbsaAdapter implements ModelAdapter {
   readonly name: string;
   session: InferenceSession | null = null;
-  tokenizer: Awaited<ReturnType<typeof AutoTokenizer.from_pretrained>> | null = null;
+  tokenizer: MachineTokenizer | null = null;
   labelMap: LabelMappings | null = null;
   progressHook?: (info: ModelLoadProgress) => void;
   private coldMode = false;
@@ -216,7 +215,10 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
 
     // Phase 3: Tokenizer loading (70-95%)
     this.progressHook?.({ status: "progress", progress: 70, phase: "tokenizer" });
-    this.tokenizer = await AutoTokenizer.from_pretrained(dir, { local_files_only: true });
+    // Controlled cast: HF's generic Tensor typing does not match MachineTokenizer.
+    this.tokenizer = (await AutoTokenizer.from_pretrained(dir, {
+      local_files_only: true,
+    })) as unknown as MachineTokenizer;
     this.progressHook?.({ status: "progress", progress: 95, phase: "tokenizer" });
 
     // Phase 4: Label mappings (95-99%)
@@ -226,7 +228,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
 
     // JIT warmup: compile WASM kernels ahead of workload
     try {
-      await this.runCleaned("warmup");
+      await this.predict("warmup");
     } catch (e) {
       console.warn(`[${this.name}] Warmup inference failed (non-fatal):`, e);
     }
@@ -238,42 +240,28 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     this.progressHook?.({ status: "done", progress: 100 });
   }
 
+  // High-level prediction contract: cleans, encodes, and runs inference.
   async predict(text: string): Promise<Prediction> {
+    if (!this.tokenizer) {
+      throw new Error(`[${this.name}] Tokenizer not loaded — call load() first.`);
+    }
     const t0 = performance.now();
-    const cleanText = Preprocess({ id: "", rawText: text });
-    const result = await this.runCleaned(cleanText);
+    const encoding = EncodeFeedback(CleanFeedback(text), this.tokenizer);
+    const result = await this.predictEncoded(encoding);
     return { ...result, latencyMs: performance.now() - t0 };
   }
 
-  async predictCleaned(cleanText: string): Promise<Prediction> {
-    const t0 = performance.now();
-    const result = await this.runCleaned(cleanText);
-    return { ...result, latencyMs: performance.now() - t0 };
-  }
-
-  private async runCleaned(cleanText: string): Promise<Prediction> {
-    if (!this.session || !this.tokenizer || !this.labelMap) {
+  // Direct low-level inference on pre-encoded tensors (Module 3).
+  async predictEncoded(encoding: FeedbackEncoding): Promise<Prediction> {
+    if (!this.session || !this.labelMap) {
       throw new Error(`[${this.name}] Adapter not loaded — call load() first.`);
     }
 
-    const encoding = this.tokenizer(cleanText, {
-      padding: "max_length",
-      truncation: true,
-      max_length: MAX_LEN,
-      return_tensor: true,
-    });
-
+    const seqLen = encoding.inputIds.length;
     const runtime = await initOrt();
     const feeds: Record<string, Tensor> = {
-      input_ids: new runtime.Tensor("int64", BigInt64Array.from(encoding.input_ids.data), [
-        1,
-        MAX_LEN,
-      ]),
-      attention_mask: new runtime.Tensor(
-        "int64",
-        BigInt64Array.from(encoding.attention_mask.data),
-        [1, MAX_LEN],
-      ),
+      input_ids: new runtime.Tensor("int64", encoding.inputIds, [1, seqLen]),
+      attention_mask: new runtime.Tensor("int64", encoding.attentionMask, [1, seqLen]),
     };
 
     const results = await this.session.run(feeds);
