@@ -11,6 +11,7 @@ export type { ModelLoadProgress as LoadProgress } from "./types";
 export interface FinetunedModelConfig {
   name: string;
   modelDir: string;
+  hfRepo: string;
   onnxFile?: string;
   cacheKey?: string;
   knownModelSize?: number;
@@ -18,6 +19,10 @@ export interface FinetunedModelConfig {
 
 function isNode(): boolean {
   return typeof process !== "undefined" && process.versions?.node !== undefined;
+}
+
+function getHfFileUrl(hfRepo: string, file: string): string {
+  return `https://huggingface.co/${hfRepo}/resolve/main/${file}`;
 }
 
 function getBaseModelDir(): string {
@@ -52,21 +57,24 @@ interface LabelMappings {
   polarity: { id2label: Record<string, string> };
 }
 
-async function loadLabelMappings(dir: string, cacheKey: string): Promise<LabelMappings> {
+async function loadLabelMappings(
+  localDir: string,
+  remoteUrl: string,
+  cacheKey: string,
+): Promise<LabelMappings> {
   if (isNode()) {
     const fs = await import("fs");
-    const file = `${dir}/label_mappings.json`;
+    const file = `${localDir}/label_mappings.json`;
     const raw = fs.readFileSync(file, "utf-8");
     return JSON.parse(raw) as LabelMappings;
   }
-  const url = `${dir}/label_mappings.json`;
-  const cached = await cachedFetch(url, cacheKey);
-  const res = cached ?? (await fetch(url));
+  const cached = await cachedFetch(remoteUrl, cacheKey);
+  const res = cached ?? (await fetch(remoteUrl));
   if (!res.ok) {
     throw new Error(`Failed to load label mappings (HTTP ${res.status})`);
   }
   const body = await res.arrayBuffer();
-  if (!cached) await cachePut(url, body, cacheKey);
+  if (!cached) await cachePut(remoteUrl, body, cacheKey);
   return JSON.parse(new TextDecoder().decode(body)) as LabelMappings;
 }
 
@@ -113,7 +121,8 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
   }
 
   protected get onnxUrl(): string {
-    return `${this.modelDir}/${this.config.onnxFile}`;
+    if (isNode()) return `${this.modelDir}/${this.config.onnxFile}`;
+    return getHfFileUrl(this.config.hfRepo, this.config.onnxFile);
   }
 
   private async readModelWithProgress(url: string): Promise<Uint8Array> {
@@ -202,7 +211,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     const runtime = await initOrt();
     const dir = this.modelDir;
 
-    env.allowLocalModels = true;
+    env.allowLocalModels = isNode();
 
     // Phase 1: Model download / cache-read (0-60%)
     const modelBuffer = await this.readModelWithProgress(this.onnxUrl);
@@ -216,14 +225,20 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     // Phase 3: Tokenizer loading (70-95%)
     this.progressHook?.({ status: "progress", progress: 70, phase: "tokenizer" });
     // Controlled cast: HF's generic Tensor typing does not match MachineTokenizer.
-    this.tokenizer = (await AutoTokenizer.from_pretrained(dir, {
-      local_files_only: true,
-    })) as unknown as MachineTokenizer;
+    this.tokenizer = (isNode()
+      ? await AutoTokenizer.from_pretrained(dir, {
+          local_files_only: true,
+        })
+      : await AutoTokenizer.from_pretrained(this.config.hfRepo)) as unknown as MachineTokenizer;
     this.progressHook?.({ status: "progress", progress: 95, phase: "tokenizer" });
 
     // Phase 4: Label mappings (95-99%)
     this.progressHook?.({ status: "progress", progress: 95, phase: "labels" });
-    this.labelMap = await loadLabelMappings(dir, this.config.cacheKey);
+    this.labelMap = await loadLabelMappings(
+      dir,
+      getHfFileUrl(this.config.hfRepo, "label_mappings.json"),
+      this.config.cacheKey,
+    );
     this.progressHook?.({ status: "progress", progress: 99, phase: "labels" });
 
     // JIT warmup: compile WASM kernels ahead of workload

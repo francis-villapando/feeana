@@ -6,6 +6,7 @@ export class MBertFinetunedAdapter extends OnnxPidAbsaAdapter {
     super({
       name: "mbert",
       modelDir: "mbert",
+      hfRepo: "francis-villapando/feeana-mbert",
       onnxFile: "int8.onnx",
       cacheKey: "feeana-model-cache-mbert-v1",
       knownModelSize: MODEL_SIZES_BYTES.mbert,

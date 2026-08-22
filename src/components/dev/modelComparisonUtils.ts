@@ -9,6 +9,7 @@ export const MODEL_CACHE_KEYS = [
   "feeana-model-cache-v1",
   "feeana-model-cache-mbert-v1",
   "feeana-model-cache-svm-v1",
+  "transformers-cache",
 ];
 
 export const STORAGE_KEY = "feeana-comparison-progress-v1";

@@ -4,6 +4,7 @@ import type { ModelLoadProgress, ModelAdapter, Prediction } from "./types";
 import { MODEL_SIZES_BYTES } from "./sizes";
 import { cachedFetch, cachePut } from "./modelCache";
 
+const SVM_HF_REPO = "francis-villapando/feeana-svm";
 const SVM_CACHE_KEY = "feeana-model-cache-svm-v1";
 const SVM_KNOWN_MODEL_SIZE = MODEL_SIZES_BYTES.svm;
 
@@ -61,13 +62,18 @@ function getSvmModelDir(): string {
   return "/models/trained/svm";
 }
 
-async function loadLabelMappings(dir: string): Promise<SvmLabelMappings> {
+function getSvmOnnxUrl(): string {
+  if (isNode()) return `${getSvmModelDir()}/svm.onnx`;
+  return `https://huggingface.co/${SVM_HF_REPO}/resolve/main/svm.onnx`;
+}
+
+async function loadLabelMappings(): Promise<SvmLabelMappings> {
   if (isNode()) {
     const fs = await import("fs");
-    const raw = fs.readFileSync(`${dir}/label_mappings.json`, "utf-8");
+    const raw = fs.readFileSync(`${getSvmModelDir()}/label_mappings.json`, "utf-8");
     return JSON.parse(raw) as SvmLabelMappings;
   }
-  const url = `${dir}/label_mappings.json`;
+  const url = `https://huggingface.co/${SVM_HF_REPO}/resolve/main/label_mappings.json`;
   const cached = await cachedFetch(url, SVM_CACHE_KEY);
   const res = cached ?? (await fetch(url));
   if (!res.ok) {
@@ -182,13 +188,12 @@ export class SvmAdapter implements ModelAdapter {
 
   async load(): Promise<void> {
     const runtime = await initOrt();
-    const dir = getSvmModelDir();
-    const url = `${dir}/svm.onnx`;
+    const url = getSvmOnnxUrl();
 
     const modelBuffer = await this.readModelWithProgress(url);
 
     this.session = await runtime.InferenceSession.create(modelBuffer);
-    this.labelMap = await loadLabelMappings(dir);
+    this.labelMap = await loadLabelMappings();
 
     // JIT warmup: compile WASM kernels ahead of workload
     try {

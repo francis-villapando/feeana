@@ -8,6 +8,7 @@ export class DistilXlmrAdapter extends OnnxPidAbsaAdapter {
     super({
       name: "distilxlmr",
       modelDir: "distilxlmr",
+      hfRepo: "francis-villapando/feeana-distilxlmr",
       onnxFile: "int8.onnx",
       cacheKey: "feeana-model-cache-v1",
       knownModelSize: MODEL_SIZES_BYTES.distilxlmr,
