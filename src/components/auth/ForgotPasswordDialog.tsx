@@ -30,8 +30,12 @@ export function ForgotPasswordDialog({
   role,
 }: ForgotPasswordDialogProps) {
   const { forgotPassword } = useAuth();
-  const { secondsLeft, isActive, startCooldown } = useCooldown("cooldown_forgot_password", 60);
   const [email, setEmail] = useState(defaultEmail ?? "");
+  const { secondsLeft, isActive, startCooldown } = useCooldown(
+    "cooldown_forgot_password",
+    60,
+    email,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [emailError, setEmailError] = useState("");
@@ -43,6 +47,8 @@ export function ForgotPasswordDialog({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (isActive || submitting) return;
+
     setEmailError("");
     setSubmitError("");
     if (!email.trim()) {
@@ -55,13 +61,15 @@ export function ForgotPasswordDialog({
     }
     setSubmitting(true);
     try {
-      const redirectTo = role ? `${window.location.origin}/auth/${role}` : window.location.origin;
+      const redirectTo = role
+        ? `${window.location.origin}/auth/reset-password?role=${role}`
+        : `${window.location.origin}/auth/reset-password`;
       await forgotPassword(email, redirectTo);
-      startCooldown();
+      startCooldown(60, { force: true });
       setSent(true);
     } catch (err) {
       if (isRateLimitError(err)) {
-        startCooldown();
+        startCooldown(60);
         setSubmitError("Too many requests. Please wait a minute before trying again.");
       } else {
         setSubmitError(friendlyError(err));

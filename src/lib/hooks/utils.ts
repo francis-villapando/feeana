@@ -21,14 +21,19 @@ export function isRateLimitError(err: unknown): boolean {
 }
 
 export function friendlyError(err: unknown, fallback = "Something went wrong."): string {
+  if (!err) return fallback;
   const msg = err instanceof Error ? err.message : String(err ?? "");
   const isNetworkError =
     !navigator.onLine ||
     msg.toLowerCase().includes("failed to fetch") ||
     msg.toLowerCase().includes("network error");
-  return isNetworkError
-    ? "Could not connect to the server. Please check your internet connection or try again later."
-    : fallback;
+  if (isNetworkError) {
+    return "Could not connect to the server. Please check your internet connection or try again later.";
+  }
+  if (isRateLimitError(err)) {
+    return "Too many requests. Please wait a minute before trying again.";
+  }
+  return msg && !msg.toLowerCase().includes("[object object]") && msg !== "Error" ? msg : fallback;
 }
 
 export type ComparableField = {

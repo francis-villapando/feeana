@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/stores/auth";
 import { PasswordField } from "./PasswordField";
-import { useNavigate } from "@tanstack/react-router";
 import { InlineError } from "../common";
 import { unchangedFields } from "@/lib/hooks/utils";
 
@@ -21,8 +20,7 @@ interface ResetPasswordDialogProps {
 }
 
 export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogProps) {
-  const { user, isPasswordRecovery, updatePassword, clearPasswordRecovery } = useAuth();
-  const navigate = useNavigate();
+  const { updatePassword } = useAuth();
   const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -39,7 +37,7 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
     setConfirmError("");
     setSubmitError("");
 
-    if (!isPasswordRecovery && !current) {
+    if (!current) {
       setCurrentError("Enter your current password.");
       return;
     }
@@ -52,7 +50,6 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
       return;
     }
     if (
-      !isPasswordRecovery &&
       unchangedFields([{ label: "password", oldValue: current, newValue: password }]).length === 1
     ) {
       setPasswordError("New password can't be the same as your old password.");
@@ -65,10 +62,6 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
       setPassword("");
       setConfirm("");
       onOpenChange(false);
-      if (isPasswordRecovery) {
-        clearPasswordRecovery();
-        navigate({ to: user?.role === "student" ? "/auth/student" : "/auth/faculty" });
-      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       const isNetwork =
@@ -96,20 +89,18 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
           <DialogDescription>Enter your new password below.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          {!isPasswordRecovery && (
-            <PasswordField
-              id="current-password"
-              label="Current password"
-              value={current}
-              onChange={(e) => {
-                setCurrent(e.target.value);
-                setCurrentError("");
-              }}
-              autoComplete="current-password"
-              placeholder="Your current password"
-              passwordError={currentError}
-            />
-          )}
+          <PasswordField
+            id="current-password"
+            label="Current password"
+            value={current}
+            onChange={(e) => {
+              setCurrent(e.target.value);
+              setCurrentError("");
+            }}
+            autoComplete="current-password"
+            placeholder="Your current password"
+            passwordError={currentError}
+          />
           <PasswordField
             id="new-password"
             label="Type new password"
@@ -139,10 +130,7 @@ export function ResetPasswordDialog({ open, onOpenChange }: ResetPasswordDialogP
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                clearPasswordRecovery();
-                onOpenChange(false);
-              }}
+              onClick={() => onOpenChange(false)}
               disabled={submitting}
             >
               Cancel

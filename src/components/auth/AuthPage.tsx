@@ -60,7 +60,7 @@ export function AuthPage({ role }: { role: UserRole }) {
     secondsLeft: resendSeconds,
     isActive: resendActive,
     startCooldown,
-  } = useCooldown("cooldown_resend_confirmation", 60);
+  } = useCooldown("cooldown_resend_confirmation", 60, email);
 
   const goHome = (r: UserRole) => {
     navigate({ to: r === "faculty" ? "/home" : "/student/home" });
@@ -114,6 +114,11 @@ export function AuthPage({ role }: { role: UserRole }) {
       return;
     }
 
+    if (mode === "signup" && resendActive) {
+      setAccountExists(true);
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (mode === "signin") {
@@ -125,10 +130,11 @@ export function AuthPage({ role }: { role: UserRole }) {
         goHome(authUser.role);
       } else {
         const regResult = await register(email, password, name, role);
-        if (regResult.alreadyExists && !regResult.confirmed) {
+        if (regResult.alreadyExists) {
+          startCooldown();
           setAccountExists(true);
         } else if (regResult.needsEmailConfirmation) {
-          startCooldown();
+          startCooldown(60, { force: true });
           toast.success("Check your email to confirm your account.");
           setMode("signin");
           setName("");
@@ -140,14 +146,28 @@ export function AuthPage({ role }: { role: UserRole }) {
         }
       }
     } catch (err) {
+      if (mode === "signup" && isRateLimitError(err)) {
+        startCooldown();
+        setAccountExists(true);
+        return;
+      }
       const msg = err instanceof Error ? err.message : "";
       const msgLower = msg.toLowerCase();
-      if (msg === "EMAIL_ALREADY_EXISTS") {
-        setSubmitError("This email is already registered. Please sign in instead.");
+      if (
+        msg === "EMAIL_ALREADY_EXISTS" ||
+        msgLower.includes("already registered") ||
+        msgLower.includes("already exists") ||
+        msgLower.includes("user_already_exists")
+      ) {
+        startCooldown();
+        setAccountExists(true);
       } else if (msgLower.includes("email not confirmed")) {
         setSubmitError(
           "Please confirm your email before signing in. Check your inbox for the confirmation link.",
         );
+      } else if (isRateLimitError(err)) {
+        startCooldown();
+        setSubmitError("Too many requests. Please wait a minute before trying again.");
       } else {
         const friendly =
           msgLower.includes("invalid login credentials") ||
@@ -162,15 +182,16 @@ export function AuthPage({ role }: { role: UserRole }) {
   };
 
   const handleResend = async () => {
+    if (resendActive || resending) return;
     setResendError("");
     setResending(true);
     try {
       await resendConfirmation(email);
-      startCooldown();
-      toast.success("Confirmation link sent. Check your email.");
+      startCooldown(60, { force: true });
+      toast.success("If your email isn't verified yet, a new confirmation link has been sent.");
     } catch (err) {
       if (isRateLimitError(err)) {
-        startCooldown();
+        startCooldown(60);
         setResendError("Too many requests. Please wait a minute before trying again.");
       } else {
         setResendError(friendlyError(err, "Could not send confirmation email."));

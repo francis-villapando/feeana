@@ -17,7 +17,9 @@ import { Route as FacultyClassIdRouteImport } from './routes/_faculty.$classId'
 import { Route as FacultyArchivedRouteImport } from './routes/_faculty.archived'
 import { Route as FacultyDashboardRouteImport } from './routes/_faculty.dashboard'
 import { Route as FacultyHomeRouteImport } from './routes/_faculty.home'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AuthFacultyRouteImport } from './routes/auth.faculty'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthStudentRouteImport } from './routes/auth.student'
 import { Route as DevCompareModelsRouteImport } from './routes/dev.compare-models'
 import { Route as StudentStudentHomeRouteImport } from './routes/_student.student.home'
@@ -61,9 +63,19 @@ const FacultyHomeRoute = FacultyHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => FacultyRoute,
 } as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthFacultyRoute = AuthFacultyRouteImport.update({
   id: '/auth/faculty',
   path: '/auth/faculty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthStudentRoute = AuthStudentRouteImport.update({
@@ -95,7 +107,9 @@ export interface FileRoutesByFullPath {
   '/archived': typeof FacultyArchivedRoute
   '/dashboard': typeof FacultyDashboardRoute
   '/home': typeof FacultyHomeRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/auth/faculty': typeof AuthFacultyRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/student': typeof AuthStudentRoute
   '/dev/compare-models': typeof DevCompareModelsRoute
   '/student/home': typeof StudentStudentHomeRoute
@@ -108,7 +122,9 @@ export interface FileRoutesByTo {
   '/archived': typeof FacultyArchivedRoute
   '/dashboard': typeof FacultyDashboardRoute
   '/home': typeof FacultyHomeRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/auth/faculty': typeof AuthFacultyRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/student': typeof AuthStudentRoute
   '/dev/compare-models': typeof DevCompareModelsRoute
   '/student/home': typeof StudentStudentHomeRoute
@@ -124,7 +140,9 @@ export interface FileRoutesById {
   '/_faculty/archived': typeof FacultyArchivedRoute
   '/_faculty/dashboard': typeof FacultyDashboardRoute
   '/_faculty/home': typeof FacultyHomeRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/auth/faculty': typeof AuthFacultyRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/student': typeof AuthStudentRoute
   '/dev/compare-models': typeof DevCompareModelsRoute
   '/_student/student/home': typeof StudentStudentHomeRoute
@@ -139,7 +157,9 @@ export interface FileRouteTypes {
     | '/archived'
     | '/dashboard'
     | '/home'
+    | '/auth/confirm'
     | '/auth/faculty'
+    | '/auth/reset-password'
     | '/auth/student'
     | '/dev/compare-models'
     | '/student/home'
@@ -152,7 +172,9 @@ export interface FileRouteTypes {
     | '/archived'
     | '/dashboard'
     | '/home'
+    | '/auth/confirm'
     | '/auth/faculty'
+    | '/auth/reset-password'
     | '/auth/student'
     | '/dev/compare-models'
     | '/student/home'
@@ -167,7 +189,9 @@ export interface FileRouteTypes {
     | '/_faculty/archived'
     | '/_faculty/dashboard'
     | '/_faculty/home'
+    | '/auth/confirm'
     | '/auth/faculty'
+    | '/auth/reset-password'
     | '/auth/student'
     | '/dev/compare-models'
     | '/_student/student/home'
@@ -179,7 +203,9 @@ export interface RootRouteChildren {
   FacultyRoute: typeof FacultyRouteWithChildren
   StudentRoute: typeof StudentRouteWithChildren
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   AuthFacultyRoute: typeof AuthFacultyRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthStudentRoute: typeof AuthStudentRoute
   DevCompareModelsRoute: typeof DevCompareModelsRoute
 }
@@ -242,11 +268,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FacultyHomeRouteImport
       parentRoute: typeof FacultyRoute
     }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/faculty': {
       id: '/auth/faculty'
       path: '/auth/faculty'
       fullPath: '/auth/faculty'
       preLoaderRoute: typeof AuthFacultyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/student': {
@@ -325,7 +365,9 @@ const rootRouteChildren: RootRouteChildren = {
   FacultyRoute: FacultyRouteWithChildren,
   StudentRoute: StudentRouteWithChildren,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   AuthFacultyRoute: AuthFacultyRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthStudentRoute: AuthStudentRoute,
   DevCompareModelsRoute: DevCompareModelsRoute,
 }
