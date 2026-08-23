@@ -5,17 +5,16 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
 
 if (!supabaseUrl) {
   throw new Error(
-    "Missing VITE_SUPABASE_URL environment variable. " +
-    "Ensure it is defined in your .env file.",
+    "Missing VITE_SUPABASE_URL environment variable. " + "Ensure it is defined in your .env file.",
   );
 }
 
 if (!serviceRoleKey) {
   throw new Error(
     "Missing SUPABASE_SERVICE_ROLE_KEY environment variable.\n" +
-    "This is required for test setup/teardown (bypassing RLS).\n" +
-    "Ensure it is defined in your .env file.\n" +
-    "If running from PowerShell, try: $env:SUPABASE_SERVICE_ROLE_KEY='your-key-here'",
+      "This is required for test setup/teardown (bypassing RLS).\n" +
+      "Ensure it is defined in your .env file.\n" +
+      "If running from PowerShell, try: $env:SUPABASE_SERVICE_ROLE_KEY='your-key-here'",
   );
 }
 

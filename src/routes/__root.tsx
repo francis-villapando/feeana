@@ -44,16 +44,17 @@ export const Route = createRootRouteWithContext()({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Feeana — Outcome-aligned feedback intelligence" },
+      { title: "Feeana — Outcome-aligned feedback analysis" },
       {
         name: "description",
         content:
           "Feeana diagnoses learning gaps by comparing student feedback against Intended Learning Outcomes for CS faculty.",
       },
-      { property: "og:title", content: "Feeana — Feedback intelligence" },
+      { property: "og:title", content: "Feeana — Feedback analysis" },
       {
         property: "og:description",
-        content: "AI-powered, outcome-aligned feedback intelligence for Computer Science faculty.",
+        content:
+          "Outcome-aligned student feedback analysis and pedagogical cues for Computer Science faculty.",
       },
       { property: "og:type", content: "website" },
     ],

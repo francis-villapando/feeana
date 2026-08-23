@@ -52,7 +52,9 @@ export function useModelComparison() {
         } catch (err) {
           if (controller.signal.aborted) break;
           console.error(`[ModelComparison] Cold start failed for ${kind}:`, err);
-          throw new Error(`Cold start failed for ${kind}: ${err instanceof Error ? err.message : String(err)}`);
+          throw new Error(
+            `Cold start failed for ${kind}: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
 
         setProgress({ stage: `Loading ${kind}…`, current: 0, total: 0 });
@@ -69,7 +71,9 @@ export function useModelComparison() {
         } catch (err) {
           if (controller.signal.aborted) break;
           console.error(`[ModelComparison] Remaining comparison failed for ${kind}:`, err);
-          throw new Error(`Remaining comparison failed for ${kind}: ${err instanceof Error ? err.message : String(err)}`);
+          throw new Error(
+            `Remaining comparison failed for ${kind}: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
 
         partial.push({ modelName: kind, ...cold, ...rest });

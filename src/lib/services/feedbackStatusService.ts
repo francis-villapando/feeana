@@ -20,9 +20,7 @@ export function computeFeedbackStatus(
   }
 
   const lastDate = new Date(last_analyzed_at);
-  const newCount = sessionFeedback.filter(
-    (f) => new Date(f.createdAt) > lastDate,
-  ).length;
+  const newCount = sessionFeedback.filter((f) => new Date(f.createdAt) > lastDate).length;
 
   return { total, newCount, isAnalyzed: true, hasNew: newCount > 0 };
 }

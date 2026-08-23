@@ -52,10 +52,14 @@ export function PolarityDistChart({ data }: PolarityDistChartProps) {
                 const preview = texts.slice(0, 3);
                 const remaining = texts.length - preview.length;
                 return (
-                  <div style={{ ...chartTooltipProps.contentStyle, pointerEvents: "none", maxWidth: 400 }}>
-                    <p style={{ fontWeight: 500, color, margin: 0 }}>
-                      {entry.label}
-                    </p>
+                  <div
+                    style={{
+                      ...chartTooltipProps.contentStyle,
+                      pointerEvents: "none",
+                      maxWidth: 400,
+                    }}
+                  >
+                    <p style={{ fontWeight: 500, color, margin: 0 }}>{entry.label}</p>
                     <p style={{ color: "var(--color-muted-foreground)", margin: 0, marginTop: 2 }}>
                       Count: {entry.value}
                     </p>
@@ -77,16 +81,21 @@ export function PolarityDistChart({ data }: PolarityDistChartProps) {
                               lineHeight: 1.4,
                               color: "var(--color-foreground)",
                               borderBottom:
-                                i < preview.length - 1
-                                  ? "1px solid var(--color-border)"
-                                  : "none",
+                                i < preview.length - 1 ? "1px solid var(--color-border)" : "none",
                             }}
                           >
                             &ldquo;{text}&rdquo;
                           </p>
                         ))}
                         {remaining > 0 && (
-                          <p style={{ margin: 0, marginTop: 4, fontSize: 11, color: "var(--color-muted-foreground)" }}>
+                          <p
+                            style={{
+                              margin: 0,
+                              marginTop: 4,
+                              fontSize: 11,
+                              color: "var(--color-muted-foreground)",
+                            }}
+                          >
                             +{remaining} more
                           </p>
                         )}

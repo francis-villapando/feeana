@@ -42,23 +42,14 @@ export function WelcomeHero({
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             {badgeIcon ?? <Sparkles className="h-3 w-3" />} {badge}
           </span>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-            {title}
-          </h1>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            {description}
-          </p>
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">{description}</p>
         </div>
         {actions.length > 0 && (
           <div className="flex flex-col gap-2 sm:max-w-60">
             {actions.map((action) =>
               action.href ? (
-                <Button
-                  key={action.label}
-                  asChild
-                  size="lg"
-                  variant={action.variant ?? "default"}
-                >
+                <Button key={action.label} asChild size="lg" variant={action.variant ?? "default"}>
                   <Link to={action.href}>
                     {action.icon}
                     {action.label}

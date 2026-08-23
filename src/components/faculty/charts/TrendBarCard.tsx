@@ -1,17 +1,42 @@
 import { BarChart3 } from "lucide-react";
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CHART_COLORS, SPECIAL_COLORS, RBT_COLOR_ORDER, CLT_COLOR_ORDER, ASPECT_COLOR_ORDER, ISSUE_COLOR_ORDER } from "@/lib/constants/chartColors";
+import {
+  CHART_COLORS,
+  SPECIAL_COLORS,
+  RBT_COLOR_ORDER,
+  CLT_COLOR_ORDER,
+  ASPECT_COLOR_ORDER,
+  ISSUE_COLOR_ORDER,
+} from "@/lib/constants/chartColors";
 import type { TrendPoint } from "@/lib/hooks/metrics";
 
 type BarView = "aspect" | "issue" | "rbt" | "clt";
 
-const VIEW_CONFIG: Record<BarView, { description: string; dataKey: "aspectDist" | "issueDist" | "rbtDist" | "cltDist" }> = {
+const VIEW_CONFIG: Record<
+  BarView,
+  { description: string; dataKey: "aspectDist" | "issueDist" | "rbtDist" | "cltDist" }
+> = {
   aspect: {
     description: "Student concern areas per session.",
     dataKey: "aspectDist",
@@ -116,7 +141,11 @@ export function TrendBarCard({ trend }: { trend: TrendPoint[] }) {
                 <BarChart data={chartData}>
                   <CartesianGrid stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="topic" stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <YAxis allowDecimals={false} stroke="var(--color-muted-foreground)" fontSize={11} />
+                  <YAxis
+                    allowDecimals={false}
+                    stroke="var(--color-muted-foreground)"
+                    fontSize={11}
+                  />
                   <Tooltip
                     cursor={{ fill: "var(--color-border)" }}
                     contentStyle={{

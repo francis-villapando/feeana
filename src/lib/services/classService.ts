@@ -17,7 +17,8 @@ function fromDbClass(row: Record<string, unknown>): Class {
       ? (row.faculty as Record<string, unknown>)
       : null;
   const enrollments = Array.isArray(row.enrollments)
-    ? (row.enrollments as Record<string, unknown>[]) : [];
+    ? (row.enrollments as Record<string, unknown>[])
+    : [];
   const activeEnrollmentCount = enrollments.filter(
     (item) => item.removed_at === null || item.removed_at === undefined,
   ).length;
@@ -132,7 +133,13 @@ export async function restoreClass(id: string): Promise<void> {
 
 export async function updateSession(
   id: string,
-  fields: { topic?: string; topicId?: string; courseId?: string; startsAt?: string; endsAt?: string },
+  fields: {
+    topic?: string;
+    topicId?: string;
+    courseId?: string;
+    startsAt?: string;
+    endsAt?: string;
+  },
 ): Promise<Session> {
   if (fields.startsAt !== undefined || fields.endsAt !== undefined) {
     const current = await getSessionById(id);
@@ -150,7 +157,12 @@ export async function updateSession(
   if (fields.startsAt !== undefined && fields.endsAt !== undefined) {
     updateFields.status = computeStatus(fields.startsAt, fields.endsAt);
   }
-  const { data, error } = await supabase.from("sessions").update(updateFields).eq("id", id).select().single();
+  const { data, error } = await supabase
+    .from("sessions")
+    .update(updateFields)
+    .eq("id", id)
+    .select()
+    .single();
   if (error) throw new Error(error.message);
   return fromDbSession(data);
 }
@@ -164,7 +176,12 @@ export async function restoreSession(id: string): Promise<Session> {
   const session = await getSessionById(id);
   if (!session) throw new Error("Session not found");
   const status = computeStatus(session.startsAt, session.endsAt);
-  const { data, error } = await supabase.from("sessions").update({ status }).eq("id", id).select().single();
+  const { data, error } = await supabase
+    .from("sessions")
+    .update({ status })
+    .eq("id", id)
+    .select()
+    .single();
   if (error) throw new Error(error.message);
   return fromDbSession(data);
 }
@@ -317,11 +334,7 @@ export async function unenrollSelf(classId: string, studentId: string): Promise<
 }
 
 export async function getClassById(id: string): Promise<Class | null> {
-  const { data, error } = await supabase
-    .from("classes")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const { data, error } = await supabase.from("classes").select("*").eq("id", id).single();
   if (error?.code === "PGRST116") return null;
   if (error) throw new Error(error.message);
   if (!data) return null;
@@ -354,7 +367,7 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
         student_count,
         profiles!faculty_id (full_name)
       )
-    `
+    `,
     )
     .eq("student_id", studentId)
     .is("removed_at", null)

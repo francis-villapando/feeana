@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import { KpiCard } from "./KpiCard";
 
 interface KeyMetricsRowProps {
-  submissionRate: number;
-  iloRate: number;
+  submissionRate: number | null;
+  iloRate: number | null;
   submissionHint?: string;
   iloHint?: string;
   wide?: boolean;
@@ -25,13 +25,13 @@ export function KeyMetricsRow({
       <KpiCard
         icon={<Users className="h-4 w-4" />}
         label="Submission rate"
-        value={`${submissionRate}%`}
+        value={submissionRate !== null && !isNaN(submissionRate) ? `${submissionRate}%` : "—"}
         hint={submissionHint}
       />
       <KpiCard
         icon={<Target className="h-4 w-4" />}
         label="ILO achievement"
-        value={`${iloRate}%`}
+        value={iloRate !== null && !isNaN(iloRate) ? `${iloRate}%` : "—"}
         hint={iloHint}
       />
       {children}

@@ -42,13 +42,7 @@ export function ClassDetailsCard({
             <Copy className="h-3 w-3 text-muted-foreground" />
           </span>
         </button>
-        <Button
-          type="button"
-          variant="default"
-          size="sm"
-          className="w-full"
-          onClick={onArchive}
-        >
+        <Button type="button" variant="default" size="sm" className="w-full" onClick={onArchive}>
           Archive class
         </Button>
       </CardContent>

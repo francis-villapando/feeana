@@ -61,10 +61,7 @@ export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === "/home"}
-                  >
+                  <SidebarMenuButton asChild isActive={location.pathname === "/home"}>
                     <Link to="/home" onClick={() => setOpenMobile(false)}>
                       <Home />
                       <span>Home</span>
@@ -73,10 +70,7 @@ export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === "/dashboard"}
-                  >
+                  <SidebarMenuButton asChild isActive={location.pathname === "/dashboard"}>
                     <Link to="/dashboard" onClick={() => setOpenMobile(false)}>
                       <LayoutDashboard />
                       <span>Dashboard</span>
@@ -144,10 +138,7 @@ export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean
                 </Collapsible>
 
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === "/archived"}
-                  >
+                  <SidebarMenuButton asChild isActive={location.pathname === "/archived"}>
                     <Link to="/archived" onClick={() => setOpenMobile(false)}>
                       <Archive />
                       <span>Archived classes</span>

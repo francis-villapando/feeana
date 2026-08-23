@@ -14,8 +14,7 @@ export const Route = createFileRoute("/_faculty/home")({
       { title: "Home — Feeana" },
       {
         name: "description",
-        content:
-          "Your Feeana workspace: create classes and run outcome-aligned sessions.",
+        content: "Your Feeana workspace: create classes and run outcome-aligned sessions.",
       },
     ],
   }),
@@ -31,7 +30,7 @@ function HomePage() {
     <div className="space-y-10">
       <WelcomeHero
         badge={`Welcome${user ? `, ${user.name}` : ""}`}
-        title="Your feedback intelligence workspace."
+        title="Your feedback analysis workspace."
         description="Spin up classes, schedule anonymous feedback sessions, and let Feeana surface ILO-aligned teaching cues from Taglish responses."
         actions={[
           {

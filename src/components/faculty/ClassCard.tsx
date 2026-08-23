@@ -5,18 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useClassStore } from "@/lib/stores/classStore";
-import {useCourseStore} from "@/lib/stores/courseStore";
+import { useCourseStore } from "@/lib/stores/courseStore";
 import type { Class } from "@/lib/types/types";
 import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
 import { useLiveNow } from "@/lib/hooks/useLiveNow";
 
-export function ClassCard({
-  cls,
-  onRestore,
-}: {
-  cls: Class;
-  onRestore?: (id: string) => void;
-}) {
+export function ClassCard({ cls, onRestore }: { cls: Class; onRestore?: (id: string) => void }) {
   const { sessionsForClass, studentCountForClass } = useClassStore();
   const sessions = sessionsForClass(cls.id);
   const now = useLiveNow();
@@ -37,10 +31,10 @@ export function ClassCard({
       <CardHeader className="relative">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <CardTitle className="text-base">{cls.courseCode} · {cls.section}</CardTitle>
-            <CardDescription>
-              {course?.title ?? cls.courseDisplay}
-            </CardDescription>
+            <CardTitle className="text-base">
+              {cls.courseCode} · {cls.section}
+            </CardTitle>
+            <CardDescription>{course?.title ?? cls.courseDisplay}</CardDescription>
           </div>
           {!cls.archived && (
             <Badge variant="outline" className="whitespace-nowrap border-primary/30 text-primary">

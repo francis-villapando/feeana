@@ -19,11 +19,11 @@ export function UncategorizedNotice({ rbtDist, cltDist }: UncategorizedNoticePro
     <div className="flex items-start gap-2 rounded-md border border-border/40 bg-background/50 px-3 py-2 text-xs text-muted-foreground lg:col-span-3">
       <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <p className="leading-relaxed italic">
-        Feedback may be designated as <AccentLabel>Uncategorized</AccentLabel>{" "}
-        due to processing errors, out-of-scope issues, missing or overly generic issue descriptions,
-        and—crucially—<AccentLabel>Perceived Marginalization</AccentLabel>{" "}
-        due to student beliefs that their feedback will be ignored or undervalued,
-        which often falls outside standard classification boundaries.
+        Feedback may be designated as <AccentLabel>Uncategorized</AccentLabel> due to processing
+        errors, out-of-scope issues, missing or overly generic issue descriptions, and—crucially—
+        <AccentLabel>Perceived Marginalization</AccentLabel> due to student beliefs that their
+        feedback will be ignored or undervalued, which often falls outside standard classification
+        boundaries.
       </p>
     </div>
   );

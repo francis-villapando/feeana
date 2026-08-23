@@ -1,4 +1,13 @@
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
 import { InterpretationBlock } from "./InterpretationBlock";
@@ -28,7 +37,13 @@ export function IssueDistChart({ data }: IssueDistChartProps) {
         <ResponsiveContainer width="100%" height={Math.max(220, data.length * 32)}>
           <BarChart data={data} layout="vertical">
             <CartesianGrid stroke="var(--color-border)" horizontal={false} />
-            <XAxis type="number" domain={[0, 'dataMax']} allowDecimals={false} stroke="var(--color-muted-foreground)" fontSize={11} />
+            <XAxis
+              type="number"
+              domain={[0, "dataMax"]}
+              allowDecimals={false}
+              stroke="var(--color-muted-foreground)"
+              fontSize={11}
+            />
             <YAxis
               type="category"
               dataKey="label"
@@ -36,13 +51,13 @@ export function IssueDistChart({ data }: IssueDistChartProps) {
               fontSize={11}
               width={170}
             />
-            <Tooltip {...chartTooltipProps} content={<ChartTooltipContent colorMap={issueColorMap} />} />
+            <Tooltip
+              {...chartTooltipProps}
+              content={<ChartTooltipContent colorMap={issueColorMap} />}
+            />
             <Bar dataKey="value" radius={[0, 6, 6, 0]}>
               {data.map((entry) => (
-                <Cell
-                  key={entry.label}
-                  fill={issueColorMap[entry.label] || CHART_COLORS[0]}
-                />
+                <Cell key={entry.label} fill={issueColorMap[entry.label] || CHART_COLORS[0]} />
               ))}
             </Bar>
           </BarChart>

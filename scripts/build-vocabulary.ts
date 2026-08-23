@@ -121,13 +121,7 @@ export function buildSeedVocabulary(): string[] {
 }
 
 export function updatePreprocessTs(words: string[]): void {
-  const preprocessPath = path.join(
-    process.cwd(),
-    "src",
-    "lib",
-    "algorithm",
-    "preprocess.ts",
-  );
+  const preprocessPath = path.join(process.cwd(), "src", "lib", "algorithm", "preprocess.ts");
 
   let content = fs.readFileSync(preprocessPath, "utf-8");
 
@@ -147,7 +141,9 @@ const seedVocabulary = new Set([\n${formattedWords}\n]);`;
 
   content = content.replace(regex, newVocabBlock);
   fs.writeFileSync(preprocessPath, content, "utf-8");
-  console.log(`[build-vocabulary] Updated seedVocabulary in preprocess.ts with ${words.length} words.`);
+  console.log(
+    `[build-vocabulary] Updated seedVocabulary in preprocess.ts with ${words.length} words.`,
+  );
 }
 
 if (process.argv[1] && process.argv[1].includes("build-vocabulary")) {

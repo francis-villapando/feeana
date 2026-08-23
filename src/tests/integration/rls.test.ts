@@ -23,10 +23,7 @@ const supabaseAnon = createClient(
 
 /* Helpers */
 async function clearTestDiagnostics(): Promise<void> {
-  await supabaseAdmin
-    .from("feedback_diagnostics")
-    .delete()
-    .eq("session_id", KNOWN_SESSION_ID);
+  await supabaseAdmin.from("feedback_diagnostics").delete().eq("session_id", KNOWN_SESSION_ID);
 }
 
 async function seedFixtureDiagnostic(): Promise<void> {
@@ -74,12 +71,11 @@ describe("RLS: feedback_diagnostics table", () => {
     const TS = Date.now();
     tempFacultyEmail = `test-nonowner-${TS}@test.com`;
 
-    const { data: createdUser, error: createErr } =
-      await supabaseAdmin.auth.admin.createUser({
-        email: tempFacultyEmail,
-        password: "tempFacultyPass123",
-        email_confirm: true,
-      });
+    const { data: createdUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+      email: tempFacultyEmail,
+      password: "tempFacultyPass123",
+      email_confirm: true,
+    });
 
     if (createErr) {
       throw new Error(`Failed to create temp faculty user: ${createErr.message}`);
@@ -199,13 +195,11 @@ describe("RLS: feedback_diagnostics table", () => {
     });
 
     it("5. CANNOT INSERT diagnostics for another faculty's session", async () => {
-      const { error } = await supabaseAnon
-        .from("feedback_diagnostics")
-        .insert({
-          session_id: KNOWN_SESSION_ID,
-          result: { test: "Should be rejected by RLS" },
-          rules_version: "1.0.0",
-        });
+      const { error } = await supabaseAnon.from("feedback_diagnostics").insert({
+        session_id: KNOWN_SESSION_ID,
+        result: { test: "Should be rejected by RLS" },
+        rules_version: "1.0.0",
+      });
 
       expect(error).not.toBeNull();
       expect(error!.message.toLowerCase()).toMatch(/(?:row-level security|policy|violates)/i);

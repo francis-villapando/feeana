@@ -104,17 +104,17 @@ export function ModelLoaderOverlay({
 
   const getHeadline = () => {
     if (isClassifying) return "Analyzing feedback…";
-    if (isEngineReady) return "AI engine is ready";
-    if (source === "network") return "Downloading the AI engine…";
+    if (isEngineReady) return "AI model ready";
+    if (source === "network") return "Downloading AI model…";
     if (phase === "download") {
-      return source === "cache" ? "Loading the AI engine…" : "Downloading the AI engine…";
+      return source === "cache" ? "Loading AI model from cache…" : "Downloading model…";
     }
     switch (phase) {
       case "session":
-        return "Warming up the AI engine…";
+        return "Warming up the AI model…";
       case "tokenizer":
       case "labels":
-        return "Preparing the AI engine…";
+        return "Preparing the AI model…";
       default:
         return "Preparing your analysis…";
     }
@@ -123,15 +123,15 @@ export function ModelLoaderOverlay({
   const getDetail = () => {
     if (isClassifying) return null;
     if (isEngineReady) {
-      return "The AI engine is saved on this device — future analyses start instantly.";
+      return "The AI model is cached in your browser — repeat analyses skip the download.";
     }
     if (source === "cache") {
-      return "Loading the AI engine from local device cache…";
+      return "Loading the AI model from browser cache…";
     }
     if (source === "network" || phase === "download") {
-      return "The AI engine will be saved locally so future analyses run offline and immediately.";
+      return "The AI model will be cached in your browser so repeat analyses skip the download.";
     }
-    return "Initializing the AI engine in your browser…";
+    return "Initializing the AI model in your browser…";
   };
 
   const getIcon = () => {
@@ -202,7 +202,7 @@ export function ModelLoaderOverlay({
         </h3>
 
         <div className="mb-4 flex items-center gap-2">
-          <StepChip state={stepOneDone ? "done" : "active"} label="AI engine" />
+          <StepChip state={stepOneDone ? "done" : "active"} label="AI model" />
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
           <StepChip state={isClassifying ? "active" : "pending"} label="Feedback analysis" />
         </div>
@@ -237,13 +237,10 @@ export function ModelLoaderOverlay({
               )}
               <div className="w-full">
                 {isIndeterminate ? (
-                  <IndeterminateBar label="AI engine setup progress" />
+                  <IndeterminateBar label="AI model setup progress" />
                 ) : (
                   <>
-                    <DeterminateBar
-                      value={loadProgress.progress}
-                      label="AI engine setup progress"
-                    />
+                    <DeterminateBar value={loadProgress.progress} label="AI model setup progress" />
                     <div className="mt-1 flex w-full justify-between text-xs font-mono text-muted-foreground">
                       <span>{Math.round(loadProgress.progress)}%</span>
                       {showDownloadBytes && loadProgress.bytes ? (

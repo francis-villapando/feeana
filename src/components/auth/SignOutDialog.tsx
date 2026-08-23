@@ -25,13 +25,16 @@ export function SignOutDialog({ onConfirm, children }: SignOutDialogProps) {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Sign out</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to sign out?
-          </AlertDialogDescription>
+          <AlertDialogDescription>Are you sure you want to sign out?</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className={cn(buttonVariants({ variant: "destructive" }))}>Sign out</AlertDialogAction>
+          <AlertDialogAction
+            onClick={onConfirm}
+            className={cn(buttonVariants({ variant: "destructive" }))}
+          >
+            Sign out
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

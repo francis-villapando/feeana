@@ -7,10 +7,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
-import { computeDashboardSubmissionRate, computeDashboardIloAchievement } from "@/lib/hooks/metrics";
+import {
+  computeDashboardSubmissionRate,
+  computeDashboardIloAchievement,
+} from "@/lib/hooks/metrics";
 import { isSessionActive } from "@/lib/utils/sessionStatusUtils";
 import { useLiveNow } from "@/lib/hooks/useLiveNow";
-import { CourseManagementHub, ActivityFeed, CrossClassSessionCreator } from "@/components/faculty/dashboard";
+import {
+  CourseManagementHub,
+  ActivityFeed,
+  CrossClassSessionCreator,
+} from "@/components/faculty/dashboard";
 import { KeyMetricsRow, KpiCard } from "@/components/faculty";
 import { KpiCardSkeleton, PageHeaderSkeleton } from "@/components/skeletons";
 
@@ -39,16 +46,15 @@ function DashboardPage() {
   const [isDataFresh, setIsDataFresh] = useState(false);
 
   useEffect(() => {
-    if (sessionIdsKey) {
-      setIsDataFresh(false);
-      const ids = sessionIdsKey.split(",").filter(Boolean);
-      if (ids.length > 0) {
-        Promise.all([
-          fetchForSessions(ids),
-          fetchFeedbackBySessions(ids),
-        ]).finally(() => setIsDataFresh(true));
-      }
+    const ids = sessionIdsKey.split(",").filter(Boolean);
+    if (ids.length === 0) {
+      setIsDataFresh(true);
+      return;
     }
+    setIsDataFresh(false);
+    Promise.all([fetchForSessions(ids), fetchFeedbackBySessions(ids)]).finally(() =>
+      setIsDataFresh(true),
+    );
   }, [sessionIdsKey, fetchForSessions, fetchFeedbackBySessions]);
 
   const stats = useMemo(() => {
@@ -80,8 +86,10 @@ function DashboardPage() {
         <KeyMetricsRow
           submissionRate={stats.submission}
           iloRate={stats.ilo}
-          submissionHint="Across all sessions"
-          iloHint="Across all sessions"
+          submissionHint={
+            stats.submission !== null ? "Across all sessions" : "No analyzed sessions"
+          }
+          iloHint={stats.ilo !== null ? "Across all sessions" : "No analyzed sessions"}
           wide
         >
           <KpiCard
@@ -170,5 +178,3 @@ function DashboardSkeleton() {
     </div>
   );
 }
-
-

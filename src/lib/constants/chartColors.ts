@@ -16,8 +16,8 @@ export const CHART_COLORS = [
 ];
 
 export const SPECIAL_COLORS: Record<string, string> = {
-  "Uncategorized": "var(--color-muted-foreground)",
-  "Unknown": "var(--color-muted-foreground)",
+  Uncategorized: "var(--color-muted-foreground)",
+  Unknown: "var(--color-muted-foreground)",
 };
 
 export const ASPECT_COLOR_ORDER: [label: string, color: string][] = [
