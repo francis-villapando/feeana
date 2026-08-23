@@ -1,21 +1,26 @@
 """
-ONNX export and INT8 quantization for PID-ABSA DistilXLM-R model.
+ONNX export and INT8 quantization for the PID-ABSA dual-head model.
 
-Reads:
-    scripts/training/checkpoints/best_model.pt
-    scripts/training/checkpoints/label_mappings.json
+Model-agnostic: the base model is resolved from the FEEANA_MODEL_NAME
+environment variable (with --model-name as an explicit override), so the
+same script serves DistilXLM-R, mBERT, or any future base model.
 
-Writes:
-    scripts/training/exports/distilxlmr-pidabsa-int8.onnx
-    scripts/training/exports/tokenizer.json
-    scripts/training/exports/config.json
-    scripts/training/exports/label_mappings.json
+Reads (resolved from the base model tag; folder-per-model with legacy fallbacks):
+    scripts/training/checkpoints/{tag}/best_model.pt
+    scripts/training/checkpoints/{tag}/label_mappings.json
+
+Writes (tag derived from base model, e.g. "mbert" / "distilxlmr"):
+    scripts/training/exports/{tag}/int8.onnx
+    scripts/training/exports/{tag}/tokenizer.json
+    scripts/training/exports/{tag}/config.json
+    scripts/training/exports/{tag}/label_mappings.json
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -27,10 +32,21 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 
-MODEL_NAME = "nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large"
+from checkpoint_paths import (
+    DEFAULT_MODEL_NAME,
+    TAG_BY_MODEL_NAME,
+    resolve_checkpoint_paths,
+    resolve_tag,
+)
+
 MAX_LEN = 256
 NUM_ISSUES = 15
 NUM_POLARITIES = 3
+
+
+def resolve_model_name(cli_value: str | None) -> str:
+    """Resolve base model: --model-name flag > FEEANA_MODEL_NAME env > default."""
+    return cli_value or os.environ.get("FEEANA_MODEL_NAME", DEFAULT_MODEL_NAME)
 
 
 class DualHeadModel(nn.Module):
@@ -73,23 +89,10 @@ class DualHeadModel(nn.Module):
         return self.issue_head(pooled), self.polarity_head(pooled)
 
 
-def merge_lora_if_present(model: DualHeadModel) -> DualHeadModel:
-    """Merge PEFT LoRA weights into base model if present."""
-    try:
-        from peft import PeftModel  # type: ignore
-
-        if isinstance(model.encoder, PeftModel):
-            print("[INFO] Merging LoRA adapter weights into base encoder...")
-            model.encoder = model.encoder.merge_and_unload()
-    except ImportError:
-        print("[INFO] peft module not loaded; skipping adapter merge.")
-    return model
-
-
-def load_checkpoint(ckpt_path: Path, device: torch.device) -> DualHeadModel:
-    """Load trained checkpoint into DualHeadModel."""
-    print(f"[INFO] Loading base model architecture: {MODEL_NAME}")
-    model = DualHeadModel(MODEL_NAME, NUM_ISSUES, NUM_POLARITIES)
+def load_checkpoint(ckpt_path: Path, device: torch.device, model_name: str) -> DualHeadModel:
+    """Load a full fine-tuned checkpoint into DualHeadModel."""
+    print(f"[INFO] Loading base model architecture: {model_name}")
+    model = DualHeadModel(model_name, NUM_ISSUES, NUM_POLARITIES)
 
     print(f"[INFO] Loading checkpoint: {ckpt_path}")
     try:
@@ -100,28 +103,13 @@ def load_checkpoint(ckpt_path: Path, device: torch.device) -> DualHeadModel:
         sys.exit(1)
 
     state_dict = ckpt["model_state_dict"] if isinstance(ckpt, dict) and "model_state_dict" in ckpt else ckpt
+    try:
+        model.load_state_dict(state_dict)
+    except Exception as err:
+        print(f"\n[ERROR] Failed to apply state dict: {err}")
+        print(f"        Expected a full fine-tuned checkpoint for {model_name}.")
+        sys.exit(1)
 
-    missing, unexpected = model.load_state_dict(state_dict, strict=False)
-    if missing or unexpected:
-        print("[INFO] Attempting PEFT-aware checkpoint load...")
-        try:
-            from peft import LoraConfig, TaskType, get_peft_model  # type: ignore
-
-            lora_config = LoraConfig(
-                task_type=TaskType.FEATURE_EXTRACTION,
-                r=16,
-                lora_alpha=32,
-                lora_dropout=0.05,
-                target_modules=["query", "key", "value", "output.dense"],
-                bias="none",
-            )
-            model.encoder = get_peft_model(model.encoder, lora_config)
-            model.load_state_dict(state_dict, strict=True)
-        except Exception as err:
-            print(f"[ERROR] Failed to apply state dict: {err}")
-            sys.exit(1)
-
-    model = merge_lora_if_present(model)
     model = model.float()
     model.eval()
     return model.to(device)
@@ -189,23 +177,40 @@ def smoke_test_onnx(onnx_path: Path) -> None:
     print("[INFO] Output shapes validated successfully.")
 
 
-def stage_assets(tokenizer: AutoTokenizer, out_dir: Path) -> None:
+def stage_assets(tokenizer: AutoTokenizer, out_dir: Path, label_mappings_src: Path) -> None:
     """Stage tokenizer files and label mappings to output directory."""
     print(f"[INFO] Staging tokenizer and configuration -> {out_dir}")
     tokenizer.save_pretrained(str(out_dir))
 
-    label_mappings_src = Path(__file__).parent / "checkpoints" / "label_mappings.json"
     if label_mappings_src.exists():
         shutil.copy(label_mappings_src, out_dir / "label_mappings.json")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Export fine-tuned DistilXLM-R model to ONNX.")
+    parser = argparse.ArgumentParser(description="Export fine-tuned dual-head model to ONNX.")
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None,
+        help="Hugging Face base model identifier. Defaults to FEEANA_MODEL_NAME env or DistilXLM-R.",
+    )
+    parser.add_argument(
+        "--tag",
+        type=str,
+        default=None,
+        help="Short tag used in output filenames (e.g. 'mbert'). Auto-derived from model name.",
+    )
     parser.add_argument(
         "--checkpoint",
         type=Path,
-        default=Path(__file__).parent / "checkpoints" / "best_model.pt",
-        help="Path to trained checkpoint (.pt).",
+        default=None,
+        help="Path to trained checkpoint (.pt). Defaults to checkpoints/{tag}/best_model.pt, else checkpoints/{tag}_best_model.pt, else best_model.pt.",
+    )
+    parser.add_argument(
+        "--label-mappings",
+        type=Path,
+        default=None,
+        help="Path to label_mappings.json. Defaults to checkpoints/{tag}/label_mappings.json, else checkpoints/{tag}_label_mappings.json, else label_mappings.json.",
     )
     parser.add_argument(
         "--out-dir",
@@ -230,31 +235,39 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    if not args.checkpoint.exists():
-        print(f"[ERROR] Checkpoint file not found: {args.checkpoint}")
+    model_name = resolve_model_name(args.model_name)
+    tag = resolve_tag(model_name, args.tag)
+    ckpt_path, label_mappings_path = resolve_checkpoint_paths(
+        tag, args.checkpoint, args.label_mappings
+    )
+
+    if not ckpt_path.exists():
+        print(f"[ERROR] Checkpoint file not found: {ckpt_path}")
         sys.exit(1)
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    tag_dir = args.out_dir / tag
+    tag_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device("cpu")
 
-    model = load_checkpoint(args.checkpoint, device)
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    model = load_checkpoint(ckpt_path, device, model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    fp32_path = args.out_dir / "distilxlmr-pidabsa-fp32.onnx"
+    fp32_path = tag_dir / "int8-fp32.onnx"
     export_fp32_onnx(model, fp32_path, args.opset)
 
     final_onnx = fp32_path
     if not args.no_quantize:
-        int8_path = args.out_dir / "distilxlmr-pidabsa-int8.onnx"
+        int8_path = tag_dir / "int8.onnx"
         quantize_int8(fp32_path, int8_path)
         final_onnx = int8_path
         if fp32_path.exists():
             fp32_path.unlink()
 
     smoke_test_onnx(final_onnx)
-    stage_assets(tokenizer, args.out_dir)
+    stage_assets(tokenizer, tag_dir, label_mappings_path)
 
-    print(f"[SUCCESS] Model export finished. Assets available in: {args.out_dir.resolve()}")
+    print(f"[SUCCESS] Model export finished. Assets available in: {tag_dir.resolve()}")
 
 
 if __name__ == "__main__":

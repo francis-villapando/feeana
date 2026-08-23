@@ -40,10 +40,10 @@ plans
 .playwright-mcp/
 
 # PyTorch
-scripts/training/checkpoints/*.pt
+scripts/training/checkpoints/**/*.pt
 
-# ONNX export staging directory (intermediate artifacts; copy to public/models/finetuned/ manually)
-scripts/training/exports/
+# Sklearn pipelines (SVM baseline; trained via train_and_export_svm.py)
+scripts/training/checkpoints/**/*.pkl
 
 # FP32 intermediate ONNX (only the INT8 version is committed, via Git LFS)
-public/models/finetuned/*-fp32.onnx
+public/models/finetuned/**/*-fp32.onnx

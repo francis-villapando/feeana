@@ -4,7 +4,7 @@
 
 import { createModel } from "./models/adapter";
 import type { DistilXlmrAdapter, LoadProgress } from "./models/distilXlmr";
-import type { IssueExtractionResult } from "./types";
+import type { FeedbackEncoding, IssueExtractionResult } from "./types";
 
 // Singleton adapter instance inside the worker
 let adapter: DistilXlmrAdapter | null = null;
@@ -36,15 +36,11 @@ export async function getClassifier(progress_callback?: (info: LoadProgress) => 
   return adapter;
 }
 
-// Asynchronously extracts the pedagogical issue from preprocessed text.
-export async function ExtractPID(cleanText: string): Promise<IssueExtractionResult> {
-  console.debug("[informationExtraction] Extracting PID via DistilXLM-R", {
-    cleanTextLength: cleanText.length,
-  });
-
+// Asynchronously extracts the pedagogical issue from preprocessed numerical encoding (Module 3).
+export async function ExtractPID(encoding: FeedbackEncoding): Promise<IssueExtractionResult> {
   try {
     const model = await getClassifier();
-    const { issue, polarity } = await model.predictCleaned(cleanText);
+    const { issue, polarity } = await model.predictEncoded(encoding);
     return { issue, polarity };
   } catch (error) {
     console.error("[informationExtraction] Classification failed, falling back", error);

@@ -40,9 +40,14 @@ async function getNodeApi(): Promise<WorkerApi> {
       _targetIloRbt: number,
     ) {
       console.debug("[mlWorkerStore:node] Running Modules 2-3-4 inline (no Web Worker).");
-      await getClassifier((info) => {
+      // Invariant: the classifier and its tokenizer must be fully initialized
+      // before the loop; a failed cold-start aborts before any feedback runs.
+      const classifier = await getClassifier((info) => {
         loadProgressCallback?.(info);
       });
+      if (!classifier.tokenizer) {
+        throw new Error("[mlWorkerStore:node] Tokenizer unavailable — model failed to load.");
+      }
       const results: {
         feedbackId?: string;
         issue: string;
@@ -55,9 +60,11 @@ async function getNodeApi(): Promise<WorkerApi> {
 
       for (let i = 0; i < feedbackStream.length; i++) {
         const feedback = feedbackStream[i];
-        const cleanText = Preprocess(feedback);
+        // Module 2: Preprocessing (algorithm.pseudo L9)
+        const preprocessResult = Preprocess(feedback, classifier.tokenizer);
         performance.mark(`node:extract:${i}-start`);
-        const extraction = await ExtractPID(cleanText);
+        // Module 3: Information Extraction (algorithm.pseudo L10)
+        const extraction = await ExtractPID(preprocessResult.encoding);
         performance.mark(`node:extract:${i}-end`);
         performance.measure(`Node entry inference #${i}`, {
           start: `node:extract:${i}-start`,

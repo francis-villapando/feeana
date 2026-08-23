@@ -29,20 +29,16 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from finetune import (
     DualHeadModel,
     FeedbackDataset,
-    apply_lora,
     ISSUE_LABELS,
     ISSUE_LABEL2ID,
-    ISSUE_ID2LABEL,
-    POLARITY_LABELS,
-    POLARITY_LABEL2ID,
-    POLARITY_ID2LABEL,
     MODEL_NAME,
     NUM_ISSUES,
     NUM_POLARITIES,
 )
+from checkpoint_paths import resolve_checkpoint_paths, resolve_tag
 
 
-def evaluate_dataset(model, loader, dataset, device):
+def evaluate_dataset(model, loader, device):
     all_issue_preds = []
     all_issue_targets = []
     all_issue_probs = []
@@ -81,17 +77,17 @@ def evaluate_dataset(model, loader, dataset, device):
 
 
 def run_phase_3_evaluation():
-    ckpt_path = CHECKPOINTS_DIR / "best_model.pt"
-    json_path = CHECKPOINTS_DIR / "label_mappings.json"
+    tag = resolve_tag(MODEL_NAME)
+    ckpt_path, json_path = resolve_checkpoint_paths(tag)
 
     if not ckpt_path.exists():
         print(f"Error: Checkpoint file not found at {ckpt_path}")
-        print("Please copy best_model.pt to scripts/training/checkpoints/")
+        print(f"Please copy the checkpoint to scripts/training/checkpoints/{tag}/best_model.pt")
         return
 
     if not json_path.exists():
         print(f"Error: Label mappings file not found at {json_path}")
-        print("Please copy label_mappings.json to scripts/training/checkpoints/")
+        print(f"Please copy label_mappings.json to scripts/training/checkpoints/{tag}/label_mappings.json")
         return
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -101,7 +97,6 @@ def run_phase_3_evaluation():
     # Load model and weights
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = DualHeadModel(MODEL_NAME, NUM_ISSUES, NUM_POLARITIES)
-    model = apply_lora(model)
 
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
     model.load_state_dict(ckpt["model_state_dict"])
@@ -115,7 +110,7 @@ def run_phase_3_evaluation():
     test_loader = DataLoader(test_ds, batch_size=32, shuffle=False)
 
     print("\nRunning test set inference...")
-    results = evaluate_dataset(model, test_loader, test_ds, device)
+    results = evaluate_dataset(model, test_loader, device)
 
     issue_acc = accuracy_score(results["issue_targets"], results["issue_preds"])
     issue_macro_f1 = f1_score(results["issue_targets"], results["issue_preds"], average="macro", zero_division=0)
@@ -178,9 +173,9 @@ def run_phase_3_evaluation():
     print("\nUncategorized Fallback Threshold Sweep (Validation Set):")
     val_ds = FeedbackDataset(DATA_DIR / "val.csv", tokenizer)
     val_loader = DataLoader(val_ds, batch_size=32, shuffle=False)
-    val_res = evaluate_dataset(model, val_loader, val_ds, device)
+    val_res = evaluate_dataset(model, val_loader, device)
 
-    uncat_id = ISSUE_LABEL2ID.get("Uncategorized", 0)
+    uncat_id = ISSUE_LABEL2ID["uncategorized"]
     print(f"  Uncategorized label ID: {uncat_id}")
     print(f"  {'Threshold':<10} {'Routed to Uncategorized':<25} {'Pct Routed':<12} {'Macro-F1':<10}")
 
@@ -201,7 +196,7 @@ def run_phase_3_evaluation():
         "test_issue_accuracy": float(issue_acc),
         "num_test_samples": len(test_df),
     }
-    out_file = REPORTS_DIR / "test_evaluation_report.json"
+    out_file = REPORTS_DIR / f"test_evaluation_report_{tag}.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
     print(f"\n[INFO] Evaluation report saved to {out_file}")

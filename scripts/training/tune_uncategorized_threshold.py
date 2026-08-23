@@ -2,7 +2,7 @@
 Tune Uncategorised Threshold (validation only)
 \
 Runs a fine‑grained sweep of the confidence threshold on the validation set
-using the exact same model / tokenizer / LoRA configuration as evaluate_test.py.
+using the exact same model / tokenizer / checkpoint configuration as evaluate_test.py.
 It prints a table for thresholds 0.10‑0.50 (step 0.01) and also includes the
 coarse thresholds 0.55, 0.60, 0.65, 0.70.
 The script never touches test.csv and never modifies any checkpoint.
@@ -29,12 +29,12 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from finetune import (
     DualHeadModel,
     FeedbackDataset,
-    apply_lora,
     MODEL_NAME,
     NUM_ISSUES,
     NUM_POLARITIES,
     ISSUE_LABEL2ID,
 )
+from checkpoint_paths import resolve_checkpoint_paths, resolve_tag
 
 
 def evaluate_dataset(model, loader, device):
@@ -78,9 +78,8 @@ def main():
     # Load model & checkpoint (identical to evaluate_test.py)
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = DualHeadModel(MODEL_NAME, NUM_ISSUES, NUM_POLARITIES)
-    model = apply_lora(model)
 
-    ckpt_path = CHECKPOINTS_DIR / "best_model.pt"
+    ckpt_path, label_map_path = resolve_checkpoint_paths(resolve_tag(MODEL_NAME))
     if not ckpt_path.exists():
         raise FileNotFoundError(f"Checkpoint not found at {ckpt_path}")
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
@@ -89,7 +88,6 @@ def main():
     model.eval()
 
     # Load label mappings (required for completeness; not used directly)
-    label_map_path = CHECKPOINTS_DIR / "label_mappings.json"
     if label_map_path.exists():
         with open(label_map_path, "r", encoding="utf-8") as f:
             _ = json.load(f)
@@ -101,7 +99,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
     val_res = evaluate_dataset(model, val_loader, device)
 
-    uncat_id = ISSUE_LABEL2ID.get("Uncategorized", 0)
+    uncat_id = ISSUE_LABEL2ID["uncategorized"]
 
     # Prepare thresholds
     fine_thresholds = np.arange(0.10, 0.51, 0.01)  # 0.10‑0.50 inclusive

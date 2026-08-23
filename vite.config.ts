@@ -23,27 +23,29 @@ function onnxWasmDevPlugin() {
     name: "onnx-wasm-dev-server",
     apply: "serve" as const, // Only runs in development (dev server)
     configureServer(server: ViteDevServer) {
-      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => {
-        const url = new URL(req.url || "", "http://localhost");
-        const filename = path.basename(url.pathname);
-        if (filename.startsWith("ort") && filename.endsWith(".mjs")) {
-          const candidates = [
-            path.join(__dirname, "public", "onnxruntime", filename),
-            path.join(__dirname, "public", filename),
-          ];
-          const filePath = candidates.find((p) => fs.existsSync(p));
-          if (filePath) {
-            res.setHeader("Content-Type", "application/javascript");
-            // Set security headers to allow WASM multi-threading
-            res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-            res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-            res.setHeader("Access-Control-Allow-Origin", "*");
-            res.end(fs.readFileSync(filePath));
-            return;
+      server.middlewares.use(
+        (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => {
+          const url = new URL(req.url || "", "http://localhost");
+          const filename = path.basename(url.pathname);
+          if (filename.startsWith("ort") && filename.endsWith(".mjs")) {
+            const candidates = [
+              path.join(__dirname, "public", "onnxruntime", filename),
+              path.join(__dirname, "public", filename),
+            ];
+            const filePath = candidates.find((p) => fs.existsSync(p));
+            if (filePath) {
+              res.setHeader("Content-Type", "application/javascript");
+              // Set security headers to allow WASM multi-threading
+              res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+              res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+              res.setHeader("Access-Control-Allow-Origin", "*");
+              res.end(fs.readFileSync(filePath));
+              return;
+            }
           }
-        }
-        next();
-      });
+          next();
+        },
+      );
     },
   };
 }
@@ -52,7 +54,21 @@ const isVitest = process.env.VITEST === "true";
 
 export default defineConfig({
   nitro: false,
-  plugins: [!(isVitest) ? nitro() : null, onnxWasmDevPlugin()].filter(Boolean),
+  plugins: [
+    !isVitest
+      ? nitro({
+          routeRules: {
+            "/**": {
+              headers: {
+                "Cross-Origin-Opener-Policy": "same-origin",
+                "Cross-Origin-Embedder-Policy": "require-corp",
+              },
+            },
+          },
+        })
+      : null,
+    onnxWasmDevPlugin(),
+  ].filter(Boolean),
   vite: {
     assetsInclude: ["**/*.wasm"],
     worker: {

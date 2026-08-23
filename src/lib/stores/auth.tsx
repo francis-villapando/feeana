@@ -11,13 +11,13 @@ import { supabase } from "../db/supabase";
 import type { UserRole } from "../types/types";
 import type { AuthUser } from "../types/types";
 import type { User } from "@supabase/supabase-js";
+import { isRateLimitError } from "../hooks/utils";
 
 interface AuthContextValue {
   user: AuthUser | null;
   supabaseUser: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  isPasswordRecovery: boolean;
   hasRole: (role: UserRole) => boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
   register: (
@@ -25,12 +25,13 @@ interface AuthContextValue {
     password: string,
     name: string,
     role: UserRole,
-  ) => Promise<AuthUser & { needsEmailConfirmation: boolean; alreadyExists: boolean; confirmed: boolean }>;
+  ) => Promise<
+    AuthUser & { needsEmailConfirmation: boolean; alreadyExists: boolean; confirmed: boolean }
+  >;
   resendConfirmation: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   forgotPassword: (email: string, redirectTo?: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
-  clearPasswordRecovery: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -42,7 +43,6 @@ function normalizeUserRole(role: string | undefined): UserRole {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -54,10 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setIsPasswordRecovery(true);
-      }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSupabaseUser((prev) => {
         if (prev?.id === session?.user?.id) return prev;
         return session?.user ?? null;
@@ -85,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) throw new Error(error.message);
     if (!data.user) throw new Error("Login failed");
-    
+
     setSupabaseUser(data.user);
 
     const userMeta = data.user.user_metadata;
@@ -99,53 +96,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (email: string, password: string, name: string, role: UserRole) => {
-      const { error: probeError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const normalizedEmail = email.trim().toLowerCase();
 
-      if (probeError?.message?.toLowerCase().includes("email not confirmed")) {
-        return {
-          id: "",
-          email,
-          name,
-          role,
-          needsEmailConfirmation: false,
-          alreadyExists: true,
-          confirmed: false,
-        };
-      }
-
-      if (!probeError) {
-        throw new Error("EMAIL_ALREADY_EXISTS");
-      }
+      const duplicateResult = {
+        id: "",
+        email: normalizedEmail,
+        name,
+        role,
+        needsEmailConfirmation: false,
+        alreadyExists: true,
+        confirmed: false,
+      };
 
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
         options: {
           data: {
             full_name: name,
             role,
           },
+          emailRedirectTo:
+            typeof window !== "undefined"
+              ? `${window.location.origin}/auth/confirm?role=${role}`
+              : undefined,
         },
       });
 
       if (error) {
         const msg = error.message?.toLowerCase() ?? "";
+        const code = (error as { code?: string }).code?.toLowerCase() ?? "";
         const isDuplicate =
-          msg.includes("user already registered") ||
-          error.status === 400;
-        if (isDuplicate) {
-          throw new Error("EMAIL_ALREADY_EXISTS");
+          msg.includes("already registered") ||
+          msg.includes("already exists") ||
+          msg.includes("user_already_exists") ||
+          code === "user_already_exists" ||
+          code === "email_exists" ||
+          error.status === 422;
+
+        const isRateLimit = isRateLimitError(error);
+
+        if (isDuplicate || isRateLimit) {
+          return duplicateResult;
         }
         throw new Error(error.message);
       }
 
       if (!data.user) throw new Error("Registration failed");
 
-      if (data.user.identities?.length === 0) {
-        throw new Error("EMAIL_ALREADY_EXISTS");
+      if (!Array.isArray(data.user.identities) || data.user.identities.length === 0) {
+        return duplicateResult;
       }
 
       if (data.session?.user) {
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return {
         id: data.user.id,
-        email: data.user.email ?? email,
+        email: data.user.email ?? normalizedEmail,
         name,
         role,
         needsEmailConfirmation: !data.session,
@@ -171,17 +171,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resendConfirmation = useCallback(async (email: string) => {
-    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/student` : undefined;
+    const redirectTo =
+      typeof window !== "undefined" ? `${window.location.origin}/auth/confirm` : undefined;
     const { error } = await supabase.auth.resend({
       type: "signup",
-      email,
+      email: email.trim().toLowerCase(),
       options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
     });
     if (error) throw new Error(error.message);
   }, []);
 
   const forgotPassword = useCallback(async (email: string, redirectTo?: string) => {
-    const url = redirectTo ?? (typeof window !== "undefined" ? window.location.origin : undefined);
+    const url =
+      redirectTo ??
+      (typeof window !== "undefined" ? `${window.location.origin}/auth/reset-password` : undefined);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: url,
     });
@@ -193,17 +196,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw new Error(error.message);
   }, []);
 
-  const clearPasswordRecovery = useCallback(() => {
-    setIsPasswordRecovery(false);
-  }, []);
-
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       supabaseUser,
       isAuthenticated: user !== null,
       isLoading,
-      isPasswordRecovery,
       hasRole: (role: UserRole) => user?.role === role,
       login,
       register,
@@ -211,9 +209,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resendConfirmation,
       forgotPassword,
       updatePassword,
-      clearPasswordRecovery,
     }),
-    [user, supabaseUser, isLoading, isPasswordRecovery, login, register, logout, resendConfirmation, forgotPassword, updatePassword, clearPasswordRecovery],
+    [
+      user,
+      supabaseUser,
+      isLoading,
+      login,
+      register,
+      logout,
+      resendConfirmation,
+      forgotPassword,
+      updatePassword,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

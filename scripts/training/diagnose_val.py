@@ -32,7 +32,6 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from finetune import (
     DualHeadModel,
     FeedbackDataset,
-    apply_lora,
     compute_weights,
     ISSUE_LABELS,
     ISSUE_LABEL2ID,
@@ -44,6 +43,7 @@ from finetune import (
     NUM_ISSUES,
     NUM_POLARITIES,
 )
+from checkpoint_paths import resolve_checkpoint_paths, resolve_tag
 
 
 def run_diagnostics(checkpoint_path: Path | None = None) -> None:
@@ -73,7 +73,6 @@ def run_diagnostics(checkpoint_path: Path | None = None) -> None:
     val_loader = DataLoader(val_ds, batch_size=32, shuffle=False)
 
     model = DualHeadModel(MODEL_NAME, NUM_ISSUES, NUM_POLARITIES)
-    model = apply_lora(model)
 
     if checkpoint_path and checkpoint_path.exists():
         ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
@@ -209,7 +208,7 @@ def run_diagnostics(checkpoint_path: Path | None = None) -> None:
     # 8. 15x15 Issue Confusion Matrix
     print("\n15x15 Issue Confusion Matrix:")
     cm = confusion_matrix(all_issue_targets, all_issue_preds, labels=list(range(NUM_ISSUES)))
-    
+
     hdr = "     " + " ".join([f"{i:3d}" for i in range(NUM_ISSUES)])
     print(hdr)
     for i in range(NUM_ISSUES):
@@ -231,5 +230,5 @@ def run_diagnostics(checkpoint_path: Path | None = None) -> None:
 
 
 if __name__ == "__main__":
-    ckpt = CHECKPOINTS_DIR / "best_model.pt"
+    ckpt, _ = resolve_checkpoint_paths(resolve_tag(MODEL_NAME))
     run_diagnostics(ckpt if ckpt.exists() else None)

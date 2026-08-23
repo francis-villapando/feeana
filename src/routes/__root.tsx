@@ -1,22 +1,19 @@
-import { useState, useEffect, lazy, Suspense } from "react";
 import {
   Outlet,
   Link,
   createRootRouteWithContext,
   HeadContent,
   Scripts,
-  useLocation,
 } from "@tanstack/react-router";
 import { Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { AnalysisStoreProvider } from "@/lib/stores/analysisStore";
-import { AuthProvider, useAuth } from "@/lib/stores/auth";
+import { AuthProvider } from "@/lib/stores/auth";
 import { ClassStoreProvider } from "@/lib/stores/classStore";
 import { CourseStoreProvider } from "@/lib/stores/courseStore";
 import { FeedbackStoreProvider } from "@/lib/stores/feedbackStore";
 import { ThemeProvider, useTheme } from "@/lib/providers/themeProvider";
-import { ResetPasswordDialog } from "@/components/auth";
 import "../styles.css";
 
 function NotFoundComponent() {
@@ -110,27 +107,6 @@ function ToasterWithTheme() {
   return <Toaster richColors position="top-right" theme={theme as "light" | "dark" | undefined} />;
 }
 
-function RecoveryDialogHandler() {
-  const { isPasswordRecovery, clearPasswordRecovery } = useAuth();
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (isPasswordRecovery) {
-      setOpen(true);
-    }
-  }, [isPasswordRecovery]);
-
-  return (
-    <ResetPasswordDialog
-      open={open}
-      onOpenChange={(v) => {
-        setOpen(v);
-        if (!v) clearPasswordRecovery();
-      }}
-    />
-  );
-}
-
 function RootComponent() {
   return (
     <ThemeProvider>
@@ -140,7 +116,6 @@ function RootComponent() {
             <FeedbackStoreProvider>
               <AnalysisStoreProvider>
                 <Outlet />
-                <RecoveryDialogHandler />
                 <ToasterWithTheme />
               </AnalysisStoreProvider>
             </FeedbackStoreProvider>

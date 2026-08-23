@@ -1,0 +1,52 @@
+{
+  "issue": {
+    "id2label": {
+      "0": "abstract logic gap",
+      "1": "clarity deficit",
+      "2": "classroom tension",
+      "3": "conceptual misalignment",
+      "4": "design synthesis failure",
+      "5": "evaluation unfairness",
+      "6": "feedback latency",
+      "7": "instructional cadence",
+      "8": "notation struggle",
+      "9": "peer distraction",
+      "10": "perceived marginalization",
+      "11": "procedural bottleneck",
+      "12": "relational coldness",
+      "13": "subject alienation",
+      "14": "uncategorized"
+    },
+    "label2id": {
+      "abstract logic gap": 0,
+      "clarity deficit": 1,
+      "classroom tension": 2,
+      "conceptual misalignment": 3,
+      "design synthesis failure": 4,
+      "evaluation unfairness": 5,
+      "feedback latency": 6,
+      "instructional cadence": 7,
+      "notation struggle": 8,
+      "peer distraction": 9,
+      "perceived marginalization": 10,
+      "procedural bottleneck": 11,
+      "relational coldness": 12,
+      "subject alienation": 13,
+      "uncategorized": 14
+    },
+    "num_labels": 15
+  },
+  "polarity": {
+    "id2label": {
+      "0": "neg",
+      "1": "neu",
+      "2": "pos"
+    },
+    "label2id": {
+      "neg": 0,
+      "neu": 1,
+      "pos": 2
+    },
+    "num_labels": 3
+  }
+}

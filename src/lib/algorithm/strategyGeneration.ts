@@ -1,5 +1,5 @@
 // Module 5: Strategy Generation
-// Computes distributions and generates recommendations or warnings.
+// Computes distributions, prioritizes issues, and generates pedagogical cues or warnings.
 
 import {
   ISSUE_DESCRIPTIONS,

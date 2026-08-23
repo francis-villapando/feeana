@@ -1,24 +1,29 @@
 """
-Phase 2 — Fine-tuning Script for PID-ABSA Dual-Head DistilXLM-R
+Fine-tuning Script for PID-ABSA Dual-Head Model
 
-Base model:  nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large
+Model-agnostic: the base model is resolved from the FEEANA_MODEL_NAME
+environment variable (or --model-name flag), so the same script fine-tunes
+DistilXLM-R, mBERT, or any future base model.
+
+Base model (default):  nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large
+                       (override with FEEANA_MODEL_NAME or --model-name)
 Task:        Dual-head classification
              - issue  (15-way): 14 taxonomy tags + Uncategorized
              - polarity (3-way): neg / neu / pos
-Architecture: Shared encoder + two separate classification heads, LoRA on q/k/v/output
-Compute:     Google Colab T4 (primary) → Kaggle free (fallback) → local CPU LoRA
+Architecture: Shared encoder + two separate classification heads (full fine-tune)
+Compute:     Google Colab T4 (primary) → Kaggle free (fallback) → local CPU
 
 Usage:
   # Colab/Kaggle (GPU):
-  !pip install peft datasets evaluate
-  !python finetune.py
+  !pip install datasets evaluate
+  !python finetune.py --model-name bert-base-multilingual-cased
 
   # Local CPU (no GPU):
   python finetune.py --device cpu
 
 Pinned versions (tested):
   torch>=2.1           transformers>=4.38
-  peft>=0.9            datasets>=2.18
+  datasets>=2.18
   evaluate>=0.4        scikit-learn>=1.3
   accelerate>=0.27
 """
@@ -29,7 +34,6 @@ import argparse
 import json
 import os
 import random
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -40,7 +44,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
-# Reproducibility — pin every source of randomness
 GLOBAL_SEED = 42
 
 
@@ -62,6 +65,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DATA_DIR = SCRIPT_DIR / "data"
 REPORTS_DIR = SCRIPT_DIR / "reports"
 CHECKPOINTS_DIR = SCRIPT_DIR / "checkpoints"
+
+from checkpoint_paths import resolve_tag
 
 TRAIN_CSV = DATA_DIR / "train.csv"
 VAL_CSV = DATA_DIR / "val.csv"
@@ -115,17 +120,27 @@ def save_label_mappings() -> None:
             "num_labels": NUM_POLARITIES,
         },
     }
-    path = CHECKPOINTS_DIR / "label_mappings.json"
+    ckpt_dir = CHECKPOINTS_DIR / TAG
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    path = ckpt_dir / "label_mappings.json"
     with open(path, "w", encoding="utf-8") as f:
         json.dump(mapping, f, indent=2, ensure_ascii=False)
     print(f"[INFO] Label mappings saved → {path}")
 
 
-# Dataset
 from transformers import AutoTokenizer  # noqa: E402
 
-MODEL_NAME = "nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large"
-MAX_LEN = 256  # 100% coverage verified in EDA (max token len = 100)
+DEFAULT_MODEL_NAME = "nreimers/mMiniLMv2-L12-H384-distilled-from-XLMR-Large"
+MAX_LEN = 256  # 256 → max observed token length (~100)
+
+
+def resolve_model_name(cli_value: str | None = None) -> str:
+    """Resolve base model: --model-name flag > FEEANA_MODEL_NAME env > default."""
+    return cli_value or os.environ.get("FEEANA_MODEL_NAME", DEFAULT_MODEL_NAME)
+
+
+MODEL_NAME = resolve_model_name()
+TAG = resolve_tag(MODEL_NAME)
 
 
 class FeedbackDataset(Dataset):
@@ -173,7 +188,7 @@ class DualHeadModel(nn.Module):
 
     def __init__(self, model_name: str, num_issues: int, num_polarities: int) -> None:
         super().__init__()
-        self.encoder = AutoModel.from_pretrained(model_name)
+        self.encoder = AutoModel.from_pretrained(model_name, torch_dtype=torch.float32)
         hidden = self.encoder.config.hidden_size  # 384 for mMiniLMv2
 
         self.issue_head = nn.Linear(hidden, num_issues)
@@ -190,7 +205,7 @@ class DualHeadModel(nn.Module):
     ) -> dict[str, torch.Tensor]:
         outputs = self.encoder(input_ids=input_ids, attention_mask=attention_mask)
 
-        # Mean Pooling over non-padded tokens (required for SentenceTransformers models like mMiniLMv2)
+        # Mean pooling over non-padded tokens (consistent across base models)
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(outputs.last_hidden_state.size()).float()
         sum_embeddings = torch.sum(outputs.last_hidden_state * input_mask_expanded, dim=1)
         sum_mask = torch.clamp(input_mask_expanded.sum(dim=1), min=1e-9)
@@ -206,26 +221,6 @@ class DualHeadModel(nn.Module):
             "issue_logits": issue_logits,
             "polarity_logits": polarity_logits,
         }
-
-
-# LoRA — apply to q, k, v, and output projections
-from peft import LoraConfig, get_peft_model, TaskType  # noqa: E402
-
-
-def apply_lora(model: DualHeadModel) -> DualHeadModel:
-    """Wrap the encoder with LoRA adapters on attention projections."""
-    lora_config = LoraConfig(
-        task_type=TaskType.FEATURE_EXTRACTION,  # encoder-only, heads stay full-rank
-        r=16,
-        lora_alpha=32,
-        lora_dropout=0.05,
-        # Target modules: XLM-R attention q/k/v and output dense layers
-        target_modules=["query", "key", "value", "output.dense"],
-        bias="none",
-    )
-    model.encoder = get_peft_model(model.encoder, lora_config)
-    model.encoder.print_trainable_parameters()
-    return model
 
 
 # Class weights — handle polarity imbalance (~87% neg) and issue imbalance
@@ -406,14 +401,16 @@ def evaluate(
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Fine-tune DistilXLM-R for PID-ABSA")
+    p = argparse.ArgumentParser(description="Fine-tune a dual-head PID-ABSA model")
+    p.add_argument("--model-name", type=str, default=None,
+                   help="Hugging Face base model. Defaults to FEEANA_MODEL_NAME env or DistilXLM-R.")
     p.add_argument("--device", type=str, default="auto",
                    help="'cuda', 'cpu', or 'auto' (default: auto-detect)")
     p.add_argument("--epochs", type=int, default=5)
     p.add_argument("--batch-size", type=int, default=16,
                    help="Per-device batch size (16 for T4 16GB, 32 if memory allows)")
     p.add_argument("--lr", type=float, default=2e-5,
-                   help="Learning rate for encoder/LoRA parameters (default: 2e-5)")
+                   help="Learning rate for encoder parameters (default: 2e-5)")
     p.add_argument("--head-lr", type=float, default=1e-3,
                    help="Learning rate for classification heads (default: 1e-3)")
     p.add_argument("--issue-loss-weight", type=float, default=3.0,
@@ -423,8 +420,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--patience", type=int, default=2,
                    help="Early stopping patience (epochs without val macro-F1 improvement)")
     p.add_argument("--seed", type=int, default=GLOBAL_SEED)
-    p.add_argument("--no-lora", action="store_true",
-                   help="Full fine-tune (no LoRA). Only use with ample VRAM.")
     return p.parse_args()
 
 
@@ -432,7 +427,11 @@ def main() -> None:
     args = parse_args()
     seed_everything(args.seed)
 
-    # Device
+    global MODEL_NAME, TAG
+    MODEL_NAME = resolve_model_name(args.model_name)
+    TAG = resolve_tag(MODEL_NAME)
+    print(f"[CONFIG] Base model: {MODEL_NAME}")
+
     if args.device == "auto":
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     else:
@@ -462,12 +461,6 @@ def main() -> None:
     print(f"[INFO] Building dual-head model on {MODEL_NAME}")
     model = DualHeadModel(MODEL_NAME, NUM_ISSUES, NUM_POLARITIES)
 
-    if not args.no_lora:
-        print("[INFO] Applying LoRA adapters to encoder (q/k/v/output.dense)...")
-        model = apply_lora(model)
-    else:
-        print("[INFO] Full fine-tune mode (no LoRA)")
-
     model.to(device)
 
     # Class weights
@@ -481,7 +474,7 @@ def main() -> None:
     polarity_criterion = nn.CrossEntropyLoss(weight=polarity_weights)
 
     # Optimizer + scheduler
-    # Differential learning rates: higher LR for newly initialized heads, standard LR for encoder/LoRA
+    # Differential learning rates: higher LR for newly initialized heads, standard LR for encoder
     head_params = list(model.issue_head.parameters()) + list(model.polarity_head.parameters())
     encoder_params = [p for n, p in model.named_parameters() if p.requires_grad and 'head' not in n]
 
@@ -519,7 +512,6 @@ def main() -> None:
 
     scaler = torch.amp.GradScaler() if use_amp else None
 
-    # Save label mappings
     save_label_mappings()
 
     # Training loop with early stopping
@@ -583,7 +575,9 @@ def main() -> None:
         if val_metrics["issue_macro_f1"] > best_val_f1:
             best_val_f1 = val_metrics["issue_macro_f1"]
             patience_counter = 0
-            ckpt_path = CHECKPOINTS_DIR / "best_model.pt"
+            ckpt_dir = CHECKPOINTS_DIR / TAG
+            ckpt_dir.mkdir(parents=True, exist_ok=True)
+            ckpt_path = ckpt_dir / "best_model.pt"
             torch.save({
                 "epoch": epoch,
                 "model_state_dict": model.state_dict(),
@@ -608,7 +602,6 @@ def main() -> None:
         "seed": args.seed,
         "device": str(device),
         "use_amp": use_amp,
-        "lora": not args.no_lora,
         "hyperparameters": {
             "epochs_planned": args.epochs,
             "epochs_completed": len(run_log),
@@ -622,7 +615,7 @@ def main() -> None:
         "epoch_logs": run_log,
     }
 
-    report_path = REPORTS_DIR / f"training_run_{timestamp}.json"
+    report_path = REPORTS_DIR / f"{TAG}_training_run_{timestamp}.json"
     with open(report_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     print(f"\n[INFO] Run report saved → {report_path}")

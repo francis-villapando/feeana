@@ -1,15 +1,16 @@
 // Module 2: Preprocessing
-// Normalizes feedback text for model tokenization.
+// Normalizes feedback text and converts it to tokenized machine encodings.
 
 import feedbackLexicon from "./data/feedback-lexicon.json";
-import type { FeedbackInput } from "./types";
+import type { FeedbackEncoding, FeedbackInput, PreprocessResult } from "./types";
 
-const URL_PATTERN = /https?:\/\/\S+|www\.\S+/gi; // URL pattern: matches http://, https://, www., and domain-like patterns.
-const TAG_PATTERN = /@\w+/g;                     // Mention/tag pattern: matches @username or similar tags.
-const HASHTAG_PATTERN = /#\w+/g;                 // Hashtag pattern: matches #hashtag.
+const URL_PATTERN = /https?:\/\/\S+|www\.\S+/gi;
+const TAG_PATTERN = /@\w+/g;
+const HASHTAG_PATTERN = /#\w+/g;
 
 // Emoji pattern: matches unicode emoji sequences.
-const EMOJI_PATTERN = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{2300}-\u{23FF}]|[\u{2000}-\u{206F}]/gu;
+const EMOJI_PATTERN =
+  /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{2300}-\u{23FF}]|[\u{2000}-\u{206F}]/gu;
 
 // Pattern to detect letters repeated 3 or more times.
 const REPETITION_PATTERN = /([a-zA-Z])\1{2,}/g;
@@ -21,7 +22,7 @@ const ABBREVIATION_LOOKUP = new Map(
   Object.entries(ABBREVIATION_MAP).map(([abbrev, fullWord]) => [abbrev.toLowerCase(), fullWord]),
 );
 
-// Strips URLs, tags, hashtags, and emojis.
+// Strips URLs, @mentions, #hashtags, and emojis.
 function removeNoise(text: string): string {
   let cleaned = text;
 
@@ -72,8 +73,7 @@ function normalizeVowels(text: string): string {
 }
 
 // Splits a token into leading punctuation, the core word, and trailing
-// punctuation. Matching stays word-bounded (no partial-word hits) while
-// punctuation attached to a token (e.g. "pls,") does not block expansion.
+// punctuation, so abbreviation matching stays word-bounded.
 function splitAttachedPunctuation(token: string): {
   core: string;
   leading: string;
@@ -94,9 +94,7 @@ function splitAttachedPunctuation(token: string): {
   };
 }
 
-// Single-pass expansion: the text is tokenized once on whitespace (O(n)) and
-// each token is looked up case-insensitively in ABBREVIATION_LOOKUP, instead of
-// running one regex pass per dictionary entry. Whitespace is preserved verbatim.
+// Expands abbreviations to full words in a single whitespace pass (O(n)).
 function expandAbbreviations(text: string): string {
   return text
     .split(/(\s+)/)
@@ -123,33 +121,75 @@ function normalizeWhitespace(text: string): string {
   return normalized;
 }
 
-export function Preprocess(feedback: FeedbackInput): string {
+// Fixed sequence length the fine-tuned ONNX models were trained with.
+export const MAX_SEQ_LEN = 256;
+
+// Structural tokenizer interface decoupling preprocessing from HF runtime imports.
+export interface MachineTokenizer {
+  (
+    text: string,
+    options?: Record<string, unknown>,
+  ): {
+    input_ids?: { data?: ArrayLike<number | bigint> };
+    attention_mask?: { data?: ArrayLike<number | bigint> };
+  };
+}
+
+// Normalizes feedback text (noise removal, vowel reduction, abbreviation mapping, whitespace).
+export function CleanFeedback(feedback: FeedbackInput | string): string {
+  const rawText = typeof feedback === "string" ? feedback : feedback.rawText;
+
+  const afterNoise = removeNoise(rawText);
+  const afterVowels = normalizeVowels(afterNoise);
+  const afterAbbrevs = expandAbbreviations(afterVowels);
+  return normalizeWhitespace(afterAbbrevs);
+}
+
+// Converts cleaned text into fixed-length BigInt64Array tensor encodings.
+export function EncodeFeedback(
+  cleanedText: string,
+  tokenizer: MachineTokenizer,
+  maxLength: number = MAX_SEQ_LEN,
+): FeedbackEncoding {
+  const output = tokenizer(cleanedText, {
+    padding: "max_length",
+    truncation: true,
+    max_length: maxLength,
+    return_tensor: true,
+  });
+
+  const inputIdsData = output?.input_ids?.data;
+  const attentionMaskData = output?.attention_mask?.data;
+
+  if (!inputIdsData || !attentionMaskData) {
+    throw new Error("[preprocess] Tokenizer returned invalid encoding output.");
+  }
+
+  const toBigInt64 = (data: ArrayLike<number | bigint>): BigInt64Array =>
+    data instanceof BigInt64Array ? data : BigInt64Array.from(data, (v) => BigInt(v));
+
+  return {
+    inputIds: toBigInt64(inputIdsData),
+    attentionMask: toBigInt64(attentionMaskData),
+  };
+}
+
+// Module 2: Preprocessing --- algorithm.pseudo line 9
+export function Preprocess(feedback: FeedbackInput, tokenizer: MachineTokenizer): PreprocessResult {
   console.debug("[preprocess] INPUT BOUNDARY: Received feedback", {
     feedbackId: feedback.id,
     rawLength: feedback.rawText.length,
     sample: feedback.rawText.substring(0, 50),
   });
 
-  const afterNoiseRemoval = removeNoise(feedback.rawText);
-  console.debug("[preprocess] After noise removal", {
-    newLength: afterNoiseRemoval.length,
-  });
+  const cleanedText = CleanFeedback(feedback);
+  const encoding = EncodeFeedback(cleanedText, tokenizer);
 
-  const afterVowelNormalization = normalizeVowels(afterNoiseRemoval);
-  console.debug("[preprocess] After vowel/consonant normalization", {
-    newLength: afterVowelNormalization.length,
-  });
-
-  const afterAbbreviationExpansion = expandAbbreviations(afterVowelNormalization);
-  console.debug("[preprocess] After abbreviation expansion", {
-    newLength: afterAbbreviationExpansion.length,
-  });
-
-  const cleanedText = normalizeWhitespace(afterAbbreviationExpansion);
   console.debug("[preprocess] OUTPUT BOUNDARY: Preprocessing complete", {
     cleanedLength: cleanedText.length,
+    hasEncoding: !!encoding,
     sample: cleanedText.substring(0, 50),
   });
 
-  return cleanedText;
+  return { cleanedText, encoding };
 }
