@@ -82,7 +82,7 @@ export function CreateClassDialog({
         <DialogHeader>
           <DialogTitle>Create a class</DialogTitle>
           <DialogDescription>
-            A 6-character enroll code is generated automatically.
+            An 8-character enroll code is generated automatically.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

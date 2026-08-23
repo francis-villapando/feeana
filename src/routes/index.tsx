@@ -14,7 +14,7 @@ import { ThemeToggle } from "@/components/common";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Feeana — Outcome-aligned feedback intelligence" },
+      { title: "Feeana — Outcome-aligned feedback analysis" },
       {
         name: "description",
         content:
@@ -52,7 +52,7 @@ function LandingPage() {
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <Sparkles className="h-3 w-3" /> Outcome-aligned feedback intelligence
+              <Sparkles className="h-3 w-3" /> Outcome-aligned feedback analysis
             </span>
             <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
               Bridge the gap between{" "}
@@ -62,7 +62,7 @@ function LandingPage() {
               and actual learning.
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
-              Feeana ingests Taglish, code-switched student feedback and turns it into
+              Feeana collects Taglish, code-switched student feedback and turns it into
               theory-grounded teaching cues — mapped to your ILOs, Revised Bloom's Taxonomy,
               Cognitive Load Theory, and Teaching Through Interactions principles.
             </p>
@@ -94,7 +94,7 @@ function LandingPage() {
             <FeatureTile
               icon={<LineChart className="h-4 w-4" />}
               title="Aspect, issue, & polarity"
-              body="ABSA distributions across every collected feedback batch."
+              body="PID-ABSA distributions across every collected feedback batch."
             />
             <FeatureTile
               icon={<Sparkles className="h-4 w-4" />}

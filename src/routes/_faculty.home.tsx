@@ -30,7 +30,7 @@ function HomePage() {
     <div className="space-y-10">
       <WelcomeHero
         badge={`Welcome${user ? `, ${user.name}` : ""}`}
-        title="Your feedback intelligence workspace."
+        title="Your feedback analysis workspace."
         description="Spin up classes, schedule anonymous feedback sessions, and let Feeana surface ILO-aligned teaching cues from Taglish responses."
         actions={[
           {

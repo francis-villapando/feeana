@@ -172,6 +172,9 @@ export function CourseManagementHub() {
             <CardDescription>
               Manage curriculum hierarchy: Course &gt; Topic &gt; ILO.
             </CardDescription>
+            <p className="text-xs text-muted-foreground italic mt-0.5">
+              Note: Curriculum data is shared among all instructors.
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">

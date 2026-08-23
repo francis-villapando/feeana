@@ -291,8 +291,8 @@ function EmptyState({ onTrigger }: { onTrigger: () => void }) {
         <div>
           <h2 className="text-lg font-semibold">Analysis not yet triggered</h2>
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            Trigger the pipeline to see aspect, issue, and polarity distributions, an ILO checklist,
-            and theory-grounded teaching recommendations.
+            Trigger the pipeline to see PID-ABSA aspect, issue, and polarity distributions, an ILO
+            checklist, and theory-grounded teaching recommendations.
           </p>
         </div>
         <Button onClick={onTrigger} size="lg">
