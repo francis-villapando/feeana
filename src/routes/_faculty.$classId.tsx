@@ -101,6 +101,8 @@ function ClassLayout() {
     if (promises.length > 0) {
       setIsDataFresh(false);
       Promise.all(promises).finally(() => setIsDataFresh(true));
+    } else {
+      setIsDataFresh(true);
     }
   }, [classId, sessionIdsKey, fetchFeedbackByClass, refreshStudents, fetchForSessions]);
 
@@ -184,8 +186,8 @@ function ClassLayout() {
           <KeyMetricsRow
             submissionRate={submissionRate}
             iloRate={iloRate}
-            submissionHint="Across sessions in this class"
-            iloHint="Across sessions in this class"
+            submissionHint={submissionRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
+            iloHint={iloRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
           />
           <TrendLineCard trend={trend} />
           <TrendBarCard trend={trend} />

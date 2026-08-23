@@ -37,9 +37,9 @@ export function iloAchievementForSession(
   return Math.round((achievedCount / totalSessionIlos) * 100);
 }
 
-export function averageRate(values: number[]): number {
-  const clean = values.filter((v) => !isNaN(v));
-  if (clean.length === 0) return 0;
+export function averageRate(values: number[]): number | null {
+  const clean = values.filter((v) => typeof v === "number" && !isNaN(v));
+  if (clean.length === 0) return null;
   return Math.round(clean.reduce((a, b) => a + b, 0) / clean.length);
 }
 
@@ -57,8 +57,9 @@ export function computeClassSubmissionRate(
   classSessions: Session[],
   cls: Class | undefined,
   feedback: Feedback[],
-): number {
+): number | null {
   const analyzed = classSessions.filter((s) => s.last_analyzed_at);
+  if (analyzed.length === 0) return null;
   return averageRate(analyzed.map((s) => submissionRateForSession(s, cls, feedback)));
 }
 
@@ -67,8 +68,10 @@ export function computeClassSubmissionRate(
 export function computeClassIloAchievement(
   classSessions: Session[],
   results: Record<string, AnalysisResult>,
-): number {
-  return averageRate(sessionsWithResults(classSessions, results).map((s) => iloAchievementForSession(s, results)));
+): number | null {
+  const analyzed = sessionsWithResults(classSessions, results);
+  if (analyzed.length === 0) return null;
+  return averageRate(analyzed.map((s) => iloAchievementForSession(s, results)));
 }
 
 /** Dashboard-level submission rate: per-class averages → dashboard average. */
@@ -76,13 +79,13 @@ export function computeDashboardSubmissionRate(
   activeClasses: Class[],
   sessions: Session[],
   feedback: Feedback[],
-): number {
+): number | null {
   const classRates = activeClasses
     .map((cls) => {
       const classSessions = sessions.filter((s) => s.classId === cls.id);
       return computeClassSubmissionRate(classSessions, cls, feedback);
     })
-    .filter((r) => r > 0);
+    .filter((r): r is number => r !== null && r > 0);
   return averageRate(classRates);
 }
 
@@ -91,13 +94,13 @@ export function computeDashboardIloAchievement(
   activeClasses: Class[],
   sessions: Session[],
   results: Record<string, AnalysisResult>,
-): number {
+): number | null {
   const classRates = activeClasses
     .map((cls) => {
       const classSessions = sessions.filter((s) => s.classId === cls.id);
       return computeClassIloAchievement(classSessions, results);
     })
-    .filter((r) => r > 0);
+    .filter((r): r is number => r !== null && r > 0);
   return averageRate(classRates);
 }
 

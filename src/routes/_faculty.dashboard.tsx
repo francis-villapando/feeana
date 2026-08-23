@@ -39,16 +39,16 @@ function DashboardPage() {
   const [isDataFresh, setIsDataFresh] = useState(false);
 
   useEffect(() => {
-    if (sessionIdsKey) {
-      setIsDataFresh(false);
-      const ids = sessionIdsKey.split(",").filter(Boolean);
-      if (ids.length > 0) {
-        Promise.all([
-          fetchForSessions(ids),
-          fetchFeedbackBySessions(ids),
-        ]).finally(() => setIsDataFresh(true));
-      }
+    const ids = sessionIdsKey.split(",").filter(Boolean);
+    if (ids.length === 0) {
+      setIsDataFresh(true);
+      return;
     }
+    setIsDataFresh(false);
+    Promise.all([
+      fetchForSessions(ids),
+      fetchFeedbackBySessions(ids),
+    ]).finally(() => setIsDataFresh(true));
   }, [sessionIdsKey, fetchForSessions, fetchFeedbackBySessions]);
 
   const stats = useMemo(() => {
@@ -80,8 +80,8 @@ function DashboardPage() {
         <KeyMetricsRow
           submissionRate={stats.submission}
           iloRate={stats.ilo}
-          submissionHint="Across all sessions"
-          iloHint="Across all sessions"
+          submissionHint={stats.submission !== null ? "Across all sessions" : "No analyzed sessions"}
+          iloHint={stats.ilo !== null ? "Across all sessions" : "No analyzed sessions"}
           wide
         >
           <KpiCard
