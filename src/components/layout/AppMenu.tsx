@@ -45,7 +45,10 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
           <PopoverContent align="end" className="w-auto min-w-40 p-1">
             <button
               type="button"
-              onClick={() => { setBadgeOpen(false); setResetOpen(true); }}
+              onClick={() => {
+                setBadgeOpen(false);
+                setResetOpen(true);
+              }}
               className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
             >
               <Lock className="h-4 w-4 text-muted-foreground" />
@@ -54,7 +57,11 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
           </PopoverContent>
         </Popover>
         <SignOutDialog onConfirm={onSignOut}>
-          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Sign out</span>
           </Button>

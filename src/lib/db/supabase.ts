@@ -9,7 +9,7 @@ function getClient(): SupabaseClient {
     if (!url || !key) {
       throw new Error(
         "Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. " +
-        "Set them in .env or pass --env-file=.env",
+          "Set them in .env or pass --env-file=.env",
       );
     }
     _client = createClient(url, key);

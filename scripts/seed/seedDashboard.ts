@@ -19,7 +19,13 @@ import type {
   BufferedDiagnostic,
   RecommendationItem,
 } from "../../src/lib/algorithm/types";
-import type { DistEntry, AnalysisResult, GapItem, RecommendationTerm, Theory } from "../../src/lib/types/types";
+import type {
+  DistEntry,
+  AnalysisResult,
+  GapItem,
+  RecommendationTerm,
+  Theory,
+} from "../../src/lib/types/types";
 
 // Dashboard Test Seed — 3 Classes, 60 Students, 9 Sessions, ~159 Feedback
 //

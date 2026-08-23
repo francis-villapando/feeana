@@ -44,7 +44,10 @@ function tokenize(paragraph: string, terms: RecommendationTerm[]): Segment[] {
   return segments;
 }
 
-function resolveDetail(term: RecommendationTerm, ilos?: ILO[]): {
+function resolveDetail(
+  term: RecommendationTerm,
+  ilos?: ILO[],
+): {
   heading: string;
   body: string;
 } {

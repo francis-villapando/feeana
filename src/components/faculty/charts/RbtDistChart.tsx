@@ -1,4 +1,13 @@
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
 import { InterpretationBlock } from "./InterpretationBlock";
@@ -17,18 +26,20 @@ export function RbtDistChart({ data }: RbtDistChartProps) {
       const num = RBT_LEVEL_NUMBERS[label];
       const newLabel = num ? `${label} (${num})` : label;
       return [newLabel, color];
-    })
+    }),
   );
   const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
   const interpretation = interpretDistribution(data, { kind: "rbt", totalFeedback });
 
-  const sortedData = data.map((entry) => {
-    const num = RBT_LEVEL_NUMBERS[entry.label];
-    return {
-      ...entry,
-      label: num ? `${entry.label} (${num})` : entry.label,
-    };
-  }).sort((a, b) => b.value - a.value);
+  const sortedData = data
+    .map((entry) => {
+      const num = RBT_LEVEL_NUMBERS[entry.label];
+      return {
+        ...entry,
+        label: num ? `${entry.label} (${num})` : entry.label,
+      };
+    })
+    .sort((a, b) => b.value - a.value);
 
   return (
     <AnalysisCard>
@@ -41,7 +52,13 @@ export function RbtDistChart({ data }: RbtDistChartProps) {
         <ResponsiveContainer width="100%" height={Math.max(220, sortedData.length * 36)}>
           <BarChart data={sortedData} layout="vertical">
             <CartesianGrid stroke="var(--color-border)" horizontal={false} />
-            <XAxis type="number" domain={[0, 'dataMax']} allowDecimals={false} stroke="var(--color-muted-foreground)" fontSize={11} />
+            <XAxis
+              type="number"
+              domain={[0, "dataMax"]}
+              allowDecimals={false}
+              stroke="var(--color-muted-foreground)"
+              fontSize={11}
+            />
             <YAxis
               type="category"
               dataKey="label"
@@ -52,10 +69,7 @@ export function RbtDistChart({ data }: RbtDistChartProps) {
             <Tooltip {...chartTooltipProps} content={<ChartTooltipContent colorMap={colorMap} />} />
             <Bar dataKey="value" fill="var(--color-chart-5)" radius={[0, 6, 6, 0]}>
               {sortedData.map((entry) => (
-                <Cell
-                  key={entry.label}
-                  fill={colorMap[entry.label] || "var(--color-chart-2)"}
-                />
+                <Cell key={entry.label} fill={colorMap[entry.label] || "var(--color-chart-2)"} />
               ))}
             </Bar>
           </BarChart>

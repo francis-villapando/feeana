@@ -8,14 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  AlertTriangle,
-  PlayCircle,
-  RefreshCw,
-  Info,
-  Sparkles,
-  CheckCircle2,
-} from "lucide-react";
+import { AlertTriangle, PlayCircle, RefreshCw, Info, Sparkles, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface AnalysisTriggerModalProps {
@@ -118,9 +111,7 @@ export function AnalysisTriggerModal({
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span className="absolute text-xs font-bold text-foreground">
-                    {percentage}%
-                  </span>
+                  <span className="absolute text-xs font-bold text-foreground">{percentage}%</span>
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -139,7 +130,9 @@ export function AnalysisTriggerModal({
                 <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
                   <Info className="h-4 w-4 shrink-0 text-emerald-500" />
                   <p className="leading-normal">
-                    You can force a re-run of the pipeline to recalculate aspect weights, polarity, and theory-grounded teaching recommendations across all {feedbackCount} submissions.
+                    You can force a re-run of the pipeline to recalculate aspect weights, polarity,
+                    and theory-grounded teaching recommendations across all {feedbackCount}{" "}
+                    submissions.
                   </p>
                 </div>
               </div>
@@ -154,7 +147,8 @@ export function AnalysisTriggerModal({
                   className="h-1.5 w-full bg-primary/10 [&>div]:bg-primary"
                 />
                 <p className="text-xs text-muted-foreground leading-normal">
-                  All {feedbackCount} submissions will be re-analyzed to ensure priority scores and recommendations are accurately weighted globally across the class session.
+                  All {feedbackCount} submissions will be re-analyzed to ensure priority scores and
+                  recommendations are accurately weighted globally across the class session.
                 </p>
               </div>
             )}

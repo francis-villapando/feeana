@@ -13,7 +13,10 @@ type PasswordFieldProps = {
   autoComplete: string;
   placeholder?: string;
   passwordError?: string;
-} & Omit<ComponentProps<typeof Input>, "id" | "type" | "value" | "onChange" | "autoComplete" | "placeholder">;
+} & Omit<
+  ComponentProps<typeof Input>,
+  "id" | "type" | "value" | "onChange" | "autoComplete" | "placeholder"
+>;
 
 export function PasswordField({
   id,
@@ -54,7 +57,7 @@ export function PasswordField({
           <span className="sr-only">{show ? "Hide password" : "Show password"}</span>
         </Button>
       </div>
-        <InlineError errorMessage={passwordError} />
+      <InlineError errorMessage={passwordError} />
     </div>
   );
 }

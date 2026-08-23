@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import type { AnalysisResult } from "../types/types";
 import { supabase } from "../db/supabase";
 
@@ -60,7 +53,7 @@ export function AnalysisStoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AnalysisStoreValue>(
     () => ({ results, isLoading, set, get, fetchForSessions }),
-    [results, isLoading, set, get, fetchForSessions]
+    [results, isLoading, set, get, fetchForSessions],
   );
 
   return <AnalysisStoreContext.Provider value={value}>{children}</AnalysisStoreContext.Provider>;

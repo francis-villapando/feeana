@@ -68,7 +68,9 @@ export function useCooldown(baseKey?: string, defaultSeconds = 60, scope?: strin
   useEffect(() => {
     const currentExpiry = readCooldownExpiry(key);
     setExpiresAt(currentExpiry);
-    setSecondsLeft(currentExpiry > 0 ? Math.max(0, Math.ceil((currentExpiry - Date.now()) / 1000)) : 0);
+    setSecondsLeft(
+      currentExpiry > 0 ? Math.max(0, Math.ceil((currentExpiry - Date.now()) / 1000)) : 0,
+    );
   }, [key]);
 
   // Listen to cross-tab storage changes

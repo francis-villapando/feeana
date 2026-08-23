@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { computeSessionDisplayStatus, type SessionDisplayStatus } from "@/lib/utils/sessionStatusUtils";
+import {
+  computeSessionDisplayStatus,
+  type SessionDisplayStatus,
+} from "@/lib/utils/sessionStatusUtils";
 import type { Session } from "@/lib/types/types";
 
 export function useSessionDisplayStatus(session: Session): SessionDisplayStatus {

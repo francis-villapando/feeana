@@ -105,10 +105,7 @@ export function CompareModelsPage() {
 
   const resultsByModel = new Map(results.map((r) => [r.modelName, r]));
 
-  const renderMetricCell = (
-    kind: (typeof MODEL_KINDS)[number],
-    metric: MetricRow,
-  ) => {
+  const renderMetricCell = (kind: (typeof MODEL_KINDS)[number], metric: MetricRow) => {
     if (metric.getValue) {
       return (
         <TableCell key={kind} className="px-4 py-3 text-muted-foreground whitespace-nowrap">

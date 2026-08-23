@@ -14,8 +14,7 @@ export const Route = createFileRoute("/_faculty/home")({
       { title: "Home — Feeana" },
       {
         name: "description",
-        content:
-          "Your Feeana workspace: create classes and run outcome-aligned sessions.",
+        content: "Your Feeana workspace: create classes and run outcome-aligned sessions.",
       },
     ],
   }),

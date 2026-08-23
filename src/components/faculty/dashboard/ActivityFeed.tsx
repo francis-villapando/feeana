@@ -124,7 +124,11 @@ export function ActivityRow({
         if (now - lastClickRef.current < 500) toast.info("Navigating…");
         lastClickRef.current = now;
         onClick?.();
-        navigate({ to: "/dashboard", search: { focus: entry.entityId, t: now }, resetScroll: false });
+        navigate({
+          to: "/dashboard",
+          search: { focus: entry.entityId, t: now },
+          resetScroll: false,
+        });
       }}
     >
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30 group-hover:bg-primary/20 transition-colors">

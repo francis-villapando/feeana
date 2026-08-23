@@ -186,7 +186,9 @@ function ClassLayout() {
           <KeyMetricsRow
             submissionRate={submissionRate}
             iloRate={iloRate}
-            submissionHint={submissionRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
+            submissionHint={
+              submissionRate !== null ? "Across sessions in this class" : "No analyzed sessions"
+            }
             iloHint={iloRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
           />
           <TrendLineCard trend={trend} />

@@ -34,9 +34,9 @@ async function main(): Promise<void> {
   if (!supabaseUrl || !serviceRoleKey) {
     console.error(
       "Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.\n" +
-      "Set them in your environment or use:\n" +
-      "  npm run db:smoke\n" +
-      "  npx tsx --env-file=.env scripts/dev/pipelineSmoke.ts",
+        "Set them in your environment or use:\n" +
+        "  npm run db:smoke\n" +
+        "  npx tsx --env-file=.env scripts/dev/pipelineSmoke.ts",
     );
     process.exit(1);
   }
@@ -56,8 +56,8 @@ async function main(): Promise<void> {
     console.error("\n[pipeline] FAILED —", (err as Error).message);
     console.error(
       "If the error mentions 'onnxruntime-node', install it:\n" +
-      "  npm install -D onnxruntime-node\n" +
-      "Then re-run this script.",
+        "  npm install -D onnxruntime-node\n" +
+        "Then re-run this script.",
     );
     process.exit(1);
   }
@@ -68,13 +68,21 @@ async function main(): Promise<void> {
   /* Assertions */
   console.log("\n--- Output Quality ---");
   assert(output.sessionId === SESSION_ID, `sessionId matches (${output.sessionId})`);
-  assert(typeof output.totalFeedback === "number" && output.totalFeedback > 0,
-    `totalFeedback > 0 (got ${output.totalFeedback})`);
+  assert(
+    typeof output.totalFeedback === "number" && output.totalFeedback > 0,
+    `totalFeedback > 0 (got ${output.totalFeedback})`,
+  );
 
   console.log("\n--- Distributions ---");
-  assert(output.aspectDist.length > 0, `aspectDist populated (${output.aspectDist.length} entries)`);
+  assert(
+    output.aspectDist.length > 0,
+    `aspectDist populated (${output.aspectDist.length} entries)`,
+  );
   assert(output.issueDist.length > 0, `issueDist populated (${output.issueDist.length} entries)`);
-  assert(output.polarityDist.length === 3, `polarityDist has 3 entries (got ${output.polarityDist.length})`);
+  assert(
+    output.polarityDist.length === 3,
+    `polarityDist has 3 entries (got ${output.polarityDist.length})`,
+  );
   assert(output.rbtDist.length > 0, `rbtDist populated (${output.rbtDist.length} entries)`);
   assert(output.cltDist.length > 0, `cltDist populated (${output.cltDist.length} entries)`);
 
@@ -84,22 +92,31 @@ async function main(): Promise<void> {
   }
 
   console.log("\n--- Recommendations ---");
-// Recommendations are generated per-issue when priorityScore >= 0.3.
-// May be 0 if no issue meets the threshold — which is valid.
-// Assert structural validity when recommendations are present.
+  // Recommendations are generated per-issue when priorityScore >= 0.3.
+  // May be 0 if no issue meets the threshold — which is valid.
+  // Assert structural validity when recommendations are present.
   assert(
     output.recommendations.length === 0 ||
-    output.recommendations.every(r =>
-      typeof r.id === "string" && typeof r.paragraph === "string" && r.priority >= 0
-    ),
-    "Recommendations have valid structure when present"
+      output.recommendations.every(
+        (r) => typeof r.id === "string" && typeof r.paragraph === "string" && r.priority >= 0,
+      ),
+    "Recommendations have valid structure when present",
   );
 
   for (const r of output.recommendations) {
     assert(typeof r.id === "string" && r.id.length > 0, "recommendation.id is non-empty");
-    assert(typeof r.paragraph === "string" && r.paragraph.length > 0, "recommendation.paragraph is non-empty");
-    assert(typeof r.priority === "number" && r.priority >= 0, `recommendation.priority >= 0 (got ${r.priority})`);
-    assert(Array.isArray(r.theories) && r.theories.length > 0, "recommendation.theories is non-empty");
+    assert(
+      typeof r.paragraph === "string" && r.paragraph.length > 0,
+      "recommendation.paragraph is non-empty",
+    );
+    assert(
+      typeof r.priority === "number" && r.priority >= 0,
+      `recommendation.priority >= 0 (got ${r.priority})`,
+    );
+    assert(
+      Array.isArray(r.theories) && r.theories.length > 0,
+      "recommendation.theories is non-empty",
+    );
   }
 
   console.log("\n--- Gaps ---");

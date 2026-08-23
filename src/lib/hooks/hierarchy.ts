@@ -1,11 +1,6 @@
 import type { Course, ILO, Topic } from "../types/types";
 
-export function getIloPath(
-  iloId: string,
-  courses: Course[],
-  topics: Topic[],
-  ilos: ILO[],
-): string {
+export function getIloPath(iloId: string, courses: Course[], topics: Topic[], ilos: ILO[]): string {
   const ilo = ilos.find((i) => i.id === iloId);
   if (!ilo) return "";
 
@@ -19,11 +14,7 @@ export function getIloPath(
   return "";
 }
 
-export function getTopicPath(
-  topicId: string,
-  courses: Course[],
-  topics: Topic[],
-): string {
+export function getTopicPath(topicId: string, courses: Course[], topics: Topic[]): string {
   const topic = topics.find((t) => t.id === topicId);
   if (!topic) return "";
 

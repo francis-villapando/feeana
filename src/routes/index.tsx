@@ -63,8 +63,8 @@ function LandingPage() {
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
               Feeana ingests Taglish, code-switched student feedback and turns it into
-              theory-grounded teaching cues — mapped to your ILOs, Revised Bloom's Taxonomy, Cognitive
-              Load Theory, and Teaching Through Interactions principles.
+              theory-grounded teaching cues — mapped to your ILOs, Revised Bloom's Taxonomy,
+              Cognitive Load Theory, and Teaching Through Interactions principles.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asChild>

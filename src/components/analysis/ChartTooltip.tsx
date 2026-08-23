@@ -39,14 +39,18 @@ export function ChartTooltipContent({ active, payload, colorMap }: ChartTooltipC
 
   return (
     <div
-      onMouseEnter={() => { frozenRef.current = true; }}
-      onMouseLeave={() => { frozenRef.current = false; }}
-      onMouseMove={(e) => { if (frozenRef.current) e.stopPropagation(); }}
+      onMouseEnter={() => {
+        frozenRef.current = true;
+      }}
+      onMouseLeave={() => {
+        frozenRef.current = false;
+      }}
+      onMouseMove={(e) => {
+        if (frozenRef.current) e.stopPropagation();
+      }}
       style={chartTooltipProps.contentStyle}
     >
-      <p style={{ fontWeight: 500, color, margin: 0 }}>
-        {entry.label}
-      </p>
+      <p style={{ fontWeight: 500, color, margin: 0 }}>{entry.label}</p>
       <p style={{ color: "var(--color-muted-foreground)", margin: 0, marginTop: 2 }}>
         Count: {entry.value}
       </p>
@@ -73,9 +77,7 @@ export function ChartTooltipContent({ active, payload, colorMap }: ChartTooltipC
                 lineHeight: 1.4,
                 color: "var(--color-foreground)",
                 borderBottom:
-                  i < entry.feedbackTexts!.length - 1
-                    ? "1px solid var(--color-border)"
-                    : "none",
+                  i < entry.feedbackTexts!.length - 1 ? "1px solid var(--color-border)" : "none",
               }}
             >
               &ldquo;{text}&rdquo;

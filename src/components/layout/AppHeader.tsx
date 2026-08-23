@@ -12,7 +12,14 @@ interface AppHeaderProps {
   onSidebarTriggerClick?: () => void;
 }
 
-export function AppHeader({ role, userName, onSignOut, contained = false, sidebarTrigger = false, onSidebarTriggerClick }: AppHeaderProps) {
+export function AppHeader({
+  role,
+  userName,
+  onSignOut,
+  contained = false,
+  sidebarTrigger = false,
+  onSidebarTriggerClick,
+}: AppHeaderProps) {
   const homeRoute = role === "faculty" ? "/home" : "/student/home";
 
   return (
@@ -28,8 +35,8 @@ export function AppHeader({ role, userName, onSignOut, contained = false, sideba
             onClick={onSidebarTriggerClick}
           />
         )}
-        <Link 
-          to={homeRoute} 
+        <Link
+          to={homeRoute}
           className={`flex items-center gap-2${
             sidebarTrigger ? " md:fixed md:left-[4.25rem] md:top-4 md:z-[61]" : ""
           }`}

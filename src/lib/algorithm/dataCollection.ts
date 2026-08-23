@@ -19,7 +19,7 @@ export function collectPipelineData(
 ): { sessionContext: SessionContext; feedbackStream: FeedbackInput[] } {
   return {
     sessionContext: { course, topic, targetIloRbt, sessionId, iloStatement },
-    feedbackStream: rawFeedbackRows.map(f => ({
+    feedbackStream: rawFeedbackRows.map((f) => ({
       id: f.id,
       rawText: f.content,
       createdAt: f.created_at,

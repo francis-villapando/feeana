@@ -13,7 +13,13 @@ import {
 
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CHART_COLORS } from "@/lib/constants/chartColors";
 import type { TrendPoint } from "@/lib/hooks/metrics";
@@ -109,11 +115,30 @@ function EngagementChart({ trend }: { trend: TrendPoint[] }) {
       <LineChart data={trend}>
         <CartesianGrid stroke="var(--color-border)" vertical={false} />
         <XAxis dataKey="topic" stroke="var(--color-muted-foreground)" fontSize={11} />
-        <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} stroke="var(--color-muted-foreground)" fontSize={11} />
+        <YAxis
+          domain={[0, 100]}
+          tickFormatter={(v) => `${v}%`}
+          stroke="var(--color-muted-foreground)"
+          fontSize={11}
+        />
         <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => `${value}%`} />
         <Legend wrapperStyle={{ fontSize: 11 }} />
-        <Line type="monotone" dataKey="submissionRate" stroke={CHART_COLORS[0]} strokeWidth={2.5} dot={{ r: 4 }} name="Submission rate" />
-        <Line type="monotone" dataKey="iloAchievement" stroke={CHART_COLORS[1]} strokeWidth={2.5} dot={{ r: 4 }} name="ILO achievement" />
+        <Line
+          type="monotone"
+          dataKey="submissionRate"
+          stroke={CHART_COLORS[0]}
+          strokeWidth={2.5}
+          dot={{ r: 4 }}
+          name="Submission rate"
+        />
+        <Line
+          type="monotone"
+          dataKey="iloAchievement"
+          stroke={CHART_COLORS[1]}
+          strokeWidth={2.5}
+          dot={{ r: 4 }}
+          name="ILO achievement"
+        />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -132,10 +157,22 @@ function PolarityChart({ trend }: { trend: TrendPoint[] }) {
       <LineChart data={trend}>
         <CartesianGrid stroke="var(--color-border)" vertical={false} />
         <XAxis dataKey="topic" stroke="var(--color-muted-foreground)" fontSize={11} />
-        <YAxis domain={[-1, 1]} tickFormatter={(v) => v.toFixed(1)} stroke="var(--color-muted-foreground)" fontSize={11} />
+        <YAxis
+          domain={[-1, 1]}
+          tickFormatter={(v) => v.toFixed(1)}
+          stroke="var(--color-muted-foreground)"
+          fontSize={11}
+        />
         <Tooltip contentStyle={tooltipStyle} formatter={(value: number) => value.toFixed(2)} />
         <Legend wrapperStyle={{ fontSize: 11 }} />
-        <Line type="monotone" dataKey="avgPolarity" stroke={CHART_COLORS[3]} strokeWidth={2.5} dot={{ r: 4 }} name="Avg polarity" />
+        <Line
+          type="monotone"
+          dataKey="avgPolarity"
+          stroke={CHART_COLORS[3]}
+          strokeWidth={2.5}
+          dot={{ r: 4 }}
+          name="Avg polarity"
+        />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -157,8 +194,22 @@ function IssuesChart({ trend }: { trend: TrendPoint[] }) {
         <YAxis allowDecimals={false} stroke="var(--color-muted-foreground)" fontSize={11} />
         <Tooltip contentStyle={tooltipStyle} />
         <Legend wrapperStyle={{ fontSize: 11 }} />
-        <Line type="monotone" dataKey="recommendationCount" stroke={CHART_COLORS[0]} strokeWidth={2.5} dot={{ r: 4 }} name="Recommendations" />
-        <Line type="monotone" dataKey="warningCount" stroke={CHART_COLORS[2]} strokeWidth={2.5} dot={{ r: 4 }} name="Warnings" />
+        <Line
+          type="monotone"
+          dataKey="recommendationCount"
+          stroke={CHART_COLORS[0]}
+          strokeWidth={2.5}
+          dot={{ r: 4 }}
+          name="Recommendations"
+        />
+        <Line
+          type="monotone"
+          dataKey="warningCount"
+          stroke={CHART_COLORS[2]}
+          strokeWidth={2.5}
+          dot={{ r: 4 }}
+          name="Warnings"
+        />
       </LineChart>
     </ResponsiveContainer>
   );

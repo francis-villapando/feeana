@@ -41,10 +41,10 @@ export function ActivityFeedDialog({
               </p>
             )}
             {entries.map((e) => (
-              <ActivityRow 
-                key={e.id} 
-                entry={e} 
-                currentUserId={currentUserId} 
+              <ActivityRow
+                key={e.id}
+                entry={e}
+                currentUserId={currentUserId}
                 courses={courses}
                 topics={topics}
                 ilos={ilos}
