@@ -160,6 +160,12 @@ export function CourseManagementHub() {
     setConfirm({ title, description, onConfirm, actionType, confirmLabel });
   };
 
+  const emptyMessage = query.trim()
+    ? "No results found matching your search."
+    : courses.length > 0 && !showArchived
+      ? "All courses are archived."
+      : "No courses yet. Add your first course.";
+
   return (
     <Card
       className="border-border/60 bg-card/70 backdrop-blur-xl flex flex-col h-full w-full max-w-full min-w-0"
@@ -205,7 +211,7 @@ export function CourseManagementHub() {
       <CardContent className="flex-1 overflow-auto">
         {filteredHierarchy.courses.length === 0 ? (
           <div className="rounded-md border border-dashed border-border/60 bg-background/30 px-4 py-12 text-center text-sm text-muted-foreground">
-            No results found matching your search.
+            {emptyMessage}
           </div>
         ) : (
           <Accordion

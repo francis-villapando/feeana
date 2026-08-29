@@ -12,6 +12,7 @@ import { friendlyError } from "../hooks/utils";
 import type {
   ActivityAction,
   ActivityEntry,
+  AuthUser,
   BloomLevel,
   Course,
   EntityKind,
@@ -19,6 +20,27 @@ import type {
   Topic,
 } from "../types/types";
 import * as courseService from "../services/courseService";
+
+// Course codes created by scripts/seed/seedDashboard.ts. These are dev-only demo
+// data and must stay hidden from non-dev faculty in the shared course hub.
+const DEV_SEED_COURSE_CODES = ["TEST-COURSE-CODE"];
+
+function filterForUser(
+  user: AuthUser | null,
+  courses: Course[],
+  topics: Topic[],
+  ilos: ILO[],
+): { courses: Course[]; topics: Topic[]; ilos: ILO[] } {
+  if (user?.isDev) return { courses, topics, ilos };
+  const hiddenCourseIds = new Set(
+    courses.filter((c) => DEV_SEED_COURSE_CODES.includes(c.code)).map((c) => c.id),
+  );
+  return {
+    courses: courses.filter((c) => !hiddenCourseIds.has(c.id)),
+    topics: topics.filter((t) => !hiddenCourseIds.has(t.courseId)),
+    ilos: ilos.filter((i) => !hiddenCourseIds.has(i.courseId)),
+  };
+}
 
 interface CourseStoreValue {
   courses: Course[];
@@ -69,6 +91,12 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Hide dev-only seeded courses (and their topics/ILOs) from non-dev faculty.
+  const visible = useMemo(
+    () => filterForUser(user, courses, topics, ilos),
+    [user, courses, topics, ilos],
+  );
 
   useEffect(() => {
     setIsLoading(true);
@@ -239,9 +267,9 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<CourseStoreValue>(
     () => ({
-      courses,
-      topics,
-      ilos,
+      courses: visible.courses,
+      topics: visible.topics,
+      ilos: visible.ilos,
       activity,
       isLoading,
       error,
@@ -262,9 +290,7 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       refreshAll,
     }),
     [
-      courses,
-      topics,
-      ilos,
+      visible,
       activity,
       createCourse,
       updateCourse,
