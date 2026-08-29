@@ -1,0 +1,6 @@
+{
+  "test_issue_macro_f1": 0.7158649776970588,
+  "test_polarity_macro_f1": 0.8557937129261877,
+  "test_issue_accuracy": 0.7497575169738119,
+  "num_test_samples": 1031
+}
