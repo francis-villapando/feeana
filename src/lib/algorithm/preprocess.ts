@@ -15,7 +15,10 @@ const EMOJI_PATTERN =
 // Pattern to detect letters repeated 3 or more times.
 const REPETITION_PATTERN = /([a-zA-Z])\1{2,}/g;
 
-const ABBREVIATION_MAP = feedbackLexicon.abbreviations as Record<string, string>;
+const ABBREVIATION_MAP: Record<string, string> = {
+  ...(feedbackLexicon.abbreviated_slang as Record<string, string>),
+  ...(feedbackLexicon.abbreviated_cs_terms as Record<string, string>),
+};
 
 // Precomputed lowercase key → expansion, so each token is a single O(1) map hit.
 const ABBREVIATION_LOOKUP = new Map(
