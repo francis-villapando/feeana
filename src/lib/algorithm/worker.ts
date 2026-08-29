@@ -7,6 +7,7 @@ import { Preprocess } from "./preprocess";
 import { ExtractPID, getClassifier } from "./informationExtraction";
 import { buildDiagnosticRecord } from "./pedagogicalDiagnosticMapping";
 import type { FeedbackInput, DiagnosticRecord } from "./types";
+import type { LoadProgress } from "./models/finetuned";
 
 env.allowLocalModels = true;
 
@@ -14,6 +15,26 @@ let lastProgressTime = 0;
 let lastPhase: string | undefined;
 let lastSource: "cache" | "network" | undefined;
 const THROTTLE_MS = 66;
+
+// Shared, throttled LOAD_PROGRESS emitter. Used by every entry point that
+// triggers a classifier load so warm/cold progress always reaches the UI.
+function notifyLoadProgress(info: LoadProgress): void {
+  const now = performance.now();
+  const phaseChanged = info.phase !== lastPhase;
+  const sourceChanged = info.source !== lastSource;
+  // Throttle progress events while preserving phase/source transitions and completion.
+  if (
+    info.status === "done" ||
+    phaseChanged ||
+    sourceChanged ||
+    now - lastProgressTime > THROTTLE_MS
+  ) {
+    lastProgressTime = now;
+    lastPhase = info.phase;
+    lastSource = info.source;
+    self.postMessage({ type: "LOAD_PROGRESS", data: info });
+  }
+}
 
 export interface InferenceProgress {
   current: number;
@@ -33,7 +54,7 @@ const api = {
 
     // Invariant: the classifier and its tokenizer must be fully initialized
     // before the loop; a failed cold-start aborts before any feedback runs.
-    const classifier = await getClassifier();
+    const classifier = await getClassifier(notifyLoadProgress);
     if (!classifier.tokenizer) {
       throw new Error("[worker] Tokenizer unavailable — model failed to load.");
     }
@@ -76,23 +97,7 @@ const api = {
     }
     preloadPromise = (async () => {
       console.log("[worker] Preloading model...");
-      await getClassifier((info) => {
-        const now = performance.now();
-        const phaseChanged = info.phase !== lastPhase;
-        const sourceChanged = info.source !== lastSource;
-        // Throttle progress events while preserving phase/source transitions and completion
-        if (
-          info.status === "done" ||
-          phaseChanged ||
-          sourceChanged ||
-          now - lastProgressTime > THROTTLE_MS
-        ) {
-          lastProgressTime = now;
-          lastPhase = info.phase;
-          lastSource = info.source;
-          self.postMessage({ type: "LOAD_PROGRESS", data: info });
-        }
-      });
+      await getClassifier(notifyLoadProgress);
       self.postMessage({ type: "LOAD_PROGRESS", data: { status: "done", progress: 100 } });
     })().finally(() => {
       preloadPromise = null;

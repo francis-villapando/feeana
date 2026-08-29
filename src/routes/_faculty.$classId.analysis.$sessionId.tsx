@@ -78,7 +78,7 @@ function AnalysisPage() {
   });
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Track cancellation to prevent error toasts when worker is terminated
+  // Track cancellation to prevent error toasts when worker is terminated.
   const isCancelledRef = React.useRef(false);
   const abortRef = React.useRef<AbortController | null>(null);
 
@@ -104,16 +104,16 @@ function AnalysisPage() {
     };
   }, []);
 
-  // Eagerly preload the ML model in the background so that when the faculty
-  // member triggers analysis, the engine is already warm in memory. Non-blocking.
+  // Eagerly preload the model so the engine is warm when analysis runs.
   useEffect(() => {
     let cancelled = false;
     import("@/lib/ml/mlWorkerStore")
       .then(({ getMLWorkerAsync }) => getMLWorkerAsync())
       .then(({ api }) => {
-        if (!cancelled) api.preloadModel().catch(() => {});
+        if (!cancelled)
+          api.preloadModel().catch((err) => console.warn("[analysis] Model preload failed:", err));
       })
-      .catch(() => {});
+      .catch((err) => console.warn("[analysis] Failed to start model preload:", err));
     return () => {
       cancelled = true;
     };
@@ -130,9 +130,9 @@ function AnalysisPage() {
         if (active) {
           setResult(data);
         }
-        // Fetch fresh feedback entries for count verification
+        // Fetch fresh feedback entries for count verification.
         await fetchFeedback(sessionId);
-        // Load student enrollment count
+        // Load student enrollment count.
         if (classId) {
           await refreshStudents(classId);
         }
@@ -174,7 +174,7 @@ function AnalysisPage() {
     const controller = new AbortController();
     abortRef.current = controller;
     setInferenceProgress(null);
-    // Reset progress only if interrupted or incomplete
+    // Reset progress only if interrupted or incomplete.
     setLoadProgress((prev) =>
       wasCancelled || prev.progress !== 100
         ? { status: "progress", progress: 0, phase: "download" }

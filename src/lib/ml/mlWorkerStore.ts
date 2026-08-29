@@ -1,11 +1,20 @@
 import * as Comlink from "comlink";
 import type { WorkerApi, InferenceProgress } from "../algorithm/worker";
 import type { LoadProgress } from "../algorithm/models/distilXlmr";
+import { deleteLegacyModelCaches } from "../algorithm/models/modelCache";
 
 let workerInstance: Worker | null = null;
 let comlinkProxy: Comlink.Remote<WorkerApi> | null = null;
 let progressCallback: ((data: InferenceProgress) => void) | null = null;
 let loadProgressCallback: ((data: LoadProgress) => void) | null = null;
+let lastLoadProgress: LoadProgress | null = null;
+
+// Retain the latest load progress so late subscribers render the current
+// state instead of the indeterminate spinner during a cold download.
+function publishLoadProgress(info: LoadProgress): void {
+  lastLoadProgress = info;
+  loadProgressCallback?.(info);
+}
 
 export const setInferenceProgressListener = (callback: typeof progressCallback) => {
   progressCallback = callback;
@@ -16,6 +25,9 @@ export const setInferenceProgressListener = (callback: typeof progressCallback) 
 
 export const setLoadProgressListener = (callback: typeof loadProgressCallback) => {
   loadProgressCallback = callback;
+  if (lastLoadProgress) {
+    callback?.(lastLoadProgress);
+  }
   return () => {
     if (loadProgressCallback === callback) loadProgressCallback = null;
   };
@@ -43,7 +55,7 @@ async function getNodeApi(): Promise<WorkerApi> {
       // Invariant: the classifier and its tokenizer must be fully initialized
       // before the loop; a failed cold-start aborts before any feedback runs.
       const classifier = await getClassifier((info) => {
-        loadProgressCallback?.(info);
+        publishLoadProgress(info);
       });
       if (!classifier.tokenizer) {
         throw new Error("[mlWorkerStore:node] Tokenizer unavailable — model failed to load.");
@@ -85,7 +97,7 @@ async function getNodeApi(): Promise<WorkerApi> {
     async preloadModel() {
       console.log("[mlWorkerStore:node] Preloading model inline...");
       await getClassifier((info) => {
-        loadProgressCallback?.(info);
+        publishLoadProgress(info);
       });
     },
   } as WorkerApi;
@@ -121,7 +133,10 @@ export function getMLWorker(): {
 } {
   if (!workerInstance || !comlinkProxy) {
     console.debug("[mlWorkerStore] Initializing new Web Worker instance.");
-    // Instantiate the worker using Vite's native worker import syntax
+    // One-time, non-blocking cleanup of the legacy pre-rename cache keys.
+    // The model re-downloads once under its descriptive cache name.
+    void deleteLegacyModelCaches();
+    // Instantiate the worker using Vite's native worker import syntax.
     workerInstance = new Worker(new URL("../algorithm/worker.ts", import.meta.url), {
       type: "module",
     });
@@ -130,7 +145,7 @@ export function getMLWorker(): {
       if (event.data?.type === "INFERENCE_PROGRESS") {
         progressCallback?.(event.data.payload);
       } else if (event.data?.type === "LOAD_PROGRESS") {
-        loadProgressCallback?.(event.data.data);
+        publishLoadProgress(event.data.data);
       }
     });
 

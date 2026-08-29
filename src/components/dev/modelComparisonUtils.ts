@@ -2,15 +2,16 @@ import * as Comlink from "comlink";
 import Papa from "papaparse";
 import type { ModelKind } from "@/lib/algorithm/models";
 import type { ComparisonWorkerApi } from "@/lib/ml/comparisonWorker";
+import {
+  MODEL_CACHE_KEYS as CACHE_KEYS_MAP,
+  LEGACY_CACHE_KEYS,
+} from "../../lib/algorithm/models/modelCache";
 
 export const MODEL_KINDS = ["distilxlmr", "mbert", "svm"] as const;
 
-export const MODEL_CACHE_KEYS = [
-  "feeana-model-cache-v1",
-  "feeana-model-cache-mbert-v1",
-  "feeana-model-cache-svm-v1",
-  "transformers-cache",
-];
+// Canonical (descriptive) cache names, plus the legacy names they replaced so a
+// full cache wipe also removes stale entries from earlier releases.
+export const MODEL_CACHE_KEYS = [...Object.values(CACHE_KEYS_MAP), ...LEGACY_CACHE_KEYS];
 
 export const STORAGE_KEY = "feeana-comparison-progress-v1";
 export const STORAGE_VERSION = 3;
@@ -58,7 +59,7 @@ export function persistComparisonState(results: ModelComparisonResult[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: STORAGE_VERSION, results }));
   } catch {
-    // ignore quota/private-mode failures
+    // Ignore quota/private-mode failures.
   }
 }
 
@@ -98,7 +99,7 @@ export async function clearModelCaches(): Promise<string[]> {
     try {
       if (await caches.delete(key)) cleared.push(key);
     } catch {
-      // ignore
+      // Ignore.
     }
   }
   return cleared;
@@ -172,7 +173,7 @@ async function sampleHeapBytes(): Promise<number> {
       return sample.bytes;
     }
   } catch {
-    // fall through
+    // Fall through.
   }
   const perf = performance as PerformanceWithMemory;
   try {

@@ -6,32 +6,40 @@ import { createModel } from "./models/adapter";
 import type { DistilXlmrAdapter, LoadProgress } from "./models/distilXlmr";
 import type { FeedbackEncoding, IssueExtractionResult } from "./types";
 
-// Singleton adapter instance inside the worker
+// Singleton adapter instance inside the worker.
 let adapter: DistilXlmrAdapter | null = null;
 // Cached load promise to prevent race conditions during concurrent calls.
 let loadPromise: Promise<void> | null = null;
 
+// Fallback hook so a classifier initialization can never run silently.
+function defaultProgressHook(info: LoadProgress): void {
+  if (typeof self === "undefined") return;
+  (self as unknown as { postMessage(message: unknown): void }).postMessage({
+    type: "LOAD_PROGRESS",
+    data: info,
+  });
+}
+
 // Initializes or returns the existing DistilXLM-R adapter.
 export async function getClassifier(progress_callback?: (info: LoadProgress) => void) {
+  const resolveHook = () => progress_callback ?? defaultProgressHook;
   if (!adapter) {
     console.log("[informationExtraction] Initializing DistilXLM-R adapter...");
     adapter = createModel("distilxlmr") as DistilXlmrAdapter;
-    if (progress_callback) {
-      adapter.progressHook = progress_callback;
-    }
+    adapter.progressHook = resolveHook();
     loadPromise = adapter.load();
     await loadPromise;
     loadPromise = null;
   } else if (loadPromise) {
-    // Re-attach callback to in-flight load and await completion
-    if (progress_callback) {
-      adapter.progressHook = progress_callback;
-    }
+    // Re-attach callback to in-flight load and await completion.
+    adapter.progressHook = resolveHook();
     await loadPromise;
-  } else if (progress_callback) {
-    // Rebind callback and emit ready state for warm adapter
-    adapter.progressHook = progress_callback;
-    progress_callback({ status: "done", progress: 100 });
+  } else {
+    // Rebind callback and emit ready state for warm adapter.
+    adapter.progressHook = resolveHook();
+    if (progress_callback) {
+      resolveHook()({ status: "done", progress: 100 });
+    }
   }
   return adapter;
 }

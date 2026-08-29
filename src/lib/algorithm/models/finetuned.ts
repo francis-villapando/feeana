@@ -4,7 +4,7 @@ import { CleanFeedback, EncodeFeedback, MAX_SEQ_LEN, type MachineTokenizer } fro
 import type { FeedbackEncoding } from "../types";
 import type { ModelLoadProgress, ModelAdapter, Prediction } from "./types";
 import { MODEL_SIZES_BYTES } from "./sizes";
-import { cachedFetch, cachePut } from "./modelCache";
+import { cachedFetch, cachePut, MODEL_CACHE_KEYS } from "./modelCache";
 
 export type { ModelLoadProgress as LoadProgress } from "./types";
 
@@ -19,6 +19,11 @@ export interface FinetunedModelConfig {
 
 function isNode(): boolean {
   return typeof process !== "undefined" && process.versions?.node !== undefined;
+}
+
+// Namespace the shared transformers.js cache (tokenizer, etc.).
+if (!isNode()) {
+  env.cacheKey = MODEL_CACHE_KEYS.hf;
 }
 
 function getHfFileUrl(hfRepo: string, file: string): string {
@@ -50,7 +55,7 @@ async function initOrt(): Promise<typeof import("onnxruntime-web")> {
   return ort;
 }
 
-// Persistent offline cache (Cache Storage API)
+// Persistent offline cache (Cache Storage API).
 
 interface LabelMappings {
   issue: { id2label: Record<string, string> };
@@ -110,7 +115,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     this.name = config.name;
     this.config = {
       onnxFile: "int8.onnx",
-      cacheKey: "feeana-model-cache-v1",
+      cacheKey: MODEL_CACHE_KEYS.distilxlmr,
       knownModelSize: MODEL_SIZES_BYTES.distilxlmr,
       ...config,
     };
@@ -131,7 +136,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
       return Promise.resolve(readFileSync(url));
     }
 
-    // Serve from Cache Storage (unless measuring a true cold start)
+    // Serve from Cache Storage (unless measuring a true cold start).
     if (!this.coldMode) {
       const cached = await cachedFetch(url, this.config.cacheKey);
       if (cached) {
@@ -189,7 +194,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     });
   }
 
-  // Pre-cache ORT WASM binaries in the background
+  // Pre-cache ORT WASM binaries in the background.
   private async warmAuxCache(): Promise<void> {
     if (isNode()) return;
     const wasmUrls = [
@@ -202,7 +207,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
         const res = await fetch(url);
         if (res.ok) await cachePut(url, await res.arrayBuffer(), this.config.cacheKey);
       } catch {
-        // ignore
+        // Ignore
       }
     }
   }
@@ -241,7 +246,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     );
     this.progressHook?.({ status: "progress", progress: 99, phase: "labels" });
 
-    // JIT warmup: compile WASM kernels ahead of workload
+    // JIT warmup: compile WASM kernels ahead of workload.
     try {
       await this.predict("warmup");
     } catch (e) {

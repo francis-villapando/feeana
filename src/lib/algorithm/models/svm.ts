@@ -2,10 +2,10 @@ import type { Tensor } from "onnxruntime-web";
 import { CleanFeedback } from "../preprocess";
 import type { ModelLoadProgress, ModelAdapter, Prediction } from "./types";
 import { MODEL_SIZES_BYTES } from "./sizes";
-import { cachedFetch, cachePut } from "./modelCache";
+import { cachedFetch, cachePut, MODEL_CACHE_KEYS } from "./modelCache";
 
 const SVM_HF_REPO = "francis-villapando/feeana-svm";
-const SVM_CACHE_KEY = "feeana-model-cache-svm-v1";
+const SVM_CACHE_KEY = MODEL_CACHE_KEYS.svm;
 const SVM_KNOWN_MODEL_SIZE = MODEL_SIZES_BYTES.svm;
 
 function isNode(): boolean {
@@ -111,7 +111,7 @@ export class SvmAdapter implements ModelAdapter {
       return Promise.resolve(readFileSync(url));
     }
 
-    // Serve from Cache Storage (unless measuring a true cold start)
+    // Serve from Cache Storage (unless measuring a true cold start).
     if (!this.coldMode) {
       const cached = await cachedFetch(url, SVM_CACHE_KEY);
       if (cached) {
@@ -168,7 +168,7 @@ export class SvmAdapter implements ModelAdapter {
     });
   }
 
-  // Pre-cache ORT WASM binaries in the background
+  // Pre-cache ORT WASM binaries in the background.
   private async warmAuxCache(): Promise<void> {
     if (isNode()) return;
     const wasmUrls = [
@@ -181,7 +181,7 @@ export class SvmAdapter implements ModelAdapter {
         const res = await fetch(url);
         if (res.ok) await cachePut(url, await res.arrayBuffer(), SVM_CACHE_KEY);
       } catch {
-        // ignore
+        // Ignore
       }
     }
   }
@@ -195,7 +195,7 @@ export class SvmAdapter implements ModelAdapter {
     this.session = await runtime.InferenceSession.create(modelBuffer);
     this.labelMap = await loadLabelMappings();
 
-    // JIT warmup: compile WASM kernels ahead of workload
+    // JIT warmup: compile WASM kernels ahead of workload.
     try {
       const feeds: Record<string, Tensor> = {
         string_input: new runtime.Tensor("string", ["warmup"], [1, 1]),
