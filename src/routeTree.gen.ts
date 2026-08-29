@@ -21,7 +21,8 @@ import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AuthFacultyRouteImport } from './routes/auth.faculty'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthStudentRouteImport } from './routes/auth.student'
-import { Route as DevCompareModelsRouteImport } from './routes/dev.compare-models'
+import { Route as FacultyDevCompareModelsRouteImport } from './routes/_faculty.dev.compare-models'
+import { Route as FacultyDevSimulationRouteImport } from './routes/_faculty.dev.simulation'
 import { Route as StudentStudentHomeRouteImport } from './routes/_student.student.home'
 import { Route as FacultyClassIdAnalysisSessionIdRouteImport } from './routes/_faculty.$classId.analysis.$sessionId'
 
@@ -83,10 +84,15 @@ const AuthStudentRoute = AuthStudentRouteImport.update({
   path: '/auth/student',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DevCompareModelsRoute = DevCompareModelsRouteImport.update({
+const FacultyDevCompareModelsRoute = FacultyDevCompareModelsRouteImport.update({
   id: '/dev/compare-models',
   path: '/dev/compare-models',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyDevSimulationRoute = FacultyDevSimulationRouteImport.update({
+  id: '/dev/simulation',
+  path: '/dev/simulation',
+  getParentRoute: () => FacultyRoute,
 } as any)
 const StudentStudentHomeRoute = StudentStudentHomeRouteImport.update({
   id: '/student/home',
@@ -111,7 +117,8 @@ export interface FileRoutesByFullPath {
   '/auth/faculty': typeof AuthFacultyRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/student': typeof AuthStudentRoute
-  '/dev/compare-models': typeof DevCompareModelsRoute
+  '/dev/compare-models': typeof FacultyDevCompareModelsRoute
+  '/dev/simulation': typeof FacultyDevSimulationRoute
   '/student/home': typeof StudentStudentHomeRoute
   '/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
 }
@@ -126,7 +133,8 @@ export interface FileRoutesByTo {
   '/auth/faculty': typeof AuthFacultyRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/student': typeof AuthStudentRoute
-  '/dev/compare-models': typeof DevCompareModelsRoute
+  '/dev/compare-models': typeof FacultyDevCompareModelsRoute
+  '/dev/simulation': typeof FacultyDevSimulationRoute
   '/student/home': typeof StudentStudentHomeRoute
   '/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
 }
@@ -144,7 +152,8 @@ export interface FileRoutesById {
   '/auth/faculty': typeof AuthFacultyRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/student': typeof AuthStudentRoute
-  '/dev/compare-models': typeof DevCompareModelsRoute
+  '/_faculty/dev/compare-models': typeof FacultyDevCompareModelsRoute
+  '/_faculty/dev/simulation': typeof FacultyDevSimulationRoute
   '/_student/student/home': typeof StudentStudentHomeRoute
   '/_faculty/$classId/analysis/$sessionId': typeof FacultyClassIdAnalysisSessionIdRoute
 }
@@ -162,6 +171,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/student'
     | '/dev/compare-models'
+    | '/dev/simulation'
     | '/student/home'
     | '/$classId/analysis/$sessionId'
   fileRoutesByTo: FileRoutesByTo
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/student'
     | '/dev/compare-models'
+    | '/dev/simulation'
     | '/student/home'
     | '/$classId/analysis/$sessionId'
   id:
@@ -193,7 +204,8 @@ export interface FileRouteTypes {
     | '/auth/faculty'
     | '/auth/reset-password'
     | '/auth/student'
-    | '/dev/compare-models'
+    | '/_faculty/dev/compare-models'
+    | '/_faculty/dev/simulation'
     | '/_student/student/home'
     | '/_faculty/$classId/analysis/$sessionId'
   fileRoutesById: FileRoutesById
@@ -207,7 +219,6 @@ export interface RootRouteChildren {
   AuthFacultyRoute: typeof AuthFacultyRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthStudentRoute: typeof AuthStudentRoute
-  DevCompareModelsRoute: typeof DevCompareModelsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -296,12 +307,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthStudentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dev/compare-models': {
-      id: '/dev/compare-models'
+    '/_faculty/dev/compare-models': {
+      id: '/_faculty/dev/compare-models'
       path: '/dev/compare-models'
       fullPath: '/dev/compare-models'
-      preLoaderRoute: typeof DevCompareModelsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof FacultyDevCompareModelsRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/_faculty/dev/simulation': {
+      id: '/_faculty/dev/simulation'
+      path: '/dev/simulation'
+      fullPath: '/dev/simulation'
+      preLoaderRoute: typeof FacultyDevSimulationRouteImport
+      parentRoute: typeof FacultyRoute
     }
     '/_student/student/home': {
       id: '/_student/student/home'
@@ -337,6 +355,8 @@ interface FacultyRouteChildren {
   FacultyArchivedRoute: typeof FacultyArchivedRoute
   FacultyDashboardRoute: typeof FacultyDashboardRoute
   FacultyHomeRoute: typeof FacultyHomeRoute
+  FacultyDevCompareModelsRoute: typeof FacultyDevCompareModelsRoute
+  FacultyDevSimulationRoute: typeof FacultyDevSimulationRoute
 }
 
 const FacultyRouteChildren: FacultyRouteChildren = {
@@ -344,6 +364,8 @@ const FacultyRouteChildren: FacultyRouteChildren = {
   FacultyArchivedRoute: FacultyArchivedRoute,
   FacultyDashboardRoute: FacultyDashboardRoute,
   FacultyHomeRoute: FacultyHomeRoute,
+  FacultyDevCompareModelsRoute: FacultyDevCompareModelsRoute,
+  FacultyDevSimulationRoute: FacultyDevSimulationRoute,
 }
 
 const FacultyRouteWithChildren =
@@ -369,7 +391,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthFacultyRoute: AuthFacultyRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthStudentRoute: AuthStudentRoute,
-  DevCompareModelsRoute: DevCompareModelsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,5 +1,14 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Archive, ChevronDown, GraduationCap, Home, LayoutDashboard, Plus } from "lucide-react";
+import {
+  Activity,
+  Archive,
+  ChevronDown,
+  GraduationCap,
+  Home,
+  LayoutDashboard,
+  Plus,
+  Scale,
+} from "lucide-react";
 import { useCallback, useState } from "react";
 import {
   Sidebar,
@@ -19,11 +28,13 @@ import {
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useClassStore } from "@/lib/stores/classStore";
+import { useAuth } from "@/lib/stores/auth";
 import { CreateClassDialog } from "@/components/faculty";
 import { Button } from "@/components/ui/button";
 
 export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean }) {
   const { activeClasses, isLoading } = useClassStore();
+  const { user } = useAuth();
   const { setOpenMobile, isMobile, setOpen } = useSidebar();
   const location = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
@@ -148,6 +159,36 @@ export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+
+          {user?.isDev === true && (
+            <SidebarGroup>
+              <SidebarGroupLabel>Developer Tools</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === "/dev/compare-models"}
+                    >
+                      <Link to="/dev/compare-models" onClick={() => setOpenMobile(false)}>
+                        <Scale />
+                        <span>Model Comparison</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={location.pathname === "/dev/simulation"}>
+                      <Link to="/dev/simulation" onClick={() => setOpenMobile(false)}>
+                        <Activity />
+                        <span>Algorithm Simulation</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
         </SidebarContent>
 
         <SidebarFooter className="group-data-[collapsible=icon]:hidden">

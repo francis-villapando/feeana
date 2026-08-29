@@ -100,6 +100,26 @@ async function getNodeApi(): Promise<WorkerApi> {
         publishLoadProgress(info);
       });
     },
+    async extractSingle(feedback: { id: string; rawText: string; createdAt?: string }) {
+      const classifier = await getClassifier((info) => {
+        publishLoadProgress(info);
+      });
+      if (!classifier.tokenizer) {
+        throw new Error("[mlWorkerStore:node] Tokenizer unavailable — model failed to load.");
+      }
+      const { Preprocess } = await import("../algorithm/preprocess");
+      const preprocessResult = Preprocess(feedback, classifier.tokenizer);
+      const { issue, polarity, confidence } = await classifier.predictEncoded(
+        preprocessResult.encoding,
+      );
+      return {
+        cleanedText: preprocessResult.cleanedText,
+        issue,
+        polarity,
+        confidence,
+        latencyMs: 0,
+      };
+    },
   } as WorkerApi;
 
   return nodeApi;

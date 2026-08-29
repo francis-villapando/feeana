@@ -104,6 +104,34 @@ const api = {
     });
     return preloadPromise;
   },
+
+  // Single-feedback extraction used by the Algorithm Simulation (Module 3).
+  // Surfaces the model confidence that ExtractPID discards.
+  async extractSingle(feedback: FeedbackInput): Promise<{
+    cleanedText: string;
+    issue: string;
+    polarity: string;
+    confidence: number;
+    latencyMs: number;
+  }> {
+    const classifier = await getClassifier(notifyLoadProgress);
+    if (!classifier.tokenizer) {
+      throw new Error("[worker] Tokenizer unavailable — model failed to load.");
+    }
+
+    const t0 = performance.now();
+    const preprocessResult = Preprocess(feedback, classifier.tokenizer);
+    const { issue, polarity, confidence } = await classifier.predictEncoded(
+      preprocessResult.encoding,
+    );
+    return {
+      cleanedText: preprocessResult.cleanedText,
+      issue,
+      polarity,
+      confidence,
+      latencyMs: performance.now() - t0,
+    };
+  },
 };
 
 export type WorkerApi = typeof api;
