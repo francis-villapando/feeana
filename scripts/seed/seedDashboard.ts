@@ -116,7 +116,8 @@ class DashboardSeeder {
   ];
 
   private static readonly STUDENT_COUNT = 50;
-  private static readonly FACULTY_EMAIL = "faculty@test.com";
+  // Faculty account that owns the seeded data. Defaults to faculty@test.com when VITE_DEV_EMAIL is unset.
+  private static readonly FACULTY_EMAIL = process.env.VITE_DEV_EMAIL ?? "faculty@test.com";
 
   private static readonly CLASS_CONFIGS: ClassSeedConfig[] = [
     {
@@ -136,9 +137,6 @@ class DashboardSeeder {
       recentCount: 0,
     },
   ];
-
-  // Classes created by the previous seed version, purged on every run.
-  private static readonly LEGACY_COURSE_CODES = ["TEST-CSEG2", "TEST-CCS106", "TEST-CCS112"];
 
   private static readonly PRIORITY_THRESHOLD = 0.3;
 
@@ -180,7 +178,7 @@ class DashboardSeeder {
 
     console.log("[2] Purging previous test data...");
     await this.cleanupAllTestData();
-    console.log("  ✓ Legacy and current test classes removed");
+    console.log("  ✓ Previous test classes removed");
 
     console.log("[3] Course, topics, ILOs...");
     const courseId = await this.getOrCreateCourse();
@@ -245,9 +243,8 @@ class DashboardSeeder {
     );
     console.log("");
 
-    console.log("Login at /login/faculty with:");
-    console.log("  Email:    faculty@test.com");
-    console.log("  Password: faculty123");
+    console.log("Seeded under faculty account:");
+    console.log(`  Email:    ${DashboardSeeder.FACULTY_EMAIL}`);
     console.log("");
 
     console.log("Badge test:");
@@ -518,15 +515,12 @@ class DashboardSeeder {
   // Cleanup
 
   /**
-   * Hard-deletes every class this seed manages (current + legacy versions) and
-   * their child rows, so re-running fully overwrites previous test data.
+   * Hard-deletes every class this seed manages and their child rows, so
+   * re-running fully overwrites previous test data.
    */
   private async cleanupAllTestData(): Promise<void> {
-    const classCodes = [
-      ...DashboardSeeder.CLASS_CONFIGS.map((c) => c.courseCode),
-      ...DashboardSeeder.LEGACY_COURSE_CODES,
-    ];
-    const courseCodes = [DashboardSeeder.COURSE_CODE, ...DashboardSeeder.LEGACY_COURSE_CODES];
+    const classCodes = DashboardSeeder.CLASS_CONFIGS.map((c) => c.courseCode);
+    const courseCodes = [DashboardSeeder.COURSE_CODE];
 
     const sessionFilter =
       "session_id IN (SELECT id FROM sessions WHERE class_id IN (SELECT id FROM classes WHERE course = ANY($1::text[])))";
