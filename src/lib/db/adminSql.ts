@@ -32,17 +32,22 @@ export async function connectAdmin(): Promise<pg.Client> {
 /**
  * Executes multiple queries in a single transaction with hard-delete bypass enabled.
  * Uses SET LOCAL so the flag persists for the entire transaction regardless of
- * PgBouncer connection pooling mode.
+ * PgBouncer connection pooling mode. Returns the affected row count per query.
  */
-export async function adminExec(queries: { text: string; params?: unknown[] }[]): Promise<void> {
+export async function adminExec(
+  queries: { text: string; params?: unknown[] }[],
+): Promise<number[]> {
   const client = await connectAdmin();
   await client.query("BEGIN");
   await client.query("SET LOCAL app.allow_hard_delete = 'true'");
   try {
+    const counts: number[] = [];
     for (const q of queries) {
-      await client.query(q.text, q.params);
+      const result = await client.query(q.text, q.params);
+      counts.push(result.rowCount ?? 0);
     }
     await client.query("COMMIT");
+    return counts;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

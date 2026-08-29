@@ -1,6 +1,8 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { createHash } from "node:crypto";
-import { connectAdmin, adminExec, closeAdminSqlClient } from "../../src/lib/db/adminSql";
+import { readFileSync } from "node:fs";
+import Papa from "papaparse";
+import { adminExec, closeAdminSqlClient } from "../../src/lib/db/adminSql";
 import {
   CalculateDistributions,
   GeneratePedagogicalCue,
@@ -27,656 +29,38 @@ import type {
   Theory,
 } from "../../src/lib/types/types";
 
-// Dashboard Test Seed — 3 Classes, 60 Students, 9 Sessions, ~159 Feedback
+// Dashboard Test Seed — 1 Course, 2 Classes, 50 Students, 4 Sessions, 155 Feedback
 //
 // Usage: npx tsx --env-file .env scripts/seed/seedDashboard.ts
 //
-// Deterministic: every ID and timestamp is derived from a fixed seed
-// so re-running produces identical data every time.
+// Deterministic: every entity ID and timestamp is derived from a fixed seed.
+// The only random part per run is which feedback rows are sampled from
+// public/model-data/test.csv (50 / 40 / 30 / 35 per session).
 
 type SeedSupabase = SupabaseClient;
 
-// Deterministic utilities
-
-const SEED_REFERENCE_DATE = new Date("2026-06-18T00:00:00Z");
-
-function seedId(namespace: string, ...parts: string[]): string {
-  const hash = createHash("sha256")
-    .update([namespace, ...parts].join(":"))
-    .digest("hex");
-  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+interface CsvFeedbackRow {
+  id: string;
+  category: string;
+  issue: string;
+  polarity: string;
+  source: string;
+  language: string;
+  text: string;
+  reference: string;
+  group_id: string;
+  cleaned_text: string;
 }
 
-// Config
-
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const FACULTY_EMAIL = "faculty@test.com";
-
-// Issue categories and their pedagogical mappings now imported from rules.ts
-
-// Feedback text pool (Taglish, keyed by issue)
-
-const FEEDBACK_POOL: Record<string, string[]> = {
-  "relational coldness": [
-    "Parang suplado si sir, tinatanong ko sa Discord pero dinidedma lang ako.",
-    "Hindi nagre-reply si Sir sa MS Teams, parang ayaw niya kaming tulungan.",
-  ],
-  "classroom tension": [
-    "Sobrang nakakatakot at high pressure tuwing Q&A, palaging galit si ma'am.",
-    "Ang init lagi ng ulo ni Ma'am sa Zoom, nakaka-stress pumasok.",
-  ],
-  "evaluation unfairness": [
-    "Parang ang unfair ng pag-grade, laging may paborito si sir sa section.",
-    "Bakit binabaan yung grade ko? Hindi inexpland kung saan ako nagkamali.",
-  ],
-  "perceived marginalization": [
-    "Pakiramdam ko na-ooverlook ako sa class activities, laging yung maiingay lang pinapansin.",
-    "Feeling ko invisible ako sa class discussion, kahit nagre-raise hand ako hindi napapansin.",
-  ],
-  "subject alienation": [
-    "Bakit ba natin pinag-aaralan ito? Parang wala namang practical application sa totoong buhay.",
-    "Sobrang boring at abstract, feeling ko hindi ko naman ito magagamit sa work.",
-  ],
-  "peer distraction": [
-    "Maingay masyado sa likod habang nagle-lecture, hindi ako makapag-focus.",
-    "Yung mga classmates ko sa GC ang ingay, distract na distract ako.",
-  ],
-  "instructional cadence": [
-    "Sobrang bilis magsalita at mag-slide ni sir, hindi ko na ma-follow yung tempo.",
-    "Ang bilis mag-next slide ni sir, hindi ko pa nasusundan yung logic.",
-  ],
-  "clarity deficit": [
-    "Ang gulo at malabo mag-explain ni ma'am, walang magandang examples.",
-    "Nalilito ako sa explanation, parang lalong sumasakit ulo ko sa gulo.",
-  ],
-  "abstract logic gap": [
-    "Ang hirap intindihin ng logical proofs at algorithms, parang andaming leaps.",
-    "Nahihirapan ako i-trace yung recursive calls, parang andaming logic leaps.",
-  ],
-  "procedural bottleneck": [
-    "Nalilito ako sa step-by-step setup ng development environment.",
-    "Stuck ako sa installation, andaming errors na hindi ko alam paano i-resolve.",
-  ],
-  "conceptual misalignment": [
-    "Medyo nalilito pa rin ako sa pinagkaiba ng parameters vs arguments.",
-    "Akala ko gets ko na yung concept, pero lito pa rin sa application.",
-  ],
-  "design synthesis failure": [
-    "Nahihirapan akong pagsamahin yung visual layout at dynamic backend state.",
-    "Hirap i-connect yung database logic sa frontend UI components.",
-  ],
-  "feedback latency": [
-    "Matagal mag-feedback si ma'am, tapos na ang midterms hindi pa chinecheck yung assignments.",
-    "Finals na pero yung Lab 2 feedback wala pa rin, hindi namin alam kung tama.",
-  ],
-  "notation struggle": [
-    "Palagi akong sumasablay sa syntax, nakakalimutan ko kung saan dapat ilagay yung curly braces.",
-    "Syntax error lagi, hindi ko makuha yung tamang placement ng quotes at aliases.",
-  ],
-};
-
-const UNCATEGORIZED_FEEDBACK = [
-  "Maganda naman ang lesson ngayon, naintindihan ko lahat.",
-  "Salamat sir sa extra explanation, malaking tulong.",
-  "Masaya ako sa progress ko sa subject na ito.",
-];
-
-const BLOOM_LEVELS = {
-  Remember: 1,
-  Understand: 2,
-  Apply: 3,
-  Analyze: 4,
-  Evaluate: 5,
-  Create: 6,
-} as const;
-
-// Class seed configuration
-
-interface FeedbackDistribution {
-  count: number;
-  posCount: number;
-  neuCount: number;
-  negCount: number;
-  uncategorizedNeuCount: number;
-  negIssues: string[];
+interface FeedbackSeed {
+  id: string;
+  sessionId: string;
+  studentId: string;
+  content: string;
+  issue: string;
+  polarity: "pos" | "neu" | "neg";
+  createdAt: string;
 }
-
-interface ClassSeedConfig {
-  label: string;
-  courseCode: string;
-  courseTitle: string;
-  section: string;
-  studentStartIndex: number;
-  studentCount: number;
-  topicDefs: { title: string }[];
-  iloDefs: { topicTitle: string; statement: string; bloomLevel: string }[];
-  sessionTopics: string[];
-  feedbackDistribution: FeedbackDistribution[];
-  analyzeSessionIndices: number[];
-  addRecentFeedback: boolean;
-}
-
-const CLASS_CONFIGS: ClassSeedConfig[] = [
-  {
-    label: "TEST-CSEG2",
-    courseCode: "TEST-CSEG2",
-    courseTitle: "TEST Game Programming 1",
-    section: "3CS-C",
-    studentStartIndex: 1,
-    studentCount: 30,
-    topicDefs: [
-      { title: "TEST Introduction to Game Programming" },
-      { title: "TEST OOP Concepts" },
-      { title: "TEST Game Loops & Performance" },
-      { title: "TEST Data Structures" },
-      { title: "TEST Advanced Topics" },
-    ],
-    iloDefs: [
-      {
-        topicTitle: "TEST Introduction to Game Programming",
-        statement:
-          "TEST Apply fundamental game programming concepts to build a simple interactive application",
-        bloomLevel: "Apply",
-      },
-      {
-        topicTitle: "TEST Introduction to Game Programming",
-        statement:
-          "TEST Analyze game mechanics and implement gameplay systems using object-oriented design",
-        bloomLevel: "Analyze",
-      },
-      {
-        topicTitle: "TEST OOP Concepts",
-        statement:
-          "TEST Understand inheritance and polymorphism in the context of game object hierarchies",
-        bloomLevel: "Understand",
-      },
-      {
-        topicTitle: "TEST OOP Concepts",
-        statement: "TEST Apply design patterns to solve common game development problems",
-        bloomLevel: "Apply",
-      },
-      {
-        topicTitle: "TEST Game Loops & Performance",
-        statement: "TEST Remember the structure of a game loop and its key components",
-        bloomLevel: "Remember",
-      },
-      {
-        topicTitle: "TEST Game Loops & Performance",
-        statement:
-          "TEST Evaluate performance trade-offs between different game loop implementations",
-        bloomLevel: "Evaluate",
-      },
-      {
-        topicTitle: "TEST Data Structures",
-        statement:
-          "TEST Implement linear and non-linear data structures to solve programming problems",
-        bloomLevel: "Apply",
-      },
-      {
-        topicTitle: "TEST Data Structures",
-        statement:
-          "TEST Evaluate time and space complexity trade-offs across different data structure choices",
-        bloomLevel: "Evaluate",
-      },
-      {
-        topicTitle: "TEST Advanced Topics",
-        statement:
-          "TEST Analyze advanced algorithms for real-time game systems integration and performance",
-        bloomLevel: "Analyze",
-      },
-      {
-        topicTitle: "TEST Advanced Topics",
-        statement:
-          "TEST Create a complete game module applying advanced engine architecture patterns",
-        bloomLevel: "Create",
-      },
-    ],
-    sessionTopics: [
-      "TEST Introduction to Game Programming",
-      "TEST OOP Concepts",
-      "TEST Game Loops & Performance",
-      "TEST Data Structures",
-      "TEST Advanced Topics",
-    ],
-    feedbackDistribution: [
-      {
-        count: 25,
-        posCount: 2,
-        neuCount: 3,
-        negCount: 20,
-        uncategorizedNeuCount: 1,
-        negIssues: [
-          "relational coldness",
-          "classroom tension",
-          "evaluation unfairness",
-          "clarity deficit",
-          "instructional cadence",
-        ],
-      },
-      {
-        count: 20,
-        posCount: 4,
-        neuCount: 8,
-        negCount: 8,
-        uncategorizedNeuCount: 2,
-        negIssues: [
-          "conceptual misalignment",
-          "notation struggle",
-          "procedural bottleneck",
-          "peer distraction",
-        ],
-      },
-      {
-        count: 28,
-        posCount: 14,
-        neuCount: 8,
-        negCount: 6,
-        uncategorizedNeuCount: 2,
-        negIssues: ["subject alienation", "design synthesis failure", "abstract logic gap"],
-      },
-      {
-        count: 15,
-        posCount: 2,
-        neuCount: 3,
-        negCount: 10,
-        uncategorizedNeuCount: 1,
-        negIssues: [
-          "feedback latency",
-          "evaluation unfairness",
-          "perceived marginalization",
-          "classroom tension",
-        ],
-      },
-      {
-        count: 20,
-        posCount: 6,
-        neuCount: 10,
-        negCount: 4,
-        uncategorizedNeuCount: 3,
-        negIssues: ["conceptual misalignment", "notation struggle", "subject alienation"],
-      },
-    ],
-    analyzeSessionIndices: [0, 1, 2],
-    addRecentFeedback: true,
-  },
-  {
-    label: "TEST-CCS106",
-    courseCode: "TEST-CCS106",
-    courseTitle: "TEST Data Structures & Algorithms",
-    section: "3CS-A",
-    studentStartIndex: 31,
-    studentCount: 15,
-    topicDefs: [{ title: "TEST Arrays & Complexity" }, { title: "TEST Trees & Recursion" }],
-    iloDefs: [
-      {
-        topicTitle: "TEST Arrays & Complexity",
-        statement: "TEST Identify different sorting algorithms and their basic operations",
-        bloomLevel: "Remember",
-      },
-      {
-        topicTitle: "TEST Arrays & Complexity",
-        statement: "TEST Apply sorting algorithms to organize data efficiently",
-        bloomLevel: "Apply",
-      },
-      {
-        topicTitle: "TEST Trees & Recursion",
-        statement: "TEST Understand recursive tree traversal and its computational impact",
-        bloomLevel: "Understand",
-      },
-      {
-        topicTitle: "TEST Trees & Recursion",
-        statement: "TEST Analyze time and space complexity of recursive solutions",
-        bloomLevel: "Analyze",
-      },
-    ],
-    sessionTopics: ["TEST Arrays & Complexity", "TEST Trees & Recursion"],
-    feedbackDistribution: [
-      {
-        count: 12,
-        posCount: 2,
-        neuCount: 2,
-        negCount: 8,
-        uncategorizedNeuCount: 1,
-        negIssues: [
-          "procedural bottleneck",
-          "notation struggle",
-          "clarity deficit",
-          "peer distraction",
-        ],
-      },
-      {
-        count: 10,
-        posCount: 2,
-        neuCount: 2,
-        negCount: 6,
-        uncategorizedNeuCount: 1,
-        negIssues: ["abstract logic gap", "conceptual misalignment", "design synthesis failure"],
-      },
-    ],
-    analyzeSessionIndices: [0, 1],
-    addRecentFeedback: false,
-  },
-  {
-    label: "TEST-CCS112",
-    courseCode: "TEST-CCS112",
-    courseTitle: "TEST Web Development",
-    section: "3CS-B",
-    studentStartIndex: 46,
-    studentCount: 15,
-    topicDefs: [{ title: "TEST Frontend Basics" }, { title: "TEST Backend Integration" }],
-    iloDefs: [
-      {
-        topicTitle: "TEST Frontend Basics",
-        statement: "TEST Apply responsive layout techniques using modern CSS frameworks",
-        bloomLevel: "Apply",
-      },
-      {
-        topicTitle: "TEST Frontend Basics",
-        statement: "TEST Create a functional user interface component with interactive features",
-        bloomLevel: "Create",
-      },
-      {
-        topicTitle: "TEST Backend Integration",
-        statement: "TEST Understand REST API design patterns for client-server communication",
-        bloomLevel: "Understand",
-      },
-      {
-        topicTitle: "TEST Backend Integration",
-        statement: "TEST Analyze client-server data flow and state management approaches",
-        bloomLevel: "Analyze",
-      },
-    ],
-    sessionTopics: ["TEST Frontend Basics", "TEST Backend Integration"],
-    feedbackDistribution: [
-      {
-        count: 14,
-        posCount: 4,
-        neuCount: 4,
-        negCount: 6,
-        uncategorizedNeuCount: 2,
-        negIssues: ["instructional cadence", "clarity deficit", "relational coldness"],
-      },
-      {
-        count: 10,
-        posCount: 3,
-        neuCount: 3,
-        negCount: 4,
-        uncategorizedNeuCount: 1,
-        negIssues: ["feedback latency", "evaluation unfairness", "subject alienation"],
-      },
-    ],
-    analyzeSessionIndices: [0, 1],
-    addRecentFeedback: false,
-  },
-];
-
-// Phase 1: Prerequisites
-
-async function getFacultyId(supabase: SeedSupabase): Promise<string> {
-  const { data } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("email", FACULTY_EMAIL)
-    .maybeSingle();
-  if (data) return data.id;
-
-  const id = seedId("faculty", FACULTY_EMAIL);
-  const { data: created } = await supabase
-    .from("profiles")
-    .insert({ id, email: FACULTY_EMAIL, full_name: "Test Faculty", role: "faculty" })
-    .select("id")
-    .single();
-  if (!created) throw new Error("Failed to create faculty profile");
-  return created.id;
-}
-
-async function getCourseId(
-  supabase: SeedSupabase,
-  courseCode: string,
-  courseTitle: string,
-): Promise<string> {
-  const id = seedId("course", courseCode);
-
-  // Check by deterministic ID first (handles re-runs), then by code (handles pre-existing)
-  const { data: byId } = await supabase.from("courses").select("id").eq("id", id).maybeSingle();
-  if (byId) {
-    await supabase.from("courses").update({ code: courseCode, title: courseTitle }).eq("id", id);
-    return byId.id;
-  }
-
-  const { data: byCode } = await supabase
-    .from("courses")
-    .select("id")
-    .eq("code", courseCode)
-    .maybeSingle();
-  if (byCode) return byCode.id;
-
-  const { data: created, error: insertErr } = await supabase
-    .from("courses")
-    .insert({ id, code: courseCode, title: courseTitle })
-    .select("id")
-    .single();
-  if (insertErr || !created)
-    throw new Error(`Failed to create course: ${insertErr?.message || "unknown"}`);
-  return created.id;
-}
-
-async function getOrCreateTopics(
-  supabase: SeedSupabase,
-  courseId: string,
-  topicDefs: { title: string }[],
-) {
-  const results: { id: string; title: string }[] = [];
-  for (const def of topicDefs) {
-    const { data: existing } = await supabase
-      .from("topics")
-      .select("id, title")
-      .eq("course_id", courseId)
-      .eq("title", def.title)
-      .maybeSingle();
-
-    if (existing) {
-      results.push(existing);
-    } else {
-      const id = seedId("topic", courseId, def.title);
-      const { data: created } = await supabase
-        .from("topics")
-        .insert({ id, course_id: courseId, title: def.title })
-        .select("id, title")
-        .single();
-      if (created) results.push(created);
-    }
-  }
-  return results;
-}
-
-async function getOrCreateIlos(
-  supabase: SeedSupabase,
-  courseId: string,
-  topics: { id: string; title: string }[],
-  iloDefs: { topicTitle: string; statement: string; bloomLevel: string }[],
-) {
-  const topicMap = new Map(topics.map((t) => [t.title, t.id]));
-  const results: { id: string; statement: string; bloomLevel: string; topicId: string }[] = [];
-
-  for (const def of iloDefs) {
-    const topicId = topicMap.get(def.topicTitle);
-    if (!topicId) continue;
-
-    const { data: existing } = await supabase
-      .from("ilos")
-      .select("id, statement, bloom_level")
-      .eq("course_id", courseId)
-      .eq("topic_id", topicId)
-      .eq("statement", def.statement)
-      .maybeSingle();
-
-    if (existing) {
-      results.push({
-        id: existing.id,
-        statement: existing.statement,
-        bloomLevel: existing.bloom_level,
-        topicId,
-      });
-    } else {
-      const id = seedId("ilo", courseId, def.statement);
-      const { data: created } = await supabase
-        .from("ilos")
-        .insert({
-          id,
-          course_id: courseId,
-          topic_id: topicId,
-          statement: def.statement,
-          bloom_level: def.bloomLevel,
-        })
-        .select("id, statement, bloom_level")
-        .single();
-      if (created)
-        results.push({
-          id: created.id,
-          statement: created.statement,
-          bloomLevel: created.bloom_level,
-          topicId,
-        });
-    }
-  }
-  return results;
-}
-
-// Phase 2: Students
-
-async function createStudents(
-  supabase: SeedSupabase,
-  startIndex: number,
-  count: number,
-): Promise<string[]> {
-  const ids: string[] = [];
-
-  for (let i = startIndex; i < startIndex + count; i++) {
-    const email = `test.student${i}@test.com`;
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (existing) {
-      ids.push(existing.id);
-    } else {
-      const id = seedId("student", email);
-      await supabase
-        .from("profiles")
-        .insert({ id, email, full_name: `Test Student ${i}`, role: "student" });
-      ids.push(id);
-    }
-  }
-
-  console.log(`  ✓ ${ids.length} student profiles ready`);
-  return ids;
-}
-
-// Phase 3: Class and Enrollments
-
-async function getOrCreateClass(
-  supabase: SeedSupabase,
-  courseId: string,
-  facultyId: string,
-  courseCode: string,
-  section: string,
-): Promise<string> {
-  const id = seedId("class", courseCode, section);
-  const { data: existing } = await supabase.from("classes").select("id").eq("id", id).maybeSingle();
-
-  if (existing) {
-    const { data: sessions } = await supabase
-      .from("sessions")
-      .select("id")
-      .eq("class_id", existing.id);
-    const sessionIds = sessions?.map((s) => s.id) ?? [];
-    await cleanupSessionData(sessionIds);
-    await cleanupEnrollments(existing.id);
-    await supabase
-      .from("classes")
-      .update({
-        faculty_id: facultyId,
-        course_id: courseId,
-        course: courseCode,
-        section,
-        name: courseCode,
-        enroll_code: `${courseCode}-${section.replace(/\s/g, "")}-DBSEED`,
-      })
-      .eq("id", existing.id);
-
-    return existing.id;
-  }
-
-  const { data: created, error: insertErr } = await supabase
-    .from("classes")
-    .insert({
-      id,
-      faculty_id: facultyId,
-      course_id: courseId,
-      course: courseCode,
-      section,
-      name: courseCode,
-      enroll_code: `${courseCode}-${section.replace(/\s/g, "")}-DBSEED`,
-    })
-    .select("id")
-    .single();
-
-  if (insertErr || !created)
-    throw new Error(`Failed to create class: ${insertErr?.message || "unknown"}`);
-  return created.id;
-}
-
-async function enrollStudents(supabase: SeedSupabase, classId: string, studentIds: string[]) {
-  try {
-    await cleanupEnrollments(classId);
-
-    const rows = studentIds.map((studentId) => ({ class_id: classId, student_id: studentId }));
-    const { error } = await supabase.from("enrollments").insert(rows);
-    if (error) throw new Error(`Enrollment error: ${error.message}`);
-
-    await supabase.from("classes").update({ student_count: studentIds.length }).eq("id", classId);
-
-    console.log(`  ✓ ${studentIds.length} students enrolled`);
-  } catch (err) {
-    console.error("  ✗ Enrollment failed:", err);
-    process.exit(1);
-  }
-}
-
-// Shared cleanup helpers
-
-/**
- * Shared cleanup: deletes all child data for given session IDs using raw SQL.
- * Replaces the duplicate blocks at ~lines 394-400 and ~477-480.
- */
-async function cleanupSessionData(sessionIds: string[]): Promise<void> {
-  if (sessionIds.length === 0) return;
-  await adminExec([
-    {
-      text: "DELETE FROM feedback_diagnostics WHERE session_id = ANY($1::uuid[])",
-      params: [sessionIds],
-    },
-    {
-      text: "DELETE FROM analysis_results WHERE session_id = ANY($1::uuid[])",
-      params: [sessionIds],
-    },
-    { text: "DELETE FROM feedback WHERE session_id = ANY($1::uuid[])", params: [sessionIds] },
-    { text: "DELETE FROM sessions WHERE id = ANY($1::uuid[])", params: [sessionIds] },
-  ]);
-}
-
-/**
- * Deletes all enrollments for a class using raw SQL.
- */
-async function cleanupEnrollments(classId: string): Promise<void> {
-  await adminExec([{ text: "DELETE FROM enrollments WHERE class_id = $1", params: [classId] }]);
-}
-
-// Phase 4: Sessions
 
 interface SessionSeed {
   id: string;
@@ -689,646 +73,946 @@ interface SessionSeed {
   lastAnalyzedAt: string | null;
 }
 
-async function createSessions(
-  supabase: SeedSupabase,
-  classId: string,
-  courseId: string,
-  topics: { id: string; title: string }[],
-  facultyId: string,
-  ilosByTopic: Map<string, { id: string; statement: string; bloomLevel: string }[]>,
-  sessionTopics: string[],
-  analyzeSessionIndices: number[],
-): Promise<SessionSeed[]> {
-  const { data: existing } = await supabase.from("sessions").select("id").eq("class_id", classId);
-  const existingIds = existing?.map((s) => s.id) ?? [];
-  await cleanupSessionData(existingIds);
+interface ClassSeedConfig {
+  label: string;
+  courseCode: string;
+  section: string;
+  sessionTopics: string[];
+  feedbackCounts: number[];
+  recentCount: number;
+}
 
-  const topicMap = new Map(topics.map((t) => [t.title, t.id]));
-  const sessionSeeds: SessionSeed[] = [];
+type TopicIloMap = Map<string, { id: string; statement: string; bloomLevel: string }[]>;
 
-  const baseDate = new Date("2026-01-05T00:00:00Z");
+class DashboardSeeder {
+  private static readonly SEED_REFERENCE_DATE = new Date("2026-06-18T00:00:00Z");
+  private static readonly BLOOM_LEVELS = {
+    Remember: 1,
+    Understand: 2,
+    Apply: 3,
+    Analyze: 4,
+    Evaluate: 5,
+    Create: 6,
+  } as const;
 
-  for (let i = 0; i < sessionTopics.length; i++) {
-    const sessionTopic = sessionTopics[i];
-    const topicId = topicMap.get(sessionTopic) ?? null;
-    const sessionIlos = ilosByTopic.get(sessionTopic) ?? [];
+  private static readonly COURSE_CODE = "TEST-COURSE-CODE";
+  private static readonly COURSE_TITLE = "TEST Course Title";
+  private static readonly TOPIC_TITLES = ["TEST Topic 1", "TEST Topic 2", "TEST Topic 3"];
 
-    const startsAt = new Date(baseDate);
-    startsAt.setDate(startsAt.getDate() + i * 14);
-    const endsAt = new Date(startsAt);
-    endsAt.setDate(endsAt.getDate() + 7);
+  private static readonly ILO_DEFS: {
+    topicTitle: string;
+    statement: string;
+    bloomLevel: string;
+  }[] = [
+    { topicTitle: "TEST Topic 1", statement: "TEST ILO 1", bloomLevel: "Remember" },
+    { topicTitle: "TEST Topic 1", statement: "TEST ILO 2", bloomLevel: "Understand" },
+    { topicTitle: "TEST Topic 1", statement: "TEST ILO 3", bloomLevel: "Apply" },
+    { topicTitle: "TEST Topic 2", statement: "TEST ILO 4", bloomLevel: "Analyze" },
+    { topicTitle: "TEST Topic 2", statement: "TEST ILO 5", bloomLevel: "Evaluate" },
+    { topicTitle: "TEST Topic 2", statement: "TEST ILO 6", bloomLevel: "Create" },
+    { topicTitle: "TEST Topic 3", statement: "TEST ILO 7", bloomLevel: "Understand" },
+    { topicTitle: "TEST Topic 3", statement: "TEST ILO 8", bloomLevel: "Apply" },
+    { topicTitle: "TEST Topic 3", statement: "TEST ILO 9", bloomLevel: "Analyze" },
+  ];
 
-    let lastAnalyzedAt: string | null;
-    if (!analyzeSessionIndices.includes(i)) {
-      lastAnalyzedAt = null;
-    } else if (i === 0) {
-      lastAnalyzedAt = new Date(
-        SEED_REFERENCE_DATE.getTime() - 7 * 24 * 60 * 60 * 1000,
-      ).toISOString();
-    } else {
-      const analyzed = new Date(endsAt);
-      analyzed.setDate(analyzed.getDate() + 1);
-      lastAnalyzedAt = analyzed.toISOString();
+  private static readonly STUDENT_COUNT = 50;
+  private static readonly FACULTY_EMAIL = "faculty@test.com";
+
+  private static readonly CLASS_CONFIGS: ClassSeedConfig[] = [
+    {
+      label: "TEST-CLASS",
+      courseCode: "TESTCLS01",
+      section: "1",
+      sessionTopics: ["TEST Topic 1", "TEST Topic 2", "TEST Topic 3"],
+      feedbackCounts: [50, 30, 30],
+      recentCount: 10,
+    },
+    {
+      label: "TEST-CLASS",
+      courseCode: "TESTCLS02",
+      section: "2",
+      sessionTopics: ["TEST Topic 1"],
+      feedbackCounts: [35],
+      recentCount: 0,
+    },
+  ];
+
+  // Classes created by the previous seed version, purged on every run.
+  private static readonly LEGACY_COURSE_CODES = ["TEST-CSEG2", "TEST-CCS106", "TEST-CCS112"];
+
+  private static readonly PRIORITY_THRESHOLD = 0.3;
+
+  private supabase: SeedSupabase;
+  private facultyId = "";
+  private feedbackPool: CsvFeedbackRow[] = [];
+
+  constructor() {
+    const url = process.env.SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceKey) {
+      console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment.");
+      console.error("Run with: npx tsx --env-file .env scripts/seed/seedDashboard.ts");
+      process.exit(1);
     }
-
-    const sessionId = seedId("session", classId, String(i));
-
-    await supabase.from("sessions").insert({
-      id: sessionId,
-      class_id: classId,
-      course_id: courseId,
-      topic: sessionTopic,
-      topic_id: topicId,
-      ilo_ids: sessionIlos.map((ilo) => ilo.id),
-      status: "active",
-      starts_at: startsAt.toISOString(),
-      ends_at: endsAt.toISOString(),
-      created_by: facultyId,
-      last_analyzed_at: lastAnalyzedAt,
-    });
-
-    sessionSeeds.push({
-      id: sessionId,
-      topic: sessionTopic,
-      topicId,
-      iloIds: sessionIlos.map((ilo) => ilo.id),
-      startsAt: startsAt.toISOString(),
-      endsAt: endsAt.toISOString(),
-      status: "active",
-      lastAnalyzedAt,
-    });
+    this.supabase = createClient(url, serviceKey);
   }
 
-  console.log(`  ✓ ${sessionSeeds.length} sessions created`);
-  return sessionSeeds;
-}
+  private static seedId(namespace: string, ...parts: string[]): string {
+    const hash = createHash("sha256")
+      .update([namespace, ...parts].join(":"))
+      .digest("hex");
+    return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+  }
 
-// Phase 5: Feedback
+  async run(): Promise<void> {
+    const totalSessions = DashboardSeeder.CLASS_CONFIGS.reduce(
+      (s, c) => s + c.sessionTopics.length,
+      0,
+    );
+    console.log("Dashboard Seed Script\n");
+    console.log(
+      `Target: ${DashboardSeeder.CLASS_CONFIGS.length} classes, ${DashboardSeeder.STUDENT_COUNT} students, ${totalSessions} sessions\n`,
+    );
 
-interface FeedbackSeed {
-  id: string;
-  sessionId: string;
-  studentId: string;
-  content: string;
-  issue: string;
-  polarity: "pos" | "neu" | "neg";
-  createdAt: string;
-}
+    console.log("[1] Faculty...");
+    this.facultyId = await this.getFacultyId();
+    console.log(`  ✓ Faculty: ${this.facultyId}`);
 
-async function createFeedback(
-  supabase: SeedSupabase,
-  sessions: SessionSeed[],
-  studentIds: string[],
-  feedbackDistribution: FeedbackDistribution[],
-  addRecentFeedback: boolean,
-): Promise<Map<string, FeedbackSeed[]>> {
-  const feedbackBySession = new Map<string, FeedbackSeed[]>();
-  let nextStudentIdx = 0;
+    console.log("[2] Purging previous test data...");
+    await this.cleanupAllTestData();
+    console.log("  ✓ Legacy and current test classes removed");
 
-  for (let si = 0; si < sessions.length; si++) {
-    const session = sessions[si];
-    const dist = feedbackDistribution[si];
-    const feedbacks: FeedbackSeed[] = [];
+    console.log("[3] Course, topics, ILOs...");
+    const courseId = await this.getOrCreateCourse();
+    const topics = await this.getOrCreateTopics(courseId);
+    const ilos = await this.getOrCreateIlos(courseId, topics);
+    const ilosByTopic: TopicIloMap = new Map();
+    for (const topic of topics) {
+      ilosByTopic.set(
+        topic.title,
+        ilos.filter((ilo) => ilo.topicId === topic.id),
+      );
+    }
+    console.log(`  ✓ Course: ${DashboardSeeder.COURSE_CODE}`);
+    console.log(`  ✓ ${topics.length} topics, ${ilos.length} ILOs`);
 
-    const assignedStudents: string[] = [];
-    for (let i = 0; i < dist.count; i++) {
-      assignedStudents.push(studentIds[nextStudentIdx % studentIds.length]);
-      nextStudentIdx++;
+    console.log("[4] Students...");
+    const studentIds = await this.createStudents();
+
+    console.log("[5] Loading feedback pool from public/model-data/test.csv...");
+    await this.loadFeedbackPool();
+    console.log(`  ✓ ${this.feedbackPool.length} feedback rows available`);
+
+    const results: {
+      label: string;
+      sessions: number;
+      feedback: number;
+      analyzed: number;
+      recent: number;
+    }[] = [];
+
+    for (const config of DashboardSeeder.CLASS_CONFIGS) {
+      results.push(await this.seedClass(config, courseId, topics, ilosByTopic, studentIds));
     }
 
-    for (let fi = 0; fi < dist.count; fi++) {
-      const studentId = assignedStudents[fi];
+    const totalFeedback = results.reduce((s, r) => s + r.feedback, 0);
+    const totalAnalyzed = results.reduce((s, r) => s + r.analyzed, 0);
+    const totalRecent = results.reduce((s, r) => s + r.recent, 0);
+    const totalSessionsSeeded = results.reduce((s, r) => s + r.sessions, 0);
 
-      let polarity: "pos" | "neu" | "neg";
-      if (fi < dist.posCount) polarity = "pos";
-      else if (fi < dist.posCount + dist.neuCount) polarity = "neu";
-      else polarity = "neg";
+    console.log("\n" + "=".repeat(50));
+    console.log("Seed Complete");
+    console.log("=".repeat(50));
+    console.log(`  Classes:       ${DashboardSeeder.CLASS_CONFIGS.length}`);
+    console.log(`  Students:      ${DashboardSeeder.STUDENT_COUNT}`);
+    console.log(`  Sessions:      ${totalSessionsSeeded}`);
+    console.log(`  Feedback:      ${totalFeedback}`);
+    console.log(`  Analyzed:      ${totalAnalyzed} feedback rows`);
+    console.log(`  Recent:        ${totalRecent} (badge test, excluded from analysis)`);
+    console.log("");
 
-      let issue: string;
-      let content: string;
-      const neuIdx = fi - dist.posCount;
+    for (const r of results) {
+      console.log(
+        `  ${r.label}: ${r.sessions} sessions, ${r.feedback} feedback, ${r.analyzed} analyzed, ${r.recent} recent`,
+      );
+    }
 
-      if (polarity === "pos") {
-        issue = "Uncategorized";
-        content = UNCATEGORIZED_FEEDBACK[fi % UNCATEGORIZED_FEEDBACK.length];
-      } else if (polarity === "neu" && neuIdx < dist.uncategorizedNeuCount) {
-        issue = "Uncategorized";
-        content = UNCATEGORIZED_FEEDBACK[fi % UNCATEGORIZED_FEEDBACK.length];
+    console.log("");
+    console.log("Row counts for verification:");
+    console.log(`  analysis_results:     ${totalAnalyzed} rows (1 per analyzed feedback)`);
+    console.log(
+      `  feedback_diagnostics: ${totalSessionsSeeded} rows (1 per analyzed session)`,
+    );
+    console.log("");
+
+    console.log("Login at /login/faculty with:");
+    console.log("  Email:    faculty@test.com");
+    console.log("  Password: faculty123");
+    console.log("");
+
+    console.log("Badge test:");
+    console.log("  TEST-CLASS1 Session 2: 10 new feedback (created after last_analyzed_at)");
+    console.log("");
+
+    await closeAdminSqlClient();
+  }
+
+  private async seedClass(
+    config: ClassSeedConfig,
+    courseId: string,
+    topics: { id: string; title: string }[],
+    ilosByTopic: TopicIloMap,
+    studentIds: string[],
+  ) {
+    const prefix = `[${config.label}]`;
+    console.log(`\n━━━ ${config.label} ━━━`);
+
+    console.log(`${prefix} Class and enrollments...`);
+    const classId = await this.getOrCreateClass(config, courseId);
+    await this.enrollStudents(classId, studentIds);
+
+    console.log(`${prefix} Sessions...`);
+    const sessions = await this.createSessions(config, classId, courseId, topics, ilosByTopic);
+
+    console.log(`${prefix} Feedback...`);
+    const { feedbackBySession, recentCount } = await this.createFeedback(
+      config,
+      sessions,
+      studentIds,
+    );
+
+    console.log(`${prefix} Analysis...`);
+    const analyzedCount = await this.createAnalysisResults(sessions, feedbackBySession, ilosByTopic);
+
+    const feedbackCount =
+      Array.from(feedbackBySession.values()).reduce((s, f) => s + f.length, 0) + recentCount;
+
+    return {
+      label: config.label,
+      sessions: sessions.length,
+      feedback: feedbackCount,
+      analyzed: analyzedCount,
+      recent: recentCount,
+    };
+  }
+
+  // Phase 1: Prerequisites
+
+  private async getFacultyId(): Promise<string> {
+    const { data } = await this.supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", DashboardSeeder.FACULTY_EMAIL)
+      .maybeSingle();
+    if (data) return data.id;
+
+    const id = DashboardSeeder.seedId("faculty", DashboardSeeder.FACULTY_EMAIL);
+    const { data: created, error: insertErr } = await this.supabase
+      .from("profiles")
+      .insert({
+        id,
+        email: DashboardSeeder.FACULTY_EMAIL,
+        full_name: "Test Faculty",
+        role: "faculty",
+      })
+      .select("id")
+      .single();
+    if (insertErr || !created)
+      throw new Error(`Failed to create faculty profile: ${insertErr?.message ?? "unknown"}`);
+    return created.id;
+  }
+
+  private async getOrCreateCourse(): Promise<string> {
+    const id = DashboardSeeder.seedId("course", DashboardSeeder.COURSE_CODE);
+
+    // Check by deterministic ID first (handles re-runs), then by code (handles pre-existing)
+    const { data: byId } = await this.supabase
+      .from("courses")
+      .select("id")
+      .eq("id", id)
+      .maybeSingle();
+    if (byId) {
+      await this.supabase
+        .from("courses")
+        .update({ code: DashboardSeeder.COURSE_CODE, title: DashboardSeeder.COURSE_TITLE })
+        .eq("id", id);
+      return byId.id;
+    }
+
+    const { data: byCode } = await this.supabase
+      .from("courses")
+      .select("id")
+      .eq("code", DashboardSeeder.COURSE_CODE)
+      .maybeSingle();
+    if (byCode) return byCode.id;
+
+    const { data: created, error: insertErr } = await this.supabase
+      .from("courses")
+      .insert({ id, code: DashboardSeeder.COURSE_CODE, title: DashboardSeeder.COURSE_TITLE })
+      .select("id")
+      .single();
+    if (insertErr || !created)
+      throw new Error(`Failed to create course: ${insertErr?.message || "unknown"}`);
+    return created.id;
+  }
+
+  private async getOrCreateTopics(courseId: string): Promise<{ id: string; title: string }[]> {
+    const results: { id: string; title: string }[] = [];
+    for (const title of DashboardSeeder.TOPIC_TITLES) {
+      const { data: existing } = await this.supabase
+        .from("topics")
+        .select("id, title")
+        .eq("course_id", courseId)
+        .eq("title", title)
+        .maybeSingle();
+
+      if (existing) {
+        results.push(existing);
       } else {
-        let issueIdx: number;
-        if (polarity === "neu") {
-          issueIdx = (neuIdx - dist.uncategorizedNeuCount) % dist.negIssues.length;
-        } else {
-          const negIdx = fi - dist.posCount - dist.neuCount;
-          issueIdx = negIdx % dist.negIssues.length;
-        }
-        issue = dist.negIssues[issueIdx];
-        const pool = FEEDBACK_POOL[issue];
-        content = pool[fi % pool.length];
+        const id = DashboardSeeder.seedId("topic", courseId, title);
+        const { data: created } = await this.supabase
+          .from("topics")
+          .insert({ id, course_id: courseId, title })
+          .select("id, title")
+          .single();
+        if (created) results.push(created);
+      }
+    }
+    return results;
+  }
+
+  private async getOrCreateIlos(
+    courseId: string,
+    topics: { id: string; title: string }[],
+  ): Promise<{ id: string; statement: string; bloomLevel: string; topicId: string }[]> {
+    const topicMap = new Map(topics.map((t) => [t.title, t.id]));
+    const results: { id: string; statement: string; bloomLevel: string; topicId: string }[] = [];
+
+    for (const def of DashboardSeeder.ILO_DEFS) {
+      const topicId = topicMap.get(def.topicTitle);
+      if (!topicId) continue;
+
+      const { data: existing } = await this.supabase
+        .from("ilos")
+        .select("id, statement, bloom_level")
+        .eq("course_id", courseId)
+        .eq("topic_id", topicId)
+        .eq("statement", def.statement)
+        .maybeSingle();
+
+      if (existing) {
+        results.push({
+          id: existing.id,
+          statement: existing.statement,
+          bloomLevel: existing.bloom_level,
+          topicId,
+        });
+      } else {
+        const id = DashboardSeeder.seedId("ilo", courseId, def.statement);
+        const { data: created } = await this.supabase
+          .from("ilos")
+          .insert({
+            id,
+            course_id: courseId,
+            topic_id: topicId,
+            statement: def.statement,
+            bloom_level: def.bloomLevel,
+          })
+          .select("id, statement, bloom_level")
+          .single();
+        if (created)
+          results.push({
+            id: created.id,
+            statement: created.statement,
+            bloomLevel: created.bloom_level,
+            topicId,
+          });
+      }
+    }
+    return results;
+  }
+
+  // Phase 2: Students
+
+  private async createStudents(): Promise<string[]> {
+    const ids: string[] = [];
+
+    for (let i = 1; i <= DashboardSeeder.STUDENT_COUNT; i++) {
+      const email = `test.student${i}@test.com`;
+      const { data: existing } = await this.supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (existing) {
+        ids.push(existing.id);
+      } else {
+        const id = DashboardSeeder.seedId("student", email);
+        await this.supabase
+          .from("profiles")
+          .insert({ id, email, full_name: `Test Student ${i}`, role: "student" });
+        ids.push(id);
+      }
+    }
+
+    console.log(`  ✓ ${ids.length} student profiles ready`);
+    return ids;
+  }
+
+  // Phase 3: Class and Enrollments
+
+  private async getOrCreateClass(config: ClassSeedConfig, courseId: string): Promise<string> {
+    const id = DashboardSeeder.seedId("class", config.courseCode, config.section);
+    const { data: existing } = await this.supabase
+      .from("classes")
+      .select("id")
+      .eq("id", id)
+      .maybeSingle();
+
+    const classRow = {
+      faculty_id: this.facultyId,
+      course_id: courseId,
+      course: config.courseCode,
+      section: config.section,
+      name: config.label,
+      enroll_code: `${config.courseCode}`,
+    };
+
+    if (existing) {
+      await this.supabase.from("classes").update(classRow).eq("id", existing.id);
+      return existing.id;
+    }
+
+    const { data: created, error: insertErr } = await this.supabase
+      .from("classes")
+      .insert({ id, ...classRow })
+      .select("id")
+      .single();
+
+    if (insertErr || !created)
+      throw new Error(`Failed to create class: ${insertErr?.message || "unknown"}`);
+    return created.id;
+  }
+
+  private async enrollStudents(classId: string, studentIds: string[]): Promise<void> {
+    try {
+      await this.cleanupEnrollments(classId);
+
+      const rows = studentIds.map((studentId) => ({ class_id: classId, student_id: studentId }));
+      const { error } = await this.supabase.from("enrollments").insert(rows);
+      if (error) throw new Error(`Enrollment error: ${error.message}`);
+
+      await this.supabase
+        .from("classes")
+        .update({ student_count: studentIds.length })
+        .eq("id", classId);
+
+      console.log(`  ✓ ${studentIds.length} students enrolled`);
+    } catch (err) {
+      console.error("  ✗ Enrollment failed:", err);
+      process.exit(1);
+    }
+  }
+
+  // Cleanup
+
+  /**
+   * Hard-deletes every class this seed manages (current + legacy versions) and
+   * their child rows, so re-running fully overwrites previous test data.
+   */
+  private async cleanupAllTestData(): Promise<void> {
+    const classCodes = [
+      ...DashboardSeeder.CLASS_CONFIGS.map((c) => c.courseCode),
+      ...DashboardSeeder.LEGACY_COURSE_CODES,
+    ];
+    const courseCodes = [DashboardSeeder.COURSE_CODE, ...DashboardSeeder.LEGACY_COURSE_CODES];
+
+    const sessionFilter =
+      "session_id IN (SELECT id FROM sessions WHERE class_id IN (SELECT id FROM classes WHERE course = ANY($1::text[])))";
+    const classFilter =
+      "class_id IN (SELECT id FROM classes WHERE course = ANY($1::text[]))";
+
+    // Orphaned student profiles from previous seed versions (e.g. test.student51..60).
+    // Scoped to this seed's own namespace only — never touches test-nonowner-*,
+    // student@test.com, or other profiles the integration tests rely on.
+    const orphanStudentFilter =
+      "email LIKE 'test.student%@test.com' AND email NOT IN (SELECT 'test.student' || i || '@test.com' FROM generate_series(1, $1::int) AS i)";
+
+    const counts = await adminExec([
+      { text: `DELETE FROM feedback_diagnostics WHERE ${sessionFilter}`, params: [classCodes] },
+      { text: `DELETE FROM analysis_results WHERE ${sessionFilter}`, params: [classCodes] },
+      { text: `DELETE FROM feedback WHERE ${sessionFilter}`, params: [classCodes] },
+      { text: `DELETE FROM submission_tokens WHERE ${sessionFilter}`, params: [classCodes] },
+      { text: `DELETE FROM sessions WHERE ${classFilter}`, params: [classCodes] },
+      { text: `DELETE FROM enrollments WHERE ${classFilter}`, params: [classCodes] },
+      { text: `DELETE FROM classes WHERE course = ANY($1::text[])`, params: [classCodes] },
+      { text: `DELETE FROM courses WHERE code = ANY($1::text[])`, params: [courseCodes] },
+      // FK safety net: activity_log rows referencing purged students must go first
+      {
+        text: `DELETE FROM activity_log WHERE user_id IN (SELECT id FROM profiles WHERE ${orphanStudentFilter})`,
+        params: [DashboardSeeder.STUDENT_COUNT],
+      },
+      { text: `DELETE FROM profiles WHERE ${orphanStudentFilter}`, params: [DashboardSeeder.STUDENT_COUNT] },
+    ]);
+
+    const tableNames = [
+      "feedback_diagnostics",
+      "analysis_results",
+      "feedback",
+      "submission_tokens",
+      "sessions",
+      "enrollments",
+      "classes",
+      "courses",
+      "activity_log",
+      "profiles",
+    ];
+    const deleted = counts
+      .map((n, i) => `${tableNames[i]}: ${n}`)
+      .filter((_, i) => counts[i] > 0)
+      .join(", ");
+    console.log(`  ✓ Deleted: ${deleted || "nothing"}`);
+  }
+
+  private async cleanupSessionData(sessionIds: string[]): Promise<void> {
+    if (sessionIds.length === 0) return;
+    await adminExec([
+      {
+        text: "DELETE FROM feedback_diagnostics WHERE session_id = ANY($1::uuid[])",
+        params: [sessionIds],
+      },
+      {
+        text: "DELETE FROM analysis_results WHERE session_id = ANY($1::uuid[])",
+        params: [sessionIds],
+      },
+      { text: "DELETE FROM feedback WHERE session_id = ANY($1::uuid[])", params: [sessionIds] },
+      { text: "DELETE FROM sessions WHERE id = ANY($1::uuid[])", params: [sessionIds] },
+    ]);
+  }
+
+  private async cleanupEnrollments(classId: string): Promise<void> {
+    await adminExec([{ text: "DELETE FROM enrollments WHERE class_id = $1", params: [classId] }]);
+  }
+
+  // Phase 4: Sessions
+
+  private async createSessions(
+    config: ClassSeedConfig,
+    classId: string,
+    courseId: string,
+    topics: { id: string; title: string }[],
+    ilosByTopic: TopicIloMap,
+  ): Promise<SessionSeed[]> {
+    const { data: existing } = await this.supabase
+      .from("sessions")
+      .select("id")
+      .eq("class_id", classId);
+    const existingIds = existing?.map((s) => s.id) ?? [];
+    await this.cleanupSessionData(existingIds);
+
+    const topicMap = new Map(topics.map((t) => [t.title, t.id]));
+    const sessionSeeds: SessionSeed[] = [];
+    const baseDate = new Date("2026-01-05T00:00:00Z");
+
+    for (let i = 0; i < config.sessionTopics.length; i++) {
+      const sessionTopic = config.sessionTopics[i];
+      const topicId = topicMap.get(sessionTopic) ?? null;
+      const sessionIlos = ilosByTopic.get(sessionTopic) ?? [];
+
+      const startsAt = new Date(baseDate);
+      startsAt.setDate(startsAt.getDate() + i * 14);
+      const endsAt = new Date(startsAt);
+      endsAt.setDate(endsAt.getDate() + 7);
+
+      let lastAnalyzedAt: string;
+      if (i === 0) {
+        lastAnalyzedAt = new Date(
+          DashboardSeeder.SEED_REFERENCE_DATE.getTime() - 7 * 24 * 60 * 60 * 1000,
+        ).toISOString();
+      } else {
+        const analyzed = new Date(endsAt);
+        analyzed.setDate(analyzed.getDate() + 1);
+        lastAnalyzedAt = analyzed.toISOString();
       }
 
-      const createdAt = new Date(new Date(session.startsAt).getTime() + fi * 3600000).toISOString();
+      const sessionId = DashboardSeeder.seedId("session", classId, String(i));
 
-      const feedbackId = seedId("feedback", session.id, String(fi));
-      const meta = {
-        cleanedText: content.toLowerCase().trim(),
-        submittedBy: studentId,
-        aspects: [{ aspect: TTI_RULES[issue] ?? "Uncategorized", issue, polarity }],
-      };
-
-      await supabase.from("feedback").insert({
-        id: feedbackId,
-        session_id: session.id,
-        content,
-        student_id: studentId,
-        meta,
-        created_at: createdAt,
+      await this.supabase.from("sessions").insert({
+        id: sessionId,
+        class_id: classId,
+        course_id: courseId,
+        topic: sessionTopic,
+        topic_id: topicId,
+        ilo_ids: sessionIlos.map((ilo) => ilo.id),
+        status: "active",
+        starts_at: startsAt.toISOString(),
+        ends_at: endsAt.toISOString(),
+        created_by: this.facultyId,
+        last_analyzed_at: lastAnalyzedAt,
       });
 
-      feedbacks.push({
-        id: feedbackId,
-        sessionId: session.id,
-        studentId,
-        content,
-        issue,
-        polarity,
-        createdAt,
+      sessionSeeds.push({
+        id: sessionId,
+        topic: sessionTopic,
+        topicId,
+        iloIds: sessionIlos.map((ilo) => ilo.id),
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
+        status: "active",
+        lastAnalyzedAt,
       });
     }
 
-    feedbackBySession.set(session.id, feedbacks);
+    console.log(`  ✓ ${sessionSeeds.length} sessions created`);
+    return sessionSeeds;
   }
 
-  const total = Array.from(feedbackBySession.values()).reduce((s, f) => s + f.length, 0);
-  console.log(`  ✓ ${total} feedback entries created`);
+  // Phase 5: Feedback
 
-  if (addRecentFeedback && sessions.length > 0) {
-    const firstDist = feedbackDistribution[0];
-    const recentStart = firstDist.count;
-    if (recentStart + 5 <= studentIds.length) {
-      const sessionA = sessions[0];
-      const existingA = feedbackBySession.get(sessionA.id)!;
-      const recentStudents = studentIds.slice(recentStart, recentStart + 5);
-      for (let i = 0; i < 5; i++) {
-        const studentId = recentStudents[i];
-        const content = "Ang hirap ng bagong topic, sana magbigay pa ng examples si sir.";
-        const feedbackId = seedId("feedback", sessionA.id, "recent", String(i));
-        const createdAt = new Date(SEED_REFERENCE_DATE.getTime() - i * 3600000).toISOString();
+  private async loadFeedbackPool(): Promise<void> {
+    const csvPath = new URL("../../public/model-data/test.csv", import.meta.url);
+    const raw = readFileSync(csvPath, "utf8");
+    const parsed = Papa.parse<CsvFeedbackRow>(raw, { header: true, skipEmptyLines: true });
+    this.feedbackPool = parsed.data.filter((r) => r.text && r.issue && r.polarity);
+  }
 
-        await supabase.from("feedback").insert({
+  /** Random, non-repeating sample from the CSV pool — the only random part of the seed. */
+  private sampleFeedback(count: number): CsvFeedbackRow[] {
+    const pool = [...this.feedbackPool];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, count);
+  }
+
+  private async createFeedback(
+    config: ClassSeedConfig,
+    sessions: SessionSeed[],
+    studentIds: string[],
+  ): Promise<{ feedbackBySession: Map<string, FeedbackSeed[]>; recentCount: number }> {
+    const feedbackBySession = new Map<string, FeedbackSeed[]>();
+    let nextStudentIdx = 0;
+    let recentCount = 0;
+
+    for (let si = 0; si < sessions.length; si++) {
+      const session = sessions[si];
+      const count = config.feedbackCounts[si];
+      const recentForSession = si === 1 ? config.recentCount : 0;
+      const sampled = this.sampleFeedback(count + recentForSession);
+      const feedbacks: FeedbackSeed[] = [];
+
+      for (let fi = 0; fi < count; fi++) {
+        const row = sampled[fi];
+        const studentId = studentIds[nextStudentIdx % studentIds.length];
+        nextStudentIdx++;
+        const issue = row.issue === "uncategorized" ? "Uncategorized" : row.issue;
+        const polarity = row.polarity as "pos" | "neu" | "neg";
+        const createdAt = new Date(
+          new Date(session.startsAt).getTime() + fi * 3600000,
+        ).toISOString();
+        const feedbackId = DashboardSeeder.seedId("feedback", session.id, String(fi));
+
+        await this.supabase.from("feedback").insert({
           id: feedbackId,
-          session_id: sessionA.id,
-          content,
+          session_id: session.id,
+          content: row.text,
           student_id: studentId,
           meta: {
-            cleanedText: content.toLowerCase().trim(),
+            cleanedText: row.cleaned_text,
             submittedBy: studentId,
-            aspects: [
-              { aspect: "Quality of Knowledge", issue: "abstract logic gap", polarity: "neg" },
-            ],
+            aspects: [{ aspect: TTI_RULES[issue] ?? "Uncategorized", issue, polarity }],
           },
           created_at: createdAt,
         });
 
-        existingA.push({
+        feedbacks.push({
           id: feedbackId,
-          sessionId: sessionA.id,
+          sessionId: session.id,
           studentId,
-          content,
-          issue: "abstract logic gap",
-          polarity: "neg",
+          content: row.text,
+          issue,
+          polarity,
           createdAt,
         });
       }
 
-      console.log(`  ✓ 5 recent feedback entries added to first session (badge test)`);
+      feedbackBySession.set(session.id, feedbacks);
+
+      // Recent feedback lands after last_analyzed_at so it shows as "new" in the
+      // badge test; it is inserted but intentionally excluded from analysis.
+      for (let ri = 0; ri < recentForSession; ri++) {
+        const row = sampled[count + ri];
+        const studentId = studentIds[nextStudentIdx % studentIds.length];
+        nextStudentIdx++;
+        const issue = row.issue === "uncategorized" ? "Uncategorized" : row.issue;
+        const polarity = row.polarity as "pos" | "neu" | "neg";
+        const createdAt = new Date(
+          DashboardSeeder.SEED_REFERENCE_DATE.getTime() - ri * 3600000,
+        ).toISOString();
+        const feedbackId = DashboardSeeder.seedId("feedback", session.id, "recent", String(ri));
+
+        await this.supabase.from("feedback").insert({
+          id: feedbackId,
+          session_id: session.id,
+          content: row.text,
+          student_id: studentId,
+          meta: {
+            cleanedText: row.cleaned_text,
+            submittedBy: studentId,
+            aspects: [{ aspect: TTI_RULES[issue] ?? "Uncategorized", issue, polarity }],
+          },
+          created_at: createdAt,
+        });
+
+        recentCount++;
+      }
     }
+
+    const total =
+      Array.from(feedbackBySession.values()).reduce((s, f) => s + f.length, 0) + recentCount;
+    console.log(`  ✓ ${total} feedback entries created (${recentCount} recent)`);
+    return { feedbackBySession, recentCount };
   }
 
-  return feedbackBySession;
-}
+  // Phase 6: Analysis Results and Diagnostics
 
-// Phase 6: Analysis Results and Diagnostics
+  private async createAnalysisResults(
+    sessions: SessionSeed[],
+    feedbackBySession: Map<string, FeedbackSeed[]>,
+    ilosByTopic: TopicIloMap,
+  ): Promise<number> {
+    let analyzedRows = 0;
 
-type TopicIloMap = Map<string, { id: string; statement: string; bloomLevel: string }[]>;
+    for (const session of sessions) {
+      const feedbacks = feedbackBySession.get(session.id);
+      if (!feedbacks || feedbacks.length === 0) continue;
 
-async function createAnalysisResults(
-  supabase: SeedSupabase,
-  sessions: SessionSeed[],
-  feedbackBySession: Map<string, FeedbackSeed[]>,
-  ilosByTopic: TopicIloMap,
-  analyzeSessionIndices: number[],
-  courseTitle: string,
-) {
-  const PRIORITY_THRESHOLD = 0.3;
-
-  for (let si = 0; si < sessions.length; si++) {
-    const session = sessions[si];
-    const feedbacks = feedbackBySession.get(session.id);
-    if (!feedbacks) continue;
-
-    if (!analyzeSessionIndices.includes(si)) {
-      console.log(`  ✓ Session "${session.topic}" left un-analyzed (intentional)`);
-      continue;
-    }
-
-    const sessionIlos = ilosByTopic.get(session.topic) ?? [];
-    const targetRbt = Math.max(
-      1,
-      ...sessionIlos.map((ilo) => BLOOM_LEVELS[ilo.bloomLevel as keyof typeof BLOOM_LEVELS] ?? 1),
-    );
-
-    // Build DiagnosticRecord[] (Modules 2-4 equivalent)
-    const buffer: DiagnosticRecord[] = feedbacks.map((fb) => {
-      if (fb.issue === "Uncategorized") {
-        return {
-          tti: TTI_RULES["uncategorized"],
-          rbt: RBT_RULES["uncategorized"],
-          clt: CLT_RULES["uncategorized"],
-          issue: "Uncategorized" as const,
-          polarity: fb.polarity,
-          isGap: false,
-          feedbackId: fb.id,
-        };
-      }
-      return {
-        tti: TTI_RULES[fb.issue],
-        rbt: RBT_RULES[fb.issue],
-        clt: CLT_RULES[fb.issue],
-        issue: fb.issue,
-        polarity: fb.polarity,
-        isGap: RBT_RULES[fb.issue] <= targetRbt && CLT_RULES[fb.issue] === "Intrinsic",
-        feedbackId: fb.id,
-      };
-    });
-
-    const total = feedbacks.length;
-
-    // Module 5: Strategy Generation
-    const sessionContext: SessionContext = {
-      course: courseTitle,
-      topic: session.topic,
-      targetIloRbt: targetRbt,
-      sessionId: session.id,
-      iloStatement: sessionIlos[0]?.statement ?? "Unknown Goal",
-    };
-
-    const stats = CalculateDistributions(buffer, total);
-
-    const uniqueIssueMap = new Map<string, BufferedDiagnostic>();
-    for (const diag of buffer) {
-      const key = diag.issue.toLowerCase();
-      const existing = uniqueIssueMap.get(key);
-      if (existing) {
-        existing.count += 1;
-      } else {
-        uniqueIssueMap.set(key, { ...diag, count: 1 });
-      }
-    }
-
-    const recommendationList: RecommendationItem[] = [];
-    const warningList: RecommendationItem[] = [];
-
-    for (const uniqueIssue of uniqueIssueMap.values()) {
-      if (uniqueIssue.issue === "Uncategorized") continue;
-
-      const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
-      const priorityScore = (uniqueIssue.count / total) * weightedCoefficient;
-
-      const pedagogicalCue = GeneratePedagogicalCue(sessionContext, uniqueIssue, total);
-
-      if (priorityScore >= PRIORITY_THRESHOLD) {
-        recommendationList.push(pedagogicalCue);
-      } else {
-        warningList.push(pedagogicalCue);
-      }
-    }
-
-    // Module 6: Dashboard Output
-    const aspectDist: DistEntry[] = Object.entries(stats.aspectCounts)
-      .map(([label, value]) => ({ label, value }) as DistEntry)
-      .sort((a, b) => b.value - a.value);
-
-    const issueDist: DistEntry[] = Object.entries(stats.issueCounts)
-      .map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry)
-      .sort((a, b) => b.value - a.value);
-
-    const polarityDist: DistEntry[] = [
-      { label: "Positive", value: stats.polarityCounts.pos || 0 },
-      { label: "Neutral", value: stats.polarityCounts.neu || 0 },
-      { label: "Negative", value: stats.polarityCounts.neg || 0 },
-    ];
-
-    const rbtDist: DistEntry[] = Object.entries(stats.rbtCounts)
-      .map(([label, value]) => ({ label, value }) as DistEntry)
-      .sort(
-        (a, b) =>
-          (RBT_LEVELS as readonly string[]).indexOf(a.label) -
-          (RBT_LEVELS as readonly string[]).indexOf(b.label),
+      const sessionIlos = ilosByTopic.get(session.topic) ?? [];
+      const targetRbt = Math.max(
+        1,
+        ...sessionIlos.map(
+          (ilo) =>
+            DashboardSeeder.BLOOM_LEVELS[
+              ilo.bloomLevel as keyof typeof DashboardSeeder.BLOOM_LEVELS
+            ] ?? 1,
+        ),
       );
 
-    const cltDist: DistEntry[] = Object.entries(stats.cltCounts)
-      .map(([label, value]) => ({ label, value }) as DistEntry)
-      .sort((a, b) => b.value - a.value);
+      // Build DiagnosticRecord[] (Modules 2-4 equivalent)
+      const buffer: DiagnosticRecord[] = feedbacks.map((fb) => {
+        if (fb.issue === "Uncategorized") {
+          return {
+            tti: TTI_RULES["uncategorized"],
+            rbt: RBT_RULES["uncategorized"],
+            clt: CLT_RULES["uncategorized"],
+            issue: "Uncategorized" as const,
+            polarity: fb.polarity,
+            isGap: false,
+            feedbackId: fb.id,
+          };
+        }
+        return {
+          tti: TTI_RULES[fb.issue],
+          rbt: RBT_RULES[fb.issue],
+          clt: CLT_RULES[fb.issue],
+          issue: fb.issue,
+          polarity: fb.polarity,
+          isGap: RBT_RULES[fb.issue] <= targetRbt && CLT_RULES[fb.issue] === "Intrinsic",
+          feedbackId: fb.id,
+        };
+      });
 
-    // Enrich distribution entries with contributing feedback texts
-    const feedbackMap = new Map<string, string>();
-    for (const fb of feedbacks) feedbackMap.set(fb.id, fb.content);
+      const total = feedbacks.length;
 
-    const aspectToTexts = new Map<string, string[]>();
-    const issueToTexts = new Map<string, string[]>();
-    const polarityToTexts: Record<string, string[]> = { pos: [], neu: [], neg: [] };
-    const rbtToTexts = new Map<string, string[]>();
-    const cltToTexts = new Map<string, string[]>();
+      // Module 5: Strategy Generation
+      const sessionContext: SessionContext = {
+        course: DashboardSeeder.COURSE_TITLE,
+        topic: session.topic,
+        targetIloRbt: targetRbt,
+        sessionId: session.id,
+        iloStatement: sessionIlos[0]?.statement ?? "Unknown Goal",
+      };
 
-    for (const diag of buffer) {
-      const text = feedbackMap.get(diag.feedbackId ?? "");
-      if (!text) continue;
+      const stats = CalculateDistributions(buffer, total);
 
-      const aspectList = aspectToTexts.get(diag.tti) ?? [];
-      aspectList.push(text);
-      aspectToTexts.set(diag.tti, aspectList);
-
-      const issueLabel = ISSUE_RULES[diag.issue.toLowerCase()] ?? diag.issue;
-      const issueList = issueToTexts.get(issueLabel) ?? [];
-      issueList.push(text);
-      issueToTexts.set(issueLabel, issueList);
-
-      if (diag.polarity in polarityToTexts) {
-        polarityToTexts[diag.polarity].push(text);
+      const uniqueIssueMap = new Map<string, BufferedDiagnostic>();
+      for (const diag of buffer) {
+        const key = diag.issue.toLowerCase();
+        const existing = uniqueIssueMap.get(key);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          uniqueIssueMap.set(key, { ...diag, count: 1 });
+        }
       }
 
-      const rbtName =
-        diag.issue === "Uncategorized"
-          ? "Uncategorized"
-          : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
-      const rbtList = rbtToTexts.get(rbtName) ?? [];
-      rbtList.push(text);
-      rbtToTexts.set(rbtName, rbtList);
+      const recommendationList: RecommendationItem[] = [];
+      const warningList: RecommendationItem[] = [];
 
-      const cltLabel = diag.issue === "Uncategorized" ? "Uncategorized" : diag.clt;
-      const cltList = cltToTexts.get(cltLabel) ?? [];
-      cltList.push(text);
-      cltToTexts.set(cltLabel, cltList);
-    }
+      for (const uniqueIssue of uniqueIssueMap.values()) {
+        if (uniqueIssue.issue === "Uncategorized") continue;
 
-    for (const entry of aspectDist) entry.feedbackTexts = aspectToTexts.get(entry.label);
-    for (const entry of issueDist) entry.feedbackTexts = issueToTexts.get(entry.label);
-    const polarityLabelKey: Record<string, string> = {
-      Positive: "pos",
-      Neutral: "neu",
-      Negative: "neg",
-    };
-    for (const entry of polarityDist)
-      entry.feedbackTexts = polarityToTexts[polarityLabelKey[entry.label]];
-    for (const entry of rbtDist) entry.feedbackTexts = rbtToTexts.get(entry.label);
-    for (const entry of cltDist) entry.feedbackTexts = cltToTexts.get(entry.label);
+        const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
+        const priorityScore = (uniqueIssue.count / total) * weightedCoefficient;
 
-    // Gap items
-    const gaps: GapItem[] = [];
-    for (const gapDiag of buffer.filter((d) => d.isGap)) {
-      const ilo = sessionIlos[0];
-      if (ilo) {
-        gaps.push({
-          iloId: ilo.id,
-          expected: ilo.statement,
-          actual: `Issue: "${gapDiag.issue}" (CLT: ${gapDiag.clt}, RBT: Level ${gapDiag.rbt})`,
-          severity: "medium" as const,
-        });
+        const pedagogicalCue = GeneratePedagogicalCue(sessionContext, uniqueIssue, total);
+
+        if (priorityScore >= DashboardSeeder.PRIORITY_THRESHOLD) {
+          recommendationList.push(pedagogicalCue);
+        } else {
+          warningList.push(pedagogicalCue);
+        }
       }
-    }
 
-    const analysisResult: AnalysisResult = {
-      sessionId: session.id,
-      totalFeedback: total,
-      aspectDist,
-      issueDist,
-      polarityDist,
-      rbtDist,
-      cltDist,
-      gaps,
-      recommendations: recommendationList.map((r) => ({
-        id: seedId("recommendation", session.id, r.issue),
-        paragraph: r.paragraph,
-        terms: r.terms as RecommendationTerm[],
-        theories: r.theories as Theory[],
-        priority: r.priority,
-      })),
-      warnings: warningList.map((recommendationItem) => ({
-        id: seedId("warning", session.id, recommendationItem.issue),
-        issue: recommendationItem.issue,
-        terms: recommendationItem.terms as RecommendationTerm[],
-        theories: recommendationItem.theories as Theory[],
-        priority: recommendationItem.priority,
-        count: recommendationItem.priority,
-        isGap: recommendationItem.isGap,
-      })),
-    };
+      // Module 6: Dashboard Output
+      const aspectDist: DistEntry[] = Object.entries(stats.aspectCounts)
+        .map(([label, value]) => ({ label, value }) as DistEntry)
+        .sort((a, b) => b.value - a.value);
 
-    await supabase.from("analysis_results").insert(
-      feedbacks.map((fb) => ({
+      const issueDist: DistEntry[] = Object.entries(stats.issueCounts)
+        .map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry)
+        .sort((a, b) => b.value - a.value);
+
+      const polarityDist: DistEntry[] = [
+        { label: "Positive", value: stats.polarityCounts.pos || 0 },
+        { label: "Neutral", value: stats.polarityCounts.neu || 0 },
+        { label: "Negative", value: stats.polarityCounts.neg || 0 },
+      ];
+
+      const rbtDist: DistEntry[] = Object.entries(stats.rbtCounts)
+        .map(([label, value]) => ({ label, value }) as DistEntry)
+        .sort(
+          (a, b) =>
+            (RBT_LEVELS as readonly string[]).indexOf(a.label) -
+            (RBT_LEVELS as readonly string[]).indexOf(b.label),
+        );
+
+      const cltDist: DistEntry[] = Object.entries(stats.cltCounts)
+        .map(([label, value]) => ({ label, value }) as DistEntry)
+        .sort((a, b) => b.value - a.value);
+
+      // Enrich distribution entries with contributing feedback texts
+      const feedbackMap = new Map<string, string>();
+      for (const fb of feedbacks) feedbackMap.set(fb.id, fb.content);
+
+      const aspectToTexts = new Map<string, string[]>();
+      const issueToTexts = new Map<string, string[]>();
+      const polarityToTexts: Record<string, string[]> = { pos: [], neu: [], neg: [] };
+      const rbtToTexts = new Map<string, string[]>();
+      const cltToTexts = new Map<string, string[]>();
+
+      for (const diag of buffer) {
+        const text = feedbackMap.get(diag.feedbackId ?? "");
+        if (!text) continue;
+
+        const aspectList = aspectToTexts.get(diag.tti) ?? [];
+        aspectList.push(text);
+        aspectToTexts.set(diag.tti, aspectList);
+
+        const issueLabel = ISSUE_RULES[diag.issue.toLowerCase()] ?? diag.issue;
+        const issueList = issueToTexts.get(issueLabel) ?? [];
+        issueList.push(text);
+        issueToTexts.set(issueLabel, issueList);
+
+        if (diag.polarity in polarityToTexts) {
+          polarityToTexts[diag.polarity].push(text);
+        }
+
+        const rbtName =
+          diag.issue === "Uncategorized"
+            ? "Uncategorized"
+            : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
+        const rbtList = rbtToTexts.get(rbtName) ?? [];
+        rbtList.push(text);
+        rbtToTexts.set(rbtName, rbtList);
+
+        const cltLabel = diag.issue === "Uncategorized" ? "Uncategorized" : diag.clt;
+        const cltList = cltToTexts.get(cltLabel) ?? [];
+        cltList.push(text);
+        cltToTexts.set(cltLabel, cltList);
+      }
+
+      for (const entry of aspectDist) entry.feedbackTexts = aspectToTexts.get(entry.label);
+      for (const entry of issueDist) entry.feedbackTexts = issueToTexts.get(entry.label);
+      const polarityLabelKey: Record<string, string> = {
+        Positive: "pos",
+        Neutral: "neu",
+        Negative: "neg",
+      };
+      for (const entry of polarityDist)
+        entry.feedbackTexts = polarityToTexts[polarityLabelKey[entry.label]];
+      for (const entry of rbtDist) entry.feedbackTexts = rbtToTexts.get(entry.label);
+      for (const entry of cltDist) entry.feedbackTexts = cltToTexts.get(entry.label);
+
+      // Gap items
+      const gaps: GapItem[] = [];
+      for (const gapDiag of buffer.filter((d) => d.isGap)) {
+        const ilo = sessionIlos[0];
+        if (ilo) {
+          gaps.push({
+            iloId: ilo.id,
+            expected: ilo.statement,
+            actual: `Issue: "${gapDiag.issue}" (CLT: ${gapDiag.clt}, RBT: Level ${gapDiag.rbt})`,
+            severity: "medium" as const,
+          });
+        }
+      }
+
+      const analysisResult: AnalysisResult = {
+        sessionId: session.id,
+        totalFeedback: total,
+        aspectDist,
+        issueDist,
+        polarityDist,
+        rbtDist,
+        cltDist,
+        gaps,
+        recommendations: recommendationList.map((r) => ({
+          id: DashboardSeeder.seedId("recommendation", session.id, r.issue),
+          paragraph: r.paragraph,
+          terms: r.terms as RecommendationTerm[],
+          theories: r.theories as Theory[],
+          priority: r.priority,
+        })),
+        warnings: warningList.map((recommendationItem) => ({
+          id: DashboardSeeder.seedId("warning", session.id, recommendationItem.issue),
+          issue: recommendationItem.issue,
+          terms: recommendationItem.terms as RecommendationTerm[],
+          theories: recommendationItem.theories as Theory[],
+          priority: recommendationItem.priority,
+          count: recommendationItem.priority,
+          isGap: recommendationItem.isGap,
+        })),
+      };
+
+      await this.supabase.from("analysis_results").insert(
+        feedbacks.map((fb) => ({
+          session_id: session.id,
+          feedback_id: fb.id,
+          issue: fb.issue,
+          polarity: fb.polarity,
+        })),
+      );
+
+      await this.supabase.from("feedback_diagnostics").insert({
         session_id: session.id,
-        feedback_id: fb.id,
-        issue: fb.issue,
-        polarity: fb.polarity,
-      })),
-    );
+        result: analysisResult,
+        rules_version: RULES_VERSION,
+      });
 
-    await supabase.from("feedback_diagnostics").insert({
-      session_id: session.id,
-      result: analysisResult,
-      rules_version: RULES_VERSION,
-    });
+      analyzedRows += feedbacks.length;
+      console.log(
+        `  ✓ Analysis result (${feedbacks.length} raw rows, 1 cache row) for "${session.topic}"`,
+      );
+    }
 
-    console.log(
-      `  ✓ Analysis result (${feedbacks.length} raw rows, 1 cache row) for "${session.topic}"`,
-    );
+    return analyzedRows;
   }
 }
 
-// Main
-
-async function seedClass(supabase: SeedSupabase, facultyId: string, config: ClassSeedConfig) {
-  const prefix = `[${config.label}]`;
-
-  console.log(`\n━━━ ${config.label} ━━━`);
-
-  // Phase 1 per class: Course, Topics, ILOs
-  console.log(`${prefix} Course, topics, ILOs...`);
-  const courseId = await getCourseId(supabase, config.courseCode, config.courseTitle);
-  const topics = await getOrCreateTopics(supabase, courseId, config.topicDefs);
-  const ilos = await getOrCreateIlos(supabase, courseId, topics, config.iloDefs);
-
-  const ilosByTopic = new Map<
-    string,
-    { id: string; statement: string; bloomLevel: string; topicId: string }[]
-  >();
-  for (const topic of topics) {
-    ilosByTopic.set(
-      topic.title,
-      ilos.filter((ilo) => ilo.topicId === topic.id),
-    );
-  }
-
-  console.log(`  ✓ Course: ${config.courseCode}`);
-  console.log(`  ✓ ${topics.length} topics, ${ilos.length} ILOs`);
-
-  // Phase 2: Students
-  console.log(`${prefix} Students...`);
-  const studentIds = await createStudents(supabase, config.studentStartIndex, config.studentCount);
-
-  // Phase 3: Class & Enrollments
-  console.log(`${prefix} Class and enrollments...`);
-  const classId = await getOrCreateClass(
-    supabase,
-    courseId,
-    facultyId,
-    config.courseCode,
-    config.section,
-  );
-  await enrollStudents(supabase, classId, studentIds);
-
-  // Phase 4: Sessions
-  console.log(`${prefix} Sessions...`);
-  const sessions = await createSessions(
-    supabase,
-    classId,
-    courseId,
-    topics,
-    facultyId,
-    ilosByTopic,
-    config.sessionTopics,
-    config.analyzeSessionIndices,
-  );
-
-  // Phase 5: Feedback
-  console.log(`${prefix} Feedback...`);
-  const feedbackBySession = await createFeedback(
-    supabase,
-    sessions,
-    studentIds,
-    config.feedbackDistribution,
-    config.addRecentFeedback,
-  );
-
-  // Phase 6: Analysis
-  console.log(`${prefix} Analysis...`);
-  await createAnalysisResults(
-    supabase,
-    sessions,
-    feedbackBySession,
-    ilosByTopic,
-    config.analyzeSessionIndices,
-    config.courseTitle,
-  );
-
-  return {
-    studentCount: studentIds.length,
-    sessionCount: sessions.length,
-    feedbackCount: Array.from(feedbackBySession.values()).reduce((s, f) => s + f.length, 0),
-    analyzedCount: config.analyzeSessionIndices.length,
-    uncategorizedCount: Array.from(feedbackBySession.values())
-      .flat()
-      .filter((f) => f.issue === "Uncategorized").length,
-  };
-}
-
-async function main() {
-  console.log("Dashboard Seed Script\n");
-  console.log(
-    `Target: ${CLASS_CONFIGS.length} classes, ${CLASS_CONFIGS.reduce((s, c) => s + c.studentCount, 0)} students, ${CLASS_CONFIGS.reduce((s, c) => s + c.sessionTopics.length, 0)} sessions\n`,
-  );
-
-  if (!SUPABASE_URL || !SERVICE_KEY) {
-    console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment.");
-    console.error("Run with: npx tsx --env-file .env scripts/seed/seedDashboard.ts");
-    process.exit(1);
-  }
-
-  const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
-
-  // Shared faculty
-  console.log("[1] Faculty...");
-  const facultyId = await getFacultyId(supabase);
-  console.log(`  ✓ Faculty: ${facultyId}`);
-
-  const results: Awaited<ReturnType<typeof seedClass>>[] = [];
-  for (const config of CLASS_CONFIGS) {
-    const result = await seedClass(supabase, facultyId, config);
-    results.push(result);
-  }
-
-  const totalStudents = results.reduce((s, r) => s + r.studentCount, 0);
-  const totalSessions = results.reduce((s, r) => s + r.sessionCount, 0);
-  const totalFeedback = results.reduce((s, r) => s + r.feedbackCount, 0);
-  const totalAnalyzed = results.reduce((s, r) => s + r.analyzedCount, 0);
-  const totalUncategorized = results.reduce((s, r) => s + r.uncategorizedCount, 0);
-
-  // Summary
-  console.log("\n" + "=".repeat(50));
-  console.log("Seed Complete");
-  console.log("=".repeat(50));
-  console.log(`  Classes:       ${CLASS_CONFIGS.length}`);
-  console.log(`  Students:      ${totalStudents}`);
-  console.log(`  Sessions:      ${totalSessions}`);
-  console.log(`  Feedback:      ${totalFeedback}`);
-  console.log(`  Analyzed:      ${totalAnalyzed} of ${totalSessions} sessions`);
-  console.log(`  Uncategorized: ${totalUncategorized} entries`);
-  console.log("");
-
-  for (let i = 0; i < CLASS_CONFIGS.length; i++) {
-    const config = CLASS_CONFIGS[i];
-    const r = results[i];
-    console.log(
-      `  ${config.label}: ${r.sessionCount} sessions, ${r.feedbackCount} feedback, ${r.analyzedCount} analyzed`,
-    );
-  }
-
-  console.log("");
-  console.log("Row counts for verification:");
-
-  // Per-class detail for verification
-  for (let i = 0; i < CLASS_CONFIGS.length; i++) {
-    const config = CLASS_CONFIGS[i];
-    const r = results[i];
-    const rowCount = config.feedbackDistribution
-      .filter((_, si) => config.analyzeSessionIndices.includes(si))
-      .reduce((s, d) => s + d.count, 0);
-    const recentCount = config.addRecentFeedback ? 5 : 0;
-    console.log(`  ${config.label}:`);
-    console.log(`    topics:              ${config.topicDefs.length}`);
-    console.log(`    ILOs:                ${config.iloDefs.length}`);
-    console.log(
-      `    analysis_results:    ${rowCount + recentCount} rows (feedback across ${config.analyzeSessionIndices.length} analyzed sessions)`,
-    );
-    console.log(
-      `    feedback_diagnostics: ${config.analyzeSessionIndices.length} rows (1 per analyzed session)`,
-    );
-  }
-
-  console.log("");
-  console.log("Login at /login/faculty with:");
-  console.log("  Email:    faculty@test.com");
-  console.log("  Password: faculty123");
-  console.log("");
-
-  console.log("Expected KPIs (TEST-CSEG2):");
-  console.log("  Submission rate: 81%  (avg of 83%,67%,93%)");
-  console.log("  ILO achievement: 50%  (avg of 50%,50%,50%)");
-  console.log("  Per-session ILO rates: 50%, 50%, 50%");
-  console.log("  Active classes:  3");
-  console.log("  Active sessions: 9");
-  console.log("");
-
-  console.log("Badge test:");
-  console.log("  TEST-CSEG2 Session A: 5 new feedback");
-  console.log("  TEST-CSEG2 Session D: 15 new feedback (never analyzed)");
-  console.log("  TEST-CSEG2 Session E: 20 new feedback (never analyzed)");
-
-  await closeAdminSqlClient();
-}
-
-main().catch((err) => {
+new DashboardSeeder().run().catch((err) => {
   console.error("\nSeed failed:", err);
   process.exit(1);
 });
