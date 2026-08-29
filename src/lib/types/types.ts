@@ -5,6 +5,7 @@ export interface AuthUser {
   email: string;
   name: string;
   role: UserRole;
+  isDev: boolean;
 }
 
 export interface Course {

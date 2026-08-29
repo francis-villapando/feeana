@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/stores/auth";
+import { isDevEmail } from "@/lib/stores/devEmail";
 import type { UserRole } from "@/lib/types/types";
 import { ThemeToggle } from "@/components/common";
 import { PasswordField } from "./PasswordField";
@@ -105,6 +106,11 @@ export function AuthPage({ role }: { role: UserRole }) {
     const hasRequiredErrors =
       !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !password.trim();
     if (hasSignupErrors || hasRequiredErrors) return;
+
+    if (role === "student" && isDevEmail(email)) {
+      setSubmitError("Invalid email or password.");
+      return;
+    }
 
     if (role === "faculty" && !validateFacultyDomain(email)) {
       const domainHint = ALLOWED_FACULTY_DOMAIN

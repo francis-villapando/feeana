@@ -12,6 +12,7 @@ import type { UserRole } from "../types/types";
 import type { AuthUser } from "../types/types";
 import type { User } from "@supabase/supabase-js";
 import { isRateLimitError } from "../hooks/utils";
+import { isDevEmail } from "./devEmail";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: supabaseUser.email ?? "",
       name: userMeta?.full_name ?? userMeta?.name ?? supabaseUser.email?.split("@")[0] ?? "User",
       role: normalizeUserRole(userMeta?.role as string | undefined),
+      isDev: isDevEmail(supabaseUser.email),
     };
   }, [supabaseUser]);
 
@@ -91,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: data.user.email ?? email,
       name: userMeta?.full_name ?? userMeta?.name ?? email.split("@")[0],
       role: normalizeUserRole(userMeta?.role as string | undefined),
+      isDev: isDevEmail(data.user.email ?? email),
     };
   }, []);
 
@@ -103,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: normalizedEmail,
         name,
         role,
+        isDev: isDevEmail(normalizedEmail),
         needsEmailConfirmation: false,
         alreadyExists: true,
         confirmed: false,
@@ -157,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.user.email ?? normalizedEmail,
         name,
         role,
+        isDev: isDevEmail(data.user.email ?? normalizedEmail),
         needsEmailConfirmation: !data.session,
         alreadyExists: false,
         confirmed: false,
