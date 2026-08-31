@@ -44,7 +44,7 @@ async function getNodeApi(): Promise<WorkerApi> {
 
   const { Preprocess } = await import("../algorithm/preprocess");
   const { ExtractPID, getClassifier } = await import("../algorithm/informationExtraction");
-  const { map_tti, map_rbt, map_clt } = await import("../algorithm/pedagogicalDiagnosticMapping");
+  const { buildDiagnosticRecord } = await import("../algorithm/pedagogicalDiagnosticMapping");
 
   nodeApi = {
     async runInference(
@@ -82,15 +82,9 @@ async function getNodeApi(): Promise<WorkerApi> {
           start: `node:extract:${i}-start`,
           end: `node:extract:${i}-end`,
         });
-        results.push({
-          feedbackId: feedback.id,
-          issue: extraction.issue,
-          polarity: extraction.polarity,
-          tti: map_tti(extraction.issue),
-          rbt: map_rbt(extraction.issue),
-          clt: map_clt(extraction.issue),
-          isGap: extraction.issue !== "Uncategorized",
-        });
+        results.push(
+          buildDiagnosticRecord(extraction.issue, extraction.polarity, _targetIloRbt, feedback.id),
+        );
       }
       return results;
     },

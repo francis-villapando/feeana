@@ -73,7 +73,7 @@ export function mapDiagnostics(issue: string, targetRbt: number): DiagnosticMapp
   const tti = map_tti(issue);
   const rbt = map_rbt(issue);
   const clt = map_clt(issue);
-  const isGap = issue !== "Uncategorized" && rbt <= targetRbt && clt === "Intrinsic";
+  const isGap = rbt <= targetRbt && clt === "Intrinsic";
   return { tti, rbt, clt, isGap };
 }
 

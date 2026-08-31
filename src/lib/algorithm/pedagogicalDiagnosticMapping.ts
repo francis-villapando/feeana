@@ -16,7 +16,7 @@ export function map_rbt(issue: string): number {
 
 export function map_clt(issue: string): CltCategory {
   console.debug("[pedagogicalDiagnosticMapping] Mapping CLT", { issue });
-  return CLT_RULES[issue.toLowerCase()] || "Intrinsic";
+  return CLT_RULES[issue.toLowerCase()] || "Extraneous";
 }
 
 export function buildDiagnosticRecord(
@@ -35,7 +35,7 @@ export function buildDiagnosticRecord(
   const tti = map_tti(issue);
   const rbt = map_rbt(issue);
   const clt = map_clt(issue);
-  const isGap = issue !== "Uncategorized" && rbt <= targetIloRbt && clt === "Intrinsic";
+  const isGap = rbt <= targetIloRbt && clt === "Intrinsic";
 
   return {
     feedbackId,

@@ -25,4 +25,34 @@ describe("buildDiagnosticRecord", () => {
       isGap: false,
     });
   });
+
+  it("handles uncategorized feedback with Extraneous CLT and isGap false", () => {
+    const record = buildDiagnosticRecord("uncategorized", "neu", 3, "fb-3");
+
+    expect(record).toMatchObject({
+      issue: "uncategorized",
+      clt: "Extraneous",
+      isGap: false,
+    });
+  });
+
+  it("safely falls back unmapped issues to Extraneous CLT without triggering gap", () => {
+    const record = buildDiagnosticRecord("completely unknown issue", "neu", 3, "fb-4");
+
+    expect(record).toMatchObject({
+      clt: "Extraneous",
+      isGap: false,
+    });
+  });
+
+  it("does not mark an intrinsic issue as a gap if RBT exceeds target ILO RBT", () => {
+    const record = buildDiagnosticRecord("design synthesis failure", "neg", 3, "fb-5");
+
+    expect(record).toMatchObject({
+      issue: "design synthesis failure",
+      rbt: 6,
+      clt: "Intrinsic",
+      isGap: false,
+    });
+  });
 });

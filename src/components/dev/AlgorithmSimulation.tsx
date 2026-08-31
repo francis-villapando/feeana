@@ -671,15 +671,14 @@ function StepMapping({
         <div className="rounded-md border border-border bg-muted/40 p-4">
           <p className="mb-2 text-sm font-medium">is_gap evaluation</p>
           <p className="font-mono text-xs text-muted-foreground">
-            is_gap = (issue != "Uncategorized") AND (rbt ≤ target_ILO_rbt) AND (clt == "Intrinsic")
+            is_gap = (rbt ≤ target_ILO_rbt) AND (clt == "Intrinsic")
           </p>
           <p className="mt-2 font-mono text-sm">
-            is_gap = ("{issue} != Uncategorized") AND ({rbtDisplay} ≤ {targetRbt}) AND (
-            {mapping.clt} == "Intrinsic")
+            is_gap = ({rbtDisplay} ≤ {targetRbt}) AND ({mapping.clt} == "Intrinsic")
           </p>
           <p className="mt-2 font-mono text-sm">
-            is_gap = ({String(issue !== "Uncategorized")}) AND ({String(mapping.rbt <= targetRbt)})
-            AND ({String(mapping.clt === "Intrinsic")})
+            is_gap = ({String(mapping.rbt <= targetRbt)}) AND ({String(mapping.clt === "Intrinsic")}
+            )
           </p>
           <p className="mt-2 font-mono text-sm">
             is_gap ={" "}

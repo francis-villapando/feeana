@@ -32,7 +32,7 @@ export function buildIloGapItems(diagnostics: DiagnosticRecord[], ilos: IloLike[
   }
 
   return diagnostics
-    .filter((diagnostic) => diagnostic.isGap && diagnostic.clt === "Intrinsic")
+    .filter((diagnostic) => diagnostic.isGap)
     .flatMap((diagnostic) => {
       const issueLevel = diagnostic.rbt;
 
