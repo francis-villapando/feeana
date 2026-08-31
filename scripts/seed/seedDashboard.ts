@@ -7,14 +7,9 @@ import {
   CalculateDistributions,
   GeneratePedagogicalCue,
 } from "../../src/lib/algorithm/strategyGeneration";
-import {
-  TTI_RULES,
-  RBT_RULES,
-  RBT_LEVELS,
-  CLT_RULES,
-  ISSUE_RULES,
-  RULES_VERSION,
-} from "../../src/lib/algorithm/rules";
+import { formatDashboardOutput, buildIloGapItems } from "../../src/lib/algorithm/dashboardOutput";
+import { buildDiagnosticRecord } from "../../src/lib/algorithm/pedagogicalDiagnosticMapping";
+import { TTI_RULES, ISSUE_RULES, RBT_LEVELS, RULES_VERSION } from "../../src/lib/algorithm/rules";
 import type {
   SessionContext,
   DiagnosticRecord,
@@ -24,14 +19,15 @@ import type {
 import type {
   DistEntry,
   AnalysisResult,
-  GapItem,
   RecommendationTerm,
   Theory,
 } from "../../src/lib/types/types";
 
 // Dashboard Test Seed — 1 Course, 2 Classes, 50 Students, 4 Sessions, 155 Feedback
 //
-// Usage: npx tsx --env-file .env scripts/seed/seedDashboard.ts
+// Usage:
+//   Collection only (default): npx tsx --env-file .env scripts/seed/seedDashboard.ts
+//   With analysis:             npx tsx --env-file .env scripts/seed/seedDashboard.ts --analyzed
 //
 // Deterministic: every entity ID and timestamp is derived from a fixed seed.
 // The only random part per run is which feedback rows are sampled from
@@ -70,7 +66,6 @@ interface SessionSeed {
   startsAt: string;
   endsAt: string;
   status: string;
-  lastAnalyzedAt: string | null;
 }
 
 interface ClassSeedConfig {
@@ -85,16 +80,6 @@ interface ClassSeedConfig {
 type TopicIloMap = Map<string, { id: string; statement: string; bloomLevel: string }[]>;
 
 class DashboardSeeder {
-  private static readonly SEED_REFERENCE_DATE = new Date("2026-06-18T00:00:00Z");
-  private static readonly BLOOM_LEVELS = {
-    Remember: 1,
-    Understand: 2,
-    Apply: 3,
-    Analyze: 4,
-    Evaluate: 5,
-    Create: 6,
-  } as const;
-
   private static readonly COURSE_CODE = "TEST-COURSE-CODE";
   private static readonly COURSE_TITLE = "TEST Course Title";
   private static readonly TOPIC_TITLES = ["TEST Topic 1", "TEST Topic 2", "TEST Topic 3"];
@@ -140,6 +125,11 @@ class DashboardSeeder {
 
   private static readonly PRIORITY_THRESHOLD = 0.3;
 
+  // Class 1 Session 1 bias: force this many "conceptual misalignment" rows so the session
+  // reliably exceeds the 30% recommendation threshold (18/50 = 36%).
+  private static readonly BIAS_ISSUE = "conceptual misalignment";
+  private static readonly BIAS_COUNT = 18;
+
   private supabase: SeedSupabase;
   private facultyId = "";
   private feedbackPool: CsvFeedbackRow[] = [];
@@ -163,13 +153,17 @@ class DashboardSeeder {
   }
 
   async run(): Promise<void> {
+    const analyzed = process.argv.includes("--analyzed");
     const totalSessions = DashboardSeeder.CLASS_CONFIGS.reduce(
       (s, c) => s + c.sessionTopics.length,
       0,
     );
     console.log("Dashboard Seed Script\n");
     console.log(
-      `Target: ${DashboardSeeder.CLASS_CONFIGS.length} classes, ${DashboardSeeder.STUDENT_COUNT} students, ${totalSessions} sessions\n`,
+      `Target: ${DashboardSeeder.CLASS_CONFIGS.length} classes, ${DashboardSeeder.STUDENT_COUNT} students, ${totalSessions} sessions`,
+    );
+    console.log(
+      `Mode: ${analyzed ? "--analyzed (production analysis)" : "collection only (pre-analysis)"}\n`,
     );
 
     console.log("[1] Faculty...");
@@ -209,8 +203,11 @@ class DashboardSeeder {
       recent: number;
     }[] = [];
 
-    for (const config of DashboardSeeder.CLASS_CONFIGS) {
-      results.push(await this.seedClass(config, courseId, topics, ilosByTopic, studentIds));
+    for (let i = 0; i < DashboardSeeder.CLASS_CONFIGS.length; i++) {
+      const config = DashboardSeeder.CLASS_CONFIGS[i];
+      results.push(
+        await this.seedClass(config, courseId, topics, ilosByTopic, studentIds, analyzed, i === 0),
+      );
     }
 
     const totalFeedback = results.reduce((s, r) => s + r.feedback, 0);
@@ -236,17 +233,23 @@ class DashboardSeeder {
     }
 
     console.log("");
-    console.log("Row counts for verification:");
-    console.log(`  analysis_results:     ${totalAnalyzed} rows (1 per analyzed feedback)`);
-    console.log(`  feedback_diagnostics: ${totalSessionsSeeded} rows (1 per analyzed session)`);
+    if (analyzed) {
+      console.log("Row counts for verification:");
+      console.log(`  analysis_results:     ${totalAnalyzed} rows (1 per analyzed feedback)`);
+      console.log(`  feedback_diagnostics: ${totalSessionsSeeded} rows (1 per analyzed session)`);
+      console.log("");
+      console.log("Badge test:");
+      console.log("  TEST-CLASS1 Session 2: 10 new feedback (created after last_analyzed_at)");
+    } else {
+      console.log("Collection-only seed complete. The database is primed for manual");
+      console.log('  "Trigger Analysis" testing in the UI. No analysis_results or');
+      console.log("  feedback_diagnostics rows were inserted; all sessions have");
+      console.log("  last_analyzed_at = null.");
+    }
     console.log("");
 
     console.log("Seeded under faculty account:");
     console.log(`  Email:    ${DashboardSeeder.FACULTY_EMAIL}`);
-    console.log("");
-
-    console.log("Badge test:");
-    console.log("  TEST-CLASS1 Session 2: 10 new feedback (created after last_analyzed_at)");
     console.log("");
 
     await closeAdminSqlClient();
@@ -258,9 +261,11 @@ class DashboardSeeder {
     topics: { id: string; title: string }[],
     ilosByTopic: TopicIloMap,
     studentIds: string[],
+    analyzed: boolean,
+    biasFirstSession: boolean,
   ) {
     const prefix = `[${config.label}]`;
-    console.log(`\n━━━ ${config.label} ━━━`);
+    console.log(`\n=== ${config.label} ===`);
 
     console.log(`${prefix} Class and enrollments...`);
     const classId = await this.getOrCreateClass(config, courseId);
@@ -270,18 +275,21 @@ class DashboardSeeder {
     const sessions = await this.createSessions(config, classId, courseId, topics, ilosByTopic);
 
     console.log(`${prefix} Feedback...`);
-    const { feedbackBySession, recentCount } = await this.createFeedback(
+    const { feedbackBySession, usedStudents } = await this.createFeedback(
       config,
       sessions,
       studentIds,
+      biasFirstSession,
     );
 
-    console.log(`${prefix} Analysis...`);
-    const analyzedCount = await this.createAnalysisResults(
-      sessions,
-      feedbackBySession,
-      ilosByTopic,
-    );
+    let analyzedCount = 0;
+    if (analyzed) {
+      console.log(`${prefix} Analysis...`);
+      analyzedCount = await this.analyzeSessions(sessions, feedbackBySession, ilosByTopic);
+    }
+
+    console.log(`${prefix} Recent feedback...`);
+    const recentCount = await this.createRecentFeedback(config, sessions, studentIds, usedStudents);
 
     const feedbackCount =
       Array.from(feedbackBySession.values()).reduce((s, f) => s + f.length, 0) + recentCount;
@@ -448,9 +456,10 @@ class DashboardSeeder {
         ids.push(existing.id);
       } else {
         const id = DashboardSeeder.seedId("student", email);
-        await this.supabase
+        const { error } = await this.supabase
           .from("profiles")
           .insert({ id, email, full_name: `Test Student ${i}`, role: "student" });
+        if (error) throw new Error(`Failed to create student profile: ${error.message}`);
         ids.push(id);
       }
     }
@@ -623,17 +632,6 @@ class DashboardSeeder {
       const endsAt = new Date(startsAt);
       endsAt.setDate(endsAt.getDate() + 7);
 
-      let lastAnalyzedAt: string;
-      if (i === 0) {
-        lastAnalyzedAt = new Date(
-          DashboardSeeder.SEED_REFERENCE_DATE.getTime() - 7 * 24 * 60 * 60 * 1000,
-        ).toISOString();
-      } else {
-        const analyzed = new Date(endsAt);
-        analyzed.setDate(analyzed.getDate() + 1);
-        lastAnalyzedAt = analyzed.toISOString();
-      }
-
       const sessionId = DashboardSeeder.seedId("session", classId, String(i));
 
       await this.supabase.from("sessions").insert({
@@ -647,7 +645,7 @@ class DashboardSeeder {
         starts_at: startsAt.toISOString(),
         ends_at: endsAt.toISOString(),
         created_by: this.facultyId,
-        last_analyzed_at: lastAnalyzedAt,
+        last_analyzed_at: null,
       });
 
       sessionSeeds.push({
@@ -658,7 +656,6 @@ class DashboardSeeder {
         startsAt: startsAt.toISOString(),
         endsAt: endsAt.toISOString(),
         status: "active",
-        lastAnalyzedAt,
       });
     }
 
@@ -675,36 +672,69 @@ class DashboardSeeder {
     this.feedbackPool = parsed.data.filter((r) => r.text && r.issue && r.polarity);
   }
 
-  /** Random, non-repeating sample from the CSV pool — the only random part of the seed. */
-  private sampleFeedback(count: number): CsvFeedbackRow[] {
-    const pool = [...this.feedbackPool];
+  /** Fisher-Yates shuffle returning a new array. */
+  private shuffle<T>(arr: T[]): T[] {
+    const pool = [...arr];
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    return pool.slice(0, count);
+    return pool;
+  }
+
+  /** Random, non-repeating sample from the CSV pool — the only random part of the seed. */
+  private sampleFeedback(count: number): CsvFeedbackRow[] {
+    return this.shuffle(this.feedbackPool).slice(0, count);
+  }
+
+  /**
+   * Samples `count` rows, forcing `biasCount` of them to carry `biasIssue` so the session
+   * reliably crosses the recommendation threshold. Used for Class 1 Session 1.
+   */
+  private sampleFeedbackWithBias(
+    count: number,
+    biasIssue: string,
+    biasCount: number,
+  ): CsvFeedbackRow[] {
+    const biased = this.shuffle(this.feedbackPool.filter((r) => r.issue === biasIssue)).slice(
+      0,
+      biasCount,
+    );
+    const general = this.shuffle(this.feedbackPool.filter((r) => r.issue !== biasIssue)).slice(
+      0,
+      count - biasCount,
+    );
+    return this.shuffle([...biased, ...general]);
   }
 
   private async createFeedback(
     config: ClassSeedConfig,
     sessions: SessionSeed[],
     studentIds: string[],
-  ): Promise<{ feedbackBySession: Map<string, FeedbackSeed[]>; recentCount: number }> {
+    biasFirstSession: boolean,
+  ): Promise<{
+    feedbackBySession: Map<string, FeedbackSeed[]>;
+    usedStudents: Map<string, Set<string>>;
+  }> {
     const feedbackBySession = new Map<string, FeedbackSeed[]>();
+    const usedStudents = new Map<string, Set<string>>();
     let nextStudentIdx = 0;
-    let recentCount = 0;
 
     for (let si = 0; si < sessions.length; si++) {
       const session = sessions[si];
       const count = config.feedbackCounts[si];
-      const recentForSession = si === 1 ? config.recentCount : 0;
-      const sampled = this.sampleFeedback(count + recentForSession);
+      const isBiased = biasFirstSession && si === 0;
+      const sampled = isBiased
+        ? this.sampleFeedbackWithBias(count, DashboardSeeder.BIAS_ISSUE, DashboardSeeder.BIAS_COUNT)
+        : this.sampleFeedback(count);
       const feedbacks: FeedbackSeed[] = [];
+      const sessionStudents = new Set<string>();
 
       for (let fi = 0; fi < count; fi++) {
         const row = sampled[fi];
         const studentId = studentIds[nextStudentIdx % studentIds.length];
         nextStudentIdx++;
+        sessionStudents.add(studentId);
         const issue = row.issue === "uncategorized" ? "Uncategorized" : row.issue;
         const polarity = row.polarity as "pos" | "neu" | "neg";
         const createdAt = new Date(
@@ -712,7 +742,7 @@ class DashboardSeeder {
         ).toISOString();
         const feedbackId = DashboardSeeder.seedId("feedback", session.id, String(fi));
 
-        await this.supabase.from("feedback").insert({
+        const { error } = await this.supabase.from("feedback").insert({
           id: feedbackId,
           session_id: session.id,
           content: row.text,
@@ -724,6 +754,7 @@ class DashboardSeeder {
           },
           created_at: createdAt,
         });
+        if (error) throw new Error(`Failed to insert feedback: ${error.message}`);
 
         feedbacks.push({
           id: feedbackId,
@@ -737,21 +768,47 @@ class DashboardSeeder {
       }
 
       feedbackBySession.set(session.id, feedbacks);
+      usedStudents.set(session.id, sessionStudents);
+    }
 
-      // Recent feedback lands after last_analyzed_at so it shows as "new" in the
-      // badge test; it is inserted but intentionally excluded from analysis.
+    const total = Array.from(feedbackBySession.values()).reduce((s, f) => s + f.length, 0);
+    console.log(`  ✓ ${total} feedback entries created`);
+    return { feedbackBySession, usedStudents };
+  }
+
+  /**
+   * Inserts the "recent" feedback used by the badge test. Timestamps are set after
+   * last_analyzed_at so the UI shows them as new; they are intentionally excluded from
+   * analysis because they are created after the analysis step has already run.
+   */
+  private async createRecentFeedback(
+    config: ClassSeedConfig,
+    sessions: SessionSeed[],
+    studentIds: string[],
+    usedStudents: Map<string, Set<string>>,
+  ): Promise<number> {
+    let recentCount = 0;
+
+    for (let si = 0; si < sessions.length; si++) {
+      const session = sessions[si];
+      const recentForSession = si === 1 ? config.recentCount : 0;
+      if (recentForSession === 0) continue;
+
+      // Recent rows must not reuse a student that already submitted for this session
+      // (unique index on feedback(session_id, student_id)).
+      const taken = usedStudents.get(session.id) ?? new Set<string>();
+      const available = studentIds.filter((id) => !taken.has(id));
+
+      const sampled = this.sampleFeedback(recentForSession);
       for (let ri = 0; ri < recentForSession; ri++) {
-        const row = sampled[count + ri];
-        const studentId = studentIds[nextStudentIdx % studentIds.length];
-        nextStudentIdx++;
+        const row = sampled[ri];
+        const studentId = available[ri % available.length];
         const issue = row.issue === "uncategorized" ? "Uncategorized" : row.issue;
         const polarity = row.polarity as "pos" | "neu" | "neg";
-        const createdAt = new Date(
-          DashboardSeeder.SEED_REFERENCE_DATE.getTime() - ri * 3600000,
-        ).toISOString();
+        const createdAt = new Date(Date.now() + (ri + 1) * 3600000).toISOString();
         const feedbackId = DashboardSeeder.seedId("feedback", session.id, "recent", String(ri));
 
-        await this.supabase.from("feedback").insert({
+        const { error } = await this.supabase.from("feedback").insert({
           id: feedbackId,
           session_id: session.id,
           content: row.text,
@@ -763,20 +820,27 @@ class DashboardSeeder {
           },
           created_at: createdAt,
         });
+        if (error) throw new Error(`Failed to insert recent feedback: ${error.message}`);
 
         recentCount++;
       }
     }
 
-    const total =
-      Array.from(feedbackBySession.values()).reduce((s, f) => s + f.length, 0) + recentCount;
-    console.log(`  ✓ ${total} feedback entries created (${recentCount} recent)`);
-    return { feedbackBySession, recentCount };
+    if (recentCount > 0) {
+      console.log(`  ✓ ${recentCount} recent feedback entries created (badge test)`);
+    }
+    return recentCount;
   }
 
-  // Phase 6: Analysis Results and Diagnostics
+  // Phase 6: Analysis (--analyzed mode only)
 
-  private async createAnalysisResults(
+  /**
+   * Runs the shared production algorithm modules (Modules 4-6) for each session and persists
+   * analysis_results, feedback_diagnostics, and sessions.last_analyzed_at. Mirrors the
+   * assembly in src/lib/algorithm/pipeline.ts but skips the ML worker since the seeder already
+   * has issue/polarity from the CSV.
+   */
+  private async analyzeSessions(
     sessions: SessionSeed[],
     feedbackBySession: Map<string, FeedbackSeed[]>,
     ilosByTopic: TopicIloMap,
@@ -788,39 +852,12 @@ class DashboardSeeder {
       if (!feedbacks || feedbacks.length === 0) continue;
 
       const sessionIlos = ilosByTopic.get(session.topic) ?? [];
-      const targetRbt = Math.max(
-        1,
-        ...sessionIlos.map(
-          (ilo) =>
-            DashboardSeeder.BLOOM_LEVELS[
-              ilo.bloomLevel as keyof typeof DashboardSeeder.BLOOM_LEVELS
-            ] ?? 1,
-        ),
-      );
 
-      // Build DiagnosticRecord[] (Modules 2-4 equivalent)
-      const buffer: DiagnosticRecord[] = feedbacks.map((fb) => {
-        if (fb.issue === "Uncategorized") {
-          return {
-            tti: TTI_RULES["uncategorized"],
-            rbt: RBT_RULES["uncategorized"],
-            clt: CLT_RULES["uncategorized"],
-            issue: "Uncategorized" as const,
-            polarity: fb.polarity,
-            isGap: false,
-            feedbackId: fb.id,
-          };
-        }
-        return {
-          tti: TTI_RULES[fb.issue],
-          rbt: RBT_RULES[fb.issue],
-          clt: CLT_RULES[fb.issue],
-          issue: fb.issue,
-          polarity: fb.polarity,
-          isGap: RBT_RULES[fb.issue] <= targetRbt && CLT_RULES[fb.issue] === "Intrinsic",
-          feedbackId: fb.id,
-        };
-      });
+      // Module 4: build diagnostic records via the shared mapping module.
+      // targetIloRbt matches the production pipeline (1).
+      const buffer: DiagnosticRecord[] = feedbacks.map((fb) =>
+        buildDiagnosticRecord(fb.issue, fb.polarity, 1, fb.id),
+      );
 
       const total = feedbacks.length;
 
@@ -828,7 +865,7 @@ class DashboardSeeder {
       const sessionContext: SessionContext = {
         course: DashboardSeeder.COURSE_TITLE,
         topic: session.topic,
-        targetIloRbt: targetRbt,
+        targetIloRbt: 1,
         sessionId: session.id,
         iloStatement: sessionIlos[0]?.statement ?? "Unknown Goal",
       };
@@ -865,6 +902,9 @@ class DashboardSeeder {
       }
 
       // Module 6: Dashboard Output
+      formatDashboardOutput(recommendationList, warningList, stats);
+
+      // Build final AnalysisResult shape (mirrors pipeline.ts)
       const aspectDist: DistEntry[] = Object.entries(stats.aspectCounts)
         .map(([label, value]) => ({ label, value }) as DistEntry)
         .sort((a, b) => b.value - a.value);
@@ -946,21 +986,10 @@ class DashboardSeeder {
       for (const entry of rbtDist) entry.feedbackTexts = rbtToTexts.get(entry.label);
       for (const entry of cltDist) entry.feedbackTexts = cltToTexts.get(entry.label);
 
-      // Gap items
-      const gaps: GapItem[] = [];
-      for (const gapDiag of buffer.filter((d) => d.isGap)) {
-        const ilo = sessionIlos[0];
-        if (ilo) {
-          gaps.push({
-            iloId: ilo.id,
-            expected: ilo.statement,
-            actual: `Issue: "${gapDiag.issue}" (CLT: ${gapDiag.clt}, RBT: Level ${gapDiag.rbt})`,
-            severity: "medium" as const,
-          });
-        }
-      }
+      // Gap items follow the RBT cascade rule (shared module)
+      const gaps = buildIloGapItems(buffer, sessionIlos);
 
-      const analysisResult: AnalysisResult = {
+      const finalResult: AnalysisResult = {
         sessionId: session.id,
         totalFeedback: total,
         aspectDist,
@@ -969,15 +998,19 @@ class DashboardSeeder {
         rbtDist,
         cltDist,
         gaps,
-        recommendations: recommendationList.map((r) => ({
-          id: DashboardSeeder.seedId("recommendation", session.id, r.issue),
-          paragraph: r.paragraph,
-          terms: r.terms as RecommendationTerm[],
-          theories: r.theories as Theory[],
-          priority: r.priority,
-        })),
+        recommendations: recommendationList.map((r) => {
+          const issueLabel = ISSUE_RULES[r.issue.toLowerCase()] ?? r.issue;
+          return {
+            id: r.id,
+            paragraph: r.paragraph,
+            terms: r.terms as RecommendationTerm[],
+            theories: r.theories as Theory[],
+            priority: r.priority,
+            feedbackTexts: issueToTexts.get(issueLabel),
+          };
+        }),
         warnings: warningList.map((recommendationItem) => ({
-          id: DashboardSeeder.seedId("warning", session.id, recommendationItem.issue),
+          id: recommendationItem.id,
           issue: recommendationItem.issue,
           terms: recommendationItem.terms as RecommendationTerm[],
           theories: recommendationItem.theories as Theory[],
@@ -987,6 +1020,7 @@ class DashboardSeeder {
         })),
       };
 
+      // Persist raw ML output (analysis_results)
       await this.supabase.from("analysis_results").insert(
         feedbacks.map((fb) => ({
           session_id: session.id,
@@ -996,11 +1030,18 @@ class DashboardSeeder {
         })),
       );
 
+      // Persist computed result (feedback_diagnostics)
       await this.supabase.from("feedback_diagnostics").insert({
         session_id: session.id,
-        result: analysisResult,
+        result: finalResult,
         rules_version: RULES_VERSION,
       });
+
+      // Update last_analyzed_at
+      await this.supabase
+        .from("sessions")
+        .update({ last_analyzed_at: new Date().toISOString() })
+        .eq("id", session.id);
 
       analyzedRows += feedbacks.length;
       console.log(
