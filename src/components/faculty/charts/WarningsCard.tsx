@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { AnalysisCard } from "./AnalysisCard";
-import { cn } from "@/lib/hooks/utils";
+import { cn, toTitleCase } from "@/lib/hooks/utils";
+import { CLT_DESCRIPTIONS } from "@/lib/algorithm/rules";
 import type { Warning, RecommendationTerm } from "@/lib/types/types";
 
 const TERM_KIND_LABEL: Record<string, string> = {
@@ -54,6 +55,24 @@ export function WarningsCard({ data }: WarningsCardProps) {
         <CardDescription>Issues detected below the recommendation threshold.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-3 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+          <p className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-destructive/30 bg-destructive/10" />
+            <span>
+              <span className="font-medium text-destructive">Red</span> badges denote{" "}
+              <span className="font-medium text-foreground">Intrinsic</span> cognitive load —{" "}
+              {CLT_DESCRIPTIONS.Intrinsic.label}.
+            </span>
+          </p>
+          <p className="flex items-center gap-1.5">
+            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-border/60 bg-background/40" />
+            <span>
+              <span className="font-medium text-foreground">Neutral</span> badges denote{" "}
+              <span className="font-medium text-foreground">Extraneous</span> cognitive load —{" "}
+              {CLT_DESCRIPTIONS.Extraneous.label}.
+            </span>
+          </p>
+        </div>
         {sorted.length === 0 ? (
           <p className="rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
             No warning for this session.
@@ -73,7 +92,7 @@ export function WarningsCard({ data }: WarningsCardProps) {
                           : "border-border/60 bg-background/40 text-foreground hover:bg-accent/50",
                       )}
                     >
-                      {warning.issue}
+                      {toTitleCase(warning.issue)}
                       <Badge
                         variant={intrinsic ? "destructive" : "secondary"}
                         className="shrink-0 text-[9px] px-1 h-3.5 font-normal"

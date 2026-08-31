@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Converts a snake/lowercase label into Title Case for display.
+export function toTitleCase(value: string): string {
+  return value
+    .split(/\s+/)
+    .map((word) => (word ? word[0].toUpperCase() + word.slice(1) : word))
+    .join(" ");
+}
+
 export function isRateLimitError(err: unknown): boolean {
   if (!err) return false;
   if (typeof err === "object" && "status" in err && (err as { status?: number }).status === 429) {

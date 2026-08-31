@@ -15,6 +15,7 @@ import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import { interpretDistribution } from "./interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
 import { CHART_COLORS, ISSUE_COLOR_ORDER } from "@/lib/constants/chartColors";
+import { toTitleCase } from "@/lib/hooks/utils";
 
 interface IssueDistChartProps {
   data: DistEntry[];
@@ -47,6 +48,7 @@ export function IssueDistChart({ data }: IssueDistChartProps) {
             <YAxis
               type="category"
               dataKey="label"
+              tickFormatter={(label: string) => toTitleCase(label)}
               stroke="var(--color-muted-foreground)"
               fontSize={11}
               width={170}

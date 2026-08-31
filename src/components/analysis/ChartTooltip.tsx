@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { type TooltipProps } from "recharts";
 import type { DistEntry } from "@/lib/types/types";
+import { toTitleCase } from "@/lib/hooks/utils";
 
 export const chartTooltipProps = {
   cursor: { fill: "var(--color-border)" } as const,
@@ -50,7 +51,7 @@ export function ChartTooltipContent({ active, payload, colorMap }: ChartTooltipC
       }}
       style={chartTooltipProps.contentStyle}
     >
-      <p style={{ fontWeight: 500, color, margin: 0 }}>{entry.label}</p>
+      <p style={{ fontWeight: 500, color, margin: 0 }}>{toTitleCase(entry.label)}</p>
       <p style={{ color: "var(--color-muted-foreground)", margin: 0, marginTop: 2 }}>
         Count: {entry.value}
       </p>

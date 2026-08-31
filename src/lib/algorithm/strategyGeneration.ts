@@ -2,6 +2,7 @@
 // Computes distributions, prioritizes issues, and generates pedagogical cues or warnings.
 
 import {
+  CLT_DESCRIPTIONS,
   ISSUE_DESCRIPTIONS,
   ISSUE_RECOMMENDATIONS,
   RBT_DESCRIPTIONS,
@@ -120,10 +121,7 @@ export function GeneratePedagogicalCue(
     {
       text: uniqueIssue.clt,
       kind: "CLT",
-      detail:
-        uniqueIssue.clt === "Intrinsic"
-          ? "The inherent complexity of a task."
-          : "The way in which instruction has been designed.",
+      detail: CLT_DESCRIPTIONS[uniqueIssue.clt].definition,
     },
     {
       text: recommendationSentence,

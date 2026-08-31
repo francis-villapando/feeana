@@ -69,6 +69,7 @@ interface RecommendationParagraphProps {
 
 export function RecommendationParagraph({ rec, index, ilos }: RecommendationParagraphProps) {
   const segments = tokenize(rec.paragraph, rec.terms);
+  const feedbackTexts = rec.feedbackTexts ?? [];
   return (
     <li className="rounded-lg border border-border/60 bg-background/40 p-4">
       <div className="flex items-baseline gap-3">
@@ -106,6 +107,26 @@ export function RecommendationParagraph({ rec, index, ilos }: RecommendationPara
           })}
         </div>
       </div>
+      {feedbackTexts.length > 0 && (
+        <div className="mt-3 border-t border-border/60 pt-3">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Student feedback
+          </p>
+          <div
+            className="chart-tooltip-scrollbar max-h-40 overflow-y-auto pr-1"
+            onWheel={(e) => e.stopPropagation()}
+          >
+            {feedbackTexts.map((text, i) => (
+              <p
+                key={i}
+                className="border-b border-border/40 py-1.5 text-xs leading-relaxed text-foreground last:border-b-0"
+              >
+                &ldquo;{text}&rdquo;
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </li>
   );
 }

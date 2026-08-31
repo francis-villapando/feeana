@@ -324,13 +324,17 @@ export async function runAnalysisPipeline(
     rbtDist,
     cltDist,
     gaps,
-    recommendations: recommendationList.map((r) => ({
-      id: r.id,
-      paragraph: r.paragraph,
-      terms: r.terms as RecommendationTerm[],
-      theories: r.theories as Theory[],
-      priority: r.priority,
-    })),
+    recommendations: recommendationList.map((r) => {
+      const issueLabel = ISSUE_RULES[r.issue.toLowerCase()] ?? r.issue;
+      return {
+        id: r.id,
+        paragraph: r.paragraph,
+        terms: r.terms as RecommendationTerm[],
+        theories: r.theories as Theory[],
+        priority: r.priority,
+        feedbackTexts: issueToTexts.get(issueLabel),
+      };
+    }),
     warnings: warningList.map((recommendationItem) => ({
       id: recommendationItem.id,
       issue: recommendationItem.issue,

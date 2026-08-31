@@ -169,3 +169,19 @@ export const TTI_DESCRIPTIONS: Record<string, string> = {
   "Language Modeling":
     "The quality and amount of teachers' use of language-stimulation and language-facilitation techniques during individual, small-group, and large-group interactions with children.",
 };
+
+export const CLT_DESCRIPTIONS: Record<
+  CltCategory,
+  { definition: string; suggestion: string; label: string }
+> = {
+  Intrinsic: {
+    definition: "The inherent complexity of a task.",
+    suggestion: "This suggests the topic may be inherently difficult for students.",
+    label: "conceptual/content difficulty",
+  },
+  Extraneous: {
+    definition: "The way in which instruction has been designed.",
+    suggestion: "This suggests students faced unnecessary distractions or unclear materials.",
+    label: "instructional delivery/procedural friction",
+  },
+};

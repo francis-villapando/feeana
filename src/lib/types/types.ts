@@ -126,6 +126,7 @@ export interface Recommendation {
   terms: RecommendationTerm[];
   theories: Theory[];
   priority: number;
+  feedbackTexts?: string[];
 }
 
 export interface Warning {

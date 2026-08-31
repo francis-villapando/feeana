@@ -2,6 +2,8 @@ import { Fragment, type ReactNode } from "react";
 import type { DistEntry } from "@/lib/types/types";
 import { RBT_LEVEL_NUMBERS } from "@/lib/constants/chartColors";
 import { AccentLabel } from "./AccentLabel";
+import { toTitleCase } from "@/lib/hooks/utils";
+import { CLT_DESCRIPTIONS } from "@/lib/algorithm/rules";
 
 type ChartKind = "aspect" | "polarity" | "issue" | "rbt" | "clt";
 
@@ -54,12 +56,13 @@ function interpretAspectOrIssue(
   if (data.length === 0) return "No data available for interpretation.";
 
   const topicNoun = kind === "aspect" ? "discussed" : "raised concerns about";
+  const displayLabel = (label: string) => (kind === "issue" ? toTitleCase(label) : label);
 
   // Most prominent category
   const categorizedEntries = data.filter((entry) => entry.label !== "Uncategorized");
   const maxCount = Math.max(...categorizedEntries.map((entry) => entry.value));
   const topEntries = categorizedEntries.filter((entry) => entry.value === maxCount);
-  const topLabels = topEntries.map((entry) => entry.label);
+  const topLabels = topEntries.map((entry) => displayLabel(entry.label));
   const firstSentence =
     maxCount === 0 ? (
       `No prominent ${kind} pattern was identified across the ${totalFeedback} responses.`
@@ -74,7 +77,7 @@ function interpretAspectOrIssue(
   // Missing categories (excluding Uncategorized)
   const missingLabels = categorizedEntries
     .filter((entry) => entry.value === 0)
-    .map((entry) => entry.label);
+    .map((entry) => displayLabel(entry.label));
   const secondSentence =
     missingLabels.length === 0 ? (
       ""
@@ -268,9 +271,9 @@ function interpretClt(data: DistEntry[], totalFeedback: number): ReactNode {
     suggestion =
       "This suggests the topic may be inherently difficult for students and that students may have faced unnecessary distractions or unclear materials.";
   } else if (topLabels[0] === "Extraneous") {
-    suggestion = "This suggests students faced unnecessary distractions or unclear materials.";
+    suggestion = CLT_DESCRIPTIONS.Extraneous.suggestion;
   } else if (topLabels[0] === "Intrinsic") {
-    suggestion = "This suggests the topic may be inherently difficult for students.";
+    suggestion = CLT_DESCRIPTIONS.Intrinsic.suggestion;
   } else {
     suggestion = "";
   }
