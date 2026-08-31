@@ -441,6 +441,7 @@ function InputSandbox({
   const set = <K extends keyof SimulationInput>(key: K, value: SimulationInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
   const [activePreset, setActivePreset] = useState<Preset | null>(null);
+  const [issueOccurrencesTouched, setIssueOccurrencesTouched] = useState(false);
 
   return (
     <Card>
@@ -543,9 +544,12 @@ function InputSandbox({
           <StepNumber
             id="sim-occ"
             label="Simulated Issue Occurrences"
-            min={0}
+            min={issueOccurrencesTouched ? 1 : 0}
             value={input.issueOccurrences}
-            onChange={(v) => set("issueOccurrences", v)}
+            onChange={(v) => {
+              if (v >= 1) setIssueOccurrencesTouched(true);
+              set("issueOccurrences", v);
+            }}
             incrementLabel="Increase issue occurrences"
             decrementLabel="Decrease issue occurrences"
           />
