@@ -10,7 +10,11 @@ import { CleanFeedback } from "../../lib/algorithm/preprocess";
 import { map_tti, map_rbt, map_clt } from "../../lib/algorithm/pedagogicalDiagnosticMapping";
 import { GeneratePedagogicalCue } from "../../lib/algorithm/strategyGeneration";
 import { RBT_LEVELS } from "../../lib/algorithm/rules";
-import type { SessionContext, BufferedDiagnostic, RecommendationItem } from "../../lib/algorithm/types";
+import type {
+  SessionContext,
+  BufferedDiagnostic,
+  RecommendationItem,
+} from "../../lib/algorithm/types";
 
 export type { RecommendationItem } from "../../lib/algorithm/types";
 

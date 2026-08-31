@@ -238,9 +238,7 @@ class DashboardSeeder {
     console.log("");
     console.log("Row counts for verification:");
     console.log(`  analysis_results:     ${totalAnalyzed} rows (1 per analyzed feedback)`);
-    console.log(
-      `  feedback_diagnostics: ${totalSessionsSeeded} rows (1 per analyzed session)`,
-    );
+    console.log(`  feedback_diagnostics: ${totalSessionsSeeded} rows (1 per analyzed session)`);
     console.log("");
 
     console.log("Seeded under faculty account:");
@@ -279,7 +277,11 @@ class DashboardSeeder {
     );
 
     console.log(`${prefix} Analysis...`);
-    const analyzedCount = await this.createAnalysisResults(sessions, feedbackBySession, ilosByTopic);
+    const analyzedCount = await this.createAnalysisResults(
+      sessions,
+      feedbackBySession,
+      ilosByTopic,
+    );
 
     const feedbackCount =
       Array.from(feedbackBySession.values()).reduce((s, f) => s + f.length, 0) + recentCount;
@@ -524,8 +526,7 @@ class DashboardSeeder {
 
     const sessionFilter =
       "session_id IN (SELECT id FROM sessions WHERE class_id IN (SELECT id FROM classes WHERE course = ANY($1::text[])))";
-    const classFilter =
-      "class_id IN (SELECT id FROM classes WHERE course = ANY($1::text[]))";
+    const classFilter = "class_id IN (SELECT id FROM classes WHERE course = ANY($1::text[]))";
 
     // Orphaned student profiles from previous seed versions (e.g. test.student51..60).
     // Scoped to this seed's own namespace only — never touches test-nonowner-*,
@@ -547,7 +548,10 @@ class DashboardSeeder {
         text: `DELETE FROM activity_log WHERE user_id IN (SELECT id FROM profiles WHERE ${orphanStudentFilter})`,
         params: [DashboardSeeder.STUDENT_COUNT],
       },
-      { text: `DELETE FROM profiles WHERE ${orphanStudentFilter}`, params: [DashboardSeeder.STUDENT_COUNT] },
+      {
+        text: `DELETE FROM profiles WHERE ${orphanStudentFilter}`,
+        params: [DashboardSeeder.STUDENT_COUNT],
+      },
     ]);
 
     const tableNames = [
@@ -866,7 +870,9 @@ class DashboardSeeder {
         .sort((a, b) => b.value - a.value);
 
       const issueDist: DistEntry[] = Object.entries(stats.issueCounts)
-        .map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry)
+        .map(
+          ([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry,
+        )
         .sort((a, b) => b.value - a.value);
 
       const polarityDist: DistEntry[] = [
