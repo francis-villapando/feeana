@@ -20,17 +20,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getMLWorkerAsync } from "../ml/mlWorkerStore";
 import { collectPipelineData } from "./dataCollection";
 import { CalculateDistributions, GeneratePedagogicalCue } from "./strategyGeneration";
-import { formatDashboardOutput } from "./dashboardOutput";
+import { getIloLevel } from "./dashboardOutput";
 import { ISSUE_RULES, RBT_LEVELS, RULES_VERSION } from "./rules";
 import { buildIloGapItems } from "./dashboardOutput";
-import type {
-  SessionContext,
-  FeedbackInput,
-  DiagnosticRecord,
-  BufferedDiagnostic,
-  RecommendationItem,
-  PipelineOutput,
-} from "./types";
+import type { DiagnosticRecord, BufferedDiagnostic, RecommendationItem } from "./types";
 
 const PRIORITY_THRESHOLD = 0.3;
 
@@ -147,7 +140,7 @@ export async function runAnalysisPipeline(
   const { sessionContext, feedbackStream } = collectPipelineData(
     courseName,
     session.topic || "Unknown Topic",
-    1,
+    getIloLevel(activeIlos[0]),
     sessionId,
     activeIlos[0]?.statement || "Unknown Goal",
     feedbackData ?? [],
@@ -172,7 +165,10 @@ export async function runAnalysisPipeline(
   });
 
   performance.mark("pipeline:inference-start");
-  const buffer: DiagnosticRecord[] = await api.runInference(feedbackStream, 1);
+  const buffer: DiagnosticRecord[] = await api.runInference(
+    feedbackStream,
+    sessionContext.targetIloRbt,
+  );
   performance.mark("pipeline:inference-end");
   assertNotAborted(signal);
   performance.measure("Pipeline total", {
@@ -232,8 +228,6 @@ export async function runAnalysisPipeline(
   }
 
   // Module 6: Dashboard Output
-  const pipelineOutput = formatDashboardOutput(recommendationList, warningList, stats);
-
   // Build final AnalysisResult shape
   const aspectDist: DistEntry[] = Object.entries(stats.aspectCounts)
     .map(([label, value]) => ({ label, value }) as DistEntry)

@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Cpu,
   Database,
   Download,
   FileText,
+  Info,
   Loader2,
   RotateCcw,
   Scale,
@@ -23,6 +26,13 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/hooks/utils";
 import { getMLWorkerAsync, setLoadProgressListener } from "@/lib/ml/mlWorkerStore";
 import type { LoadProgress } from "@/lib/algorithm/models/distilXlmr";
@@ -40,6 +50,8 @@ import {
   type RecommendationItem,
 } from "@/components/dev/simulationEngine";
 
+import { PRESETS, type Preset } from "./simulationPresets";
+
 const BLOOM_LEVELS = [
   { value: "1", label: "1 · Remember" },
   { value: "2", label: "2 · Understand" },
@@ -47,54 +59,6 @@ const BLOOM_LEVELS = [
   { value: "4", label: "4 · Analyze" },
   { value: "5", label: "5 · Evaluate" },
   { value: "6", label: "6 · Create" },
-];
-
-interface Preset {
-  label: string;
-  description: string;
-  input: SimulationInput;
-}
-
-const PRESETS: Preset[] = [
-  {
-    label: "Cognitive Overload (Gap)",
-    description: "Abstract logic gap, RBT 4 ≤ target 5, Intrinsic → gap, P ≥ 0.30",
-    input: {
-      topic: "Recursion & Divide-and-Conquer",
-      iloStatement: "Design and analyze recursive algorithms for complex problems.",
-      targetRbt: 5,
-      feedbackText:
-        "I can't break down the recursive cases into smaller subproblems. The abstract logic is really hard to follow and I keep getting lost.",
-      totalFeedback: 10,
-      issueOccurrences: 3,
-    },
-  },
-  {
-    label: "Pacing Issue",
-    description: "Instructional cadence, RBT 2 ≤ target 3, Extraneous → not a gap, P ≥ 0.30",
-    input: {
-      topic: "Linked Lists",
-      iloStatement: "Implement and manipulate singly linked list operations.",
-      targetRbt: 3,
-      feedbackText:
-        "The lesson moves way too fast. We jump between topics without enough time to practice each one.",
-      totalFeedback: 10,
-      issueOccurrences: 4,
-    },
-  },
-  {
-    label: "Minor Feedback (Warning)",
-    description: "Low prevalence → P < 0.30, passive diagnostic warning",
-    input: {
-      topic: "Stacks & Queues",
-      iloStatement: "Apply stack and queue data structures to solve problems.",
-      targetRbt: 3,
-      feedbackText:
-        "The notation for the stack operations is a bit confusing at first, but I think I get it now.",
-      totalFeedback: 10,
-      issueOccurrences: 1,
-    },
-  },
 ];
 
 type ModelStatus = "loading" | "ready" | "error";
@@ -108,16 +72,18 @@ const STEP_META = [
   { label: "Output", icon: Activity },
 ];
 
+const EMPTY_INPUT: SimulationInput = {
+  topic: "",
+  iloStatement: "",
+  targetRbt: 0,
+  feedbackText: "",
+  totalFeedback: 0,
+  issueOccurrences: 0,
+};
+
 export function AlgorithmSimulation() {
   const [step, setStep] = useState(0);
-  const [input, setInput] = useState<SimulationInput>({
-    topic: "",
-    iloStatement: "",
-    targetRbt: 3,
-    feedbackText: "",
-    totalFeedback: 10,
-    issueOccurrences: 3,
-  });
+  const [input, setInput] = useState<SimulationInput>({ ...EMPTY_INPUT });
 
   const [modelStatus, setModelStatus] = useState<ModelStatus>("loading");
   const [loadProgress, setLoadProgress] = useState<LoadProgress>({
@@ -192,7 +158,12 @@ export function AlgorithmSimulation() {
         rawText: input.feedbackText,
       });
       const diag = mapDiagnostics(result.issue, input.targetRbt);
-      const strat = computePriority(input.issueOccurrences, input.totalFeedback, diag.isGap);
+      const strat = computePriority(
+        result.issue,
+        input.issueOccurrences,
+        input.totalFeedback,
+        diag.isGap,
+      );
       const cueResult = buildCue(input, result.issue, diag, input.issueOccurrences);
       setExtraction(result);
       setMapping(diag);
@@ -231,6 +202,7 @@ export function AlgorithmSimulation() {
 
   const handleReset = () => {
     setStep(0);
+    setInput({ ...EMPTY_INPUT });
     setExtraction(null);
     setMapping(null);
     setStrategy(null);
@@ -243,7 +215,10 @@ export function AlgorithmSimulation() {
 
   const canNext =
     step === 0
-      ? input.topic.trim().length > 0 && input.feedbackText.trim().length > 0
+      ? input.topic.trim().length > 0 &&
+        input.feedbackText.trim().length > 0 &&
+        input.targetRbt >= 1 &&
+        input.totalFeedback >= 1
       : step === 2
         ? modelReady && !extracting
         : step < 6;
@@ -319,11 +294,13 @@ export function AlgorithmSimulation() {
 
       {step >= 3 && extraction && <StepExtraction extraction={extraction} />}
 
-      {step >= 4 && mapping && <StepMapping mapping={mapping} targetRbt={input.targetRbt} />}
+      {step >= 4 && mapping && extraction && (
+        <StepMapping mapping={mapping} targetRbt={input.targetRbt} issue={extraction.issue} />
+      )}
 
       {step >= 5 && strategy && <StepStrategy strategy={strategy} />}
 
-      {step >= 6 && cue && strategy && <StepOutput cue={cue} strategy={strategy} />}
+      {step >= 6 && strategy && <StepOutput cue={cue} strategy={strategy} />}
     </div>
   );
 }
@@ -398,6 +375,60 @@ function ModelStatusCard({
   );
 }
 
+function StepNumber({
+  id,
+  label,
+  min,
+  value,
+  onChange,
+  incrementLabel,
+  decrementLabel,
+}: {
+  id: string;
+  label: string;
+  min: number;
+  value: number;
+  onChange: (value: number) => void;
+  incrementLabel: string;
+  decrementLabel: string;
+}) {
+  const clamp = (n: number) => Math.max(min, Number.isFinite(n) ? n : 0);
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="flex h-9 rounded-md border border-input bg-transparent shadow-sm focus-within:ring-1 focus-within:ring-ring">
+        <Input
+          id={id}
+          type="number"
+          min={min}
+          value={value}
+          onChange={(e) => onChange(clamp(Number(e.target.value)))}
+          className="h-full border-0 bg-transparent shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+        <div className="flex flex-col divide-y divide-input border-l border-input">
+          <button
+            type="button"
+            aria-label={incrementLabel}
+            onClick={() => onChange(value + 1)}
+            className="flex h-1/2 items-center justify-center px-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <ChevronUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label={decrementLabel}
+            onClick={() => onChange(Math.max(min, value - 1))}
+            disabled={value <= min}
+            className="flex h-1/2 items-center justify-center px-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-40"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function InputSandbox({
   input,
   setInput,
@@ -409,6 +440,7 @@ function InputSandbox({
 }) {
   const set = <K extends keyof SimulationInput>(key: K, value: SimulationInput[K]) =>
     setInput((prev) => ({ ...prev, [key]: value }));
+  const [activePreset, setActivePreset] = useState<Preset | null>(null);
 
   return (
     <Card>
@@ -425,15 +457,23 @@ function InputSandbox({
             <Button
               key={preset.label}
               type="button"
-              variant="outline"
+              variant={activePreset?.label === preset.label ? "secondary" : "outline"}
               size="sm"
-              onClick={() => onPreset(preset)}
+              onClick={() => {
+                onPreset(preset);
+                setActivePreset(preset);
+              }}
             >
               <Sparkles className="mr-2 h-4 w-4" />
               {preset.label}
             </Button>
           ))}
         </div>
+        <p className="text-xs text-muted-foreground">
+          {activePreset
+            ? `${activePreset.label} — ${activePreset.description}`
+            : "Select a preset to load a pre-configured scenario, or configure the fields below manually."}
+        </p>
 
         <Separator />
 
@@ -471,45 +511,49 @@ function InputSandbox({
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="sim-rbt">Target Bloom level (RBT_target)</Label>
-            <select
-              id="sim-rbt"
-              value={String(input.targetRbt)}
-              onChange={(e) => set("targetRbt", Number(e.target.value))}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            <Label htmlFor="sim-rbt">Target Bloom level (target_ILO_rbt)</Label>
+            <Select
+              value={input.targetRbt === 0 ? "" : String(input.targetRbt)}
+              onValueChange={(v) => set("targetRbt", Number(v))}
             >
-              {BLOOM_LEVELS.map((level) => (
-                <option key={level.value} value={level.value}>
-                  {level.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger
+                id="sim-rbt"
+                className={input.targetRbt >= 1 ? "[&>svg]:text-primary [&>svg]:opacity-70" : ""}
+              >
+                <SelectValue placeholder="Select RBT level" />
+              </SelectTrigger>
+              <SelectContent>
+                {BLOOM_LEVELS.map((level) => (
+                  <SelectItem key={level.value} value={level.value}>
+                    {level.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="sim-total">Simulated Total Feedback (Total_F)</Label>
-            <Input
-              id="sim-total"
-              type="number"
-              min={1}
-              value={input.totalFeedback}
-              onChange={(e) => set("totalFeedback", Math.max(1, Number(e.target.value)))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="sim-occ">Simulated Issue Occurrences</Label>
-            <Input
-              id="sim-occ"
-              type="number"
-              min={0}
-              value={input.issueOccurrences}
-              onChange={(e) => set("issueOccurrences", Math.max(0, Number(e.target.value)))}
-            />
-          </div>
+          <StepNumber
+            id="sim-total"
+            label="Simulated Total Feedback (Total_F)"
+            min={1}
+            value={input.totalFeedback}
+            onChange={(v) => set("totalFeedback", v)}
+            incrementLabel="Increase total feedback"
+            decrementLabel="Decrease total feedback"
+          />
+          <StepNumber
+            id="sim-occ"
+            label="Simulated Issue Occurrences"
+            min={0}
+            value={input.issueOccurrences}
+            onChange={(v) => set("issueOccurrences", v)}
+            incrementLabel="Increase issue occurrences"
+            decrementLabel="Decrease issue occurrences"
+          />
         </div>
 
         <p className="text-xs text-muted-foreground">
           The simulated cohort lets you demonstrate both branches: set occurrences so that{" "}
-          <span className="font-mono">P = (count / Total_F) × w_c</span> crosses the{" "}
+          <span className="font-mono">P = (count / Total_F) x w_c</span> crosses the{" "}
           <span className="font-mono">0.30</span> threshold (recommendation) or stays below it
           (warning).
         </p>
@@ -522,16 +566,19 @@ function StepContext({ input }: { input: SimulationInput }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 1 · Session Context (Module 1)</CardTitle>
+        <CardTitle>Step 1 · Data Collection (Module 1)</CardTitle>
         <CardDescription>
-          Data collection — session context and empty diagnostic buffers.
+          Data collection — session context fed into the Module 2–4 feedback loop.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <Row label="Topic" value={input.topic || "—"} />
         <Row label="Target ILO" value={input.iloStatement || "—"} />
-        <Row label="Target Bloom level (RBT_target)" value={rbtLabel(input.targetRbt)} />
-        <Row label="Diagnostic buffer" value="[] (empty — awaiting feedback loop)" mono />
+        <Row
+          label="Target Bloom level (target_ILO_rbt)"
+          value={input.targetRbt >= 1 ? `${input.targetRbt} · ${rbtLabel(input.targetRbt)}` : "—"}
+        />
+        <Row label="Feedback (raw)" value={input.feedbackText || "—"} />
       </CardContent>
     </Card>
   );
@@ -574,7 +621,7 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
           <Stat label="Extracted Issue" value={extraction.issue} />
           <Stat label="Polarity" value={extraction.polarity} />
           <Stat
@@ -582,17 +629,24 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
             value={`${(extraction.confidence * 100).toFixed(1)}%`}
             highlight={extraction.confidence >= 0.5}
           />
+          <Stat label="Inference Latency" value={`${extraction.latencyMs.toFixed(1)} ms`} />
         </div>
-        <p className="text-xs text-muted-foreground">
-          Inference latency: {extraction.latencyMs.toFixed(1)} ms
-        </p>
       </CardContent>
     </Card>
   );
 }
 
-function StepMapping({ mapping, targetRbt }: { mapping: DiagnosticMapping; targetRbt: number }) {
-  const gapTrue = mapping.rbt <= targetRbt && mapping.clt === "Intrinsic";
+function StepMapping({
+  mapping,
+  targetRbt,
+  issue,
+}: {
+  mapping: DiagnosticMapping;
+  targetRbt: number;
+  issue: string;
+}) {
+  const uncategorized = mapping.clt === "Uncategorized";
+  const rbtDisplay = uncategorized ? "N/A" : mapping.rbt;
   return (
     <Card>
       <CardHeader>
@@ -604,27 +658,42 @@ function StepMapping({ mapping, targetRbt }: { mapping: DiagnosticMapping; targe
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <Stat label="TTI (Aspect)" value={mapping.tti} />
-          <Stat label="RBT_issue" value={`${mapping.rbt} · ${rbtLabel(mapping.rbt)}`} />
+          <Stat
+            label="RBT_issue"
+            value={
+              uncategorized
+                ? rbtLabel(mapping.rbt, issue)
+                : `${mapping.rbt} · ${rbtLabel(mapping.rbt)}`
+            }
+          />
           <Stat label="CLT" value={mapping.clt} />
         </div>
         <div className="rounded-md border border-border bg-muted/40 p-4">
           <p className="mb-2 text-sm font-medium">is_gap evaluation</p>
           <p className="font-mono text-xs text-muted-foreground">
-            is_gap = (rbt ≤ target_ilo_rbt) AND (clt == "Intrinsic")
+            is_gap = (issue != "Uncategorized") AND (rbt ≤ target_ILO_rbt) AND (clt == "Intrinsic")
           </p>
           <p className="mt-2 font-mono text-sm">
-            ({mapping.rbt} ≤ {targetRbt}) AND ({mapping.clt} == "Intrinsic") ={" "}
-            <span className={gapTrue ? "text-emerald-600" : "text-destructive"}>
-              {String(gapTrue)}
+            is_gap = ("{issue} != Uncategorized") AND ({rbtDisplay} ≤ {targetRbt}) AND (
+            {mapping.clt} == "Intrinsic")
+          </p>
+          <p className="mt-2 font-mono text-sm">
+            is_gap = ({String(issue !== "Uncategorized")}) AND ({String(mapping.rbt <= targetRbt)})
+            AND ({String(mapping.clt === "Intrinsic")})
+          </p>
+          <p className="mt-2 font-mono text-sm">
+            is_gap ={" "}
+            <span className={mapping.isGap ? "text-emerald-600" : "text-destructive"}>
+              {String(mapping.isGap)}
             </span>
           </p>
           <Badge
             className={cn(
-              "mt-2",
-              gapTrue ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground",
+              "mt-3",
+              mapping.isGap ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
             )}
           >
-            {gapTrue ? "Gap detected" : "Not a gap"}
+            {mapping.isGap ? "Gap detected" : "Not a gap"}
           </Badge>
         </div>
       </CardContent>
@@ -633,6 +702,37 @@ function StepMapping({ mapping, targetRbt }: { mapping: DiagnosticMapping; targe
 }
 
 function StepStrategy({ strategy }: { strategy: StrategyResult }) {
+  if (strategy.isExcluded) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Step 5 · Strategy Generation (Module 5)</CardTitle>
+          <CardDescription>Unified priority scoring and threshold trigger.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Stat label="issue_count" value={String(strategy.issueCount)} />
+            <Stat label="Total_F (total feedback)" value={String(strategy.totalFeedback)} />
+            <Stat label="w_c (criticality weight)" value="—" />
+          </div>
+          <div className="rounded-md border border-border bg-muted/40 p-4">
+            <p className="mb-2 text-sm font-medium">Priority score (P)</p>
+            <p className="font-mono text-xs text-muted-foreground">
+              P = (issue_count / Total_F) x w_c — bypassed for uncategorized feedback
+            </p>
+            <Alert className="mt-3 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Excluded from Unified Priority Scoring</AlertTitle>
+              <AlertDescription>
+                Uncategorized feedback does not carry pedagogical weight.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const pct = (strategy.priorityScore * 100).toFixed(1);
   return (
     <Card>
@@ -642,34 +742,35 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Stat label="w_c (weight)" value={String(strategy.weightedCoefficient)} />
-          <Stat label="Issue count" value={String(strategy.issueCount)} />
-          <Stat label="Total_F" value={String(strategy.totalFeedback)} />
+          <Stat label="issue_count" value={String(strategy.issueCount)} />
+          <Stat label="Total_F (total feedback)" value={String(strategy.totalFeedback)} />
+          <Stat label="w_c (criticality weight)" value={String(strategy.weightedCoefficient)} />
         </div>
         <div className="rounded-md border border-border bg-muted/40 p-4">
           <p className="mb-2 text-sm font-medium">Priority score (P)</p>
           <p className="font-mono text-xs text-muted-foreground">
-            P = (issue_count / Total_F) × w_c
+            P = (issue_count / Total_F) x w_c
           </p>
           <p className="mt-2 font-mono text-sm">
-            P = ({strategy.issueCount} / {strategy.totalFeedback}) × {strategy.weightedCoefficient}{" "}
-            = <span className="font-semibold text-primary">{pct}%</span>
+            P = ({strategy.issueCount} / {strategy.totalFeedback}) x{" "}
+            {strategy.weightedCoefficient}{" "}
           </p>
-          <div className="mt-3 flex items-center gap-2">
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-primary/20">
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${Math.min(100, strategy.priorityScore * 100)}%` }}
-              />
-            </div>
-            <span className="font-mono text-xs text-muted-foreground">threshold 30%</span>
-          </div>
+          <p className="mt-2 font-mono text-sm">
+            P ={" "}
+            <span className="font-medium">
+              {(strategy.issueCount / strategy.totalFeedback).toFixed(1)}
+            </span>{" "}
+            x {strategy.weightedCoefficient}{" "}
+          </p>
+          <p className="mt-2 font-mono text-sm">
+            P = <span className="font-semibold text-primary">{pct}%</span>
+          </p>
           <Badge
             className={cn(
               "mt-3",
               strategy.triggersRecommendation
                 ? "bg-primary/10 text-primary"
-                : "bg-amber-500/10 text-amber-600",
+                : "bg-warning/10 text-warning",
             )}
           >
             {strategy.triggersRecommendation
@@ -682,8 +783,45 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
   );
 }
 
-function StepOutput({ cue, strategy }: { cue: RecommendationItem; strategy: StrategyResult }) {
+const WARNING_TERM_KINDS = new Set(["prevalence", "TTI", "RBT", "CLT"]);
+
+function StepOutput({
+  cue,
+  strategy,
+}: {
+  cue: RecommendationItem | null;
+  strategy: StrategyResult;
+}) {
+  if (strategy.isExcluded || !cue) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Step 6 · Dashboard Output (Module 6)</CardTitle>
+          <CardDescription>
+            Uncategorized feedback — no recommendation or warning generated.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-slate-400/40 bg-slate-500/5 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <Info className="h-4 w-4 text-slate-500" />
+              <span className="text-sm font-semibold">Uncategorized Diagnostic Notice</span>
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              This feedback was classified as{" "}
+              <span className="font-medium text-foreground">Uncategorized</span> — it does not match
+              any known pedagogical issue pattern. Diagnostic mapping, priority scoring, and
+              strategy generation are bypassed, so no recommendation or warning is generated for
+              this entry.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const isRecommendation = strategy.triggersRecommendation;
+  const pct = (strategy.priorityScore * 100).toFixed(1);
   return (
     <Card>
       <CardHeader>
@@ -691,47 +829,60 @@ function StepOutput({ cue, strategy }: { cue: RecommendationItem; strategy: Stra
         <CardDescription>
           {isRecommendation
             ? "Threshold met — full pedagogical recommendation cue generated."
-            : "Threshold not met — passive diagnostic warning generated."}
+            : "Threshold not met — passive diagnostic warning monitor."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div
-          className={cn(
-            "rounded-lg border p-4",
-            isRecommendation
-              ? "border-primary/40 bg-primary/5"
-              : "border-amber-500/40 bg-amber-500/5",
-          )}
-        >
-          <div className="mb-2 flex items-center gap-2">
-            {isRecommendation ? (
+        {isRecommendation ? (
+          <div className="rounded-lg border border-primary/40 bg-primary/5 p-4">
+            <div className="mb-2 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-            ) : (
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-            )}
-            <span className="text-sm font-semibold">
-              {isRecommendation ? "Pedagogical Recommendation" : "Diagnostic Warning"}
-            </span>
-            <Badge variant="outline" className="ml-auto font-mono">
-              {cue.issue}
-            </Badge>
+              <span className="text-sm font-semibold">Recommendation Cue</span>
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">{cue.paragraph}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {cue.terms.map((term, i) => (
+                <Badge
+                  key={i}
+                  variant="secondary"
+                  className="h-auto py-1 font-normal whitespace-normal"
+                >
+                  <span className="font-medium">{term.text}</span>
+                  <span className="ml-1 shrink-0 whitespace-nowrap text-muted-foreground">
+                    · {term.kind}
+                  </span>
+                </Badge>
+              ))}
+            </div>
           </div>
-          <p className="text-sm leading-relaxed text-muted-foreground">{cue.paragraph}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {cue.terms.map((term, i) => (
-            <Badge
-              key={i}
-              variant="secondary"
-              className="h-auto py-1 font-normal whitespace-normal"
-            >
-              <span className="font-medium">{term.text}</span>
-              <span className="ml-1 shrink-0 whitespace-nowrap text-muted-foreground">
-                · {term.kind}
-              </span>
-            </Badge>
-          ))}
-        </div>
+        ) : (
+          <div className="rounded-lg border border-warning/40 bg-warning/10 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              <span className="text-sm font-semibold">Diagnostic Warning Monitor</span>
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Low-prevalence diagnostic alert — {pct}% of the class. Below the 30% recommendation
+              threshold; no instructional intervention is triggered. Monitor in the next session.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {cue.terms
+                .filter((term) => WARNING_TERM_KINDS.has(term.kind))
+                .map((term, i) => (
+                  <Badge
+                    key={i}
+                    variant="secondary"
+                    className="h-auto py-1 font-normal whitespace-normal"
+                  >
+                    <span className="font-medium">{term.text}</span>
+                    <span className="ml-1 shrink-0 whitespace-nowrap text-muted-foreground">
+                      · {term.kind}
+                    </span>
+                  </Badge>
+                ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -739,9 +890,11 @@ function StepOutput({ cue, strategy }: { cue: RecommendationItem; strategy: Stra
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-4">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={cn("text-right font-medium", mono && "font-mono")}>{value}</span>
+    <div className="grid grid-cols-1 gap-1 sm:grid-cols-[240px_1fr] sm:items-start sm:gap-4">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className={cn("min-w-0 break-words font-medium sm:text-right", mono && "font-mono")}>
+        {value}
+      </span>
     </div>
   );
 }

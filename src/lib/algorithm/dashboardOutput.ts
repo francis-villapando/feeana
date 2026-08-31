@@ -20,7 +20,8 @@ interface IloLike {
   bloom_level?: string;
 }
 
-function getIloLevel(ilo: IloLike): number {
+export function getIloLevel(ilo: IloLike | undefined): number {
+  if (!ilo) return 1;
   const bloomLevel = ilo.bloomLevel ?? ilo.bloom_level;
   return bloomLevel ? (BLOOM_LEVEL_MAP[bloomLevel] ?? 1) : 1;
 }
