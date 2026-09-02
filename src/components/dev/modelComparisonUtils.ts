@@ -14,7 +14,7 @@ export const MODEL_KINDS = ["distilxlmr", "mbert", "svm"] as const;
 export const MODEL_CACHE_KEYS = [...Object.values(CACHE_KEYS_MAP), ...LEGACY_CACHE_KEYS];
 
 export const STORAGE_KEY = "feeana-comparison-progress-v1";
-export const STORAGE_VERSION = 3;
+export const STORAGE_VERSION = 4;
 
 export const RESULT_KEYS = [
   "coldStartMs",
@@ -24,6 +24,8 @@ export const RESULT_KEYS = [
   "p50LatencyMs",
   "p95LatencyMs",
   "peakJSHeapMB",
+  "coldTTFRMs",
+  "warmTTFRMs",
 ] as const;
 
 export interface PersistedComparisonState {
@@ -76,20 +78,18 @@ interface TestSetRow {
 }
 
 export async function loadTestSet(): Promise<TestCase[]> {
-  const res = await fetch("/model-data/test.csv");
-  if (!res.ok) throw new Error("Failed to load test set");
+  const res = await fetch("/model-data/sop5-2-benchmark-sample.csv");
+  if (!res.ok) throw new Error("Failed to load benchmark sample");
   const csv = await res.text();
   const parsed = Papa.parse<TestSetRow>(csv, { header: true, skipEmptyLines: true });
   if (parsed.errors.length > 0) {
-    throw new Error(`Failed to parse test set: ${parsed.errors[0].message}`);
+    throw new Error(`Failed to parse benchmark sample: ${parsed.errors[0].message}`);
   }
-  return parsed.data
-    .map((row) => ({
-      id: String(row.id),
-      text: row.text,
-      expectedIssue: row.issue,
-    }))
-    .slice(0, 50);
+  return parsed.data.map((row) => ({
+    id: String(row.id),
+    text: row.text,
+    expectedIssue: row.issue,
+  }));
 }
 
 export async function clearModelCaches(): Promise<string[]> {
@@ -114,6 +114,12 @@ export interface ModelComparisonResult {
   p50LatencyMs: number;
   p95LatencyMs: number;
   peakJSHeapMB: number;
+  /** End-to-end time from trigger click to first result (cold: no cache). */
+  coldTTFRMs: number;
+  /** End-to-end time from trigger click to first result (warm: cached). */
+  warmTTFRMs: number;
+  /** Set when this model failed to complete; other metrics are absent. */
+  error?: string;
 }
 
 export interface RestMetrics {
@@ -140,81 +146,6 @@ export interface ComparisonProgress {
   current: number;
   total: number;
   bytes?: { loaded: number; total: number };
-}
-
-interface PerformanceWithMemory extends Performance {
-  memory?: { usedJSHeapSize: number };
-}
-
-interface MemoryAttribution {
-  bytes: number;
-}
-
-type MeasureUserAgentSpecificMemory = () => Promise<MemoryAttribution>;
-
-const MEMORY_SAMPLE_INTERVAL_MS = 50;
-
-async function sampleHeapBytes(): Promise<number> {
-  try {
-    if (
-      typeof crossOriginIsolated !== "undefined" &&
-      crossOriginIsolated &&
-      typeof (
-        performance as PerformanceWithMemory & {
-          measureUserAgentSpecificMemory?: MeasureUserAgentSpecificMemory;
-        }
-      ).measureUserAgentSpecificMemory === "function"
-    ) {
-      const sample = await (
-        performance as PerformanceWithMemory & {
-          measureUserAgentSpecificMemory: MeasureUserAgentSpecificMemory;
-        }
-      ).measureUserAgentSpecificMemory();
-      return sample.bytes;
-    }
-  } catch {
-    // Fall through.
-  }
-  const perf = performance as PerformanceWithMemory;
-  try {
-    return perf.memory?.usedJSHeapSize ?? 0;
-  } catch {
-    return 0;
-  }
-}
-
-class HeapSampler {
-  private timer: ReturnType<typeof setInterval> | null = null;
-  private peakBytes = 0;
-  private sampling = false;
-
-  async start(): Promise<void> {
-    this.peakBytes = 0;
-    if (this.timer) clearInterval(this.timer);
-    const initial = await sampleHeapBytes();
-    if (initial > this.peakBytes) this.peakBytes = initial;
-
-    this.timer = setInterval(async () => {
-      if (this.sampling) return;
-      this.sampling = true;
-      try {
-        const bytes = await sampleHeapBytes();
-        if (bytes > this.peakBytes) this.peakBytes = bytes;
-      } finally {
-        this.sampling = false;
-      }
-    }, MEMORY_SAMPLE_INTERVAL_MS);
-  }
-
-  async stop(): Promise<number> {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
-    }
-    const finalBytes = await sampleHeapBytes();
-    if (finalBytes > this.peakBytes) this.peakBytes = finalBytes;
-    return this.peakBytes;
-  }
 }
 
 function createComparisonWorker(): {
@@ -252,21 +183,22 @@ function withAbort<T>(
 export async function runColdStart(
   kind: ModelKind,
   signal?: AbortSignal,
-  onDownloadProgress?: (loaded: number, total: number) => void,
+  onDownloadProgress?: (loaded: number, total: number, phase?: string) => void,
 ): Promise<{ coldStartMs: number; coldPeakJSHeapMB: number }> {
   const { worker, api } = createComparisonWorker();
-  const sampler = new HeapSampler();
   try {
-    await sampler.start();
-    const { coldStartMs } = await withAbort(
+    const { coldStartMs, peakWorkerHeapMB } = await withAbort(
       worker,
       signal,
-      api.loadModel(kind, onDownloadProgress ? Comlink.proxy(onDownloadProgress) : undefined, true),
+      api.loadModel(
+        kind,
+        onDownloadProgress ? Comlink.proxy(onDownloadProgress) : undefined,
+        true,
+        true,
+      ),
     );
-    const peakJSHeapBytes = await sampler.stop();
-    return { coldStartMs, coldPeakJSHeapMB: peakJSHeapBytes / 1024 / 1024 };
+    return { coldStartMs, coldPeakJSHeapMB: peakWorkerHeapMB };
   } finally {
-    await sampler.stop();
     if (!signal?.aborted) await api.disposeModel();
     worker.terminate();
   }
@@ -279,17 +211,17 @@ export async function runRest(
   signal?: AbortSignal,
 ): Promise<RestMetrics> {
   const { worker, api } = createComparisonWorker();
-  const sampler = new HeapSampler();
 
   try {
     onProgress?.("Loading model…", 0, 0);
     const tWarm = performance.now();
-    await withAbort(worker, signal, api.loadModel(kind));
+    // Warm start: load from cache without warmup inference (warmup runs in the
+    // dedicated warmup phase of runComparison below).
+    await withAbort(worker, signal, api.loadModel(kind, undefined, false, true));
     const warmStartMs = performance.now() - tWarm;
 
     onProgress?.("Warming up…", 0, 0);
-    await sampler.start();
-    const { latencies } = await withAbort(
+    const { latencies, peakWorkerHeapMB } = await withAbort(
       worker,
       signal,
       api.runComparison(
@@ -299,20 +231,51 @@ export async function runRest(
         ),
       ),
     );
-    const peakJSHeapBytes = await sampler.stop();
 
     return {
       warmStartMs,
       avgLatencyMs: latencies.reduce((a, b) => a + b, 0) / latencies.length,
       p50LatencyMs: percentile(latencies, 0.5),
       p95LatencyMs: percentile(latencies, 0.95),
-      peakJSHeapMB: peakJSHeapBytes / 1024 / 1024,
+      peakJSHeapMB: peakWorkerHeapMB,
     };
   } finally {
-    await sampler.stop();
     if (!signal?.aborted) await api.disposeModel();
     worker.terminate();
   }
+}
+
+async function runTimeToFirstResult(
+  kind: ModelKind,
+  firstText: string,
+  cold: boolean,
+  signal?: AbortSignal,
+): Promise<number> {
+  const { worker, api } = createComparisonWorker();
+  try {
+    const fn = cold ? api.coldTimeToFirstResult : api.warmTimeToFirstResult;
+    const { endToEndMs } = await withAbort(worker, signal, fn(kind, firstText));
+    return endToEndMs;
+  } finally {
+    if (!signal?.aborted) await api.disposeModel();
+    worker.terminate();
+  }
+}
+
+export async function runColdTTFR(
+  kind: ModelKind,
+  firstText: string,
+  signal?: AbortSignal,
+): Promise<number> {
+  return runTimeToFirstResult(kind, firstText, true, signal);
+}
+
+export async function runWarmTTFR(
+  kind: ModelKind,
+  firstText: string,
+  signal?: AbortSignal,
+): Promise<number> {
+  return runTimeToFirstResult(kind, firstText, false, signal);
 }
 
 export const IDLE_PROGRESS: ComparisonProgress = {

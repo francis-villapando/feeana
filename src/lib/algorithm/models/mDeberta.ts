@@ -1,6 +1,6 @@
 import { pipeline, type PipelineType } from "@huggingface/transformers";
 import { CleanFeedback } from "../preprocess";
-import type { ModelAdapter, Prediction } from "./types";
+import type { ModelAdapter, ModelLoadOptions, Prediction } from "./types";
 
 // @deprecated — tracer bullet-only model. Not used in production;
 // the DistilXlmrAdapter is the production model.
@@ -31,7 +31,7 @@ export class MDebertaAdapter implements ModelAdapter {
   readonly name = "mdeberta";
   private classifier: ZeroShotClassifier | null = null;
 
-  async load(): Promise<void> {
+  async load(_options?: ModelLoadOptions): Promise<void> {
     this.classifier = (await pipeline(
       "zero-shot-classification" as PipelineType,
       "Xenova/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",

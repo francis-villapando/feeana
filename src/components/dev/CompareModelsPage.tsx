@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Loader2, RotateCcw } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Loader2, RotateCcw, AlertTriangle } from "lucide-react";
 import {
   useModelComparison,
   loadTestSet,
@@ -28,7 +28,7 @@ function formatMs(ms: number): string {
 }
 
 const MODEL_LABELS: Record<(typeof MODEL_KINDS)[number], string> = {
-  distilxlmr: "DistilXLMR",
+  distilxlmr: "DistilXLM-R",
   mbert: "mBERT",
   svm: "SVM",
 };
@@ -52,19 +52,52 @@ const METRICS: MetricRow[] = [
   { label: "Cold Start (ms)", key: "coldStartMs", format: formatMs },
   { label: "Cold Peak JS Heap (MB)", key: "coldPeakJSHeapMB", format: formatMB },
   { label: "Warm Start (ms)", key: "warmStartMs", format: formatMs },
+  { label: "Warm Peak JS Heap (MB)", key: "peakJSHeapMB", format: formatMB },
+  { label: "Cold Time-to-First-Result (ms)", key: "coldTTFRMs", format: formatMs },
+  { label: "Warm Time-to-First-Result (ms)", key: "warmTTFRMs", format: formatMs },
   { label: "Avg Latency (ms)", key: "avgLatencyMs", format: formatMs },
   { label: "P50 Latency (ms)", key: "p50LatencyMs", format: formatMs },
   { label: "P95 Latency (ms)", key: "p95LatencyMs", format: formatMs },
-  { label: "Peak JS Heap (MB)", key: "peakJSHeapMB", format: formatMB },
 ];
 
 export function CompareModelsPage() {
   const [testSet, setTestSet] = useState<TestCase[]>([]);
+  const [testSetError, setTestSetError] = useState<string | null>(null);
   const { results, loading, currentModel, progress, runComparison, cancel } = useModelComparison();
 
-  useEffect(() => {
-    loadTestSet().then(setTestSet).catch(console.error);
+  const loadTestSetOnce = useCallback(() => {
+    setTestSetError(null);
+    loadTestSet()
+      .then(setTestSet)
+      .catch((err) => {
+        console.error("[CompareModelsPage] Failed to load test set:", err);
+        setTestSetError(err instanceof Error ? err.message : String(err));
+      });
   }, []);
+
+  useEffect(() => {
+    loadTestSetOnce();
+  }, [loadTestSetOnce]);
+
+  if (testSetError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="space-y-4 p-6">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              <h2 className="font-semibold">Failed to load test set</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">{testSetError}</p>
+            <Button onClick={loadTestSetOnce}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (testSet.length === 0) {
     return (
@@ -116,6 +149,18 @@ export function CompareModelsPage() {
 
     const result = resultsByModel.get(kind);
     const value = metric.key ? (result?.[metric.key] as number | undefined) : undefined;
+
+    // Model failed at runtime: show an error badge instead of wiping the table.
+    if (result?.error) {
+      return (
+        <TableCell key={kind} className="px-4 py-3 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1 text-destructive" title={result.error}>
+            <AlertTriangle className="h-3 w-3" />
+            Error
+          </span>
+        </TableCell>
+      );
+    }
 
     if (value !== undefined && metric.format) {
       return (

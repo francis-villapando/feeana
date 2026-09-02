@@ -2,7 +2,7 @@ import type { InferenceSession, Tensor } from "onnxruntime-web";
 import { AutoTokenizer, env } from "@huggingface/transformers";
 import { CleanFeedback, EncodeFeedback, MAX_SEQ_LEN, type MachineTokenizer } from "../preprocess";
 import type { FeedbackEncoding } from "../types";
-import type { ModelLoadProgress, ModelAdapter, Prediction } from "./types";
+import type { ModelLoadProgress, ModelAdapter, ModelLoadOptions, Prediction } from "./types";
 import { MODEL_SIZES_BYTES } from "./sizes";
 import { cachedFetch, cachePut, MODEL_CACHE_KEYS } from "./modelCache";
 
@@ -212,7 +212,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     }
   }
 
-  async load(): Promise<void> {
+  async load(options?: ModelLoadOptions): Promise<void> {
     const runtime = await initOrt();
     const dir = this.modelDir;
 
@@ -246,11 +246,14 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     );
     this.progressHook?.({ status: "progress", progress: 99, phase: "labels" });
 
-    // JIT warmup: compile WASM kernels ahead of workload.
-    try {
-      await this.predict("warmup");
-    } catch (e) {
-      console.warn(`[${this.name}] Warmup inference failed (non-fatal):`, e);
+    // JIT warmup: compile WASM kernels ahead of workload. Skipped when the
+    // caller measures pure load timing (e.g. benchmarks).
+    if (!options?.skipWarmup) {
+      try {
+        await this.predict("warmup");
+      } catch (e) {
+        console.warn(`[${this.name}] Warmup inference failed (non-fatal):`, e);
+      }
     }
 
     void this.warmAuxCache();

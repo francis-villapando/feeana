@@ -16,9 +16,14 @@ export interface ModelLoadProgress {
   bytes?: { loaded: number; total: number };
 }
 
+export interface ModelLoadOptions {
+  /** Skip the JIT warmup inference so load() measures only asset retrieval and session creation. */
+  skipWarmup?: boolean;
+}
+
 export interface ModelAdapter {
   readonly name: string;
-  load(): Promise<void>;
+  load(options?: ModelLoadOptions): Promise<void>;
   predict(text: string): Promise<Prediction>;
   dispose(): Promise<void>;
   setProgressHook?(hook: (info: ModelLoadProgress) => void): void;

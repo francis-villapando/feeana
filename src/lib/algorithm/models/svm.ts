@@ -1,6 +1,6 @@
 import type { Tensor } from "onnxruntime-web";
 import { CleanFeedback } from "../preprocess";
-import type { ModelLoadProgress, ModelAdapter, Prediction } from "./types";
+import type { ModelLoadProgress, ModelAdapter, ModelLoadOptions, Prediction } from "./types";
 import { MODEL_SIZES_BYTES } from "./sizes";
 import { cachedFetch, cachePut, MODEL_CACHE_KEYS } from "./modelCache";
 
@@ -186,7 +186,7 @@ export class SvmAdapter implements ModelAdapter {
     }
   }
 
-  async load(): Promise<void> {
+  async load(options?: ModelLoadOptions): Promise<void> {
     const runtime = await initOrt();
     const url = getSvmOnnxUrl();
 
@@ -195,14 +195,17 @@ export class SvmAdapter implements ModelAdapter {
     this.session = await runtime.InferenceSession.create(modelBuffer);
     this.labelMap = await loadLabelMappings();
 
-    // JIT warmup: compile WASM kernels ahead of workload.
-    try {
-      const feeds: Record<string, Tensor> = {
-        string_input: new runtime.Tensor("string", ["warmup"], [1, 1]),
-      };
-      await this.session.run(feeds);
-    } catch (e) {
-      console.warn("[svm] Warmup inference failed (non-fatal):", e);
+    // JIT warmup: compile WASM kernels ahead of workload. Skipped when the
+    // caller measures pure load timing (e.g. benchmarks).
+    if (!options?.skipWarmup) {
+      try {
+        const feeds: Record<string, Tensor> = {
+          string_input: new runtime.Tensor("string", ["warmup"], [1, 1]),
+        };
+        await this.session.run(feeds);
+      } catch (e) {
+        console.warn("[svm] Warmup inference failed (non-fatal):", e);
+      }
     }
 
     void this.warmAuxCache();

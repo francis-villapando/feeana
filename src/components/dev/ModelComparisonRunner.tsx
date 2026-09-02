@@ -8,7 +8,8 @@ import {
   clearModelCaches,
   runColdStart,
   runRest,
-  type RestMetrics,
+  runColdTTFR,
+  runWarmTTFR,
   type TestCase,
   type ModelComparisonResult,
   type ComparisonProgress,
@@ -43,24 +44,25 @@ export function useModelComparison() {
         if (controller.signal.aborted) break;
         const kind = kinds[i];
         setCurrentModel(kind);
-        setProgress({ stage: `Downloading ${kind}…`, current: 0, total: 0, bytes: undefined });
-        let cold: { coldStartMs: number; coldPeakJSHeapMB: number };
-        try {
-          cold = await runColdStart(kind, controller.signal, (loaded: number, total: number) => {
-            setProgress((prev) => ({ ...prev, bytes: { loaded, total } }));
-          });
-        } catch (err) {
-          if (controller.signal.aborted) break;
-          console.error(`[ModelComparison] Cold start failed for ${kind}:`, err);
-          throw new Error(
-            `Cold start failed for ${kind}: ${err instanceof Error ? err.message : String(err)}`,
-          );
-        }
+        setProgress({ stage: "Downloading model…", current: 0, total: 0, bytes: undefined });
 
-        setProgress({ stage: `Loading ${kind}…`, current: 0, total: 0 });
-        let rest: RestMetrics;
+        // Per-model fail-safe: a single model failure must not abort the whole
+        // pipeline or wipe previously computed results.
         try {
-          rest = await runRest(
+          const cold = await runColdStart(
+            kind,
+            controller.signal,
+            (loaded: number, total: number, phase?: string) => {
+              setProgress((prev) => ({
+                ...prev,
+                bytes: loaded > 0 ? { loaded, total } : prev.bytes,
+                stage: phase === "download" || !phase ? "Downloading model…" : "Preparing model…",
+              }));
+            },
+          );
+
+          setProgress({ stage: "Loading model…", current: 0, total: 0 });
+          const rest = await runRest(
             kind,
             texts,
             (stage, current, total) => {
@@ -68,15 +70,31 @@ export function useModelComparison() {
             },
             controller.signal,
           );
+
+          // End-to-end time-to-first-result, separate from per-sample latency.
+          setProgress({ stage: "Measuring cold time-to-first-result…", current: 0, total: 0 });
+          const coldTTFRMs = await runColdTTFR(kind, texts[0], controller.signal);
+          setProgress({ stage: "Measuring warm time-to-first-result…", current: 0, total: 0 });
+          const warmTTFRMs = await runWarmTTFR(kind, texts[0], controller.signal);
+
+          partial.push({ modelName: kind, ...cold, ...rest, coldTTFRMs, warmTTFRMs });
         } catch (err) {
           if (controller.signal.aborted) break;
-          console.error(`[ModelComparison] Remaining comparison failed for ${kind}:`, err);
-          throw new Error(
-            `Remaining comparison failed for ${kind}: ${err instanceof Error ? err.message : String(err)}`,
-          );
+          console.error(`[ModelComparison] Comparison failed for ${kind}:`, err);
+          partial.push({
+            modelName: kind,
+            error: err instanceof Error ? err.message : String(err),
+            coldStartMs: 0,
+            coldPeakJSHeapMB: 0,
+            warmStartMs: 0,
+            avgLatencyMs: 0,
+            p50LatencyMs: 0,
+            p95LatencyMs: 0,
+            peakJSHeapMB: 0,
+            coldTTFRMs: 0,
+            warmTTFRMs: 0,
+          });
         }
-
-        partial.push({ modelName: kind, ...cold, ...rest });
         setResults([...partial]);
       }
     } finally {
