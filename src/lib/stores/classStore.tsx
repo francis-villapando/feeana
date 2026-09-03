@@ -42,6 +42,7 @@ interface ClassStoreValue {
     courseId?: string;
     startsAt: string;
     endsAt: string;
+    iloIds?: string[];
   }) => Promise<Session>;
   updateSession: (
     id: string,
@@ -257,6 +258,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       courseId?: string;
       startsAt: string;
       endsAt: string;
+      iloIds?: string[];
     }) => {
       const s = await classService.createSession({
         classId: input.classId,
@@ -265,7 +267,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
         startsAt: input.startsAt,
         endsAt: input.endsAt,
         courseId: input.courseId,
-        iloIds: [],
+        iloIds: input.iloIds ?? [],
       });
       setSessions((prev) => [s, ...prev]);
       return s;

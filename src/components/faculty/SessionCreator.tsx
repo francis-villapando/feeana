@@ -20,7 +20,7 @@ import { friendlyError } from "@/lib/hooks/utils";
 
 export function SessionCreator({ classId }: { classId: string }) {
   const { createSession, getClass } = useClassStore();
-  const { courses, topics } = useCourseStore();
+  const { courses, topics, ilos } = useCourseStore();
   const cls = getClass(classId);
 
   const availableTopics = useMemo(
@@ -61,6 +61,7 @@ export function SessionCreator({ classId }: { classId: string }) {
 
     setStarting(true);
     try {
+      const sessionIlos = ilos.filter((i) => i.topicId === topic.id && !i.archived);
       const s = await createSession({
         classId,
         topic: topic.title,
@@ -68,6 +69,7 @@ export function SessionCreator({ classId }: { classId: string }) {
         courseId: topic.courseId,
         startsAt,
         endsAt,
+        iloIds: sessionIlos.map((i) => i.id),
       });
       toast.success(`Session started: ${s.topic}`);
       setTopicId("");

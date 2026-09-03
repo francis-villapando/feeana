@@ -43,7 +43,7 @@ type RowFieldErrors = {
 
 export function CrossClassSessionCreator() {
   const { activeClasses, createSession } = useClassStore();
-  const { courses, topics } = useCourseStore();
+  const { courses, topics, ilos } = useCourseStore();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<PerClass[]>([]);
   const [launchError, setLaunchError] = useState("");
@@ -134,12 +134,14 @@ export function CrossClassSessionCreator() {
           const crsTopics = topicsForClass(cls, courses, topics);
           const topic = crsTopics.find((t) => t.id === r.topicId);
           if (!topic) return Promise.resolve();
+          const sessionIlos = ilos.filter((i) => i.topicId === topic.id && !i.archived);
           return createSession({
             classId: r.classId,
             topic: topic.title,
             topicId: topic.id,
             startsAt: r.startsAt,
             endsAt: r.endsAt,
+            iloIds: sessionIlos.map((i) => i.id),
           });
         }),
       );
