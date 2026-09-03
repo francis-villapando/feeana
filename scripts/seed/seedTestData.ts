@@ -237,12 +237,18 @@ async function main() {
 
     const feedbackRows = feedbackTexts.map((text) => ({
       session_id: SESSION_ID,
-      student_id: studentId!,
-      feedback_text: text,
+      content: text,
     }));
 
     await supabaseAdmin.from("feedback").insert(feedbackRows);
     console.log(`Inserted ${feedbackRows.length} feedback entries.`);
+
+    // Record participation so the student's submission history is preserved.
+    await supabaseAdmin.from("session_participations").insert({
+      session_id: SESSION_ID,
+      student_id: studentId!,
+    });
+    console.log("Inserted participation record.");
   }
 
   console.log("Seeding complete!");

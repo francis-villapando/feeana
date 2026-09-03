@@ -107,7 +107,7 @@ class DashboardSeeder {
   private static readonly CLASS_CONFIGS: ClassSeedConfig[] = [
     {
       label: "TEST-CLASS",
-      courseCode: "TESTCLS01",
+      courseCode: "TESTCLS1",
       section: "1",
       sessionTopics: ["TEST Topic 1", "TEST Topic 2", "TEST Topic 3"],
       feedbackCounts: [50, 30, 30],
@@ -115,7 +115,7 @@ class DashboardSeeder {
     },
     {
       label: "TEST-CLASS",
-      courseCode: "TESTCLS02",
+      courseCode: "TESTCLS2",
       section: "2",
       sessionTopics: ["TEST Topic 1"],
       feedbackCounts: [35],
@@ -746,15 +746,20 @@ class DashboardSeeder {
           id: feedbackId,
           session_id: session.id,
           content: row.text,
-          student_id: studentId,
           meta: {
             cleanedText: row.cleaned_text,
-            submittedBy: studentId,
             aspects: [{ aspect: TTI_RULES[issue] ?? "Uncategorized", issue, polarity }],
           },
           created_at: createdAt,
         });
         if (error) throw new Error(`Failed to insert feedback: ${error.message}`);
+
+        const { error: partErr } = await this.supabase.from("session_participations").insert({
+          session_id: session.id,
+          student_id: studentId,
+          created_at: createdAt,
+        });
+        if (partErr) throw new Error(`Failed to insert participation: ${partErr.message}`);
 
         feedbacks.push({
           id: feedbackId,
@@ -812,15 +817,20 @@ class DashboardSeeder {
           id: feedbackId,
           session_id: session.id,
           content: row.text,
-          student_id: studentId,
           meta: {
             cleanedText: row.cleaned_text,
-            submittedBy: studentId,
             aspects: [{ aspect: TTI_RULES[issue] ?? "Uncategorized", issue, polarity }],
           },
           created_at: createdAt,
         });
         if (error) throw new Error(`Failed to insert recent feedback: ${error.message}`);
+
+        const { error: partErr } = await this.supabase.from("session_participations").insert({
+          session_id: session.id,
+          student_id: studentId,
+          created_at: createdAt,
+        });
+        if (partErr) throw new Error(`Failed to insert recent participation: ${partErr.message}`);
 
         recentCount++;
       }
