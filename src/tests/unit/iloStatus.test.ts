@@ -7,10 +7,42 @@ const topicA = "topic-a";
 const topicB = "topic-b";
 
 const ilos: ILO[] = [
-  { id: "ilo-a1", courseId, topicId: topicA, statement: "A1", bloomLevel: "Remember", archived: false, version: 1 },
-  { id: "ilo-a2", courseId, topicId: topicA, statement: "A2", bloomLevel: "Understand", archived: false, version: 1 },
-  { id: "ilo-b1", courseId, topicId: topicB, statement: "B1", bloomLevel: "Apply", archived: false, version: 1 },
-  { id: "ilo-a3", courseId, topicId: topicA, statement: "A3", bloomLevel: "Remember", archived: true, version: 1 },
+  {
+    id: "ilo-a1",
+    courseId,
+    topicId: topicA,
+    statement: "A1",
+    bloomLevel: "Remember",
+    archived: false,
+    version: 1,
+  },
+  {
+    id: "ilo-a2",
+    courseId,
+    topicId: topicA,
+    statement: "A2",
+    bloomLevel: "Understand",
+    archived: false,
+    version: 1,
+  },
+  {
+    id: "ilo-b1",
+    courseId,
+    topicId: topicB,
+    statement: "B1",
+    bloomLevel: "Apply",
+    archived: false,
+    version: 1,
+  },
+  {
+    id: "ilo-a3",
+    courseId,
+    topicId: topicA,
+    statement: "A3",
+    bloomLevel: "Remember",
+    archived: true,
+    version: 1,
+  },
 ];
 
 function makeSession(overrides: Partial<Session> = {}): Session {

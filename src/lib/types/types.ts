@@ -119,7 +119,14 @@ export interface SessionParticipation {
 export type Theory = "RBT" | "CLT" | "TTI";
 
 export type TermKind =
-  "issue" | "RBT" | "CLT" | "TTI" | "ILO" | "prevalence" | "topic" | "recommendation";
+  | "issue"
+  | "RBT"
+  | "CLT"
+  | "TTI"
+  | "ILO"
+  | "prevalence"
+  | "topic"
+  | "recommendation";
 
 export interface RecommendationTerm {
   text: string;

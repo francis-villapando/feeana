@@ -24,12 +24,11 @@ export function fromDbClass(row: Record<string, unknown>): Class {
   ).length;
 
   const course = row.courses as Record<string, unknown> | null | undefined;
-  const courseCode =
-    (course?.code as string) ?? (row.name as string) ?? "";
+  const courseCode = (course?.code as string) ?? (row.name as string) ?? "";
   const courseDisplay =
     course?.code && course?.title
       ? `${course.code} — ${course.title}`
-      : (row.course as string) ?? "";
+      : ((row.course as string) ?? "");
 
   return {
     id: row.id as string,
