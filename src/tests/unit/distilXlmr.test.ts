@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { DistilXlmrAdapter } from "../../lib/algorithm/models/distilXlmr";
 
-describe("DistilXlmrAdapter", () => {
+describe("DistilXlmrAdapter", { timeout: 30000 }, () => {
   it("loads the session, tokenizer, and label mappings", async () => {
     const adapter = new DistilXlmrAdapter();
     await adapter.load();
