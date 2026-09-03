@@ -11,16 +11,21 @@ export function computeIloStatuses(
   feedback: Feedback[],
   ilos: ILO[],
 ): IloStatus[] {
-  let scope = ilos.filter((i) => i.courseId === session.courseId && !i.archived);
-  if (scope.length === 0) {
-    scope = ilos.filter((i) => session.iloIds.includes(i.id));
+  // A session's ILOs come from its topic (course -> topics -> ILOs). Prefer the
+  // explicitly stored iloIds; fall back to the topic's ILOs; never expand to all
+  // course ILOs, which would misrepresent the session's scope.
+  let scope: ILO[];
+  if (session.iloIds.length > 0) {
+    scope = ilos.filter((i) => session.iloIds.includes(i.id) && !i.archived);
+  } else if (session.topicId) {
+    scope = ilos.filter((i) => i.topicId === session.topicId && !i.archived);
+  } else {
+    scope = [];
   }
 
-  const sessionScope = scope.filter((ilo) => session.iloIds.includes(ilo.id));
-  const targetScope = sessionScope.length > 0 ? sessionScope : scope;
   const flaggedIloIds = new Set<string>((result?.gaps ?? []).map((g) => g.iloId));
 
-  return targetScope.map((ilo) => {
+  return scope.map((ilo) => {
     const achieved = !flaggedIloIds.has(ilo.id);
     return { ilo, achieved };
   });
