@@ -75,12 +75,15 @@ async function toggleEntityArchived(
 }
 
 function fromDbCourse(row: Record<string, unknown>): Course {
+  const creator = row.profiles as Record<string, unknown> | null;
   return {
     id: row.id as string,
     code: row.code as string,
     title: row.title as string,
     archived: row.archived as boolean,
     version: (row.version as number) ?? 1,
+    createdById: (row.created_by as string) ?? null,
+    createdByEmail: (creator?.email as string) ?? null,
   };
 }
 
@@ -119,23 +122,33 @@ function fromDbActivity(row: Record<string, unknown>): ActivityEntry {
     timestamp: row.timestamp as string,
     userId: row.user_id as string,
     userName: (profile?.full_name as string) ?? undefined,
+    userEmail: (profile?.email as string) ?? undefined,
   };
 }
 
 export async function getCourses(): Promise<Course[]> {
   const { data, error } = await supabase
     .from("courses")
-    .select("*")
+    .select("*, profiles!created_by(id, email)")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(fromDbCourse);
 }
 
 export async function createCourse(input: { code: string; title: string }): Promise<Course> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("You must be signed in to create a course.");
+
   const { data, error } = await supabase
     .from("courses")
-    .insert({ code: input.code.trim(), title: input.title.trim() })
-    .select()
+    .insert({
+      code: input.code.trim(),
+      title: input.title.trim(),
+      created_by: user.id,
+    })
+    .select("*, profiles!created_by(id, email)")
     .single();
   if (error) {
     await handleDuplicateError(
@@ -430,7 +443,7 @@ export async function getActivity(days = 30): Promise<ActivityEntry[]> {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from("activity_log")
-    .select("*, profiles!inner(full_name)")
+    .select("*, profiles!inner(full_name, email)")
     .gte("timestamp", since)
     .order("timestamp", { ascending: false })
     .limit(200);

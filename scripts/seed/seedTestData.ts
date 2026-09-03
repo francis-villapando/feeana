@@ -71,7 +71,7 @@ async function main() {
   if (!courseId) {
     const { data: createdCourse, error } = await supabaseAdmin
       .from("courses")
-      .insert({ code: "CSEG2", title: "Game Programming 1" })
+      .insert({ code: "CSEG2", title: "Game Programming 1", created_by: facultyId })
       .select("id")
       .single();
     if (error) console.error("Course insert error:", error);

@@ -341,7 +341,11 @@ class DashboardSeeder {
     if (byId) {
       await this.supabase
         .from("courses")
-        .update({ code: DashboardSeeder.COURSE_CODE, title: DashboardSeeder.COURSE_TITLE })
+        .update({
+          code: DashboardSeeder.COURSE_CODE,
+          title: DashboardSeeder.COURSE_TITLE,
+          created_by: this.facultyId,
+        })
         .eq("id", id);
       return byId.id;
     }
@@ -355,7 +359,12 @@ class DashboardSeeder {
 
     const { data: created, error: insertErr } = await this.supabase
       .from("courses")
-      .insert({ id, code: DashboardSeeder.COURSE_CODE, title: DashboardSeeder.COURSE_TITLE })
+      .insert({
+        id,
+        code: DashboardSeeder.COURSE_CODE,
+        title: DashboardSeeder.COURSE_TITLE,
+        created_by: this.facultyId,
+      })
       .select("id")
       .single();
     if (insertErr || !created)

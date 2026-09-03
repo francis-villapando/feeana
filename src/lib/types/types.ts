@@ -14,6 +14,8 @@ export interface Course {
   title: string;
   archived: boolean;
   version: number;
+  createdById?: string | null;
+  createdByEmail?: string | null;
 }
 
 export type BloomLevel = "Remember" | "Understand" | "Apply" | "Analyze" | "Evaluate" | "Create";
@@ -51,6 +53,7 @@ export interface ActivityEntry {
   timestamp: string;
   userId?: string;
   userName?: string;
+  userEmail?: string;
 }
 
 export interface Student {
