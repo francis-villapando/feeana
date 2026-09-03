@@ -274,6 +274,17 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     return { ...result, latencyMs: performance.now() - t0 };
   }
 
+  // Exposes the subword token strings for a cleaned text. The stored tokenizer
+  // is the full HF AutoTokenizer instance (MachineTokenizer is only a structural
+  // subset), so tokenize() is available at runtime.
+  tokenize(text: string): string[] {
+    if (!this.tokenizer) {
+      throw new Error(`[${this.name}] Tokenizer not loaded — call load() first.`);
+    }
+    const hf = this.tokenizer as unknown as { tokenize(input: string): string[] };
+    return hf.tokenize(text);
+  }
+
   // Direct low-level inference on pre-encoded tensors (Module 3).
   async predictEncoded(encoding: FeedbackEncoding): Promise<Prediction> {
     if (!this.session || !this.labelMap) {
@@ -307,6 +318,78 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
       polarity,
       confidence: issueProbs[issueIdx],
       latencyMs: 0,
+    };
+  }
+
+  // Diagnostic inference used by the Algorithm Simulation. Runs the same ONNX
+  // graph as predictEncoded but also surfaces the raw logits, the full softmax
+  // distribution, and the top-K ranked predictions for visualization.
+  async predictEncodedDiagnostics(encoding: FeedbackEncoding): Promise<{
+    issue: string;
+    polarity: string;
+    confidence: number;
+    issueLogitsRaw: number[];
+    polarityLogitsRaw: number[];
+    topKIssues: Array<{ label: string; logit: number; probability: number }>;
+    polarityDistribution: Array<{ label: string; logit: number; probability: number }>;
+  }> {
+    if (!this.session || !this.labelMap) {
+      throw new Error(`[${this.name}] Adapter not loaded — call load() first.`);
+    }
+
+    const seqLen = encoding.inputIds.length;
+    const runtime = await initOrt();
+    const feeds: Record<string, Tensor> = {
+      input_ids: new runtime.Tensor("int64", encoding.inputIds, [1, seqLen]),
+      attention_mask: new runtime.Tensor("int64", encoding.attentionMask, [1, seqLen]),
+    };
+
+    const results = await this.session.run(feeds);
+
+    const issueLogits = Array.from(results["issue_logits"].data as Float32Array);
+    const polarityLogits = Array.from(results["polarity_logits"].data as Float32Array);
+
+    const issueProbs = softmax(results["issue_logits"].data as Float32Array);
+    const polarityProbs = softmax(results["polarity_logits"].data as Float32Array);
+
+    const issueIdx = argmax(issueProbs);
+    const polarityIdx = argmax(polarityProbs);
+
+    let issue = this.labelMap.issue.id2label[String(issueIdx)] ?? "Uncategorized";
+    if (issue === "uncategorized") {
+      issue = "Uncategorized";
+    }
+    const polarity = (this.labelMap.polarity.id2label[String(polarityIdx)] ??
+      "neu") as Prediction["polarity"];
+
+    // Rank all issue classes by softmax probability, keep the top 5.
+    const ranked = issueLogits
+      .map((logit, i) => ({
+        label: this.labelMap!.issue.id2label[String(i)] ?? `class_${i}`,
+        logit,
+        probability: issueProbs[i],
+      }))
+      .sort((a, b) => b.probability - a.probability)
+      .slice(0, 5)
+      .map((entry, i, arr) => ({
+        ...entry,
+        deltaFromTop: i === 0 ? 0 : arr[0].probability - entry.probability,
+      }));
+
+    const polarityDistribution = polarityLogits.map((logit, i) => ({
+      label: this.labelMap?.polarity.id2label[String(i)] ?? `class_${i}`,
+      logit,
+      probability: polarityProbs[i],
+    }));
+
+    return {
+      issue,
+      polarity,
+      confidence: issueProbs[issueIdx],
+      issueLogitsRaw: issueLogits,
+      polarityLogitsRaw: polarityLogits,
+      topKIssues: ranked,
+      polarityDistribution,
     };
   }
 

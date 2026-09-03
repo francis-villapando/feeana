@@ -3,7 +3,7 @@
 
 import * as Comlink from "comlink";
 import { env } from "@huggingface/transformers";
-import { Preprocess } from "./preprocess";
+import { Preprocess, EncodeFeedback, inspectPreprocessingSteps, MAX_SEQ_LEN } from "./preprocess";
 import { ExtractPID, getClassifier } from "./informationExtraction";
 import { buildDiagnosticRecord } from "./pedagogicalDiagnosticMapping";
 import type { FeedbackInput, DiagnosticRecord } from "./types";
@@ -105,14 +105,79 @@ const api = {
     return preloadPromise;
   },
 
+  // Tokenization and tensor encoding used by Phase 2 Preprocessing visualization.
+  async tokenizeSingle(rawText: string): Promise<{
+    subwords: string[];
+    inputIdsPreview: number[];
+    attentionMaskPreview: number[];
+    totalTokens: number;
+    maxLength: number;
+    dataType: string;
+    tensorShape: [number, number];
+  }> {
+    const classifier = await getClassifier(notifyLoadProgress);
+    if (!classifier.tokenizer) {
+      throw new Error("[worker] Tokenizer unavailable — model failed to load.");
+    }
+
+    const preprocessing = inspectPreprocessingSteps(rawText);
+    const encoding = EncodeFeedback(preprocessing.cleanedText, classifier.tokenizer);
+
+    const inputIds = Array.from(encoding.inputIds).map(Number);
+    const attentionMask = Array.from(encoding.attentionMask).map(Number);
+    const totalTokens = attentionMask.filter((v) => v === 1).length;
+
+    return {
+      subwords: classifier.tokenize(preprocessing.cleanedText),
+      inputIdsPreview: inputIds,
+      attentionMaskPreview: attentionMask,
+      totalTokens,
+      maxLength: MAX_SEQ_LEN,
+      dataType: "int64",
+      tensorShape: [1, MAX_SEQ_LEN],
+    };
+  },
+
   // Single-feedback extraction used by the Algorithm Simulation (Module 3).
-  // Surfaces the model confidence that ExtractPID discards.
+  // Surfaces the model confidence that ExtractPID discards, plus the full
+  // preprocessing timeline, tokenization, and logit telemetry for visualization.
   async extractSingle(feedback: FeedbackInput): Promise<{
     cleanedText: string;
     issue: string;
     polarity: string;
     confidence: number;
     latencyMs: number;
+    preprocessing: {
+      rawText: string;
+      afterNoise: string;
+      afterVowels: string;
+      afterAbbrevs: string;
+      cleanedText: string;
+    };
+    tokenization: {
+      subwords: string[];
+      inputIdsPreview: number[];
+      attentionMaskPreview: number[];
+      totalTokens: number;
+      maxLength: number;
+      dataType: string;
+      tensorShape: [number, number];
+    };
+    issueLogitsRaw: number[];
+    polarityLogitsRaw: number[];
+    topKIssues: Array<{
+      label: string;
+      logit: number;
+      probability: number;
+      deltaFromTop?: number;
+    }>;
+    polarityDistribution: Array<{ label: string; logit: number; probability: number }>;
+    executionMeta: {
+      modelName: string;
+      runtime: string;
+      sequenceLength: number;
+      latencyMs: number;
+    };
   }> {
     const classifier = await getClassifier(notifyLoadProgress);
     if (!classifier.tokenizer) {
@@ -120,16 +185,48 @@ const api = {
     }
 
     const t0 = performance.now();
-    const preprocessResult = Preprocess(feedback, classifier.tokenizer);
-    const { issue, polarity, confidence } = await classifier.predictEncoded(
-      preprocessResult.encoding,
-    );
+    const preprocessing = inspectPreprocessingSteps(feedback.rawText);
+    const encoding = EncodeFeedback(preprocessing.cleanedText, classifier.tokenizer);
+
+    // Convert BigInt64Array to plain number[] — BigInt64Array is not
+    // structured-clone-safe across the Comlink worker boundary. Return the
+    // full 256-length tensors (including padding zeros) so the complete
+    // encoding is visible in the lab UI.
+    const inputIds = Array.from(encoding.inputIds).map(Number);
+    const attentionMask = Array.from(encoding.attentionMask).map(Number);
+    const totalTokens = attentionMask.filter((v) => v === 1).length;
+
+    const tokenization = {
+      subwords: classifier.tokenize(preprocessing.cleanedText),
+      inputIdsPreview: inputIds,
+      attentionMaskPreview: attentionMask,
+      totalTokens,
+      maxLength: MAX_SEQ_LEN,
+      dataType: "int64",
+      tensorShape: [1, MAX_SEQ_LEN] as [number, number],
+    };
+
+    const diagnostics = await classifier.predictEncodedDiagnostics(encoding);
+    const latencyMs = performance.now() - t0;
+
     return {
-      cleanedText: preprocessResult.cleanedText,
-      issue,
-      polarity,
-      confidence,
-      latencyMs: performance.now() - t0,
+      cleanedText: preprocessing.cleanedText,
+      issue: diagnostics.issue,
+      polarity: diagnostics.polarity,
+      confidence: diagnostics.confidence,
+      latencyMs,
+      preprocessing,
+      tokenization,
+      issueLogitsRaw: diagnostics.issueLogitsRaw,
+      polarityLogitsRaw: diagnostics.polarityLogitsRaw,
+      topKIssues: diagnostics.topKIssues,
+      polarityDistribution: diagnostics.polarityDistribution,
+      executionMeta: {
+        modelName: "DistilXLM-R (int8 quantized)",
+        runtime: "ONNX Runtime Web (WASM SIMD Multi-threaded)",
+        sequenceLength: MAX_SEQ_LEN,
+        latencyMs,
+      },
     };
   },
 };

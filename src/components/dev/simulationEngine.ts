@@ -31,12 +31,51 @@ export interface SimulationInput {
   issueOccurrences: number; // simulated count of the extracted issue in the cohort
 }
 
+export interface PreprocessingSteps {
+  rawText: string;
+  afterNoise: string;
+  afterVowels: string;
+  afterAbbrevs: string;
+  cleanedText: string;
+}
+
+export interface TokenizationTelemetry {
+  subwords: string[];
+  inputIdsPreview: number[];
+  attentionMaskPreview: number[];
+  totalTokens: number;
+  maxLength: number;
+  dataType: string;
+  tensorShape: [number, number];
+}
+
+export interface LogitDistribution {
+  label: string;
+  logit: number;
+  probability: number;
+  deltaFromTop?: number;
+}
+
+export interface ExecutionMeta {
+  modelName: string;
+  runtime: string;
+  sequenceLength: number;
+  latencyMs: number;
+}
+
 export interface ExtractionResult {
   cleanedText: string;
   issue: string;
   polarity: string;
   confidence: number;
   latencyMs: number;
+  preprocessing: PreprocessingSteps;
+  tokenization: TokenizationTelemetry;
+  issueLogitsRaw: number[];
+  polarityLogitsRaw: number[];
+  topKIssues: LogitDistribution[];
+  polarityDistribution: LogitDistribution[];
+  executionMeta: ExecutionMeta;
 }
 
 export interface DiagnosticMapping {

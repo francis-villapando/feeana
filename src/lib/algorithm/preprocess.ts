@@ -138,14 +138,30 @@ export interface MachineTokenizer {
   };
 }
 
-// Normalizes feedback text (noise removal, vowel reduction, abbreviation mapping, whitespace).
-export function CleanFeedback(feedback: FeedbackInput | string): string {
-  const rawText = typeof feedback === "string" ? feedback : feedback.rawText;
+// Intermediate strings produced at each preprocessing stage, used by the
+// Algorithm Simulation to expose the step-by-step cleaning pipeline.
+export interface PreprocessingSteps {
+  rawText: string;
+  afterNoise: string;
+  afterVowels: string;
+  afterAbbrevs: string;
+  cleanedText: string;
+}
 
+// Runs the four cleaning stages and returns every intermediate string so the
+// UI can show the transformation timeline (noise → vowels → abbrevs → whitespace).
+export function inspectPreprocessingSteps(rawText: string): PreprocessingSteps {
   const afterNoise = removeNoise(rawText);
   const afterVowels = normalizeVowels(afterNoise);
   const afterAbbrevs = expandAbbreviations(afterVowels);
-  return normalizeWhitespace(afterAbbrevs);
+  const cleanedText = normalizeWhitespace(afterAbbrevs);
+  return { rawText, afterNoise, afterVowels, afterAbbrevs, cleanedText };
+}
+
+// Normalizes feedback text (noise removal, vowel reduction, abbreviation mapping, whitespace).
+export function CleanFeedback(feedback: FeedbackInput | string): string {
+  const rawText = typeof feedback === "string" ? feedback : feedback.rawText;
+  return inspectPreprocessingSteps(rawText).cleanedText;
 }
 
 // Converts cleaned text into fixed-length BigInt64Array tensor encodings.

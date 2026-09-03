@@ -101,17 +101,47 @@ async function getNodeApi(): Promise<WorkerApi> {
       if (!classifier.tokenizer) {
         throw new Error("[mlWorkerStore:node] Tokenizer unavailable — model failed to load.");
       }
-      const { Preprocess } = await import("../algorithm/preprocess");
-      const preprocessResult = Preprocess(feedback, classifier.tokenizer);
-      const { issue, polarity, confidence } = await classifier.predictEncoded(
-        preprocessResult.encoding,
-      );
+      const { Preprocess, EncodeFeedback, inspectPreprocessingSteps, MAX_SEQ_LEN } =
+        await import("../algorithm/preprocess");
+      const t0 = performance.now();
+      const preprocessing = inspectPreprocessingSteps(feedback.rawText);
+      const encoding = EncodeFeedback(preprocessing.cleanedText, classifier.tokenizer);
+
+      const inputIds = Array.from(encoding.inputIds).map(Number);
+      const attentionMask = Array.from(encoding.attentionMask).map(Number);
+      const totalTokens = attentionMask.filter((v) => v === 1).length;
+
+      const tokenization = {
+        subwords: classifier.tokenize(preprocessing.cleanedText),
+        inputIdsPreview: inputIds,
+        attentionMaskPreview: attentionMask,
+        totalTokens,
+        maxLength: MAX_SEQ_LEN,
+        dataType: "int64",
+        tensorShape: [1, MAX_SEQ_LEN] as [number, number],
+      };
+
+      const diagnostics = await classifier.predictEncodedDiagnostics(encoding);
+      const latencyMs = performance.now() - t0;
+
       return {
-        cleanedText: preprocessResult.cleanedText,
-        issue,
-        polarity,
-        confidence,
-        latencyMs: 0,
+        cleanedText: preprocessing.cleanedText,
+        issue: diagnostics.issue,
+        polarity: diagnostics.polarity,
+        confidence: diagnostics.confidence,
+        latencyMs,
+        preprocessing,
+        tokenization,
+        issueLogitsRaw: diagnostics.issueLogitsRaw,
+        polarityLogitsRaw: diagnostics.polarityLogitsRaw,
+        topKIssues: diagnostics.topKIssues,
+        polarityDistribution: diagnostics.polarityDistribution,
+        executionMeta: {
+          modelName: "DistilXLM-R (int8 quantized)",
+          runtime: "ONNX Runtime Web (WASM SIMD Multi-threaded)",
+          sequenceLength: MAX_SEQ_LEN,
+          latencyMs,
+        },
       };
     },
   } as WorkerApi;

@@ -4,6 +4,13 @@ export interface Preset {
   label: string;
   description: string;
   input: SimulationInput;
+  /**
+   * The exact cleaned text that the dirtified `input.feedbackText` must restore
+   * to after preprocessing. The model only ever sees this cleaned form, so the
+   * invariant `CleanFeedback(feedbackText) === expectedClean` guarantees the
+   * dirtification never changes the model's classification.
+   */
+  expectedClean: string;
 }
 
 export const PRESETS: Preset[] = [
@@ -16,10 +23,12 @@ export const PRESETS: Preset[] = [
       iloStatement: "Design and analyze recursive algorithms for complex problems.",
       targetRbt: 5,
       feedbackText:
-        "madali naman magsulat ng basic loop pero yung pagdecompose ng malaking problem papunta sa recursive base cases and subproblems talagang di kayang i-wrap ng utak ko",
+        "😭 @sir_ramirez #Recursion madali naman   magsulat ng basic loop pero yung   pagdecompose ng malaking problem papunta sa recursive base cases and subproblems talagaaang   di kayang i-wrap ng utak ko https://feeana.edu/feedback",
       totalFeedback: 10,
       issueOccurrences: 3,
     },
+    expectedClean:
+      "madali naman magsulat ng basic loop pero yung pagdecompose ng malaking problem papunta sa recursive base cases and subproblems talagang di kayang i-wrap ng utak ko",
   },
   {
     label: "Extraneous (Recommendation)",
@@ -30,10 +39,12 @@ export const PRESETS: Preset[] = [
       iloStatement: "Implement and manipulate singly linked list operations.",
       targetRbt: 3,
       feedbackText:
-        "Hindi ko masundan yung bilis ng lipat kasi parang laging biglaan ang paglipat sa bagong topic.",
+        "@prof_santos #LessonPacing Hindi ko   masundan ung bilis ng lipat kc   parang laging biglaan ang paglipat   sa bagong topic. 😭 https://feeana.edu/survey",
       totalFeedback: 10,
       issueOccurrences: 4,
     },
+    expectedClean:
+      "Hindi ko masundan yung bilis ng lipat kasi parang laging biglaan ang paglipat sa bagong topic.",
   },
   {
     label: "Intrinsic Non-Gap (Recommendation)",
@@ -44,10 +55,12 @@ export const PRESETS: Preset[] = [
       iloStatement: "Implement a working program from a given algorithm specification.",
       targetRbt: 3,
       feedbackText:
-        "kaya kong sundan yung step by step code habang nagdidiscuss pero pag tinatry ko nang magbuild ng sarili kong algorithm para sa assignment, nasisira lang lahat",
+        "kaya kong sundan   ung step by step code habang nagdidiscuss pero pag tinatry ko nang   magbuild ng sarili kong algorithm para sa assignment, nasisira lng   lahat #CS102",
       totalFeedback: 10,
       issueOccurrences: 3,
     },
+    expectedClean:
+      "kaya kong sundan yung step by step code habang nagdidiscuss pero pag tinatry ko nang magbuild ng sarili kong algorithm para sa assignment, nasisira lang lahat",
   },
   {
     label: "Gap Multiplier Boost",
@@ -58,10 +71,12 @@ export const PRESETS: Preset[] = [
       iloStatement: "Apply sorting algorithms to order data sets.",
       targetRbt: 4,
       feedbackText:
-        "gets ko naman yung algorithm pero nacoconfuse ako kung paano ko sisimulan yung implementation",
+        "gets ko naman   yung algorithm pero nacoconfuse ako kung paano   ko sisimulan yung implementation",
       totalFeedback: 10,
       issueOccurrences: 2,
     },
+    expectedClean:
+      "gets ko naman yung algorithm pero nacoconfuse ako kung paano ko sisimulan yung implementation",
   },
   {
     label: "Intrinsic (Warning)",
@@ -72,10 +87,12 @@ export const PRESETS: Preset[] = [
       iloStatement: "Interpret logical notation used in mathematical proofs.",
       targetRbt: 3,
       feedbackText:
-        "nalito talaga ako nung nag-start magsulat yung professor ng mga baligtad na A at paatras na E sa board, parang nakatingin ako sa ibang langauge",
+        "nalito talagaaa ako nung   nag-start magsulat yung prof ng mga baligtad na A   at paatras na E sa board, parang nakatingin ako sa   ibang langauge 😭 #DiscreteMath",
       totalFeedback: 10,
       issueOccurrences: 1,
     },
+    expectedClean:
+      "nalito talaga ako nung nag-start magsulat yung professor ng mga baligtad na A at paatras na E sa board, parang nakatingin ako sa ibang langauge",
   },
   {
     label: "Extraneous (Warning)",
@@ -86,10 +103,12 @@ export const PRESETS: Preset[] = [
       iloStatement: "Traverse binary trees using in-order and pre-order strategies.",
       targetRbt: 3,
       feedbackText:
-        "ang hirap ifollow nung lecture kapag panay ang daldalan nung group sa likod tungkol sa mga weekend plans nila",
+        "ang hirap ifollow   nung lecture kapag panay ang daldalan nung group sa likod   tungkol sa mga weekend plans nila @classmate_jo",
       totalFeedback: 10,
       issueOccurrences: 1,
     },
+    expectedClean:
+      "ang hirap ifollow nung lecture kapag panay ang daldalan nung group sa likod tungkol sa mga weekend plans nila",
   },
   {
     label: "Uncategorized Feedback",
@@ -99,9 +118,11 @@ export const PRESETS: Preset[] = [
       topic: "Graph Theory",
       iloStatement: "Represent graphs using adjacency lists and matrices.",
       targetRbt: 4,
-      feedbackText: "may ginawa kaming diagram about sa microservices architecture kanina",
+      feedbackText:
+        "may ginawa kaming   diagram about sa microservices architecture   kanina #GraphTheory",
       totalFeedback: 10,
       issueOccurrences: 1,
     },
+    expectedClean: "may ginawa kaming diagram about sa microservices architecture kanina",
   },
 ];
