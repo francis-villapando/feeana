@@ -103,8 +103,13 @@ export interface Feedback {
   rawText: string;
   cleanedText: string;
   aspects: AspectExtraction[];
-  submittedBy?: string;
-  studentId?: string;
+  createdAt: string;
+}
+
+export interface SessionParticipation {
+  id: string;
+  sessionId: string;
+  studentId: string;
   createdAt: string;
 }
 

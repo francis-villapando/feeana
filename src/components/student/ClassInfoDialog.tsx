@@ -61,9 +61,8 @@ export function ClassInfoDialog({ open, onOpenChange, cls, studentId }: ClassInf
 
     setIsLoading(true);
 
-    Promise.all([refreshSessions(cls.id), feedbackService.getFeedbackByClass(cls.id)])
-      .then(([, feedback]) => {
-        const ids = feedback.filter((f) => f.submittedBy === studentId).map((f) => f.sessionId);
+    Promise.all([refreshSessions(cls.id), feedbackService.getStudentSubmissions(studentId)])
+      .then(([, ids]) => {
         setSubmittedIds(new Set(ids));
       })
       .catch((e) => {

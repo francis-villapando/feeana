@@ -9,8 +9,6 @@ export function fromDbFeedback(row: Record<string, unknown>): Feedback {
     rawText: row.content as string,
     cleanedText: (meta.cleanedText as string) ?? (row.content as string),
     aspects: (meta.aspects as Feedback["aspects"]) ?? [],
-    submittedBy: meta.submittedBy as string | undefined,
-    studentId: row.student_id as string | undefined,
     createdAt: row.created_at as string,
   };
 }
@@ -47,36 +45,34 @@ export async function getFeedbackBySessions(sessionIds: string[]): Promise<Feedb
 }
 
 export async function submitFeedback(sessionId: string, content: string): Promise<Feedback> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data, error } = await supabase
-    .from("feedback")
-    .insert({
-      session_id: sessionId,
-      content: content.trim(),
-      student_id: user?.id,
-      meta: {
-        cleanedText: content.trim().toLowerCase(),
-        submittedBy: user?.id,
-      },
-    })
-    .select()
-    .single();
+  const trimmed = content.trim();
+  const { data, error } = await supabase.rpc("submit_anonymous_feedback", {
+    p_session_id: sessionId,
+    p_content: trimmed,
+    p_meta: { cleanedText: trimmed.toLowerCase() },
+  });
 
   if (error) {
-    if (error.code === "23505") {
+    if (error.message === "already_submitted") {
       throw new Error("duplicate_submission");
     }
     throw new Error(error.message);
   }
-  return fromDbFeedback(data);
+
+  // The RPC returns only the new feedback id; reconstruct the local entry.
+  return {
+    id: data as string,
+    sessionId,
+    rawText: trimmed,
+    cleanedText: trimmed.toLowerCase(),
+    aspects: [],
+    createdAt: new Date().toISOString(),
+  };
 }
 
 export async function getStudentSubmissions(studentId: string): Promise<string[]> {
   const { data, error } = await supabase
-    .from("feedback")
+    .from("session_participations")
     .select("session_id")
     .eq("student_id", studentId);
 
