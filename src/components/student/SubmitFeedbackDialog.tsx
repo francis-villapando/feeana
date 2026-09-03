@@ -68,7 +68,7 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
       ]);
 
       if (liveSession?.status === "archived" || liveSession?.status === "closed") {
-        toast.error("This session has been closed.");
+        toast.error("This session is no longer open.");
         await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
         handleClose();
         return;
@@ -90,6 +90,14 @@ export function SubmitFeedbackDialog({ session, open, onOpenChange }: SubmitFeed
       if (e instanceof Error && e.message === "duplicate_submission") {
         addSubmittedSession(session.id);
         toast.error("You've already submitted feedback for this session.");
+        await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+        handleClose();
+      } else if (e instanceof Error && e.message === "session_not_open") {
+        toast.error("This session is no longer open.");
+        await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
+        handleClose();
+      } else if (e instanceof Error && e.message === "not_enrolled") {
+        toast.error("You are no longer enrolled in this class.");
         await Promise.all([refreshEnrolledClasses(), refreshSessions(session.classId)]);
         handleClose();
       } else {
