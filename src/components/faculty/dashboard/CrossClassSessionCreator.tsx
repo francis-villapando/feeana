@@ -247,7 +247,7 @@ export function CrossClassSessionCreator() {
                         {cls?.courseCode} · {cls?.section}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {courses.find((crs) => crs.code === cls?.courseCode)?.title}
+                        {courses.find((crs) => crs.id === cls?.courseId)?.title}
                       </p>
                     </div>
                     <div className="space-y-1">

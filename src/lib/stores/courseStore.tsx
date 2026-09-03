@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "./auth";
+import { useClassStore } from "./classStore";
 import { friendlyError } from "../hooks/utils";
 import type {
   ActivityAction,
@@ -85,6 +86,7 @@ const CourseStoreContext = createContext<CourseStoreValue | null>(null);
 
 export function CourseStoreProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { refreshClasses } = useClassStore();
   const [courses, setCourses] = useState<Course[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [ilos, setIlos] = useState<ILO[]>([]);
@@ -166,8 +168,9 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
         ),
       );
       await refreshActivity();
+      await refreshClasses();
     },
-    [],
+    [refreshClasses],
   );
 
   const archiveCourse = useCallback(async (id: string) => {

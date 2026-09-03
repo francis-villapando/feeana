@@ -10,7 +10,7 @@ function generateCode(len = 6): string {
   return out;
 }
 
-function fromDbClass(row: Record<string, unknown>): Class {
+export function fromDbClass(row: Record<string, unknown>): Class {
   const faculty = row.profiles
     ? (row.profiles as Record<string, unknown>)
     : row.faculty
@@ -23,11 +23,19 @@ function fromDbClass(row: Record<string, unknown>): Class {
     (item) => item.removed_at === null || item.removed_at === undefined,
   ).length;
 
+  const course = row.courses as Record<string, unknown> | null | undefined;
+  const courseCode =
+    (course?.code as string) ?? (row.name as string) ?? "";
+  const courseDisplay =
+    course?.code && course?.title
+      ? `${course.code} — ${course.title}`
+      : (row.course as string) ?? "";
+
   return {
     id: row.id as string,
-    courseCode: (row.name as string) ?? "",
+    courseCode,
     courseId: (row.course_id as string) ?? "",
-    courseDisplay: row.course as string,
+    courseDisplay,
     section: row.section as string,
     enrollCode: row.enroll_code as string,
     createdAt: row.created_at as string,
@@ -81,7 +89,7 @@ function toDbSession(s: Session) {
 export async function getClasses(facultyId: string): Promise<Class[]> {
   const { data, error } = await supabase
     .from("classes")
-    .select("*")
+    .select("*, courses(id, code, title)")
     .eq("faculty_id", facultyId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
@@ -271,7 +279,7 @@ export async function getStudents(classId: string): Promise<Student[]> {
 export async function enrollClassByCode(code: string, studentId: string): Promise<Class | null> {
   const { data: cls, error: clsError } = await supabase
     .from("classes")
-    .select("*")
+    .select("*, courses(id, code, title)")
     .eq("enroll_code", code.trim().toUpperCase())
     .eq("archived", false);
   if (clsError) throw new Error(clsError.message);
@@ -334,7 +342,11 @@ export async function unenrollSelf(classId: string, studentId: string): Promise<
 }
 
 export async function getClassById(id: string): Promise<Class | null> {
-  const { data, error } = await supabase.from("classes").select("*").eq("id", id).single();
+  const { data, error } = await supabase
+    .from("classes")
+    .select("*, courses(id, code, title)")
+    .eq("id", id)
+    .single();
   if (error?.code === "PGRST116") return null;
   if (error) throw new Error(error.message);
   if (!data) return null;
@@ -365,7 +377,8 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
         created_at,
         archived,
         student_count,
-        profiles!faculty_id (full_name)
+        profiles!faculty_id (full_name),
+        courses (id, code, title)
       )
     `,
     )
