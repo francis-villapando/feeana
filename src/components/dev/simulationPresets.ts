@@ -23,12 +23,12 @@ export const PRESETS: Preset[] = [
       iloStatement: "Design and analyze recursive algorithms for complex problems.",
       targetRbt: 5,
       feedbackText:
-        "😭 @sir_ramirez #Recursion madali naman   magsulat ng basic loop pero yung   pagdecompose ng malaking problem papunta sa recursive base cases and subproblems talagaaang   di kayang i-wrap ng utak ko https://feeana.edu/feedback",
+        "😭 @sir_ramirez #Recursion medyo nawawala   ako kapag nagcoconnect na   ng iba't ibang concepts https://feeana.edu/feedback",
       totalFeedback: 10,
       issueOccurrences: 3,
     },
     expectedClean:
-      "madali naman magsulat ng basic loop pero yung pagdecompose ng malaking problem papunta sa recursive base cases and subproblems talagang di kayang i-wrap ng utak ko",
+      "medyo nawawala ako kapag nagcoconnect na ng iba't ibang concepts",
   },
   {
     label: "Extraneous (Recommendation)",
