@@ -43,9 +43,9 @@ git push
 
 ## Size expectations
 
-| Format        | Estimated size                                        |
-| ------------- | ----------------------------------------------------- |
-| FP32 baseline | ~184 MB (mMiniLMv2 is much smaller than full XLM-R)   |
-| INT8 PTQ      | ~50–90 MB (embeddings excluded from quant by default) |
+| Format        | Estimated size                                                      |
+| ------------- | ------------------------------------------------------------------- |
+| FP32 baseline | ~448 MB (470 MB unquantized ONNX dual-head graph)                   |
+| INT8 PTQ      | ~113 MB (per-channel dynamic quantization; embeddings included)    |
 
 > FP32 intermediates (`*-fp32.onnx`) are `.gitignore`d — only the INT8 version is committed.

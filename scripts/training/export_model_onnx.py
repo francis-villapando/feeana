@@ -147,13 +147,14 @@ def export_fp32_onnx(model: DualHeadModel, out_path: Path, opset: int) -> None:
     print(f"[INFO] FP32 model size: {size_mb:.2f} MB")
 
 
-def quantize_int8(fp32_path: Path, int8_path: Path) -> None:
+def quantize_int8(fp32_path: Path, int8_path: Path, per_channel: bool = True) -> None:
     """Quantize FP32 ONNX model to INT8 using dynamic quantization."""
-    print(f"[INFO] Quantizing model to INT8 -> {int8_path}")
+    print(f"[INFO] Quantizing model to INT8 (per_channel={per_channel}) -> {int8_path}")
     quantize_dynamic(
         model_input=str(fp32_path),
         model_output=str(int8_path),
         weight_type=QuantType.QInt8,
+        per_channel=per_channel,
     )
     size_mb = int8_path.stat().st_size / (1024 * 1024)
     print(f"[INFO] INT8 model size: {size_mb:.2f} MB")
@@ -177,10 +178,23 @@ def smoke_test_onnx(onnx_path: Path) -> None:
     print("[INFO] Output shapes validated successfully.")
 
 
-def stage_assets(tokenizer: AutoTokenizer, out_dir: Path, label_mappings_src: Path) -> None:
-    """Stage tokenizer files and label mappings to output directory."""
-    print(f"[INFO] Staging tokenizer and configuration -> {out_dir}")
+def stage_assets(
+    model_name: str,
+    tokenizer: AutoTokenizer,
+    out_dir: Path,
+    label_mappings_src: Path,
+) -> None:
+    """Stage tokenizer files, model config, and label mappings to output directory."""
+    print(f"[INFO] Staging tokenizer, config, and label mappings -> {out_dir}")
     tokenizer.save_pretrained(str(out_dir))
+
+    if not (out_dir / "special_tokens_map.json").exists():
+        with open(out_dir / "special_tokens_map.json", "w", encoding="utf-8") as f:
+            json.dump(tokenizer.special_tokens_map, f, indent=2)
+
+    from transformers import AutoConfig
+    config = AutoConfig.from_pretrained(model_name)
+    config.save_pretrained(str(out_dir))
 
     if label_mappings_src.exists():
         shutil.copy(label_mappings_src, out_dir / "label_mappings.json")
@@ -224,6 +238,11 @@ def parse_args() -> argparse.Namespace:
         help="Skip INT8 quantization step.",
     )
     parser.add_argument(
+        "--keep-fp32",
+        action="store_true",
+        help="Keep the FP32 ONNX intermediate after INT8 quantization.",
+    )
+    parser.add_argument(
         "--opset",
         type=int,
         default=17,
@@ -261,11 +280,11 @@ def main() -> None:
         int8_path = tag_dir / "int8.onnx"
         quantize_int8(fp32_path, int8_path)
         final_onnx = int8_path
-        if fp32_path.exists():
+        if fp32_path.exists() and not args.keep_fp32:
             fp32_path.unlink()
 
     smoke_test_onnx(final_onnx)
-    stage_assets(tokenizer, tag_dir, label_mappings_path)
+    stage_assets(model_name, tokenizer, tag_dir, label_mappings_path)
 
     print(f"[SUCCESS] Model export finished. Assets available in: {tag_dir.resolve()}")
 
