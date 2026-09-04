@@ -1,0 +1,124 @@
+{
+  "checkpoint": "scripts\\training\\checkpoints\\distilxlmr\\best_model.pt",
+  "data": "scripts\\training\\data\\val.csv",
+  "samples": 1002,
+  "issue_labels": [
+    "abstract logic gap",
+    "clarity deficit",
+    "classroom tension",
+    "conceptual misalignment",
+    "design synthesis failure",
+    "evaluation unfairness",
+    "feedback latency",
+    "instructional cadence",
+    "notation struggle",
+    "peer distraction",
+    "perceived marginalization",
+    "procedural bottleneck",
+    "relational coldness",
+    "subject alienation",
+    "uncategorized"
+  ],
+  "polarity_labels": [
+    "neg",
+    "neu",
+    "pos"
+  ],
+  "raw": {
+    "overall_issue_accuracy": 0.7644710578842315,
+    "overall_issue_macro_f1": 0.7382816103933736,
+    "overall_polarity_macro_f1": 0.8251139112947011,
+    "uncategorized_vs_named": {
+      "precision": 0.9553072625698324,
+      "recall": 0.8592964824120602,
+      "f1": 0.9047619047619048,
+      "confusion_matrix": [
+        [
+          795,
+          8
+        ],
+        [
+          28,
+          171
+        ]
+      ]
+    },
+    "ground_truth_uncategorized": {
+      "samples": 199,
+      "issue_accuracy": 0.8592964824120602,
+      "issue_macro_f1": 0.10270270270270271,
+      "polarity_macro_f1": 0.7655826558265583
+    },
+    "ground_truth_named": {
+      "samples": 803,
+      "issue_accuracy": 0.7409713574097135,
+      "issue_macro_f1": 0.6914107687132057,
+      "polarity_macro_f1": 0.33019065577205114
+    },
+    "named_issue_macro_f1_14_class": 0.6914107687132057,
+    "polarity_when_issue_correct": {
+      "samples": 766,
+      "macro_f1": 0.8702574595055413
+    },
+    "polarity_when_issue_incorrect": {
+      "samples": 236,
+      "macro_f1": 0.4540399154394639
+    }
+  },
+  "threshold_sweep_validation_only": [
+    {
+      "threshold": 0.3,
+      "routed_percentage": 19.16167664670659,
+      "overall_issue_macro_f1": 0.7359089090014445,
+      "uncategorized_binary_f1": 0.9316835874758
+    },
+    {
+      "threshold": 0.35,
+      "routed_percentage": 21.35728542914172,
+      "overall_issue_macro_f1": 0.7380407065936387,
+      "uncategorized_binary_f1": 0.9100296309598634
+    },
+    {
+      "threshold": 0.4,
+      "routed_percentage": 24.9500998003992,
+      "overall_issue_macro_f1": 0.7421467752553516,
+      "uncategorized_binary_f1": 0.8751437635617556
+    },
+    {
+      "threshold": 0.45,
+      "routed_percentage": 29.241516966067866,
+      "overall_issue_macro_f1": 0.7292901218400829,
+      "uncategorized_binary_f1": 0.8302845528455285
+    },
+    {
+      "threshold": 0.5,
+      "routed_percentage": 34.930139720558884,
+      "overall_issue_macro_f1": 0.7167159346759154,
+      "uncategorized_binary_f1": 0.775464293091469
+    },
+    {
+      "threshold": 0.55,
+      "routed_percentage": 39.82035928143712,
+      "overall_issue_macro_f1": 0.6963399882704292,
+      "uncategorized_binary_f1": 0.7378173808379758
+    },
+    {
+      "threshold": 0.6,
+      "routed_percentage": 43.91217564870259,
+      "overall_issue_macro_f1": 0.6851657326916274,
+      "uncategorized_binary_f1": 0.7070628901614817
+    },
+    {
+      "threshold": 0.65,
+      "routed_percentage": 48.30339321357285,
+      "overall_issue_macro_f1": 0.6607571935659791,
+      "uncategorized_binary_f1": 0.6679408984054185
+    },
+    {
+      "threshold": 0.7,
+      "routed_percentage": 53.59281437125748,
+      "overall_issue_macro_f1": 0.6275502876758806,
+      "uncategorized_binary_f1": 0.6242156425730353
+    }
+  ]
+}
