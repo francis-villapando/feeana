@@ -1,64 +1,64 @@
 model,task,source,label,precision,recall,f1,n
-distilxlmr,issue,augmented,abstract logic gap,0.5357,0.4688,0.5,416
-distilxlmr,issue,augmented,clarity deficit,0.4231,0.5,0.4583,416
-distilxlmr,issue,augmented,classroom tension,0.3333,0.381,0.3556,416
-distilxlmr,issue,augmented,conceptual misalignment,0.5263,0.7692,0.625,416
-distilxlmr,issue,augmented,design synthesis failure,0.5238,0.6875,0.5946,416
-distilxlmr,issue,augmented,evaluation unfairness,0.4286,0.5294,0.4737,416
-distilxlmr,issue,augmented,feedback latency,0.75,0.1765,0.2857,416
-distilxlmr,issue,augmented,instructional cadence,0.8571,0.3,0.4444,416
-distilxlmr,issue,augmented,notation struggle,0.913,0.5526,0.6885,416
-distilxlmr,issue,augmented,peer distraction,0.8,0.4211,0.5517,416
-distilxlmr,issue,augmented,perceived marginalization,0.3585,0.7308,0.481,416
-distilxlmr,issue,augmented,procedural bottleneck,0.7143,0.5556,0.625,416
-distilxlmr,issue,augmented,relational coldness,0.4138,0.5714,0.48,416
-distilxlmr,issue,augmented,subject alienation,0.303,0.5,0.3774,416
-distilxlmr,issue,augmented,uncategorized,0.9649,0.7051,0.8148,416
-distilxlmr,issue,augmented,macro,0.5897,0.5233,0.5171,416
-distilxlmr,issue,real,abstract logic gap,0.5,0.5714,0.5333,96
-distilxlmr,issue,real,clarity deficit,0.3333,0.4,0.3636,96
-distilxlmr,issue,real,classroom tension,0.4286,0.6,0.5,96
-distilxlmr,issue,real,conceptual misalignment,0.6,0.6,0.6,96
-distilxlmr,issue,real,design synthesis failure,0.6667,0.6667,0.6667,96
-distilxlmr,issue,real,evaluation unfairness,0.375,0.75,0.5,96
-distilxlmr,issue,real,feedback latency,0.0,0.0,0.0,96
-distilxlmr,issue,real,instructional cadence,0.6667,0.3333,0.4444,96
-distilxlmr,issue,real,notation struggle,0.8889,0.8,0.8421,96
-distilxlmr,issue,real,peer distraction,0.6667,0.6667,0.6667,96
-distilxlmr,issue,real,perceived marginalization,0.1818,0.4,0.25,96
-distilxlmr,issue,real,procedural bottleneck,0.6,0.5,0.5455,96
-distilxlmr,issue,real,relational coldness,0.25,0.3333,0.2857,96
-distilxlmr,issue,real,subject alienation,0.2,0.25,0.2222,96
-distilxlmr,issue,real,uncategorized,0.875,0.3889,0.5385,96
-distilxlmr,issue,real,macro,0.4822,0.484,0.4639,96
-distilxlmr,issue,synthetic,abstract logic gap,0.6977,0.7895,0.7407,519
-distilxlmr,issue,synthetic,clarity deficit,0.84,0.8077,0.8235,519
-distilxlmr,issue,synthetic,classroom tension,0.7308,0.76,0.7451,519
-distilxlmr,issue,synthetic,conceptual misalignment,0.9091,1.0,0.9524,519
-distilxlmr,issue,synthetic,design synthesis failure,0.8684,0.9167,0.8919,519
-distilxlmr,issue,synthetic,evaluation unfairness,0.8333,0.7692,0.8,519
-distilxlmr,issue,synthetic,feedback latency,0.85,0.6296,0.7234,519
-distilxlmr,issue,synthetic,instructional cadence,0.9474,0.75,0.8372,519
-distilxlmr,issue,synthetic,notation struggle,0.9143,0.9143,0.9143,519
-distilxlmr,issue,synthetic,peer distraction,1.0,0.7037,0.8261,519
-distilxlmr,issue,synthetic,perceived marginalization,0.4634,0.76,0.5758,519
-distilxlmr,issue,synthetic,procedural bottleneck,0.8788,0.7436,0.8056,519
-distilxlmr,issue,synthetic,relational coldness,0.8333,0.625,0.7143,519
-distilxlmr,issue,synthetic,subject alienation,0.4878,0.7692,0.597,519
-distilxlmr,issue,synthetic,uncategorized,0.9677,0.8911,0.9278,519
-distilxlmr,issue,synthetic,macro,0.8148,0.7886,0.7917,519
-distilxlmr,polarity,augmented,neg,0.9755,0.9702,0.9728,416
-distilxlmr,polarity,augmented,neu,0.76,0.7917,0.7755,416
-distilxlmr,polarity,augmented,pos,0.75,0.7826,0.766,416
-distilxlmr,polarity,augmented,macro,0.8285,0.8482,0.8381,416
-distilxlmr,polarity,real,neg,0.9425,0.9425,0.9425,96
-distilxlmr,polarity,real,neu,0.1667,0.25,0.2,96
-distilxlmr,polarity,real,pos,1.0,0.6,0.75,96
-distilxlmr,polarity,real,macro,0.7031,0.5975,0.6308,96
-distilxlmr,polarity,synthetic,neg,1.0,0.9716,0.9856,519
-distilxlmr,polarity,synthetic,neu,0.8718,1.0,0.9315,519
-distilxlmr,polarity,synthetic,pos,0.7778,1.0,0.875,519
-distilxlmr,polarity,synthetic,macro,0.8832,0.9905,0.9307,519
+distilxlmr,issue,augmented,abstract logic gap,0.6071,0.5312,0.5667,416
+distilxlmr,issue,augmented,clarity deficit,0.4615,0.5455,0.5,416
+distilxlmr,issue,augmented,classroom tension,0.4615,0.5714,0.5106,416
+distilxlmr,issue,augmented,conceptual misalignment,0.7308,0.7308,0.7308,416
+distilxlmr,issue,augmented,design synthesis failure,0.6486,0.75,0.6957,416
+distilxlmr,issue,augmented,evaluation unfairness,0.7143,0.5882,0.6452,416
+distilxlmr,issue,augmented,feedback latency,0.5652,0.7647,0.65,416
+distilxlmr,issue,augmented,instructional cadence,0.6364,0.7,0.6667,416
+distilxlmr,issue,augmented,notation struggle,0.9333,0.7368,0.8235,416
+distilxlmr,issue,augmented,peer distraction,0.6818,0.7895,0.7317,416
+distilxlmr,issue,augmented,perceived marginalization,0.72,0.6923,0.7059,416
+distilxlmr,issue,augmented,procedural bottleneck,0.6667,0.8148,0.7333,416
+distilxlmr,issue,augmented,relational coldness,0.6,0.5714,0.5854,416
+distilxlmr,issue,augmented,subject alienation,0.6,0.45,0.5143,416
+distilxlmr,issue,augmented,uncategorized,0.9275,0.8205,0.8707,416
+distilxlmr,issue,augmented,macro,0.6637,0.6705,0.662,416
+distilxlmr,issue,real,abstract logic gap,0.5,0.2857,0.3636,96
+distilxlmr,issue,real,clarity deficit,0.375,0.6,0.4615,96
+distilxlmr,issue,real,classroom tension,0.25,0.2,0.2222,96
+distilxlmr,issue,real,conceptual misalignment,0.5,0.6,0.5455,96
+distilxlmr,issue,real,design synthesis failure,0.5556,0.5556,0.5556,96
+distilxlmr,issue,real,evaluation unfairness,0.25,0.5,0.3333,96
+distilxlmr,issue,real,feedback latency,0.3333,0.6667,0.4444,96
+distilxlmr,issue,real,instructional cadence,1.0,0.3333,0.5,96
+distilxlmr,issue,real,notation struggle,0.7273,0.8,0.7619,96
+distilxlmr,issue,real,peer distraction,0.5,1.0,0.6667,96
+distilxlmr,issue,real,perceived marginalization,0.5,0.4,0.4444,96
+distilxlmr,issue,real,procedural bottleneck,0.4444,0.6667,0.5333,96
+distilxlmr,issue,real,relational coldness,0.25,0.1667,0.2,96
+distilxlmr,issue,real,subject alienation,0.6667,0.5,0.5714,96
+distilxlmr,issue,real,uncategorized,0.8333,0.5556,0.6667,96
+distilxlmr,issue,real,macro,0.5124,0.522,0.4847,96
+distilxlmr,issue,synthetic,abstract logic gap,0.875,0.9211,0.8974,519
+distilxlmr,issue,synthetic,clarity deficit,0.8889,0.9231,0.9057,519
+distilxlmr,issue,synthetic,classroom tension,0.8846,0.92,0.902,519
+distilxlmr,issue,synthetic,conceptual misalignment,0.9524,1.0,0.9756,519
+distilxlmr,issue,synthetic,design synthesis failure,0.9444,0.9444,0.9444,519
+distilxlmr,issue,synthetic,evaluation unfairness,0.913,0.8077,0.8571,519
+distilxlmr,issue,synthetic,feedback latency,0.8966,0.963,0.9286,519
+distilxlmr,issue,synthetic,instructional cadence,1.0,0.9583,0.9787,519
+distilxlmr,issue,synthetic,notation struggle,0.9412,0.9143,0.9275,519
+distilxlmr,issue,synthetic,peer distraction,1.0,1.0,1.0,519
+distilxlmr,issue,synthetic,perceived marginalization,0.8846,0.92,0.902,519
+distilxlmr,issue,synthetic,procedural bottleneck,0.9286,1.0,0.963,519
+distilxlmr,issue,synthetic,relational coldness,0.95,0.7917,0.8636,519
+distilxlmr,issue,synthetic,subject alienation,0.9545,0.8077,0.875,519
+distilxlmr,issue,synthetic,uncategorized,0.9902,1.0,0.9951,519
+distilxlmr,issue,synthetic,macro,0.9336,0.9247,0.9277,519
+distilxlmr,polarity,augmented,neg,0.9757,0.981,0.9784,416
+distilxlmr,polarity,augmented,neu,0.8571,0.75,0.8,416
+distilxlmr,polarity,augmented,pos,0.8333,0.8696,0.8511,416
+distilxlmr,polarity,augmented,macro,0.8887,0.8669,0.8765,416
+distilxlmr,polarity,real,neg,0.9634,0.908,0.9349,96
+distilxlmr,polarity,real,neu,0.1429,0.25,0.1818,96
+distilxlmr,polarity,real,pos,0.7143,1.0,0.8333,96
+distilxlmr,polarity,real,macro,0.6069,0.7193,0.65,96
+distilxlmr,polarity,synthetic,neg,1.0,0.9847,0.9923,519
+distilxlmr,polarity,synthetic,neu,0.8947,1.0,0.9444,519
+distilxlmr,polarity,synthetic,pos,0.9032,1.0,0.9492,519
+distilxlmr,polarity,synthetic,macro,0.9327,0.9949,0.962,519
 mbert,issue,augmented,abstract logic gap,0.6579,0.7812,0.7143,416
 mbert,issue,augmented,clarity deficit,0.5,0.7273,0.5926,416
 mbert,issue,augmented,classroom tension,0.5,0.5714,0.5333,416

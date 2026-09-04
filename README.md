@@ -146,9 +146,11 @@ Evaluation is performed on a held-out grouped test set of **1,031 rows** (groupe
 | :------------- | :--------- | :-------------- | :----------- | :---------- | :----------------- | :-------------- |
 | svm            | 0.7999     | 0.8042          | 0.8008       | 0.9293      | 0.9804             | 0.8887          |
 | mbert          | 0.7690     | 0.7708          | 0.7748       | 0.8707      | 0.8568             | 0.8854          |
-| **distilxlmr** | **0.6544** | **0.6886**      | **0.6551**   | **0.8727**  | **0.8445**         | **0.9047**      |
+| **distilxlmr** | **0.7781** | **0.7782**      | **0.7835**   | **0.9026**  | **0.8815**         | **0.9257**      |
 
-DistilXLM-R's own held-out test metrics (from [`test_evaluation_report_distilxlmr.json`](scripts/training/reports/test_evaluation_report_distilxlmr.json)): **issue macro-F1 0.7159**, **polarity macro-F1 0.8558**, issue accuracy 0.7498.
+_Note: DistilXLM-R metrics corrected after switching INT8 export to `per_channel=True` quantization; embeddings remain quantized._
+
+DistilXLM-R's own held-out test metrics (from [`test_evaluation_report_distilxlmr.json`](scripts/training/reports/test_evaluation_report_distilxlmr.json)): **issue macro-F1 0.7781**, **polarity macro-F1 0.9026**, issue accuracy 0.8021.
 
 ### Discussion
 
