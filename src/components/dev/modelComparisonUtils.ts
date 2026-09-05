@@ -14,7 +14,8 @@ export const MODEL_KINDS = ["distilxlmr", "mbert", "svm"] as const;
 export const MODEL_CACHE_KEYS = [...Object.values(CACHE_KEYS_MAP), ...LEGACY_CACHE_KEYS];
 
 export const STORAGE_KEY = "feeana-comparison-progress-v1";
-export const STORAGE_VERSION = 4;
+// Increment to invalidate persisted results when the stored metric shape changes.
+export const STORAGE_VERSION = 5;
 
 export const RESULT_KEYS = [
   "coldStartMs",

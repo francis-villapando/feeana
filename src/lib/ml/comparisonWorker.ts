@@ -1,3 +1,6 @@
+// Imported first so the WASM memory monitor is installed before any model code
+// can allocate WASM linear memory.
+import { resetHeapMonitor, getPeakWasmHeapBytes } from "./heapMonitor";
 import * as Comlink from "comlink";
 import {
   createModel,
@@ -10,33 +13,6 @@ const WARMUP_COUNT = 3;
 
 let model: ModelAdapter | null = null;
 
-// Worker-side heap sampling. Reports the V8 JS heap of this worker (including
-// JS wrappers and buffers), which is where ONNX models execute. It cannot
-// introspect private WebAssembly.Memory pages directly, so metrics represent
-// worker heap utilization.
-interface PerformanceWithMemory extends Performance {
-  memory?: { usedJSHeapSize: number };
-}
-
-function sampleWorkerHeapBytes(): number {
-  try {
-    return (performance as PerformanceWithMemory).memory?.usedJSHeapSize ?? 0;
-  } catch {
-    return 0;
-  }
-}
-
-async function sampleWorkerHeapPeak(): Promise<number> {
-  let peak = sampleWorkerHeapBytes();
-  // Fine granularity to catch transient peaks on fast models.
-  for (let i = 0; i < 20; i++) {
-    await new Promise((r) => setTimeout(r, 10));
-    const bytes = sampleWorkerHeapBytes();
-    if (bytes > peak) peak = bytes;
-  }
-  return peak;
-}
-
 async function loadModel(
   kind: ModelKind,
   onDownloadProgress?: (loaded: number, total: number, phase?: string) => void,
@@ -44,6 +20,7 @@ async function loadModel(
   skipWarmup = false,
 ): Promise<{ coldStartMs: number; peakWorkerHeapMB: number }> {
   if (model) await disposeModel();
+  resetHeapMonitor();
   const t0 = performance.now();
   const adapter = createModel(kind);
   adapter.setProgressHook?.((info) => {
@@ -56,7 +33,7 @@ async function loadModel(
   adapter.setColdMode?.(coldMode);
   model = adapter;
   await model.load({ skipWarmup });
-  const peakWorkerHeapMB = (await sampleWorkerHeapPeak()) / 1024 / 1024;
+  const peakWorkerHeapMB = getPeakWasmHeapBytes() / 1024 / 1024;
   return { coldStartMs: performance.now() - t0, peakWorkerHeapMB };
 }
 
@@ -74,6 +51,7 @@ async function runComparison(
 
   // Dedicated warmup phase: run JIT warmup before timing benchmark samples so
   // warmup compute is excluded from latency metrics.
+  resetHeapMonitor();
   for (let i = 0; i < Math.min(WARMUP_COUNT, texts.length); i++) {
     await model.predict(texts[i]);
   }
@@ -87,7 +65,7 @@ async function runComparison(
     latencies.push(performance.now() - t0);
   }
 
-  const peakWorkerHeapMB = (await sampleWorkerHeapPeak()) / 1024 / 1024;
+  const peakWorkerHeapMB = getPeakWasmHeapBytes() / 1024 / 1024;
   return { predictions, latencies, peakWorkerHeapMB };
 }
 
