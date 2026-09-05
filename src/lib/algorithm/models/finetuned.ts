@@ -93,6 +93,18 @@ function argmax(probs: number[]): number {
   return probs.indexOf(Math.max(...probs));
 }
 
+// Module 3: low-confidence top-1 predictions route to "Uncategorized"
+// so false positives don't distort diagnostic cues.
+export const CONFIDENCE_FALLBACK_THRESHOLD = 0.31;
+
+export function applyConfidenceFallback(
+  rawIssue: string,
+  topConfidence: number,
+  threshold: number = CONFIDENCE_FALLBACK_THRESHOLD,
+): string {
+  return topConfidence < threshold ? "Uncategorized" : rawIssue;
+}
+
 export class OnnxPidAbsaAdapter implements ModelAdapter {
   readonly name: string;
   session: InferenceSession | null = null;
@@ -306,7 +318,8 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     const issueIdx = argmax(issueProbs);
     const polarityIdx = argmax(polarityProbs);
 
-    let issue = this.labelMap.issue.id2label[String(issueIdx)] ?? "Uncategorized";
+    const rawIssue = this.labelMap.issue.id2label[String(issueIdx)] ?? "Uncategorized";
+    let issue = applyConfidenceFallback(rawIssue, issueProbs[issueIdx]);
     if (issue === "uncategorized") {
       issue = "Uncategorized";
     }
@@ -328,6 +341,10 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     issue: string;
     polarity: string;
     confidence: number;
+    rawIssue: string;
+    rawConfidence: number;
+    routedDueToLowConfidence: boolean;
+    confidenceThreshold: number;
     issueLogitsRaw: number[];
     polarityLogitsRaw: number[];
     topKIssues: Array<{ label: string; logit: number; probability: number }>;
@@ -355,7 +372,10 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     const issueIdx = argmax(issueProbs);
     const polarityIdx = argmax(polarityProbs);
 
-    let issue = this.labelMap.issue.id2label[String(issueIdx)] ?? "Uncategorized";
+    const rawIssue = this.labelMap.issue.id2label[String(issueIdx)] ?? "Uncategorized";
+    const rawConfidence = issueProbs[issueIdx];
+    const routedDueToLowConfidence = rawConfidence < CONFIDENCE_FALLBACK_THRESHOLD;
+    let issue = routedDueToLowConfidence ? "Uncategorized" : rawIssue;
     if (issue === "uncategorized") {
       issue = "Uncategorized";
     }
@@ -385,7 +405,11 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     return {
       issue,
       polarity,
-      confidence: issueProbs[issueIdx],
+      confidence: rawConfidence,
+      rawIssue,
+      rawConfidence,
+      routedDueToLowConfidence,
+      confidenceThreshold: CONFIDENCE_FALLBACK_THRESHOLD,
       issueLogitsRaw: issueLogits,
       polarityLogitsRaw: polarityLogits,
       topKIssues: ranked,

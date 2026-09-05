@@ -3,6 +3,7 @@ import { MODEL_SIZES_BYTES } from "./sizes";
 import { MODEL_CACHE_KEYS } from "./modelCache";
 
 export type { LoadProgress } from "./finetuned";
+export { CONFIDENCE_FALLBACK_THRESHOLD } from "./finetuned";
 
 export class DistilXlmrAdapter extends OnnxPidAbsaAdapter {
   constructor() {

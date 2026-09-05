@@ -146,6 +146,10 @@ const api = {
     issue: string;
     polarity: string;
     confidence: number;
+    rawIssue: string;
+    rawConfidence: number;
+    routedDueToLowConfidence: boolean;
+    confidenceThreshold: number;
     latencyMs: number;
     preprocessing: {
       rawText: string;
@@ -214,6 +218,10 @@ const api = {
       issue: diagnostics.issue,
       polarity: diagnostics.polarity,
       confidence: diagnostics.confidence,
+      rawIssue: diagnostics.rawIssue,
+      rawConfidence: diagnostics.rawConfidence,
+      routedDueToLowConfidence: diagnostics.routedDueToLowConfidence,
+      confidenceThreshold: diagnostics.confidenceThreshold,
       latencyMs,
       preprocessing,
       tokenization,

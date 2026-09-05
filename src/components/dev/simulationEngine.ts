@@ -68,6 +68,10 @@ export interface ExtractionResult {
   issue: string;
   polarity: string;
   confidence: number;
+  rawIssue: string;
+  rawConfidence: number;
+  routedDueToLowConfidence: boolean;
+  confidenceThreshold: number;
   latencyMs: number;
   preprocessing: PreprocessingSteps;
   tokenization: TokenizationTelemetry;

@@ -62,6 +62,13 @@ const EXPECTED: Record<
     triggersRecommendation: false,
     isExcluded: true,
   },
+  "Low-Confidence Fallback (Uncategorized)": {
+    issue: "Uncategorized",
+    isGap: false,
+    priorityScore: 0,
+    triggersRecommendation: false,
+    isExcluded: true,
+  },
 };
 
 describe("model-backed preset simulation", () => {
@@ -80,6 +87,13 @@ describe("model-backed preset simulation", () => {
 
       const expected = EXPECTED[preset.label];
       expect(extraction.issue).toBe(expected.issue);
+
+      if (preset.label === "Low-Confidence Fallback (Uncategorized)") {
+        expect(extraction.routedDueToLowConfidence).toBe(true);
+        expect(extraction.confidenceThreshold).toBe(0.31);
+        expect(extraction.rawConfidence).toBeLessThan(0.31);
+        expect(typeof extraction.rawIssue).toBe("string");
+      }
 
       const diag = mapDiagnostics(extraction.issue, preset.input.targetRbt);
       const strat = computePriority(
