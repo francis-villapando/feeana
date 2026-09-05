@@ -95,7 +95,9 @@ describe("Pipeline Integration Tests", () => {
       .maybeSingle();
 
     if (!facultyProfile) {
-      throw new Error(`Faculty profile for ${FACULTY_EMAIL} not found. Ensure seed data has been run.`);
+      throw new Error(
+        `Faculty profile for ${FACULTY_EMAIL} not found. Ensure seed data has been run.`,
+      );
     }
 
     /* resolve or create class owned by faculty */

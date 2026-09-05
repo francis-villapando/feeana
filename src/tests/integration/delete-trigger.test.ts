@@ -26,7 +26,9 @@ describe("prevent_delete trigger bypass", () => {
       .maybeSingle();
 
     if (!faculty) {
-      throw new Error(`Faculty profile for ${FACULTY_EMAIL} not found. Ensure seed data has been run.`);
+      throw new Error(
+        `Faculty profile for ${FACULTY_EMAIL} not found. Ensure seed data has been run.`,
+      );
     }
     facultyId = faculty.id;
 
@@ -62,7 +64,9 @@ describe("prevent_delete trigger bypass", () => {
 
   afterAll(async () => {
     if (insertedSessionId) {
-      await adminExec([{ text: "DELETE FROM sessions WHERE id = $1", params: [insertedSessionId] }]);
+      await adminExec([
+        { text: "DELETE FROM sessions WHERE id = $1", params: [insertedSessionId] },
+      ]);
     }
     if (testClassId) {
       await supabaseAdmin.from("classes").delete().eq("id", testClassId);
