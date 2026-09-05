@@ -11,7 +11,6 @@ The script never touches test.csv and never modifies any checkpoint.
 import json
 import pathlib
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, f1_score
@@ -22,6 +21,8 @@ from transformers import AutoTokenizer
 SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
 DATA_DIR = SCRIPT_DIR / "data"
 CHECKPOINTS_DIR = SCRIPT_DIR / "checkpoints"
+REPORTS_DIR = SCRIPT_DIR / "reports"
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Ensure finetune module is on the path
 import sys
@@ -118,6 +119,7 @@ def main():
     best_thresh = None
     best_macro_f1 = -1.0
     best_metrics = None
+    sweep_rows = []
 
     for thresh in thresholds:
         fallback_preds = val_res["issue_preds"].copy()
@@ -131,6 +133,16 @@ def main():
         weighted_f1 = f1_score(val_res["issue_targets"], fallback_preds, average="weighted", zero_division=0)
         unique_classes = np.unique(fallback_preds).size
 
+        sweep_rows.append({
+            "threshold": float(thresh),
+            "routed": num_routed,
+            "pct_routed": float(pct_routed),
+            "accuracy": float(acc),
+            "macro_f1": float(macro_f1),
+            "weighted_f1": float(weighted_f1),
+            "unique_classes": int(unique_classes),
+        })
+
         print(f"{thresh:<10.2f} {num_routed:<12d} {pct_routed:<10.2f} {acc:<10.4f} {macro_f1:<9.4f} {weighted_f1:<12.4f} {unique_classes:<15d}")
 
         if macro_f1 > best_macro_f1:
@@ -138,9 +150,7 @@ def main():
             best_thresh = thresh
             best_metrics = (acc, pct_routed)
 
-    # ---------------------------------------------------------------------
     # Summary of best threshold
-    # ---------------------------------------------------------------------
     if best_thresh is not None:
         best_acc, best_pct = best_metrics
         print("\nBEST VALIDATION THRESHOLD: {:.2f}".format(best_thresh))
@@ -149,6 +159,25 @@ def main():
         print("PERCENT ROUTED TO UNCATEGORIZED: {:.2f}%".format(best_pct))
     else:
         print("No thresholds evaluated.")
+
+    # Save full sweep report
+    report = {
+        "model_tag": resolve_tag(MODEL_NAME),
+        "validation_set": "val.csv",
+        "sweep": sweep_rows,
+    }
+    if best_thresh is not None:
+        best_acc, best_pct = best_metrics
+        report["best"] = {
+            "threshold": float(best_thresh),
+            "issue_macro_f1": float(best_macro_f1),
+            "accuracy": float(best_acc),
+            "pct_routed": float(best_pct),
+        }
+    out_file = REPORTS_DIR / f"threshold_sweep_{resolve_tag(MODEL_NAME)}.json"
+    with open(out_file, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2)
+    print(f"\n[INFO] Threshold sweep report saved to {out_file}")
 
 if __name__ == "__main__":
     main()

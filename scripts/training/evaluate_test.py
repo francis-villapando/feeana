@@ -171,6 +171,7 @@ def run_phase_3_evaluation():
     print(pol_report)
 
     # Language breakdown
+    language_breakdown = []
     if "language" in test_df.columns:
         print("\nBreakdown by Language:")
         for lang in test_df["language"].dropna().unique():
@@ -181,9 +182,16 @@ def run_phase_3_evaluation():
             sub_preds = results["issue_preds"][mask]
             sub_f1 = f1_score(sub_targets, sub_preds, average="macro", zero_division=0)
             sub_acc = accuracy_score(sub_targets, sub_preds)
+            language_breakdown.append({
+                "language": str(lang),
+                "n": int(mask.sum()),
+                "issue_macro_f1": float(sub_f1),
+                "accuracy": float(sub_acc),
+            })
             print(f"  Language: {lang:<12} (n={mask.sum():<4}) -> Issue Macro-F1: {sub_f1:.4f} | Accuracy: {sub_acc:.4f}")
 
     # Data source breakdown
+    source_breakdown = []
     if "source" in test_df.columns:
         print("\nBreakdown by Data Source:")
         for src in test_df["source"].dropna().unique():
@@ -194,6 +202,12 @@ def run_phase_3_evaluation():
             sub_preds = results["issue_preds"][mask]
             sub_f1 = f1_score(sub_targets, sub_preds, average="macro", zero_division=0)
             sub_acc = accuracy_score(sub_targets, sub_preds)
+            source_breakdown.append({
+                "source": str(src),
+                "n": int(mask.sum()),
+                "issue_macro_f1": float(sub_f1),
+                "accuracy": float(sub_acc),
+            })
             print(f"  Source: {src:<12} (n={mask.sum():<4}) -> Issue Macro-F1: {sub_f1:.4f} | Accuracy: {sub_acc:.4f}")
 
     # Uncategorized confidence fallback threshold sweep (Validation set)
@@ -206,6 +220,7 @@ def run_phase_3_evaluation():
     print(f"  Uncategorized label ID: {uncat_id}")
     print(f"  {'Threshold':<10} {'Routed to Uncategorized':<25} {'Pct Routed':<12} {'Macro-F1':<10}")
 
+    threshold_sweep = []
     for thresh in np.arange(0.30, 0.75, 0.05):
         fallback_preds = val_res["issue_preds"].copy()
         low_conf_mask = val_res["issue_probs"] < thresh
@@ -214,9 +229,15 @@ def run_phase_3_evaluation():
         num_routed = low_conf_mask.sum()
         pct_routed = (num_routed / len(val_res["issue_preds"])) * 100
         f1_val = f1_score(val_res["issue_targets"], fallback_preds, average="macro", zero_division=0)
+        threshold_sweep.append({
+            "threshold": float(thresh),
+            "routed": int(num_routed),
+            "pct_routed": float(pct_routed),
+            "macro_f1": float(f1_val),
+        })
         print(f"  {thresh:<10.2f} {num_routed:<25d} {pct_routed:<11.2f}% {f1_val:<10.4f}")
 
-    # Save summary report
+    # Save full evaluation report
     summary = {
         "test_issue_macro_f1": float(issue_macro_f1),
         "test_issue_macro_precision": float(issue_macro_p),
@@ -227,6 +248,28 @@ def run_phase_3_evaluation():
         "test_polarity_macro_recall": float(pol_macro_r),
         "test_polarity_accuracy": float(pol_acc),
         "num_test_samples": len(test_df),
+        "test_issue_confusion_matrix": cm.tolist(),
+        "per_class_issue": classification_report(
+            results["issue_targets"],
+            results["issue_preds"],
+            labels=list(range(NUM_ISSUES)),
+            target_names=ISSUE_LABELS,
+            digits=4,
+            zero_division=0,
+            output_dict=True,
+        ),
+        "per_class_polarity": classification_report(
+            results["pol_targets"],
+            results["pol_preds"],
+            labels=list(range(NUM_POLARITIES)),
+            target_names=POLARITY_LABELS,
+            digits=4,
+            zero_division=0,
+            output_dict=True,
+        ),
+        "language_breakdown": language_breakdown,
+        "source_breakdown": source_breakdown,
+        "val_uncategorized_threshold_sweep": threshold_sweep,
     }
     out_file = REPORTS_DIR / f"test_evaluation_report_{tag}.json"
     with open(out_file, "w", encoding="utf-8") as f:
