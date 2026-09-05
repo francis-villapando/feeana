@@ -1,16 +1,19 @@
 export const MODEL_CACHE_KEYS = {
-  distilxlmr: "feeana-distilxlmr-cache-v1",
-  mbert: "feeana-mbert-cache-v1",
+  distilxlmr: "feeana-distilxlmr-cache-v2",
+  mbert: "feeana-mbert-cache-v2",
   svm: "feeana-svm-cache-v1",
-  hf: "feeana-hf-cache-v1",
+  hf: "feeana-hf-cache-v2",
 } as const;
 
-// Cache names used before the descriptive naming scheme took effect.
+// Obsolete cache namespaces purged once per session.
 export const LEGACY_CACHE_KEYS = [
   "feeana-model-cache-v1",
   "feeana-model-cache-mbert-v1",
   "feeana-model-cache-svm-v1",
   "transformers-cache",
+  "feeana-distilxlmr-cache-v1",
+  "feeana-mbert-cache-v1",
+  "feeana-hf-cache-v1",
 ] as const;
 
 export async function getModelCache(cacheKey: string): Promise<Cache | null> {
