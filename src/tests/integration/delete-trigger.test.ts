@@ -13,30 +13,63 @@ const supabaseAnon = createClient(
 );
 
 describe("prevent_delete trigger bypass", () => {
+  let facultyId: string;
   let testClassId: string;
   let testCourseId: string;
-  let testIloIds: string[];
   let insertedSessionId: string;
 
   beforeAll(async () => {
-    const { data: classRow } = await supabaseAdmin
-      .from("classes")
-      .select("id, course_id")
-      .eq("section", "3CS-C")
-      .eq("course", "CSEG2")
-      .single();
-    testClassId = classRow!.id;
-    testCourseId = classRow!.course_id;
-
-    const { data: ilos } = await supabaseAdmin
-      .from("ilos")
+    const { data: faculty } = await supabaseAdmin
+      .from("profiles")
       .select("id")
-      .eq("course_id", testCourseId);
-    testIloIds = (ilos ?? []).map((i) => i.id);
+      .eq("email", FACULTY_EMAIL)
+      .maybeSingle();
+
+    if (!faculty) {
+      throw new Error(`Faculty profile for ${FACULTY_EMAIL} not found. Ensure seed data has been run.`);
+    }
+    facultyId = faculty.id;
+
+    const { data: course, error: courseErr } = await supabaseAdmin
+      .from("courses")
+      .insert({ code: `TRIG-${Date.now()}`, title: "Trigger Test Course" })
+      .select("id")
+      .single();
+
+    if (courseErr || !course) {
+      throw new Error(`Failed to create fixture course: ${courseErr?.message}`);
+    }
+    testCourseId = course.id;
+
+    const { data: cls, error: clsErr } = await supabaseAdmin
+      .from("classes")
+      .insert({
+        faculty_id: facultyId,
+        course_id: testCourseId,
+        course: "TRIG-TEST",
+        section: "T",
+        name: "Trigger Test Class",
+        enroll_code: `TRIG-${Date.now()}`,
+      })
+      .select("id")
+      .single();
+
+    if (clsErr || !cls) {
+      throw new Error(`Failed to create fixture class: ${clsErr?.message}`);
+    }
+    testClassId = cls.id;
   });
 
   afterAll(async () => {
-    await adminExec([{ text: "DELETE FROM sessions WHERE id = $1", params: [insertedSessionId] }]);
+    if (insertedSessionId) {
+      await adminExec([{ text: "DELETE FROM sessions WHERE id = $1", params: [insertedSessionId] }]);
+    }
+    if (testClassId) {
+      await supabaseAdmin.from("classes").delete().eq("id", testClassId);
+    }
+    if (testCourseId) {
+      await supabaseAdmin.from("courses").delete().eq("id", testCourseId);
+    }
     await closeAdminSqlClient();
   });
 
@@ -48,7 +81,7 @@ describe("prevent_delete trigger bypass", () => {
         course_id: testCourseId,
         topic: "trigger-test",
         status: "active",
-        ilo_ids: testIloIds,
+        ilo_ids: [],
       })
       .select("id")
       .single();
@@ -75,7 +108,7 @@ describe("prevent_delete trigger bypass", () => {
         course_id: testCourseId,
         topic: "trigger-block-test",
         status: "active",
-        ilo_ids: testIloIds,
+        ilo_ids: [],
       })
       .select("id")
       .single();

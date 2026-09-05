@@ -12,7 +12,9 @@ const STUDENT_EMAIL = "student@test.com";
 const STUDENT_PASSWORD = "student123";
 
 /* Mutable suite-level state */
-let fixtureFeedbackId: string;
+let fixtureCourseId: string;
+let fixtureClassId: string;
+let fixtureSessionId: string;
 let tempFacultyEmail: string;
 let tempFacultyId: string;
 
@@ -23,18 +25,22 @@ const supabaseAnon = createClient(
 
 /* Helpers */
 async function clearTestDiagnostics(): Promise<void> {
-  await supabaseAdmin.from("feedback_diagnostics").delete().eq("session_id", KNOWN_SESSION_ID);
+  if (fixtureSessionId) {
+    await supabaseAdmin.from("feedback_diagnostics").delete().eq("session_id", fixtureSessionId);
+  }
 }
 
 async function seedFixtureDiagnostic(): Promise<void> {
-  await supabaseAdmin.from("feedback_diagnostics").upsert(
-    {
-      session_id: KNOWN_SESSION_ID,
-      result: { test: "Fixture diagnostic for RLS validation" },
-      rules_version: "1.0.0",
-    },
-    { onConflict: "session_id" },
-  );
+  if (fixtureSessionId) {
+    await supabaseAdmin.from("feedback_diagnostics").upsert(
+      {
+        session_id: fixtureSessionId,
+        result: { test: "Fixture diagnostic for RLS validation" },
+        rules_version: "1.0.0",
+      },
+      { onConflict: "session_id" },
+    );
+  }
 }
 
 /* Suite */
@@ -45,30 +51,68 @@ describe("RLS: feedback_diagnostics table", () => {
       throw new Error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env");
     }
 
-    /* resolve a feedback_id from seed data */
-    let { data: feedbackRow } = await supabaseAdmin
-      .from("feedback")
-      .select("id, session_id")
-      .eq("session_id", KNOWN_SESSION_ID)
-      .limit(1)
+    /* resolve faculty owner profile */
+    const { data: facultyProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("email", FACULTY_EMAIL)
       .maybeSingle();
 
-    if (!feedbackRow) {
-      const { data: anyFb } = await supabaseAdmin
-        .from("feedback")
-        .select("id, session_id")
-        .limit(1)
-        .maybeSingle();
-      if (!anyFb) {
-        throw new Error("No feedback found in database. Ensure seed data has been run.");
-      }
-      feedbackRow = anyFb;
-      KNOWN_SESSION_ID = anyFb.session_id;
+    if (!facultyProfile) {
+      throw new Error(`Faculty profile for ${FACULTY_EMAIL} not found. Ensure seed data has been run.`);
     }
-    fixtureFeedbackId = feedbackRow.id;
+
+    /* create dedicated fixture course and class owned by faculty@test.com */
+    const TS = Date.now();
+    const { data: course, error: courseErr } = await supabaseAdmin
+      .from("courses")
+      .insert({ code: `RLS-${TS}`, title: "RLS Diagnostics Test Course" })
+      .select("id")
+      .single();
+
+    if (courseErr || !course) {
+      throw new Error(`Failed to create fixture course: ${courseErr?.message}`);
+    }
+    fixtureCourseId = course.id;
+
+    const { data: cls, error: clsErr } = await supabaseAdmin
+      .from("classes")
+      .insert({
+        faculty_id: facultyProfile.id,
+        course_id: fixtureCourseId,
+        course: `RLS-${TS}`,
+        section: "RLS-SEC",
+        name: "RLS Diagnostics Test Class",
+        enroll_code: `RLS-${TS}`,
+      })
+      .select("id")
+      .single();
+
+    if (clsErr || !cls) {
+      throw new Error(`Failed to create fixture class: ${clsErr?.message}`);
+    }
+    fixtureClassId = cls.id;
+
+    /* create dedicated fixture session owned by faculty@test.com */
+    const { data: session, error: sessErr } = await supabaseAdmin
+      .from("sessions")
+      .insert({
+        class_id: fixtureClassId,
+        course_id: fixtureCourseId,
+        topic: "RLS Test Session",
+        status: "active",
+        ilo_ids: [],
+      })
+      .select("id")
+      .single();
+
+    if (sessErr || !session) {
+      throw new Error(`Failed to create fixture session: ${sessErr?.message}`);
+    }
+    fixtureSessionId = session.id;
+    KNOWN_SESSION_ID = session.id;
 
     /* create temp non-owning faculty user */
-    const TS = Date.now();
     tempFacultyEmail = `test-nonowner-${TS}@test.com`;
 
     const { data: createdUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
@@ -104,6 +148,17 @@ describe("RLS: feedback_diagnostics table", () => {
     /* delete temp faculty user */
     if (tempFacultyId) {
       await supabaseAdmin.auth.admin.deleteUser(tempFacultyId);
+    }
+
+    /* delete created session, class, course */
+    if (fixtureSessionId) {
+      await supabaseAdmin.from("sessions").delete().eq("id", fixtureSessionId);
+    }
+    if (fixtureClassId) {
+      await supabaseAdmin.from("classes").delete().eq("id", fixtureClassId);
+    }
+    if (fixtureCourseId) {
+      await supabaseAdmin.from("courses").delete().eq("id", fixtureCourseId);
     }
   });
 

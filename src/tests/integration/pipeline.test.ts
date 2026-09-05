@@ -61,6 +61,9 @@ function buildMockOutput(feedbackIds: string[]): DiagnosticRecord[] {
   ];
 }
 
+let fixtureCourseId: string | null = null;
+let fixtureClassId: string | null = null;
+
 async function cleanCreatedData(): Promise<void> {
   await adminExec([
     { text: "DELETE FROM feedback_diagnostics WHERE session_id = $1", params: [TEST_SESSION_ID] },
@@ -68,6 +71,14 @@ async function cleanCreatedData(): Promise<void> {
     { text: "DELETE FROM feedback WHERE session_id = $1", params: [TEST_SESSION_ID] },
     { text: "DELETE FROM sessions WHERE id = $1", params: [TEST_SESSION_ID] },
   ]);
+  if (fixtureClassId) {
+    await supabaseAdmin.from("classes").delete().eq("id", fixtureClassId);
+    fixtureClassId = null;
+  }
+  if (fixtureCourseId) {
+    await supabaseAdmin.from("courses").delete().eq("id", fixtureCourseId);
+    fixtureCourseId = null;
+  }
 }
 
 /* Suite */
@@ -76,38 +87,76 @@ describe("Pipeline Integration Tests", () => {
     /* clean any leftover from a prior aborted run */
     await cleanCreatedData();
 
-    /* resolve seed references */
-    const { data: classRow } = await supabaseAdmin
-      .from("classes")
-      .select("id, course_id")
-      .eq("section", "3CS-C")
-      .eq("course", "CSEG2")
-      .single();
+    /* resolve faculty profile */
+    const { data: facultyProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("email", FACULTY_EMAIL)
+      .maybeSingle();
 
-    if (!classRow) {
-      throw new Error("Seed class 3CS-C / CSEG2 not found. Ensure seed.sql has been run.");
+    if (!facultyProfile) {
+      throw new Error(`Faculty profile for ${FACULTY_EMAIL} not found. Ensure seed data has been run.`);
     }
 
-    const { data: ilos } = await supabaseAdmin
-      .from("ilos")
-      .select("id")
-      .eq("course_id", classRow.course_id)
-      .eq("archived", false);
+    /* resolve or create class owned by faculty */
+    let classId: string;
+    let courseId: string;
+    let iloIds: string[] = [];
 
-    const iloIds = (ilos ?? []).map((i) => i.id);
+    const { data: existingClass } = await supabaseAdmin
+      .from("classes")
+      .select("id, course_id")
+      .eq("faculty_id", facultyProfile.id)
+      .limit(1)
+      .maybeSingle();
 
-    const { data: courseRow } = await supabaseAdmin
-      .from("courses")
-      .select("title")
-      .eq("id", classRow.course_id)
-      .single();
+    if (existingClass) {
+      classId = existingClass.id;
+      courseId = existingClass.course_id;
+      const { data: ilos } = await supabaseAdmin
+        .from("ilos")
+        .select("id")
+        .eq("course_id", courseId)
+        .eq("archived", false);
+      iloIds = (ilos ?? []).map((i) => i.id);
+    } else {
+      const TS = Date.now();
+      const { data: newCourse, error: courseErr } = await supabaseAdmin
+        .from("courses")
+        .insert({ code: `PIPE-${TS}`, title: "Pipeline Integration Test Course" })
+        .select("id")
+        .single();
+      if (courseErr || !newCourse) {
+        throw new Error(`Failed to create fixture course: ${courseErr?.message}`);
+      }
+      fixtureCourseId = newCourse.id;
+      courseId = newCourse.id;
+
+      const { data: newClass, error: clsErr } = await supabaseAdmin
+        .from("classes")
+        .insert({
+          faculty_id: facultyProfile.id,
+          course_id: courseId,
+          course: `PIPE-${TS}`,
+          section: "T",
+          name: "Pipeline Test Class",
+          enroll_code: `PIPE-${TS}`,
+        })
+        .select("id")
+        .single();
+      if (clsErr || !newClass) {
+        throw new Error(`Failed to create fixture class: ${clsErr?.message}`);
+      }
+      fixtureClassId = newClass.id;
+      classId = newClass.id;
+    }
 
     /* create an isolated test session */
     const { error: sessionErr } = await supabaseAdmin.from("sessions").upsert(
       {
         id: TEST_SESSION_ID,
-        class_id: classRow.id,
-        course_id: classRow.course_id,
+        class_id: classId,
+        course_id: courseId,
         topic: "Pipeline Integration Test Session",
         status: "active",
         ilo_ids: iloIds,
