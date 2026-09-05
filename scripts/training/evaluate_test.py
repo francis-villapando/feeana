@@ -15,7 +15,13 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_recall_fscore_support,
+)
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 
@@ -34,6 +40,7 @@ from finetune import (
     MODEL_NAME,
     NUM_ISSUES,
     NUM_POLARITIES,
+    POLARITY_LABELS,
 )
 from checkpoint_paths import resolve_checkpoint_paths, resolve_tag
 
@@ -115,6 +122,15 @@ def run_phase_3_evaluation():
     issue_acc = accuracy_score(results["issue_targets"], results["issue_preds"])
     issue_macro_f1 = f1_score(results["issue_targets"], results["issue_preds"], average="macro", zero_division=0)
     pol_macro_f1 = f1_score(results["pol_targets"], results["pol_preds"], average="macro", zero_division=0)
+    pol_acc = accuracy_score(results["pol_targets"], results["pol_preds"])
+
+    # Compute macro metrics
+    issue_macro_p, issue_macro_r, issue_macro_f1, _ = precision_recall_fscore_support(
+        results["issue_targets"], results["issue_preds"], average="macro", zero_division=0
+    )
+    pol_macro_p, pol_macro_r, pol_macro_f1, _ = precision_recall_fscore_support(
+        results["pol_targets"], results["pol_preds"], average="macro", zero_division=0
+    )
 
     cm = confusion_matrix(
         results["issue_targets"],
@@ -142,6 +158,17 @@ def run_phase_3_evaluation():
         zero_division=0,
     )
     print(report)
+
+    print("\nPer-Class Polarity Performance:")
+    pol_report = classification_report(
+        results["pol_targets"],
+        results["pol_preds"],
+        labels=list(range(NUM_POLARITIES)),
+        target_names=POLARITY_LABELS,
+        digits=4,
+        zero_division=0,
+    )
+    print(pol_report)
 
     # Language breakdown
     if "language" in test_df.columns:
@@ -192,8 +219,13 @@ def run_phase_3_evaluation():
     # Save summary report
     summary = {
         "test_issue_macro_f1": float(issue_macro_f1),
-        "test_polarity_macro_f1": float(pol_macro_f1),
+        "test_issue_macro_precision": float(issue_macro_p),
+        "test_issue_macro_recall": float(issue_macro_r),
         "test_issue_accuracy": float(issue_acc),
+        "test_polarity_macro_f1": float(pol_macro_f1),
+        "test_polarity_macro_precision": float(pol_macro_p),
+        "test_polarity_macro_recall": float(pol_macro_r),
+        "test_polarity_accuracy": float(pol_acc),
         "num_test_samples": len(test_df),
     }
     out_file = REPORTS_DIR / f"test_evaluation_report_{tag}.json"

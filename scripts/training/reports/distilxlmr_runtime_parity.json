@@ -1,0 +1,47 @@
+{
+  "data": "scripts\\training\\data\\test.csv",
+  "rows": 1031,
+  "checkpoint": "scripts\\training\\checkpoints\\distilxlmr\\best_model.pt",
+  "artifacts": {
+    "fp32_onnx": {
+      "path": "scripts\\training\\exports\\distilxlmr\\fp32.onnx",
+      "bytes": 470210259
+    },
+    "int8_onnx": {
+      "path": "public\\models\\finetuned\\distilxlmr\\int8.onnx",
+      "bytes": 118283312
+    }
+  },
+  "max_abs_logit_delta": {
+    "pytorch_vs_onnx_fp32_issue": 0.01573634147644043,
+    "pytorch_vs_onnx_fp32_polarity": 0.008199095726013184,
+    "onnx_fp32_vs_int8_issue": 2.6436262130737305,
+    "onnx_fp32_vs_int8_polarity": 0.9930912256240845
+  },
+  "argmax_agreement": {
+    "pytorch_vs_onnx_fp32_issue": 1.0,
+    "pytorch_vs_onnx_fp32_polarity": 1.0,
+    "onnx_fp32_vs_int8_issue": 0.9582929194956353,
+    "onnx_fp32_vs_int8_polarity": 0.9961202715809894
+  },
+  "metrics": [
+    {
+      "runtime": "pytorch_fp32",
+      "issue_accuracy": 0.8292919495635306,
+      "issue_macro_f1": 0.8106284643227649,
+      "polarity_macro_f1": 0.9205890295345664
+    },
+    {
+      "runtime": "onnx_fp32",
+      "issue_accuracy": 0.8292919495635306,
+      "issue_macro_f1": 0.8106284643227649,
+      "polarity_macro_f1": 0.9205890295345664
+    },
+    {
+      "runtime": "onnx_int8",
+      "issue_accuracy": 0.8234723569350145,
+      "issue_macro_f1": 0.8042767150966157,
+      "polarity_macro_f1": 0.9202569899419841
+    }
+  ]
+}
