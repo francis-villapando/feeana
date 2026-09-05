@@ -68,8 +68,7 @@ export function GeneratePedagogicalCue(
     issue: uniqueIssue.issue,
   });
 
-  const percentage = Math.round((uniqueIssue.count / totalFeedback) * 100);
-  const percentageStr = `${percentage}%`;
+  const percentageStr = `${((uniqueIssue.count / totalFeedback) * 100).toFixed(0)}%`;
   const rbtName = RBT_LEVELS[uniqueIssue.rbt] ?? String(uniqueIssue.rbt);
 
   const rbtLower = rbtName.toLowerCase();
