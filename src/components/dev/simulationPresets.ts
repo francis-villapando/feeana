@@ -27,8 +27,7 @@ export const PRESETS: Preset[] = [
       totalFeedback: 10,
       issueOccurrences: 3,
     },
-    expectedClean:
-      "medyo nawawala ako kapag nagcoconnect na ng iba't ibang concepts",
+    expectedClean: "medyo nawawala ako kapag nagcoconnect na ng iba't ibang concepts",
   },
   {
     label: "Extraneous (Recommendation)",
@@ -124,5 +123,20 @@ export const PRESETS: Preset[] = [
       issueOccurrences: 1,
     },
     expectedClean: "may ginawa kaming diagram about sa microservices architecture kanina",
+  },
+  {
+    label: "Low-Confidence Fallback (Uncategorized)",
+    description:
+      "Ambiguous instructor-competence feedback (test.csv #6294) where the model's top softmax confidence (27.5%) falls below the 31.0% confidence cutoff. The raw candidate 'subject alienation' is nearly tied with 'evaluation unfairness' (26.6%), so the item is routed to Uncategorized to prevent a low-confidence false positive from polluting downstream diagnostic cues.",
+    input: {
+      topic: "Programming Fundamentals",
+      iloStatement: "Write and debug simple programs using core language constructs.",
+      targetRbt: 3,
+      feedbackText:
+        "😭 @prof_santos #CS102 Makes mistakes frequentlyyyy and is not equipped to teach at this level. https://feeana.edu/survey",
+      totalFeedback: 10,
+      issueOccurrences: 1,
+    },
+    expectedClean: "Makes mistakes frequently and is not equipped to teach at this level.",
   },
 ];

@@ -992,6 +992,13 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
         <div className="space-y-2">
           <Label>Top-5 predicted issues (softmax probability)</Label>
           <div className="rounded-md border border-border bg-muted/40 p-4">
+            <div className="mb-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="inline-block h-3 w-px bg-foreground/60" />
+              <span>
+                Fallback threshold {(extraction.confidenceThreshold * 100).toFixed(1)}% — a top-1
+                probability below this routes to Uncategorized
+              </span>
+            </div>
             <div className="space-y-2">
               {extraction.topKIssues.map((entry, i) => (
                 <ProbabilityBar
@@ -1002,10 +1009,51 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
                   logit={entry.logit}
                   deltaFromTop={entry.deltaFromTop}
                   isTop={i === 0}
+                  threshold={extraction.confidenceThreshold}
                 />
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Confidence threshold decision */}
+        <div className="space-y-2">
+          {extraction.routedDueToLowConfidence ? (
+            <Alert variant="destructive" className="[&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Low Confidence Fallback</AlertTitle>
+              <AlertDescription>
+                Top confidence{" "}
+                <span className="font-mono font-semibold">
+                  {(extraction.rawConfidence * 100).toFixed(1)}%
+                </span>{" "}
+                &lt;{" "}
+                <span className="font-mono font-semibold">
+                  {(extraction.confidenceThreshold * 100).toFixed(1)}%
+                </span>{" "}
+                Threshold → Routed to <span className="font-semibold">Uncategorized</span> (Raw
+                model candidate: <span className="font-mono">{extraction.rawIssue}</span> at{" "}
+                <span className="font-mono">{(extraction.rawConfidence * 100).toFixed(1)}%</span>)
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert className="border-emerald-500/40 bg-emerald-500/5 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <AlertTitle>Confidence Threshold Passed</AlertTitle>
+              <AlertDescription>
+                Confidence{" "}
+                <span className="font-mono font-semibold">
+                  {(extraction.confidence * 100).toFixed(1)}%
+                </span>{" "}
+                ≥{" "}
+                <span className="font-mono font-semibold">
+                  {(extraction.confidenceThreshold * 100).toFixed(1)}%
+                </span>{" "}
+                Threshold → Retained predicted category:{" "}
+                <span className="font-semibold">{extraction.issue}</span>
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {/* Polarity distribution */}
@@ -1063,6 +1111,7 @@ function ProbabilityBar({
   logit,
   deltaFromTop,
   isTop,
+  threshold,
 }: {
   rank: number;
   label: string;
@@ -1070,17 +1119,27 @@ function ProbabilityBar({
   logit: number;
   deltaFromTop?: number;
   isTop: boolean;
+  threshold: number;
 }) {
+  const failsThreshold = isTop && probability < threshold;
   return (
     <div className="flex items-center gap-3">
       <span className="w-5 shrink-0 text-right font-mono text-xs text-muted-foreground">
         {rank}
       </span>
       <span className="w-40 shrink-0 truncate text-xs font-medium">{label}</span>
-      <div className="h-5 flex-1 overflow-hidden rounded bg-muted">
+      <div className="relative h-5 flex-1 overflow-hidden rounded bg-muted">
         <div
-          className={cn("h-full rounded transition-all", isTop ? "bg-primary" : "bg-primary/50")}
+          className={cn(
+            "h-full rounded transition-all",
+            failsThreshold ? "bg-destructive" : isTop ? "bg-primary" : "bg-primary/50",
+          )}
           style={{ width: `${Math.max(probability * 100, 1)}%` }}
+        />
+        <div
+          className="absolute inset-y-0 w-px bg-foreground/60"
+          style={{ left: `${threshold * 100}%` }}
+          title={`Fallback threshold ${(threshold * 100).toFixed(1)}%`}
         />
       </div>
       <span className="w-16 shrink-0 text-right font-mono text-xs">
@@ -1190,7 +1249,7 @@ function StepMapping({
                       <td className="p-2 font-sans text-xs">Uncategorized</td>
                       <td className="p-2 text-center">0 · None</td>
                       <td className="p-2 text-center">
-                        <Badge variant="secondary" className="font-mono text-[10px]">
+                        <Badge variant="destructive" className="font-mono text-[10px]">
                           Uncategorized
                         </Badge>
                       </td>
@@ -1221,7 +1280,6 @@ function StepMapping({
           <p className="mb-2 text-sm font-medium">is_gap evaluation</p>
           <p className="font-mono text-xs text-muted-foreground">
             is_gap = (rbt ≤ target_ILO_rbt) AND (clt == &quot;Intrinsic&quot;)
-            {uncategorized ? " — bypassed for uncategorized feedback" : ""}
           </p>
           <div className="mt-3 space-y-1.5 font-mono text-sm">
             {uncategorized ? (
@@ -1289,7 +1347,7 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
           <div className="rounded-md border border-border bg-muted/40 p-4">
             <p className="mb-2 text-sm font-medium">Priority score (P)</p>
             <p className="font-mono text-xs text-muted-foreground">
-              P = (issue_count / Total_F) x w_c — bypassed for uncategorized feedback
+              P = (issue_count / Total_F) x w_c
             </p>
             <Alert className="mt-3 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
               <Info className="h-4 w-4" />
@@ -1305,7 +1363,7 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
   }
 
   const rawRatio = (strategy.issueCount / strategy.totalFeedback) * 100;
-  const pct = (strategy.priorityScore * 100).toFixed(1);
+  const pct = (strategy.priorityScore * 100).toFixed(0);
   return (
     <Card>
       <CardHeader>
@@ -1317,7 +1375,7 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
           <Stat
             label="issue_count (Occurrences)"
             value={String(strategy.issueCount)}
-            subvalue={`${rawRatio.toFixed(1)}% of cohort`}
+            subvalue={`${rawRatio.toFixed(0)}% of cohort`}
           />
           <Stat label="Total_F (Total Feedback)" value={String(strategy.totalFeedback)} />
           <Stat
@@ -1342,7 +1400,7 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
               </Badge>
             </div>
             <p>
-              P = {(strategy.issueCount / strategy.totalFeedback).toFixed(3)} x{" "}
+              P = {(strategy.issueCount / strategy.totalFeedback).toFixed(2)} x{" "}
               {strategy.weightedCoefficient}
             </p>
             <p>
@@ -1355,7 +1413,7 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
             <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
               <span>0%</span>
               <span className="font-mono font-medium text-foreground">
-                threshold {PRIORITY_THRESHOLD * 100}%
+                threshold {Math.round(PRIORITY_THRESHOLD * 100)}%
               </span>
               <span>100%</span>
             </div>
@@ -1373,7 +1431,6 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
               />
             </div>
             <div className="mt-2 flex items-center justify-between text-[11px]">
-              <span className="font-mono text-muted-foreground">P = {pct}%</span>
               <Badge
                 className={cn(
                   strategy.triggersRecommendation
@@ -1382,8 +1439,8 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
                 )}
               >
                 {strategy.triggersRecommendation
-                  ? `P ≥ ${PRIORITY_THRESHOLD} → Recommendation (Phase 6)`
-                  : `P < ${PRIORITY_THRESHOLD} → Diagnostic Warning (Phase 6)`}
+                  ? `P ≥ ${(PRIORITY_THRESHOLD * 100).toFixed(0)}% → Recommendation (Phase 6)`
+                  : `P < ${(PRIORITY_THRESHOLD * 100).toFixed(0)}% → Diagnostic Warning (Phase 6)`}
               </Badge>
             </div>
           </div>
@@ -1464,7 +1521,7 @@ function StepOutput({
   }
 
   const isRecommendation = strategy.triggersRecommendation;
-  const pct = (strategy.priorityScore * 100).toFixed(1);
+  const pct = (strategy.priorityScore * 100).toFixed(0);
   return (
     <Card>
       <CardHeader>
