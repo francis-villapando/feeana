@@ -1,44 +1,64 @@
 model,task,label,precision,recall,f1
-distilxlmr,issue,abstract logic gap,0.75,0.7013,0.7248
-distilxlmr,issue,clarity deficit,0.6393,0.7358,0.6842
-distilxlmr,issue,classroom tension,0.6429,0.7059,0.6729
-distilxlmr,issue,conceptual misalignment,0.8378,0.8732,0.8552
-distilxlmr,issue,design synthesis failure,0.7683,0.8182,0.7925
-distilxlmr,issue,evaluation unfairness,0.7333,0.7021,0.7174
-distilxlmr,issue,feedback latency,0.7069,0.8723,0.781
-distilxlmr,issue,instructional cadence,0.8298,0.78,0.8041
-distilxlmr,issue,notation struggle,0.9067,0.8193,0.8608
-distilxlmr,issue,peer distraction,0.8182,0.9184,0.8654
-distilxlmr,issue,perceived marginalization,0.7818,0.7679,0.7748
-distilxlmr,issue,procedural bottleneck,0.7738,0.9028,0.8333
-distilxlmr,issue,relational coldness,0.7273,0.6275,0.6737
-distilxlmr,issue,subject alienation,0.8,0.64,0.7111
-distilxlmr,issue,uncategorized,0.9563,0.8883,0.9211
-distilxlmr,issue,macro,0.7782,0.7835,0.7781
-distilxlmr,polarity,neg,0.9867,0.9759,0.9813
-distilxlmr,polarity,neu,0.803,0.8548,0.8281
-distilxlmr,polarity,pos,0.8548,0.9464,0.8983
-distilxlmr,polarity,macro,0.8815,0.9257,0.9026
-mbert,issue,abstract logic gap,0.75,0.8571,0.8
-mbert,issue,clarity deficit,0.6029,0.7736,0.6777
-mbert,issue,classroom tension,0.6481,0.6863,0.6667
-mbert,issue,conceptual misalignment,0.8824,0.8451,0.8633
-mbert,issue,design synthesis failure,0.7654,0.8052,0.7848
-mbert,issue,evaluation unfairness,0.78,0.8298,0.8041
-mbert,issue,feedback latency,0.7872,0.7872,0.7872
-mbert,issue,instructional cadence,0.7679,0.86,0.8113
-mbert,issue,notation struggle,0.9,0.759,0.8235
-mbert,issue,peer distraction,0.7857,0.898,0.8381
-mbert,issue,perceived marginalization,0.7,0.625,0.6604
-mbert,issue,procedural bottleneck,0.9016,0.7639,0.8271
-mbert,issue,relational coldness,0.7568,0.549,0.6364
-mbert,issue,subject alienation,0.6034,0.7,0.6481
-mbert,issue,uncategorized,0.9305,0.8832,0.9062
-mbert,issue,macro,0.7708,0.7748,0.769
-mbert,polarity,neg,0.9823,0.9748,0.9786
-mbert,polarity,neu,0.7576,0.8065,0.7812
-mbert,polarity,pos,0.8305,0.875,0.8522
-mbert,polarity,macro,0.8568,0.8854,0.8707
+distilxlmr,issue,abstract logic gap,0.6667,0.7792,0.7186
+distilxlmr,issue,clarity deficit,0.7447,0.6604,0.7
+distilxlmr,issue,classroom tension,0.6909,0.7451,0.717
+distilxlmr,issue,conceptual misalignment,0.8228,0.9155,0.8667
+distilxlmr,issue,design synthesis failure,0.8933,0.8701,0.8816
+distilxlmr,issue,evaluation unfairness,0.8182,0.766,0.7912
+distilxlmr,issue,feedback latency,0.7692,0.8511,0.8081
+distilxlmr,issue,instructional cadence,0.9302,0.8,0.8602
+distilxlmr,issue,notation struggle,0.8904,0.7831,0.8333
+distilxlmr,issue,peer distraction,0.8462,0.898,0.8713
+distilxlmr,issue,perceived marginalization,0.7143,0.8036,0.7563
+distilxlmr,issue,procedural bottleneck,0.8125,0.9028,0.8553
+distilxlmr,issue,relational coldness,0.7308,0.7451,0.7379
+distilxlmr,issue,subject alienation,0.7826,0.72,0.75
+distilxlmr,issue,uncategorized,0.9667,0.8832,0.9231
+distilxlmr,issue,macro,0.8053,0.8082,0.8047
+distilxlmr,polarity,neg,0.9868,0.9847,0.9857
+distilxlmr,polarity,neu,0.8833,0.8548,0.8689
+distilxlmr,polarity,pos,0.8833,0.9464,0.9138
+distilxlmr,polarity,macro,0.9178,0.9286,0.9228
+distilxlmr_fp32,issue,abstract logic gap,0.6778,0.7922,0.7305
+distilxlmr_fp32,issue,clarity deficit,0.7778,0.6604,0.7143
+distilxlmr_fp32,issue,classroom tension,0.6727,0.7255,0.6981
+distilxlmr_fp32,issue,conceptual misalignment,0.8553,0.9155,0.8844
+distilxlmr_fp32,issue,design synthesis failure,0.9067,0.8831,0.8947
+distilxlmr_fp32,issue,evaluation unfairness,0.8182,0.766,0.7912
+distilxlmr_fp32,issue,feedback latency,0.8,0.8511,0.8247
+distilxlmr_fp32,issue,instructional cadence,0.9111,0.82,0.8632
+distilxlmr_fp32,issue,notation struggle,0.9054,0.8072,0.8535
+distilxlmr_fp32,issue,peer distraction,0.8491,0.9184,0.8824
+distilxlmr_fp32,issue,perceived marginalization,0.7097,0.7857,0.7458
+distilxlmr_fp32,issue,procedural bottleneck,0.825,0.9167,0.8684
+distilxlmr_fp32,issue,relational coldness,0.6909,0.7451,0.717
+distilxlmr_fp32,issue,subject alienation,0.7872,0.74,0.7629
+distilxlmr_fp32,issue,uncategorized,0.9722,0.8883,0.9284
+distilxlmr_fp32,issue,macro,0.8106,0.8143,0.8106
+distilxlmr_fp32,polarity,neg,0.9868,0.9836,0.9852
+distilxlmr_fp32,polarity,neu,0.8548,0.8548,0.8548
+distilxlmr_fp32,polarity,pos,0.8983,0.9464,0.9217
+distilxlmr_fp32,polarity,macro,0.9133,0.9283,0.9206
+mbert,issue,abstract logic gap,0.7294,0.8052,0.7654
+mbert,issue,clarity deficit,0.6774,0.7925,0.7304
+mbert,issue,classroom tension,0.6071,0.6667,0.6355
+mbert,issue,conceptual misalignment,0.875,0.8873,0.8811
+mbert,issue,design synthesis failure,0.8701,0.8701,0.8701
+mbert,issue,evaluation unfairness,0.8511,0.8511,0.8511
+mbert,issue,feedback latency,0.8478,0.8298,0.8387
+mbert,issue,instructional cadence,0.8077,0.84,0.8235
+mbert,issue,notation struggle,0.9375,0.7229,0.8163
+mbert,issue,peer distraction,0.8958,0.8776,0.8866
+mbert,issue,perceived marginalization,0.7818,0.7679,0.7748
+mbert,issue,procedural bottleneck,0.92,0.9583,0.9388
+mbert,issue,relational coldness,0.7059,0.7059,0.7059
+mbert,issue,subject alienation,0.7551,0.74,0.7475
+mbert,issue,uncategorized,0.9115,0.8883,0.8997
+mbert,issue,macro,0.8116,0.8136,0.811
+mbert,polarity,neg,0.9878,0.977,0.9824
+mbert,polarity,neu,0.7941,0.871,0.8308
+mbert,polarity,pos,0.85,0.9107,0.8793
+mbert,polarity,macro,0.8773,0.9196,0.8975
 svm,issue,abstract logic gap,0.75,0.8961,0.8166
 svm,issue,clarity deficit,0.814,0.6604,0.7292
 svm,issue,classroom tension,0.7143,0.7843,0.7477

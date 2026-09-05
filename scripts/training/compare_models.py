@@ -1,10 +1,11 @@
 """
 Offline SOP 5.1 evaluation of all deployed PID-ABSA models on the held-out test set.
 
-Runs the three browser-deployed ONNX artifacts through onnxruntime on CPU:
-  - DistilXLM-R / mBERT: dual-head transformers consuming tokenizer
-    input_ids/attention_mask (int64 [N, 256]) and emitting issue_logits /
-    polarity_logits, decoded via softmax argmax against label_mappings.json.
+Runs the browser-deployed ONNX artifacts through onnxruntime on CPU:
+  - DistilXLM-R (INT8 and FP32) / mBERT: dual-head transformers consuming
+    tokenizer input_ids/attention_mask (int64 [N, 256]) and emitting
+    issue_logits / polarity_logits, decoded via softmax argmax against
+    label_mappings.json.
   - SVM baseline: a single dual-head ONNX consuming string_input and emitting
     issue_label/polarity_label (int64 index) + issue_probabilities/
     polarity_probabilities from one run, decoded via label_mappings.json.
@@ -59,10 +60,29 @@ def public_model(relative: str) -> Path:
     return PUBLIC_MODELS_DIR / relative
 
 
+def resolve_fp32_onnx() -> Path:
+    candidates = [
+        SCRIPT_DIR / "exports" / "distilxlmr" / "fp32.onnx",
+        ROOT / "feeana-distilxlmr-output" / "fp32.onnx",
+        ROOT / "feeana-distilxlmr-output" / "exports" / "distilxlmr" / "fp32.onnx",
+        PUBLIC_MODELS_DIR / "finetuned" / "distilxlmr" / "fp32.onnx",
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
+
+
 MODELS = {
     "distilxlmr": {
         "kind": "transformer",
         "onnx": public_model("finetuned/distilxlmr/int8.onnx"),
+        "tokenizer_dir": public_model("finetuned/distilxlmr"),
+        "label_mappings": public_model("finetuned/distilxlmr/label_mappings.json"),
+    },
+    "distilxlmr_fp32": {
+        "kind": "transformer",
+        "onnx": resolve_fp32_onnx(),
         "tokenizer_dir": public_model("finetuned/distilxlmr"),
         "label_mappings": public_model("finetuned/distilxlmr/label_mappings.json"),
     },
@@ -262,6 +282,9 @@ def main() -> None:
 
     comparison_frames: list[pd.DataFrame] = []
     for model_name, model_cfg in MODELS.items():
+        if not model_cfg["onnx"].exists():
+            print(f"[WARN] Skipping {model_name}: {model_cfg['onnx']} not found")
+            continue
         print(f"\n[INFO] Evaluating model: {model_name} ({model_cfg['kind']})")
         labels_by_task = load_label_mappings(model_cfg["label_mappings"])
 
