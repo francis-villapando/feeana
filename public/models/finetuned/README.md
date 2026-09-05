@@ -48,4 +48,4 @@ git push
 | FP32 baseline | ~448 MB (470 MB unquantized ONNX dual-head graph)                   |
 | INT8 PTQ      | ~113 MB (per-channel dynamic quantization; embeddings included)    |
 
-> FP32 intermediates (`*-fp32.onnx`) are `.gitignore`d — only the INT8 version is committed.
+> FP32 intermediates (`fp32.onnx`) are `.gitignore`d — only the INT8 version is committed.

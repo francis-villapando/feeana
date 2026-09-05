@@ -46,4 +46,9 @@ scripts/training/checkpoints/**/*.pt
 scripts/training/checkpoints/**/*.pkl
 
 # FP32 intermediate ONNX (only the INT8 version is committed, via Git LFS)
-public/models/finetuned/**/*-fp32.onnx
+public/models/finetuned/**/fp32.onnx
+
+feeana-distilxlmr-output/
+feeana-mbert-output/
+scripts/training/exports/
+scripts/training/scratch_quant/

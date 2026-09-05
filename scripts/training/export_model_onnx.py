@@ -272,7 +272,7 @@ def main() -> None:
     model = load_checkpoint(ckpt_path, device, model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    fp32_path = tag_dir / "int8-fp32.onnx"
+    fp32_path = tag_dir / "fp32.onnx"
     export_fp32_onnx(model, fp32_path, args.opset)
 
     final_onnx = fp32_path
