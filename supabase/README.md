@@ -7,7 +7,7 @@ except for admin callers. Three bypass paths exist:
 |-----------------------------------------------|--------------------------------------------------------|
 | `supabase db reset` (CLI)                     | Runs as `postgres` superuser                           |
 | `scripts/seed/seedSql.ts`                    | `connectAdmin()` from `src/lib/db/adminSql.ts`         |
-| `scripts/seed/seedTestData.ts` / tests       | `connectAdmin()` for DELETEs, service_role for INSERTs |
+| integration tests                            | `connectAdmin()` for DELETEs, service_role for INSERTs |
 
 **Connection pattern:** All seed/test scripts use `connectAdmin()` from
 `src/lib/db/adminSql.ts` for DELETE operations on protected tables. The

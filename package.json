@@ -15,9 +15,9 @@
     "test:unit:watch": "vitest src/tests/unit",
     "test:integration": "vitest run src/tests/integration --fileParallelism=false",
     "test:all": "vitest run --fileParallelism=false",
-    "db:reset": "supabase db reset && npx tsx --env-file .env scripts/seed/seedDashboard.ts",
+    "db:reset": "supabase db reset && npx tsx --env-file .env scripts/seed/seed.ts",
     "db:seed": "npx tsx scripts/seed/seedSql.ts",
-    "db:seed:dashboard": "npx tsx --env-file .env scripts/seed/seedDashboard.ts",
+    "db:seed:dashboard": "npx tsx --env-file .env scripts/seed/seed.ts",
     "db:smoke": "npx tsx --env-file=.env scripts/dev/pipelineSmoke.ts",
     "sync:ort": "npx tsx scripts/dev/syncOrtWasm.ts",
     "postinstall": "npm run sync:ort"
