@@ -187,8 +187,7 @@ class DashboardSeeder {
           title: "Introduction to 2D Physics and Collision Detection",
           ilos: [
             {
-              statement:
-                "Explain the mathematical principles behind AABB collision detection",
+              statement: "Explain the mathematical principles behind AABB collision detection",
               bloomLevel: "Understand",
             },
             {
@@ -245,8 +244,7 @@ class DashboardSeeder {
           title: "RESTful API Design & Authentication",
           ilos: [
             {
-              statement:
-                "Differentiate session-based and token-based authentication mechanisms",
+              statement: "Differentiate session-based and token-based authentication mechanisms",
               bloomLevel: "Understand",
             },
             {
@@ -777,11 +775,7 @@ class DashboardSeeder {
     return created.id;
   }
 
-  private async getOrCreateIlo(
-    courseId: string,
-    topicId: string,
-    def: IloDef,
-  ): Promise<string> {
+  private async getOrCreateIlo(courseId: string, topicId: string, def: IloDef): Promise<string> {
     const { data: existing } = await this.supabase
       .from("ilos")
       .select("id")
@@ -1313,9 +1307,7 @@ class DashboardSeeder {
       .sort((a, b) => b.value - a.value);
 
     const issueDist: DistEntry[] = Object.entries(stats.issueCounts)
-      .map(
-        ([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry,
-      )
+      .map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry)
       .sort((a, b) => b.value - a.value);
 
     const polarityDist: DistEntry[] = [
@@ -1510,9 +1502,7 @@ class DashboardSeeder {
     const classIds = [...DashboardSeeder.CLASSES, ...DashboardSeeder.DEV_CLASSES].map((c) =>
       DashboardSeeder.seedId("class", c.classIdKey ?? c.courseCode, c.section),
     );
-    const courseIds = DashboardSeeder.COURSES.map((c) =>
-      DashboardSeeder.seedId("course", c.code),
-    );
+    const courseIds = DashboardSeeder.COURSES.map((c) => DashboardSeeder.seedId("course", c.code));
 
     const sessionFilter = "session_id = ANY($1::uuid[])";
     const classFilter = "class_id = ANY($1::uuid[])";
