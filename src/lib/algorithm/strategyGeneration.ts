@@ -57,6 +57,15 @@ export function CalculateDistributions(
   return stats;
 }
 
+function scopeIloStatement(sessionContext: SessionContext, rbtLevel: number): string {
+  const ilos = sessionContext.ilos;
+  if (!ilos || ilos.length === 0) return sessionContext.iloStatement;
+  const relevant = ilos.filter((ilo) => ilo.level >= rbtLevel);
+  if (relevant.length === 0) return sessionContext.iloStatement;
+  if (ilos.length === 1) return relevant[0].statement;
+  return relevant.map((ilo) => `ILO ${ilo.index + 1}: ${ilo.statement}`).join("; ");
+}
+
 export function GeneratePedagogicalCue(
   sessionContext: SessionContext,
   uniqueIssue: BufferedDiagnostic,
@@ -78,8 +87,10 @@ export function GeneratePedagogicalCue(
     ISSUE_RECOMMENDATIONS[uniqueIssue.issue] ??
     `Thus, "recommendation cue for ${uniqueIssue.issue}."`;
 
+  const goalStatement = scopeIloStatement(sessionContext, uniqueIssue.rbt);
+
   const paragraph = uniqueIssue.isGap
-    ? `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the goal: ${sessionContext.iloStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
+    ? `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the goal: ${goalStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
     : `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
 
   const terms = [
@@ -111,9 +122,9 @@ export function GeneratePedagogicalCue(
     ...(uniqueIssue.isGap
       ? [
           {
-            text: sessionContext.iloStatement,
+            text: goalStatement,
             kind: "ILO" as const,
-            detail: sessionContext.iloStatement,
+            detail: goalStatement,
           },
         ]
       : []),

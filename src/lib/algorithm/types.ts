@@ -12,6 +12,7 @@ export interface SessionContext {
   targetIloRbt: number;
   sessionId?: string;
   iloStatement: string;
+  ilos?: { index: number; statement: string; level: number }[];
 }
 
 export interface FeedbackInput {

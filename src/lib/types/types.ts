@@ -154,6 +154,7 @@ export interface GapItem {
   expected: string;
   actual: string;
   severity: Severity;
+  feedbackId?: string;
 }
 
 export interface DistEntry {

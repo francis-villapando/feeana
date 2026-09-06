@@ -25,6 +25,7 @@ describe("gap cascade logic", () => {
     const gaps = buildIloGapItems(diagnostics, ilos);
 
     expect(gaps.map((gap) => gap.iloId)).toEqual(["ilo-1", "ilo-2"]);
+    expect(gaps.every((gap) => gap.feedbackId === "fb-1")).toBe(true);
   });
 
   it("does not flag ILOs below the diagnostic RBT level", () => {
@@ -48,5 +49,6 @@ describe("gap cascade logic", () => {
     const gaps = buildIloGapItems(diagnostics, ilos);
 
     expect(gaps.map((gap) => gap.iloId)).toEqual(["ilo-1"]);
+    expect(gaps.every((gap) => gap.feedbackId === "fb-2")).toBe(true);
   });
 });

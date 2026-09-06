@@ -19,22 +19,30 @@ export function submissionRateForSession(
   return Math.min(100, Math.round((responses / cls.studentCount) * 100));
 }
 
-/** ILO achievement = % of active ILOs that have no flagged gaps in this session.
- *  Caller must ensure `analyses[session.id]` exists — passes NaN otherwise. */
 export function iloAchievementForSession(
   session: Session,
   analyses: Record<string, AnalysisResult>,
-): number {
+): number | null {
   const analysis = analyses[session.id];
-  if (!analysis) return NaN;
+  if (!analysis || analysis.totalFeedback === 0) return null;
 
   const totalSessionIlos = session.iloIds.length;
   if (totalSessionIlos === 0) return 100;
 
-  const flaggedIloIds = new Set<string>((analysis.gaps ?? []).map((g) => g.iloId));
-  const achievedCount = totalSessionIlos - flaggedIloIds.size;
+  const gaps = analysis.gaps ?? [];
+  const totalFeedback = analysis.totalFeedback;
 
-  return Math.round((achievedCount / totalSessionIlos) * 100);
+  const perIloAchievement = session.iloIds.map((iloId) => {
+    const uniqueGaps = new Set<string>();
+    for (const gap of gaps) {
+      if (gap.iloId !== iloId) continue;
+      uniqueGaps.add(gap.feedbackId ?? `legacy:${iloId}`);
+    }
+    const gapRate = uniqueGaps.size / totalFeedback;
+    return Math.max(0, Math.min(100, Math.round(100 - gapRate * 100)));
+  });
+
+  return Math.round(perIloAchievement.reduce((a, b) => a + b, 0) / perIloAchievement.length);
 }
 
 export function averageRate(values: number[]): number | null {
@@ -71,7 +79,10 @@ export function computeClassIloAchievement(
 ): number | null {
   const analyzed = sessionsWithResults(classSessions, results);
   if (analyzed.length === 0) return null;
-  return averageRate(analyzed.map((s) => iloAchievementForSession(s, results)));
+  const rates = analyzed
+    .map((s) => iloAchievementForSession(s, results))
+    .filter((r): r is number => r !== null);
+  return averageRate(rates);
 }
 
 /** Dashboard-level submission rate: per-class averages → dashboard average. */
@@ -85,7 +96,7 @@ export function computeDashboardSubmissionRate(
       const classSessions = sessions.filter((s) => s.classId === cls.id);
       return computeClassSubmissionRate(classSessions, cls, feedback);
     })
-    .filter((r): r is number => r !== null && r > 0);
+    .filter((r): r is number => r !== null);
   return averageRate(classRates);
 }
 
@@ -100,7 +111,7 @@ export function computeDashboardIloAchievement(
       const classSessions = sessions.filter((s) => s.classId === cls.id);
       return computeClassIloAchievement(classSessions, results);
     })
-    .filter((r): r is number => r !== null && r > 0);
+    .filter((r): r is number => r !== null);
   return averageRate(classRates);
 }
 
@@ -140,7 +151,7 @@ export interface TrendPoint {
   topic: string;
   sessionId: string;
   submissionRate: number;
-  iloAchievement: number;
+  iloAchievement: number | null;
   avgPolarity: number;
   recommendationCount: number;
   warningCount: number;

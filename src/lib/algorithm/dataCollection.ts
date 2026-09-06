@@ -16,9 +16,10 @@ export function collectPipelineData(
   sessionId: string,
   iloStatement: string,
   rawFeedbackRows: RawFeedbackRow[],
+  ilos?: { index: number; statement: string; level: number }[],
 ): { sessionContext: SessionContext; feedbackStream: FeedbackInput[] } {
   return {
-    sessionContext: { course, topic, targetIloRbt, sessionId, iloStatement },
+    sessionContext: { course, topic, targetIloRbt, sessionId, iloStatement, ilos },
     feedbackStream: rawFeedbackRows.map((f) => ({
       id: f.id,
       rawText: f.content,

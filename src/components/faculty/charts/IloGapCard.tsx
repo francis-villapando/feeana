@@ -26,7 +26,7 @@ export function IloGapCard({ statuses }: IloGapCardProps) {
             No ILOs defined for selected topic.
           </p>
         ) : (
-          statuses.map(({ ilo, achieved }) => (
+          statuses.map(({ ilo, achieved, achievementRate, gapCount }) => (
             <div
               key={ilo.id}
               className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-3"
@@ -36,7 +36,13 @@ export function IloGapCard({ statuses }: IloGapCardProps) {
               ) : (
                 <AlertCircle className="self-center h-5 w-5 shrink-0 text-destructive" />
               )}
-              <p className="flex-1 text-sm leading-relaxed">{ilo.statement}</p>
+              <div className="flex-1">
+                <p className="text-sm leading-relaxed">{ilo.statement}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {achievementRate}% achieved
+                  {gapCount > 0 && ` • ${gapCount} feedback gap${gapCount === 1 ? "" : "s"}`}
+                </p>
+              </div>
               <Badge
                 variant="default"
                 className="self-center shrink-0 text-[9px] px-1 h-3.5 font-normal uppercase tracking-tighter"

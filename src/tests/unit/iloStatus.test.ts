@@ -62,10 +62,10 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
-function makeResult(flaggedIloIds: string[]): AnalysisResult {
+function makeResult(flaggedIloIds: string[], totalFeedback = 1): AnalysisResult {
   return {
     sessionId: "s1",
-    totalFeedback: 1,
+    totalFeedback,
     aspectDist: [],
     issueDist: [],
     polarityDist: [],
@@ -113,5 +113,61 @@ describe("computeIloStatuses", () => {
     const statuses = computeIloStatuses(session, result, [], ilos);
     expect(statuses.find((s) => s.ilo.id === "ilo-a1")?.achieved).toBe(false);
     expect(statuses.find((s) => s.ilo.id === "ilo-a2")?.achieved).toBe(true);
+  });
+
+  it("computes proportional achievement rate per ILO", () => {
+    const session = makeSession({ iloIds: ["ilo-a1", "ilo-a2"] });
+    const result: AnalysisResult = {
+      sessionId: "s1",
+      totalFeedback: 4,
+      aspectDist: [],
+      issueDist: [],
+      polarityDist: [],
+      rbtDist: [],
+      cltDist: [],
+      gaps: [{ iloId: "ilo-a1", expected: "e", actual: "a", severity: "high", feedbackId: "fb-1" }],
+      recommendations: [],
+      warnings: [],
+    };
+    const statuses = computeIloStatuses(session, result, [], ilos);
+    const a1 = statuses.find((s) => s.ilo.id === "ilo-a1")!;
+    const a2 = statuses.find((s) => s.ilo.id === "ilo-a2")!;
+    expect(a1.achievementRate).toBe(75);
+    expect(a1.gapCount).toBe(1);
+    expect(a1.achieved).toBe(false);
+    expect(a2.achievementRate).toBe(100);
+    expect(a2.gapCount).toBe(0);
+    expect(a2.achieved).toBe(true);
+  });
+
+  it("deduplicates multiple diagnostics from the same feedback per ILO", () => {
+    const session = makeSession({ iloIds: ["ilo-a1"] });
+    const result: AnalysisResult = {
+      sessionId: "s1",
+      totalFeedback: 10,
+      aspectDist: [],
+      issueDist: [],
+      polarityDist: [],
+      rbtDist: [],
+      cltDist: [],
+      gaps: [
+        { iloId: "ilo-a1", expected: "e", actual: "a", severity: "high", feedbackId: "fb-1" },
+        { iloId: "ilo-a1", expected: "e", actual: "a", severity: "high", feedbackId: "fb-1" },
+        { iloId: "ilo-a1", expected: "e", actual: "a", severity: "high", feedbackId: "fb-1" },
+      ],
+      recommendations: [],
+      warnings: [],
+    };
+    const statuses = computeIloStatuses(session, result, [], ilos);
+    const a1 = statuses.find((s) => s.ilo.id === "ilo-a1")!;
+    expect(a1.gapCount).toBe(1);
+    expect(a1.achievementRate).toBe(90);
+  });
+
+  it("returns 100% achievement when there is no feedback", () => {
+    const session = makeSession({ iloIds: ["ilo-a1"] });
+    const result = makeResult([], 0);
+    const statuses = computeIloStatuses(session, result, [], ilos);
+    expect(statuses.find((s) => s.ilo.id === "ilo-a1")?.achievementRate).toBe(100);
   });
 });

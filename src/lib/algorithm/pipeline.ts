@@ -137,13 +137,25 @@ export async function runAnalysisPipeline(
   const sessionIloIds = Array.isArray(session.ilo_ids) ? session.ilo_ids : [];
   const activeIlos = ilosData.filter((ilo) => sessionIloIds.includes(ilo.id));
 
+  const maxSessionRbt = activeIlos.length > 0 ? Math.max(...activeIlos.map(getIloLevel)) : 1;
+  const iloStatement =
+    activeIlos.length > 1
+      ? activeIlos.map((ilo, i) => `ILO ${i + 1}: ${ilo.statement}`).join("; ")
+      : activeIlos[0]?.statement || "Unknown Goal";
+  const ilosScope = activeIlos.map((ilo, index) => ({
+    index,
+    statement: ilo.statement,
+    level: getIloLevel(ilo),
+  }));
+
   const { sessionContext, feedbackStream } = collectPipelineData(
     courseName,
     session.topic || "Unknown Topic",
-    getIloLevel(activeIlos[0]),
+    maxSessionRbt,
     sessionId,
-    activeIlos[0]?.statement || "Unknown Goal",
+    iloStatement,
     feedbackData ?? [],
+    ilosScope,
   );
 
   // Guard against empty feedback stream

@@ -7,7 +7,11 @@ import {
   CalculateDistributions,
   GeneratePedagogicalCue,
 } from "../../src/lib/algorithm/strategyGeneration";
-import { formatDashboardOutput, buildIloGapItems } from "../../src/lib/algorithm/dashboardOutput";
+import {
+  formatDashboardOutput,
+  buildIloGapItems,
+  getIloLevel,
+} from "../../src/lib/algorithm/dashboardOutput";
 import { buildDiagnosticRecord } from "../../src/lib/algorithm/pedagogicalDiagnosticMapping";
 import { TTI_RULES, ISSUE_RULES, RBT_LEVELS, RULES_VERSION } from "../../src/lib/algorithm/rules";
 import type {
@@ -1245,8 +1249,19 @@ class DashboardSeeder {
 
     const sessionIlos = ilosByTopic.get(`${courseCode}:${session.topic}`) ?? [];
 
+    const maxSessionRbt = sessionIlos.length > 0 ? Math.max(...sessionIlos.map(getIloLevel)) : 1;
+    const iloStatement =
+      sessionIlos.length > 1
+        ? sessionIlos.map((ilo, i) => `ILO ${i + 1}: ${ilo.statement}`).join("; ")
+        : (sessionIlos[0]?.statement ?? "Unknown Goal");
+    const ilosScope = sessionIlos.map((ilo, index) => ({
+      index,
+      statement: ilo.statement,
+      level: getIloLevel(ilo),
+    }));
+
     const buffer: DiagnosticRecord[] = feedbacks.map((fb) =>
-      buildDiagnosticRecord(fb.issue, fb.polarity, 1, fb.id),
+      buildDiagnosticRecord(fb.issue, fb.polarity, maxSessionRbt, fb.id),
     );
 
     const total = feedbacks.length;
@@ -1254,9 +1269,10 @@ class DashboardSeeder {
     const sessionContext: SessionContext = {
       course: courseCode,
       topic: session.topic,
-      targetIloRbt: 1,
+      targetIloRbt: maxSessionRbt,
       sessionId: session.id,
-      iloStatement: sessionIlos[0]?.statement ?? "Unknown Goal",
+      iloStatement,
+      ilos: ilosScope,
     };
 
     const stats = CalculateDistributions(buffer, total);

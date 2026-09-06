@@ -43,6 +43,7 @@ export function buildIloGapItems(diagnostics: DiagnosticRecord[], ilos: IloLike[
           expected: ilo.statement,
           actual: `Issue: "${diagnostic.issue}" (CLT: ${diagnostic.clt}, RBT: Level ${diagnostic.rbt})`,
           severity: "medium" as const,
+          feedbackId: diagnostic.feedbackId,
         }));
     });
 }
