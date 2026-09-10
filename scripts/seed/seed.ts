@@ -1297,7 +1297,7 @@ class DashboardSeeder {
       const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
       const priorityScore = (uniqueIssue.count / total) * weightedCoefficient;
 
-      const pedagogicalCue = GeneratePedagogicalCue(sessionContext, uniqueIssue, total);
+      const pedagogicalCue = GeneratePedagogicalCue(sessionContext, uniqueIssue, total, weightedCoefficient);
 
       if (priorityScore >= DashboardSeeder.PRIORITY_THRESHOLD) {
         recommendationList.push(pedagogicalCue);

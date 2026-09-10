@@ -170,13 +170,14 @@ export function buildCue(
     isGap: mapping.isGap,
     count: issueCount,
   };
+  const weightedCoefficient = mapping.isGap ? GAP_WEIGHT : NON_GAP_WEIGHT;
   const sessionContext: SessionContext = {
     course: "Simulation",
     topic: input.topic,
     targetIloRbt: input.targetRbt,
     iloStatement: input.iloStatement,
   };
-  return GeneratePedagogicalCue(sessionContext, buffered, input.totalFeedback);
+  return GeneratePedagogicalCue(sessionContext, buffered, input.totalFeedback, weightedCoefficient);
 }
 
 export function rbtLabel(level: number, issue?: string): string {

@@ -230,7 +230,7 @@ export async function runAnalysisPipeline(
     const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
     const priorityScore = (uniqueIssue.count / totalFeedback) * weightedCoefficient;
 
-    const pedagogicalCue = GeneratePedagogicalCue(sessionContext, uniqueIssue, totalFeedback);
+    const pedagogicalCue = GeneratePedagogicalCue(sessionContext, uniqueIssue, totalFeedback, weightedCoefficient);
 
     if (priorityScore >= PRIORITY_THRESHOLD) {
       recommendationList.push(pedagogicalCue);

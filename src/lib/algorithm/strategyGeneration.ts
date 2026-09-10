@@ -70,6 +70,7 @@ export function GeneratePedagogicalCue(
   sessionContext: SessionContext,
   uniqueIssue: BufferedDiagnostic,
   totalFeedback: number,
+  weightedCoefficient: number,
 ): RecommendationItem {
   console.debug("[strategyGeneration] Generating pedagogical cue", {
     topic: sessionContext.topic,
@@ -77,7 +78,8 @@ export function GeneratePedagogicalCue(
     issue: uniqueIssue.issue,
   });
 
-  const percentageStr = `${((uniqueIssue.count / totalFeedback) * 100).toFixed(0)}%`;
+  const percentageStr = `${((uniqueIssue.count / totalFeedback) * weightedCoefficient * 100).toFixed(0)}%`;
+  const rawPctStr = `${((uniqueIssue.count / totalFeedback) * 100).toFixed(0)}%`;
   const rbtName = RBT_LEVELS[uniqueIssue.rbt] ?? String(uniqueIssue.rbt);
 
   const rbtLower = rbtName.toLowerCase();
@@ -93,11 +95,15 @@ export function GeneratePedagogicalCue(
     ? `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the goal: ${goalStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
     : `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
 
+  const prevalenceDetail = uniqueIssue.isGap
+    ? `${uniqueIssue.count} out of ${totalFeedback} responses — boosted from ${rawPctStr} due to ILO gap`
+    : `${uniqueIssue.count} out of ${totalFeedback} responses`;
+
   const terms = [
     {
       text: percentageStr,
       kind: "prevalence",
-      detail: `${uniqueIssue.count} out of ${totalFeedback} responses`,
+      detail: prevalenceDetail,
     },
     {
       text: uniqueIssue.issue,
