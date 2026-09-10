@@ -26,7 +26,9 @@ export function IloGapCard({ statuses }: IloGapCardProps) {
             No ILOs defined for selected topic.
           </p>
         ) : (
-          statuses.map(({ ilo, achieved, achievementRate, gapCount }) => (
+          [...statuses]
+            .sort((a, b) => (RBT_LEVEL_NUMBERS[b.ilo.bloomLevel] ?? 0) - (RBT_LEVEL_NUMBERS[a.ilo.bloomLevel] ?? 0))
+            .map(({ ilo, achieved, achievementRate, gapCount }) => (
             <div
               key={ilo.id}
               className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-3"

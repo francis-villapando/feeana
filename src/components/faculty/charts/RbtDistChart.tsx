@@ -39,7 +39,11 @@ export function RbtDistChart({ data }: RbtDistChartProps) {
         label: num ? `${entry.label} (${num})` : entry.label,
       };
     })
-    .sort((a, b) => b.value - a.value);
+    .sort((a, b) => {
+      const aNum = RBT_LEVEL_NUMBERS[a.label.replace(/ \(\d+\)$/, "")] ?? 99;
+      const bNum = RBT_LEVEL_NUMBERS[b.label.replace(/ \(\d+\)$/, "")] ?? 99;
+      return bNum - aNum;
+    });
 
   return (
     <AnalysisCard>
