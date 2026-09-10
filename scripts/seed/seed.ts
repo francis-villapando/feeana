@@ -73,6 +73,7 @@ interface SessionSeed {
   startsAt: string;
   endsAt: string;
   status: string;
+  lastAnalyzedAt?: string | null;
 }
 
 interface AccountDef {
@@ -141,7 +142,7 @@ interface ClassSeedResult {
 type TopicIloMap = Map<string, { id: string; statement: string; bloomLevel: string }[]>;
 
 class DashboardSeeder {
-  // ---- Account definitions ----
+  // Account definitions
   // The dev email used by isDevEmail() to isolate dev-authored curriculum from non-dev faculty.
   private static readonly DEV_EMAIL = process.env.VITE_DEV_EMAIL ?? "dev@feeana.me";
 
@@ -176,7 +177,7 @@ class DashboardSeeder {
     },
   ];
 
-  // ---- Curriculum definitions ----
+  // Curriculum definitions
   private static readonly COURSES: CourseDef[] = [
     {
       code: "CSEG2",
@@ -299,7 +300,7 @@ class DashboardSeeder {
     },
   ];
 
-  // ---- Class & session definitions ----
+  // Class & session definitions
   private static readonly CLASSES: ClassDef[] = [
     {
       courseCode: "CSEG2",
@@ -362,7 +363,7 @@ class DashboardSeeder {
     },
   ];
 
-  // ---- Dev sandbox classes ----
+  // Dev sandbox classes
   // analyzedCount holds the "when --analyzed" value; run() zeroes it for collection-only
   // mode. classIdKey preserves the legacy deterministic ids (seedId("class","TESTCLS1","1"))
   // so cleanup stays idempotent against previously seeded dev data.
@@ -411,7 +412,7 @@ class DashboardSeeder {
     },
   ];
 
-  // ---- Collaborative activity log definitions (spanning last 14 days) ----
+  // Collaborative activity log definitions (spanning last 14 days)
   private static readonly ACTIVITY_LOGS: ActivityLogDef[] = [
     {
       entity: "course",
@@ -620,7 +621,7 @@ class DashboardSeeder {
     await closeAdminSqlClient();
   }
 
-  // ---- Phase 1: Accounts ----
+  // Phase 1: Accounts
 
   /**
    * Creates or verifies the auth user + profile for every seed account.
@@ -684,7 +685,7 @@ class DashboardSeeder {
     if (error) throw new Error(`Failed to upsert profile for ${acc.email}: ${error.message}`);
   }
 
-  // ---- Phase 2: Curriculum ----
+  // Phase 2: Curriculum
 
   private async seedCurriculum(): Promise<{
     courses: Map<string, string>; // course code -> id
@@ -802,7 +803,7 @@ class DashboardSeeder {
     return created.id;
   }
 
-  // ---- Phase 3: Students ----
+  // Phase 3: Students
 
   private async createStudents(): Promise<string[]> {
     const ids: string[] = [];
@@ -831,7 +832,7 @@ class DashboardSeeder {
     return ids;
   }
 
-  // ---- Phase 4: Classes, sessions, feedback, analysis ----
+  // Phase 4: Classes, sessions, feedback, analysis
 
   private async seedAllClasses(
     curriculum: {
@@ -1059,7 +1060,7 @@ class DashboardSeeder {
     return sessionSeeds;
   }
 
-  // ---- Phase 5: Feedback ----
+  // Phase 5: Feedback
 
   private async loadFeedbackPool(): Promise<void> {
     const csvPath = new URL("../../public/model-data/test.csv", import.meta.url);
@@ -1200,7 +1201,12 @@ class DashboardSeeder {
       const studentId = available[ri % available.length];
       const issue = row.issue === "uncategorized" ? "Uncategorized" : row.issue;
       const polarity = row.polarity as "pos" | "neu" | "neg";
-      const createdAt = new Date(Date.now() + (ri + 1) * 3600000).toISOString();
+      const lastAnalyzed = session.lastAnalyzedAt
+        ? new Date(session.lastAnalyzedAt).getTime()
+        : Date.now();
+      const createdAt = new Date(
+        Math.min(Date.now(), lastAnalyzed + (ri + 1) * 1000),
+      ).toISOString();
       const feedbackId = DashboardSeeder.seedId("feedback", session.id, "pending", String(ri));
 
       const { error } = await this.supabase.from("feedback").insert({
@@ -1227,7 +1233,7 @@ class DashboardSeeder {
     return count;
   }
 
-  // ---- Phase 6: Analysis ----
+  // Phase 6: Analysis
 
   /**
    * Runs the shared production algorithm modules (Modules 4-6) for a session and persists
@@ -1428,10 +1434,12 @@ class DashboardSeeder {
       rules_version: RULES_VERSION,
     });
 
+    const lastAnalyzedAt = new Date().toISOString();
     await this.supabase
       .from("sessions")
-      .update({ last_analyzed_at: new Date().toISOString() })
+      .update({ last_analyzed_at: lastAnalyzedAt })
       .eq("id", session.id);
+    session.lastAnalyzedAt = lastAnalyzedAt;
 
     console.log(
       `  ✓ Analysis result (${feedbacks.length} raw rows, 1 cache row) for "${session.topic}"`,
@@ -1439,7 +1447,7 @@ class DashboardSeeder {
     return feedbacks.length;
   }
 
-  // ---- Phase 7: Activity logs ----
+  // Phase 7: Activity logs
 
   private async seedActivityLogs(curriculum: {
     courses: Map<string, string>;
@@ -1492,7 +1500,7 @@ class DashboardSeeder {
     return null;
   }
 
-  // ---- Cleanup ----
+  // Cleanup
 
   /**
    * Hard-deletes every entity this seed manages (identified by deterministic IDs),

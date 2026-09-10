@@ -375,7 +375,9 @@ export async function runAnalysisPipeline(
     .update({ last_analyzed_at: new Date().toISOString() })
     .eq("id", sessionId);
 
-  if (updateErr) console.error("Error updating session timestamp:", updateErr);
+  if (updateErr) {
+    throw new Error(`Failed to persist last_analyzed_at: ${updateErr.message}`);
+  }
 
   console.debug("[pipeline] Pipeline complete for session", { sessionId });
   return finalResult;
