@@ -106,7 +106,7 @@ export function ClassInfoDialog({ open, onOpenChange, cls, studentId }: ClassInf
           <button
             type="button"
             onClick={copyCode}
-            className="flex w-full items-center justify-between rounded-md border border-border/60 bg-background/40 px-3 py-2 text-sm hover:border-primary/40"
+            className="flex w-full items-center justify-between rounded-md border border-border/60 bg-transparent px-3 py-2 text-sm hover:border-primary/40"
           >
             <span className="text-muted-foreground">Enrollment code</span>
             <span className="flex items-center gap-2 font-mono tracking-wider">

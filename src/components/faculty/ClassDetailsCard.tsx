@@ -34,7 +34,7 @@ export function ClassDetailsCard({
         <button
           type="button"
           onClick={onCopy}
-          className="flex w-full items-center justify-between rounded-md border border-border/60 bg-background/40 px-3 py-2 text-xs hover:border-primary/40"
+          className="flex w-full items-center justify-between rounded-md border border-border/60 bg-transparent px-3 py-2 text-xs hover:border-primary/40"
         >
           <span className="text-muted-foreground">Code</span>
           <span className="flex items-center gap-2 font-mono text-sm tracking-wider">

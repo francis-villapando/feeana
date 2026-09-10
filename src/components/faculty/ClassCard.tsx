@@ -46,7 +46,7 @@ export function ClassCard({ cls, onRestore }: { cls: Class; onRestore?: (id: str
 
       {onRestore ? (
         <CardContent className="relative space-y-3">
-          <div className="rounded-md border border-border/60 bg-background/40 px-3 py-2 text-xs">
+          <div className="rounded-md border border-border/60 bg-transparent px-3 py-2 text-xs">
             <span className="text-muted-foreground">Code </span>
             <span className="font-mono tracking-wider">{cls.enrollCode}</span>
           </div>
@@ -74,7 +74,7 @@ export function ClassCard({ cls, onRestore }: { cls: Class; onRestore?: (id: str
           <button
             type="button"
             onClick={copyCode}
-            className="flex w-full items-center justify-between rounded-md border border-border/60 bg-background/40 px-3 py-2 text-xs hover:border-primary/40"
+            className="flex w-full items-center justify-between rounded-md border border-border/60 bg-transparent px-3 py-2 text-xs hover:border-primary/40"
           >
             <span className="text-muted-foreground">Code</span>
             <span className="flex items-center gap-2 font-mono text-sm tracking-wider">
@@ -82,7 +82,7 @@ export function ClassCard({ cls, onRestore }: { cls: Class; onRestore?: (id: str
               <Copy className="h-3 w-3 text-muted-foreground" />
             </span>
           </button>
-          <Button asChild variant="ghost" size="sm" className="w-full justify-between">
+          <Button asChild variant="secondary" size="sm" className="w-full justify-between">
             <Link to="/$classId" params={{ classId: cls.id }}>
               Open class
               <ArrowRight className="h-4 w-4" />
