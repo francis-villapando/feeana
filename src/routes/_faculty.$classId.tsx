@@ -19,7 +19,7 @@ import {
   SessionCard as FacultySessionCard,
 } from "@/components/faculty";
 import { TrendLineCard, TrendBarCard } from "@/components/faculty/charts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
@@ -76,7 +76,6 @@ function ClassLayout() {
   const navigate = useNavigate();
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveError, setArchiveError] = useState("");
-  const [isDataFresh, setIsDataFresh] = useState(false);
 
   const cls = getClass(classId);
   const sessions = sessionsForClass(classId);
@@ -84,27 +83,25 @@ function ClassLayout() {
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
 
   useEffect(() => {
-    const promises: Promise<unknown>[] = [];
+    if (location.pathname.includes("/analysis/")) return;
 
     if (classId) {
-      promises.push(fetchFeedbackByClass(classId));
+      fetchFeedbackByClass(classId);
       refreshStudents(classId);
     }
 
-    if (sessionIdsKey) {
-      const ids = sessionIdsKey.split(",").filter(Boolean);
-      if (ids.length > 0) {
-        promises.push(fetchForSessions(ids));
-      }
+    const ids = sessionIdsKey.split(",").filter(Boolean);
+    if (ids.length > 0) {
+      fetchForSessions(ids);
     }
-
-    if (promises.length > 0) {
-      setIsDataFresh(false);
-      Promise.all(promises).finally(() => setIsDataFresh(true));
-    } else {
-      setIsDataFresh(true);
-    }
-  }, [classId, sessionIdsKey, fetchFeedbackByClass, refreshStudents, fetchForSessions]);
+  }, [
+    location.pathname,
+    classId,
+    sessionIdsKey,
+    fetchFeedbackByClass,
+    refreshStudents,
+    fetchForSessions,
+  ]);
 
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;
@@ -181,39 +178,16 @@ function ClassLayout() {
       </Button>
 
       {/* KPI cards */}
-      {isDataFresh ? (
-        <>
-          <KeyMetricsRow
-            submissionRate={submissionRate}
-            iloRate={iloRate}
-            submissionHint={
-              submissionRate !== null ? "Across sessions in this class" : "No analyzed sessions"
-            }
-            iloHint={iloRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
-          />
-          <TrendLineCard trend={trend} />
-          <TrendBarCard trend={trend} />
-        </>
-      ) : (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <KpiCardSkeleton key={i} />
-            ))}
-          </div>
-          <ChartCardSkeleton height="h-40" />
-          <ChartCardSkeleton height="h-40" />
-          <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
-            <CardHeader>
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="mt-1 h-3 w-48" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-12 w-full" />
-            </CardContent>
-          </Card>
-        </>
-      )}
+      <KeyMetricsRow
+        submissionRate={submissionRate}
+        iloRate={iloRate}
+        submissionHint={
+          submissionRate !== null ? "Across sessions in this class" : "No analyzed sessions"
+        }
+        iloHint={iloRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
+      />
+      <TrendLineCard trend={trend} />
+      <TrendBarCard trend={trend} />
 
       {/* Two-column: tabs left, details + creator right */}
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">

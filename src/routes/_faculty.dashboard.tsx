@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Database, GraduationCap } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,18 +43,10 @@ function DashboardPage() {
 
   const now = useLiveNow();
 
-  const [isDataFresh, setIsDataFresh] = useState(false);
-
   useEffect(() => {
     const ids = sessionIdsKey.split(",").filter(Boolean);
-    if (ids.length === 0) {
-      setIsDataFresh(true);
-      return;
-    }
-    setIsDataFresh(false);
-    Promise.all([fetchForSessions(ids), fetchFeedbackBySessions(ids)]).finally(() =>
-      setIsDataFresh(true),
-    );
+    if (ids.length === 0) return;
+    Promise.all([fetchForSessions(ids), fetchFeedbackBySessions(ids)]).catch(() => {});
   }, [sessionIdsKey, fetchForSessions, fetchFeedbackBySessions]);
 
   const stats = useMemo(() => {
@@ -82,34 +74,24 @@ function DashboardPage() {
       </div>
 
       {/* KPI row */}
-      {isDataFresh ? (
-        <KeyMetricsRow
-          submissionRate={stats.submission}
-          iloRate={stats.ilo}
-          submissionHint={
-            stats.submission !== null ? "Across all sessions" : "No analyzed sessions"
-          }
-          iloHint={stats.ilo !== null ? "Across all sessions" : "No analyzed sessions"}
-          wide
-        >
-          <KpiCard
-            icon={<GraduationCap className="h-4 w-4" />}
-            label="Active classes"
-            value={activeClasses.length.toString()}
-          />
-          <KpiCard
-            icon={<Database className="h-4 w-4" />}
-            label="Active sessions"
-            value={stats.active.toString()}
-          />
-        </KeyMetricsRow>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <KpiCardSkeleton key={i} />
-          ))}
-        </div>
-      )}
+      <KeyMetricsRow
+        submissionRate={stats.submission}
+        iloRate={stats.ilo}
+        submissionHint={stats.submission !== null ? "Across all sessions" : "No analyzed sessions"}
+        iloHint={stats.ilo !== null ? "Across all sessions" : "No analyzed sessions"}
+        wide
+      >
+        <KpiCard
+          icon={<GraduationCap className="h-4 w-4" />}
+          label="Active classes"
+          value={activeClasses.length.toString()}
+        />
+        <KpiCard
+          icon={<Database className="h-4 w-4" />}
+          label="Active sessions"
+          value={stats.active.toString()}
+        />
+      </KeyMetricsRow>
 
       {/* Hub + activity feed */}
       <div className="grid min-h-0 min-w-0 flex-1 gap-6 lg:grid-cols-[2fr_1fr]">

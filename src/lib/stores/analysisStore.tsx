@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { AnalysisResult } from "../types/types";
 import { supabase } from "../db/supabase";
 
@@ -15,6 +23,8 @@ const AnalysisStoreContext = createContext<AnalysisStoreValue | null>(null);
 export function AnalysisStoreProvider({ children }: { children: ReactNode }) {
   const [results, setResults] = useState<Record<string, AnalysisResult>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const resultsRef = useRef(results);
+  resultsRef.current = results;
 
   const set = useCallback((sessionId: string, result: AnalysisResult) => {
     setResults((prev) => ({ ...prev, [sessionId]: result }));
@@ -24,12 +34,14 @@ export function AnalysisStoreProvider({ children }: { children: ReactNode }) {
 
   const fetchForSessions = useCallback(async (sessionIds: string[]) => {
     if (sessionIds.length === 0) return;
+    const missing = sessionIds.filter((id) => !resultsRef.current[id]);
+    if (missing.length === 0) return;
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from("feedback_diagnostics")
         .select("session_id, result")
-        .in("session_id", sessionIds);
+        .in("session_id", missing);
 
       if (error) {
         console.error("Error fetching analysis results:", error);

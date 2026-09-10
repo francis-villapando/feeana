@@ -17,6 +17,13 @@ interface FeedbackStoreValue {
 
 const FeedbackStoreContext = createContext<FeedbackStoreValue | null>(null);
 
+function mergeFeedback(prev: Feedback[], incoming: Feedback[]): Feedback[] {
+  if (incoming.length === 0) return prev;
+  const incomingSessionIds = new Set(incoming.map((f) => f.sessionId));
+  const others = prev.filter((f) => !incomingSessionIds.has(f.sessionId));
+  return [...others, ...incoming];
+}
+
 export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +52,7 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const data = await feedbackService.getFeedbackByClass(classId);
-      setFeedback(data);
+      setFeedback((prev) => mergeFeedback(prev, data));
       return data;
     } catch (e) {
       setError(friendlyError(e, "Failed to load feedback"));
@@ -61,7 +68,7 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const data = await feedbackService.getFeedbackBySessions(sessionIds);
-      setFeedback(data);
+      setFeedback((prev) => mergeFeedback(prev, data));
       return data;
     } catch (e) {
       setError(friendlyError(e, "Failed to load feedback"));

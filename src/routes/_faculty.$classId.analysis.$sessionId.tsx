@@ -63,10 +63,10 @@ function AnalysisPage() {
     useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
   const { feedback, fetchFeedback } = useFeedbackStore();
-  const { set: setAnalysisResult } = useAnalysisStore();
-  const [loading, setLoading] = useState(false);
+  const { results: analysisResults, set: setAnalysisResult } = useAnalysisStore();
+  const [loading, setLoading] = useState(analysisResults[sessionId] == null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(analysisResults[sessionId] ?? null);
   const [inferenceProgress, setInferenceProgress] = useState<{
     current: number;
     total: number;
@@ -119,12 +119,23 @@ function AnalysisPage() {
     };
   }, []);
 
+  const resultsRef = React.useRef(analysisResults);
+  resultsRef.current = analysisResults;
+
+  useEffect(() => {
+    const cached = resultsRef.current[sessionId];
+    setResult(cached ?? null);
+    setLoading(cached == null);
+  }, [sessionId]);
+
   useEffect(() => {
     if (!sessionId) return;
     let active = true;
 
     async function loadInitial() {
-      setLoading(true);
+      if (!resultsRef.current[sessionId]) {
+        setLoading(true);
+      }
       try {
         const data = await fetchComputedResult(sessionId);
         if (active) {
