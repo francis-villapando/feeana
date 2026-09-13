@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { AlertCircle, CheckCircle2, Loader2, Lock, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthLandingCard, PasswordField } from "@/components/auth";
+import { AppFooter } from "@/components/layout";
 import { InlineError } from "@/components/common";
 import { useAuth } from "@/lib/stores/auth";
 import { friendlyError } from "@/lib/hooks/utils";
@@ -88,6 +89,7 @@ function ResetPasswordPage() {
         icon={Lock}
         title="Reset password"
         description="Enter your new password below."
+        footer={<AppFooter />}
       >
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <PasswordField
@@ -130,6 +132,7 @@ function ResetPasswordPage() {
         iconClassName="bg-primary/15 text-primary ring-primary/30"
         title="Password Updated"
         description="Your password has been reset successfully."
+        footer={<AppFooter />}
       >
         <div className="space-y-4 text-center">
           <Button asChild className="w-full">
@@ -153,6 +156,7 @@ function ResetPasswordPage() {
         iconClassName="bg-destructive/15 text-destructive ring-destructive/30"
         title="Reset link is invalid or has expired"
         description="This password reset link is invalid or was already used. Request a new one from the sign-in page."
+        footer={<AppFooter />}
       >
         <div className="text-center">
           <Button asChild className="w-full">
@@ -166,7 +170,7 @@ function ResetPasswordPage() {
   }
 
   return (
-    <AuthLandingCard icon={Lock} title="Reset password">
+    <AuthLandingCard icon={Lock} title="Reset password" footer={<AppFooter />}>
       <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" /> Validating your reset link…
       </div>

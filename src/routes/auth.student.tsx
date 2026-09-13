@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AuthPage } from "@/components/auth";
+import { AppFooter } from "@/components/layout";
 
 export const Route = createFileRoute("/auth/student")({
   head: () => ({
@@ -11,5 +12,5 @@ export const Route = createFileRoute("/auth/student")({
       },
     ],
   }),
-  component: () => <AuthPage role="student" />,
+  component: () => <AuthPage role="student" footer={<AppFooter />} />,
 });

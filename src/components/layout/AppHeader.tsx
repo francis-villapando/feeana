@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Activity } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AppMenu } from "@/components/layout/AppMenu";
 
@@ -42,7 +42,7 @@ export function AppHeader({
           }`}
         >
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/30">
-            <Activity className="h-4 w-4 text-primary" />
+            <GraduationCap className="h-4 w-4 text-primary" />
           </span>
           <span className="text-base font-semibold tracking-tight">Feeana</span>
         </Link>

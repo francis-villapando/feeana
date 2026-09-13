@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertCircle, CheckCircle2, Loader2, LogIn, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthLandingCard } from "@/components/auth";
+import { AppFooter } from "@/components/layout";
 import { useAuth } from "@/lib/stores/auth";
 
 type ConfirmSearch = { role?: "faculty" | "student" };
@@ -51,6 +52,7 @@ function ConfirmEmailPage() {
         iconClassName="bg-primary/15 text-primary ring-primary/30"
         title="Account Verified"
         description="Your email address has been confirmed."
+        footer={<AppFooter />}
       >
         <div className="space-y-4 text-center">
           <Button asChild className="w-full">
@@ -74,6 +76,7 @@ function ConfirmEmailPage() {
         iconClassName="bg-destructive/15 text-destructive ring-destructive/30"
         title="Link expired or already used"
         description="This confirmation link is invalid or has expired."
+        footer={<AppFooter />}
       >
         <div className="text-center">
           <Button asChild className="w-full">
@@ -87,7 +90,7 @@ function ConfirmEmailPage() {
   }
 
   return (
-    <AuthLandingCard icon={Mail} title="Confirming your email">
+    <AuthLandingCard icon={Mail} title="Confirming your email" footer={<AppFooter />}>
       <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" /> Verifying your account…
       </div>

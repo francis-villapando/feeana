@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar";
-import { AppHeader, FacultySidebar } from "@/components/layout";
+import { AppFooter, AppHeader, FacultySidebar } from "@/components/layout";
 import { useAuth } from "@/lib/stores/auth";
 import { LayoutSkeleton } from "@/components/skeletons";
 
@@ -70,6 +70,7 @@ function FacultyLayoutInner({
           <main className="mx-auto w-full max-w-7xl flex-1 overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8">
             <Outlet />
           </main>
+          <AppFooter />
         </SidebarInset>
       </div>
     </div>

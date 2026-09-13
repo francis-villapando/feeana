@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldCheck, Sparkles } from "lucide-react";
+import { GraduationCap, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/common";
+import { AppFooter } from "@/components/layout";
 
 export const Route = createFileRoute("/privacy-policy")({
   head: () => ({
@@ -22,7 +23,7 @@ function PrivacyPage() {
       <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
         <Link to="/" className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/30">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <GraduationCap className="h-4 w-4 text-primary" />
           </span>
           <span className="text-lg font-semibold tracking-tight">Feeana</span>
         </Link>
@@ -148,6 +149,8 @@ function PrivacyPage() {
           </section>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 }

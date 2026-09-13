@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Outlet } from "@tanstack/react-router";
-import { AppHeader } from "@/components/layout";
+import { AppHeader, AppFooter } from "@/components/layout";
 import { EnrollClassDialog } from "@/components/student";
 import { useAuth } from "@/lib/stores/auth";
 import { LayoutSkeleton } from "@/components/skeletons";
@@ -31,7 +31,7 @@ function StudentLayout() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-[60] border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <AppHeader
           role="student"
@@ -42,9 +42,10 @@ function StudentLayout() {
           }}
         />
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <Outlet />
       </main>
+      <AppFooter />
       <EnrollClassDialog open={enrollOpen} onOpenChange={setEnrollOpen} />
     </div>
   );
