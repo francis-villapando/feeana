@@ -118,19 +118,30 @@ const EMPTY_INPUT: SimulationInput = {
 // Live browser connectivity state. Inference runs 100% locally in WASM, so the
 // model keeps working even when the network is offline.
 function useNetworkStatus(): boolean {
-  const [online, setOnline] = useState<boolean>(
-    typeof navigator !== "undefined" ? navigator.onLine : true,
-  );
+  const [online, setOnline] = useState(false);
+
   useEffect(() => {
+    const controller = new AbortController();
+
+    // HEAD favicon.svg with cache-busting to verify real connectivity.
+    fetch("/favicon.svg", { method: "HEAD", cache: "no-store", signal: controller.signal })
+      .then((res) => {
+        if (res.ok) setOnline(true);
+      })
+      .catch(() => {});
+
     const on = () => setOnline(true);
     const off = () => setOnline(false);
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
+
     return () => {
+      controller.abort();
       window.removeEventListener("online", on);
       window.removeEventListener("offline", off);
     };
   }, []);
+
   return online;
 }
 
