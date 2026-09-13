@@ -3,11 +3,11 @@
 The `prevent_delete()` trigger on core tables blocks all DELETE operations
 except for admin callers. Three bypass paths exist:
 
-| Caller                                        | Mechanism                                              |
-|-----------------------------------------------|--------------------------------------------------------|
-| `supabase db reset` (CLI)                     | Runs as `postgres` superuser                           |
-| `scripts/seed/seedSql.ts`                    | `connectAdmin()` from `src/lib/db/adminSql.ts`         |
-| integration tests                            | `connectAdmin()` for DELETEs, service_role for INSERTs |
+| Caller                    | Mechanism                                              |
+| ------------------------- | ------------------------------------------------------ |
+| `supabase db reset` (CLI) | Runs as `postgres` superuser                           |
+| `scripts/seed/seedSql.ts` | `connectAdmin()` from `src/lib/db/adminSql.ts`         |
+| integration tests         | `connectAdmin()` for DELETEs, service_role for INSERTs |
 
 **Connection pattern:** All seed/test scripts use `connectAdmin()` from
 `src/lib/db/adminSql.ts` for DELETE operations on protected tables. The

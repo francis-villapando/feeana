@@ -27,32 +27,36 @@ export function IloGapCard({ statuses }: IloGapCardProps) {
           </p>
         ) : (
           [...statuses]
-            .sort((a, b) => (RBT_LEVEL_NUMBERS[b.ilo.bloomLevel] ?? 0) - (RBT_LEVEL_NUMBERS[a.ilo.bloomLevel] ?? 0))
+            .sort(
+              (a, b) =>
+                (RBT_LEVEL_NUMBERS[b.ilo.bloomLevel] ?? 0) -
+                (RBT_LEVEL_NUMBERS[a.ilo.bloomLevel] ?? 0),
+            )
             .map(({ ilo, achieved, achievementRate, gapCount }) => (
-            <div
-              key={ilo.id}
-              className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-3"
-            >
-              {achieved ? (
-                <CheckCircle2 className="self-center h-5 w-5 shrink-0 text-emerald-500" />
-              ) : (
-                <AlertCircle className="self-center h-5 w-5 shrink-0 text-destructive" />
-              )}
-              <div className="flex-1">
-                <p className="text-sm leading-relaxed">{ilo.statement}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {achievementRate}% achieved
-                  {gapCount > 0 && ` • ${gapCount} feedback gap${gapCount === 1 ? "" : "s"}`}
-                </p>
-              </div>
-              <Badge
-                variant="default"
-                className="self-center shrink-0 text-[9px] px-1 h-3.5 font-normal uppercase tracking-tighter"
+              <div
+                key={ilo.id}
+                className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-3"
               >
-                {ilo.bloomLevel} ({RBT_LEVEL_NUMBERS[ilo.bloomLevel] || "?"})
-              </Badge>
-            </div>
-          ))
+                {achieved ? (
+                  <CheckCircle2 className="self-center h-5 w-5 shrink-0 text-emerald-500" />
+                ) : (
+                  <AlertCircle className="self-center h-5 w-5 shrink-0 text-destructive" />
+                )}
+                <div className="flex-1">
+                  <p className="text-sm leading-relaxed">{ilo.statement}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {achievementRate}% achieved
+                    {gapCount > 0 && ` • ${gapCount} feedback gap${gapCount === 1 ? "" : "s"}`}
+                  </p>
+                </div>
+                <Badge
+                  variant="default"
+                  className="self-center shrink-0 text-[9px] px-1 h-3.5 font-normal uppercase tracking-tighter"
+                >
+                  {ilo.bloomLevel} ({RBT_LEVEL_NUMBERS[ilo.bloomLevel] || "?"})
+                </Badge>
+              </div>
+            ))
         )}
       </CardContent>
     </AnalysisCard>

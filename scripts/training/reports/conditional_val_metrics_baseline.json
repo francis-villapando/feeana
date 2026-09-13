@@ -19,11 +19,7 @@
     "subject alienation",
     "uncategorized"
   ],
-  "polarity_labels": [
-    "neg",
-    "neu",
-    "pos"
-  ],
+  "polarity_labels": ["neg", "neu", "pos"],
   "raw": {
     "overall_issue_accuracy": 0.7644710578842315,
     "overall_issue_macro_f1": 0.7382816103933736,
@@ -33,14 +29,8 @@
       "recall": 0.8592964824120602,
       "f1": 0.9047619047619048,
       "confusion_matrix": [
-        [
-          795,
-          8
-        ],
-        [
-          28,
-          171
-        ]
+        [795, 8],
+        [28, 171]
       ]
     },
     "ground_truth_uncategorized": {

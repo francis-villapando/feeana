@@ -236,4 +236,20 @@
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
   }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  input:-moz-autofill,
+  input:-moz-autofill:hover,
+  input:-moz-autofill:focus,
+  input:-moz-autofill:active {
+    background-color: var(--color-background) !important;
+    -webkit-box-shadow: 0 0 0 1000px var(--color-background) inset !important;
+    box-shadow: 0 0 0 1000px var(--color-background) inset !important;
+    -webkit-text-fill-color: var(--color-foreground) !important;
+    caret-color: var(--color-foreground) !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
 }

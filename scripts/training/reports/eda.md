@@ -43,45 +43,45 @@
 
 ### Issue × Polarity
 
-| issue | neg | neu | pos | All |
-| --- | --- | --- | --- | --- |
-| abstract logic gap | 750 | 0 | 0 | 750 |
-| clarity deficit | 500 | 0 | 0 | 500 |
-| classroom tension | 500 | 0 | 0 | 500 |
-| conceptual misalignment | 750 | 0 | 0 | 750 |
-| design synthesis failure | 750 | 0 | 0 | 750 |
-| evaluation unfairness | 500 | 0 | 0 | 500 |
-| feedback latency | 500 | 0 | 0 | 500 |
-| instructional cadence | 500 | 0 | 0 | 500 |
-| notation struggle | 750 | 0 | 0 | 750 |
-| peer distraction | 500 | 0 | 0 | 500 |
-| perceived marginalization | 500 | 0 | 0 | 500 |
-| procedural bottleneck | 750 | 0 | 0 | 750 |
-| relational coldness | 500 | 0 | 0 | 500 |
-| subject alienation | 500 | 0 | 0 | 500 |
-| uncategorized | 666 | 667 | 667 | 2000 |
-| All | 8916 | 667 | 667 | 10250 |
+| issue                     | neg  | neu | pos | All   |
+| ------------------------- | ---- | --- | --- | ----- |
+| abstract logic gap        | 750  | 0   | 0   | 750   |
+| clarity deficit           | 500  | 0   | 0   | 500   |
+| classroom tension         | 500  | 0   | 0   | 500   |
+| conceptual misalignment   | 750  | 0   | 0   | 750   |
+| design synthesis failure  | 750  | 0   | 0   | 750   |
+| evaluation unfairness     | 500  | 0   | 0   | 500   |
+| feedback latency          | 500  | 0   | 0   | 500   |
+| instructional cadence     | 500  | 0   | 0   | 500   |
+| notation struggle         | 750  | 0   | 0   | 750   |
+| peer distraction          | 500  | 0   | 0   | 500   |
+| perceived marginalization | 500  | 0   | 0   | 500   |
+| procedural bottleneck     | 750  | 0   | 0   | 750   |
+| relational coldness       | 500  | 0   | 0   | 500   |
+| subject alienation        | 500  | 0   | 0   | 500   |
+| uncategorized             | 666  | 667 | 667 | 2000  |
+| All                       | 8916 | 667 | 667 | 10250 |
 
 ### Issue × Source
 
-| issue | augmented | real | synthetic | All |
-| --- | --- | --- | --- | --- |
-| abstract logic gap | 300 | 75 | 375 | 750 |
-| clarity deficit | 200 | 50 | 250 | 500 |
-| classroom tension | 200 | 50 | 250 | 500 |
-| conceptual misalignment | 300 | 75 | 375 | 750 |
-| design synthesis failure | 300 | 75 | 375 | 750 |
-| evaluation unfairness | 200 | 50 | 250 | 500 |
-| feedback latency | 200 | 50 | 250 | 500 |
-| instructional cadence | 200 | 50 | 250 | 500 |
-| notation struggle | 300 | 75 | 375 | 750 |
-| peer distraction | 200 | 50 | 250 | 500 |
-| perceived marginalization | 200 | 50 | 250 | 500 |
-| procedural bottleneck | 300 | 75 | 375 | 750 |
-| relational coldness | 200 | 50 | 250 | 500 |
-| subject alienation | 200 | 50 | 250 | 500 |
-| uncategorized | 800 | 201 | 999 | 2000 |
-| All | 4100 | 1026 | 5124 | 10250 |
+| issue                     | augmented | real | synthetic | All   |
+| ------------------------- | --------- | ---- | --------- | ----- |
+| abstract logic gap        | 300       | 75   | 375       | 750   |
+| clarity deficit           | 200       | 50   | 250       | 500   |
+| classroom tension         | 200       | 50   | 250       | 500   |
+| conceptual misalignment   | 300       | 75   | 375       | 750   |
+| design synthesis failure  | 300       | 75   | 375       | 750   |
+| evaluation unfairness     | 200       | 50   | 250       | 500   |
+| feedback latency          | 200       | 50   | 250       | 500   |
+| instructional cadence     | 200       | 50   | 250       | 500   |
+| notation struggle         | 300       | 75   | 375       | 750   |
+| peer distraction          | 200       | 50   | 250       | 500   |
+| perceived marginalization | 200       | 50   | 250       | 500   |
+| procedural bottleneck     | 300       | 75   | 375       | 750   |
+| relational coldness       | 200       | 50   | 250       | 500   |
+| subject alienation        | 200       | 50   | 250       | 500   |
+| uncategorized             | 800       | 201  | 999       | 2000  |
+| All                       | 4100      | 1026 | 5124      | 10250 |
 
 ---
 
@@ -90,4 +90,3 @@
 - **Exact Cleaned Text Duplicates**: 0 rows
 - **Duplicates Across Different `group_id`s**: 0 text patterns
 - **Avg Rows per Group**: 1.67 (Min: 1, Max: 5)
-
