@@ -318,19 +318,19 @@ export function AlgorithmSimulation() {
         ? modelReady && !extracting
         : step < 6;
 
-  const nextLabel = step === 2 ? (extracting ? "Extracting…" : "Run extraction") : "Next Phase";
+  const nextLabel = "Next Phase";
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold">Algorithm Simulation</h1>
           <p className="text-sm text-muted-foreground">
             Step through the 6-module pedagogical diagnostic pipeline using the real DistilXLM-R
             model.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Badge
             variant="outline"
             className={cn(
@@ -1607,7 +1607,10 @@ function StepOutput({
                   if (!seg.kind) return <span key={i}>{seg.text}</span>;
                   if (seg.kind === "prevalence") {
                     return (
-                      <span key={i} className="font-mono font-semibold text-foreground">
+                      <span
+                        key={i}
+                        className="font-mono font-medium text-foreground underline decoration-primary/50 underline-offset-4"
+                      >
                         {seg.text}
                       </span>
                     );
