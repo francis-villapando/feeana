@@ -1,9 +1,8 @@
 import { Fragment, type ReactNode } from "react";
 import type { DistEntry } from "@/lib/types/types";
-import { RBT_LEVEL_NUMBERS } from "@/lib/constants/chartColors";
+import { RBT_LEVEL_NUMBERS, CLT_DESCRIPTIONS } from "@/lib/algorithm/rules";
 import { AccentLabel } from "./AccentLabel";
 import { toTitleCase } from "@/lib/hooks/utils";
-import { CLT_DESCRIPTIONS } from "@/lib/algorithm/rules";
 
 type ChartKind = "aspect" | "polarity" | "issue" | "rbt" | "clt";
 
@@ -89,19 +88,10 @@ function interpretAspectOrIssue(
       </>
     );
 
-  // Uncategorized
-  const uncategorizedEntry = data.find((entry) => entry.label === "Uncategorized");
-  const uncategorizedCount = uncategorizedEntry?.value ?? 0;
-  const thirdSentence =
-    uncategorizedCount > 0
-      ? ` ${uncategorizedCount} ${uncategorizedCount === 1 ? "response" : "responses"} (${formatPercent(uncategorizedCount, totalFeedback)}) could not be mapped to an ${kind}, limiting the analysis.`
-      : "";
-
   return (
     <>
       {firstSentence}
       {secondSentence}
-      {thirdSentence}
     </>
   );
 }
@@ -173,21 +163,15 @@ function interpretRbt(data: DistEntry[], totalFeedback: number): ReactNode {
   if (data.length === 0) return "No data available for interpretation.";
 
   const categorizedEntries = data.filter((entry) => entry.label !== "Uncategorized");
-  const uncategorizedEntry = data.find((entry) => entry.label === "Uncategorized");
-  const uncategorizedCount = uncategorizedEntry?.value ?? 0;
-  const thirdSentence =
-    uncategorizedCount > 0
-      ? ` ${uncategorizedCount} response${uncategorizedCount === 1 ? "" : "s"} (${formatPercent(uncategorizedCount, totalFeedback)}) could not be mapped to a Bloom's level, limiting the analysis.`
-      : "";
 
   if (categorizedEntries.length === 0) {
-    return <>No prominent cognitive-process pattern was identified.{thirdSentence}</>;
+    return <>No prominent cognitive-process pattern was identified.</>;
   }
 
   const maxCount = Math.max(...categorizedEntries.map((entry) => entry.value));
   const topEntries = categorizedEntries.filter((entry) => entry.value === maxCount);
   const topLevelLabels = topEntries.map(
-    (entry) => `${entry.label} (Level ${RBT_LEVEL_NUMBERS[entry.label] ?? "?"})`,
+    (entry) => `${entry.label} (${RBT_LEVEL_NUMBERS[entry.label] ?? "?"})`,
   );
 
   const firstSentence =
@@ -214,7 +198,7 @@ function interpretRbt(data: DistEntry[], totalFeedback: number): ReactNode {
         {otherLevels.map((entry, index) => (
           <Fragment key={entry.label}>
             {index > 0 ? ", " : ""}
-            <AccentLabel>{entry.label}</AccentLabel> (Level {RBT_LEVEL_NUMBERS[entry.label] ?? "?"})
+            <AccentLabel>{entry.label}</AccentLabel> ({RBT_LEVEL_NUMBERS[entry.label] ?? "?"})
           </Fragment>
         ))}
         .
@@ -225,7 +209,6 @@ function interpretRbt(data: DistEntry[], totalFeedback: number): ReactNode {
     <>
       {firstSentence}
       {secondSentence}
-      {thirdSentence}
     </>
   );
 }
@@ -279,19 +262,10 @@ function interpretClt(data: DistEntry[], totalFeedback: number): ReactNode {
   }
   const secondSentence = suggestion ? ` ${suggestion}` : "";
 
-  // Uncategorized
-  const uncategorizedEntry = data.find((entry) => entry.label === "Uncategorized");
-  const uncategorizedCount = uncategorizedEntry?.value ?? 0;
-  const thirdSentence =
-    uncategorizedCount > 0
-      ? ` ${uncategorizedCount} response${uncategorizedCount === 1 ? "" : "s"} (${formatPercent(uncategorizedCount, totalFeedback)}) could not be mapped to a cognitive-load type, limiting the analysis.`
-      : "";
-
   return (
     <>
       {firstSentence}
       {secondSentence}
-      {thirdSentence}
     </>
   );
 }

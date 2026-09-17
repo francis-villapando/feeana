@@ -15,8 +15,8 @@ describe("interpretDistribution RBT rendering", () => {
       <>{interpretDistribution(data, { kind: "rbt", totalFeedback: 4 })}</>,
     );
 
-    expect(markup).toContain("Analyze (Level 4)");
-    expect(markup).toContain("Level 3");
+    expect(markup).toContain("Analyze (4)");
+    expect(markup).toContain("(3)");
     expect(markup).not.toContain("[object Object]");
   });
 });

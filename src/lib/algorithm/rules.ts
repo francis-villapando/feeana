@@ -104,6 +104,10 @@ export const RBT_LEVELS = [
   "Create",
 ] as const;
 
+export const RBT_LEVEL_NUMBERS = Object.fromEntries(
+  (RBT_LEVELS as readonly string[]).slice(1).map((name, index) => [name, index + 1]),
+) as Record<string, number>;
+
 export const ISSUE_DESCRIPTIONS: Record<string, string> = {
   "relational coldness":
     "Feedback indicating a lack of emotional connection, rapport, or mutual respect between the instructor and students.",
