@@ -1,5 +1,5 @@
 export const MODEL_SIZES_BYTES = {
-  distilxlmr: 118_283_312,
+  distilxlmr: 118_292_883,
   mbert: 178_453_202,
   svm: 5_365_457,
 } as const;

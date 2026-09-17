@@ -7,6 +7,7 @@ import { Preprocess, EncodeFeedback, inspectPreprocessingSteps, MAX_SEQ_LEN } fr
 import { ExtractPID, getClassifier } from "./informationExtraction";
 import { buildDiagnosticRecord } from "./pedagogicalDiagnosticMapping";
 import type { FeedbackInput, DiagnosticRecord } from "./types";
+import type { ModelInternals } from "./internals";
 import type { LoadProgress } from "./models/finetuned";
 
 env.allowLocalModels = true;
@@ -170,12 +171,14 @@ const api = {
     issueLogitsRaw: number[];
     polarityLogitsRaw: number[];
     topKIssues: Array<{
+      id: number;
       label: string;
       logit: number;
       probability: number;
       deltaFromTop?: number;
     }>;
     polarityDistribution: Array<{ label: string; logit: number; probability: number }>;
+    internals: ModelInternals;
     executionMeta: {
       modelName: string;
       runtime: string;
@@ -229,6 +232,7 @@ const api = {
       polarityLogitsRaw: diagnostics.polarityLogitsRaw,
       topKIssues: diagnostics.topKIssues,
       polarityDistribution: diagnostics.polarityDistribution,
+      internals: diagnostics.internals,
       executionMeta: {
         modelName: "DistilXLM-R (int8 quantized)",
         runtime: "ONNX Runtime Web (WASM SIMD Multi-threaded)",

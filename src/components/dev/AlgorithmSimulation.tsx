@@ -65,6 +65,7 @@ import {
 } from "@/components/dev/simulationEngine";
 
 import { PRESETS, type Preset } from "./simulationPresets";
+import { EncoderInternalsWorkbench } from "./internals/EncoderInternalsWorkbench";
 
 const BLOOM_LEVELS = [
   { value: "1", label: "1 · Remember" },
@@ -997,6 +998,12 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
           <Badge variant="outline" className="font-mono">
             {meta.latencyMs.toFixed(1)} ms
           </Badge>
+        </div>
+
+        {/* Encoder internals — Phase 3 internal computation workbench */}
+        <div className="space-y-2">
+          <Label>Encoder internal computation (DistilXLM-R, 12 layers × 12 heads)</Label>
+          <EncoderInternalsWorkbench extraction={extraction} />
         </div>
 
         {/* Top-5 issue probability distribution */}

@@ -1,5 +1,5 @@
 export const MODEL_CACHE_KEYS = {
-  distilxlmr: "feeana-distilxlmr-cache-v2",
+  distilxlmr: "feeana-distilxlmr-cache-v3",
   mbert: "feeana-mbert-cache-v2",
   svm: "feeana-svm-cache-v1",
   hf: "feeana-hf-cache-v2",
@@ -12,6 +12,7 @@ export const LEGACY_CACHE_KEYS = [
   "feeana-model-cache-svm-v1",
   "transformers-cache",
   "feeana-distilxlmr-cache-v1",
+  "feeana-distilxlmr-cache-v2",
   "feeana-mbert-cache-v1",
   "feeana-hf-cache-v1",
 ] as const;

@@ -140,6 +140,7 @@ async function getNodeApi(): Promise<WorkerApi> {
         polarityLogitsRaw: diagnostics.polarityLogitsRaw,
         topKIssues: diagnostics.topKIssues,
         polarityDistribution: diagnostics.polarityDistribution,
+        internals: diagnostics.internals,
         executionMeta: {
           modelName: "DistilXLM-R (int8 quantized)",
           runtime: "ONNX Runtime Web (WASM SIMD Multi-threaded)",

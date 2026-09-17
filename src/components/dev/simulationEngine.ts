@@ -10,6 +10,7 @@ import { CleanFeedback } from "../../lib/algorithm/preprocess";
 import { map_tti, map_rbt, map_clt } from "../../lib/algorithm/pedagogicalDiagnosticMapping";
 import { GeneratePedagogicalCue } from "../../lib/algorithm/strategyGeneration";
 import { RBT_LEVELS } from "../../lib/algorithm/rules";
+import type { ModelInternals } from "../../lib/algorithm/internals";
 import type {
   SessionContext,
   BufferedDiagnostic,
@@ -17,6 +18,7 @@ import type {
 } from "../../lib/algorithm/types";
 
 export type { RecommendationItem } from "../../lib/algorithm/types";
+export type { ModelInternals } from "../../lib/algorithm/internals";
 
 export const PRIORITY_THRESHOLD = 0.3;
 export const GAP_WEIGHT = 1.5;
@@ -50,6 +52,7 @@ export interface TokenizationTelemetry {
 }
 
 export interface LogitDistribution {
+  id?: number;
   label: string;
   logit: number;
   probability: number;
@@ -79,6 +82,7 @@ export interface ExtractionResult {
   polarityLogitsRaw: number[];
   topKIssues: LogitDistribution[];
   polarityDistribution: LogitDistribution[];
+  internals: ModelInternals;
   executionMeta: ExecutionMeta;
 }
 

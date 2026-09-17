@@ -2,11 +2,26 @@ import type { InferenceSession, Tensor } from "onnxruntime-web";
 import { AutoTokenizer, env } from "@huggingface/transformers";
 import { CleanFeedback, EncodeFeedback, MAX_SEQ_LEN, type MachineTokenizer } from "../preprocess";
 import type { FeedbackEncoding } from "../types";
+import { buildModelInternals, type HeadWeightMatrices, type ModelInternals } from "../internals";
 import type { ModelLoadProgress, ModelAdapter, ModelLoadOptions, Prediction } from "./types";
 import { MODEL_SIZES_BYTES } from "./sizes";
 import { cachedFetch, cachePut, MODEL_CACHE_KEYS } from "./modelCache";
 
 export type { ModelLoadProgress as LoadProgress } from "./types";
+export type { ModelInternals } from "../internals";
+
+// Requested explicitly on every fast-path run so the large internal tensors
+// (attention, hidden states) are never materialised for batch inference.
+const LOGIT_OUTPUTS: readonly string[] = ["issue_logits", "polarity_logits"];
+
+// Full graph outputs used by the Algorithm Simulation workbench.
+const FULL_OUTPUTS: readonly string[] = [
+  "issue_logits",
+  "polarity_logits",
+  "pooled_output",
+  "attentions",
+  "hidden_states",
+];
 
 export interface FinetunedModelConfig {
   name: string;
@@ -83,6 +98,54 @@ async function loadLabelMappings(
   return JSON.parse(new TextDecoder().decode(body)) as LabelMappings;
 }
 
+// Head matrices ship as a JSON sidecar (the ONNX quantizer renames/rewrites
+// parameter-derived graph outputs). Optional: the logit decomposition degrades
+// gracefully when it is missing.
+interface RawHeadWeightsJson {
+  hidden_size?: number;
+  issue_weights?: number[][];
+  issue_bias?: number[];
+  polarity_weights?: number[][];
+  polarity_bias?: number[];
+}
+
+// The sidecar serializes the two heads flat; reshape into the head-keyed form
+// the internals module consumes.
+function parseHeadWeights(text: string): HeadWeightMatrices | null {
+  const json = JSON.parse(text) as RawHeadWeightsJson;
+  const { issue_weights, issue_bias, polarity_weights, polarity_bias } = json;
+  if (!issue_weights || !issue_bias || !polarity_weights || !polarity_bias) {
+    console.warn("[finetuned] head_weights.json is missing required matrices");
+    return null;
+  }
+  return {
+    issue: { weights: issue_weights, bias: issue_bias },
+    polarity: { weights: polarity_weights, bias: polarity_bias },
+  };
+}
+
+async function loadHeadWeights(
+  localDir: string,
+  remoteUrl: string,
+  cacheKey: string,
+): Promise<HeadWeightMatrices | null> {
+  try {
+    if (isNode()) {
+      const fs = await import("fs");
+      return parseHeadWeights(fs.readFileSync(`${localDir}/head_weights.json`, "utf-8"));
+    }
+    const cached = await cachedFetch(remoteUrl, cacheKey);
+    const res = cached ?? (await fetch(remoteUrl));
+    if (!res.ok) return null;
+    const body = await res.arrayBuffer();
+    if (!cached) await cachePut(remoteUrl, body, cacheKey);
+    return parseHeadWeights(new TextDecoder().decode(body));
+  } catch (e) {
+    console.warn(`[finetuned] Head weights unavailable (${remoteUrl}):`, e);
+    return null;
+  }
+}
+
 function softmax(logits: Float32Array): number[] {
   const exp = Array.from(logits).map((v) => Math.exp(v));
   const sum = exp.reduce((a, b) => a + b, 0);
@@ -110,6 +173,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
   session: InferenceSession | null = null;
   tokenizer: MachineTokenizer | null = null;
   labelMap: LabelMappings | null = null;
+  headWeights: HeadWeightMatrices | null = null;
   progressHook?: (info: ModelLoadProgress) => void;
   private coldMode = false;
 
@@ -297,6 +361,18 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     return hf.tokenize(text);
   }
 
+  // Lazily fetches the head matrices once per session. Non-fatal: the
+  // decomposition section simply hides when the sidecar is unavailable.
+  async ensureHeadWeights(): Promise<HeadWeightMatrices | null> {
+    if (this.headWeights) return this.headWeights;
+    this.headWeights = await loadHeadWeights(
+      this.modelDir,
+      getHfFileUrl(this.config.hfRepo, "head_weights.json"),
+      this.config.cacheKey,
+    );
+    return this.headWeights;
+  }
+
   // Direct low-level inference on pre-encoded tensors (Module 3).
   async predictEncoded(encoding: FeedbackEncoding): Promise<Prediction> {
     if (!this.session || !this.labelMap) {
@@ -310,7 +386,9 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
       attention_mask: new runtime.Tensor("int64", encoding.attentionMask, [1, seqLen]),
     };
 
-    const results = await this.session.run(feeds);
+    // Requested outputs only: avoids materialising the ~43 MB attention and
+    // hidden-state tensors on the hot batch path.
+    const results = await this.session.run(feeds, LOGIT_OUTPUTS);
 
     const issueProbs = softmax(results["issue_logits"].data as Float32Array);
     const polarityProbs = softmax(results["polarity_logits"].data as Float32Array);
@@ -334,9 +412,10 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     };
   }
 
-  // Diagnostic inference used by the Algorithm Simulation. Runs the same ONNX
-  // graph as predictEncoded but also surfaces the raw logits, the full softmax
-  // distribution, and the top-K ranked predictions for visualization.
+  // Diagnostic inference used by the Algorithm Simulation. Runs the full ONNX
+  // graph in a single pass and surfaces the raw logits, the full softmax
+  // distribution, the top-K ranked predictions, and the encoder internals
+  // (attention, hidden states, pooled vector) for the Phase 3 workbench.
   async predictEncodedDiagnostics(encoding: FeedbackEncoding): Promise<{
     issue: string;
     polarity: string;
@@ -347,8 +426,15 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     confidenceThreshold: number;
     issueLogitsRaw: number[];
     polarityLogitsRaw: number[];
-    topKIssues: Array<{ label: string; logit: number; probability: number }>;
+    topKIssues: Array<{
+      id: number;
+      label: string;
+      logit: number;
+      probability: number;
+      deltaFromTop?: number;
+    }>;
     polarityDistribution: Array<{ label: string; logit: number; probability: number }>;
+    internals: ModelInternals;
   }> {
     if (!this.session || !this.labelMap) {
       throw new Error(`[${this.name}] Adapter not loaded — call load() first.`);
@@ -361,7 +447,20 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
       attention_mask: new runtime.Tensor("int64", encoding.attentionMask, [1, seqLen]),
     };
 
-    const results = await this.session.run(feeds);
+    const results = await this.session.run(feeds, FULL_OUTPUTS);
+
+    const headWeights = await this.ensureHeadWeights();
+    const attentionTensor = results["attentions"];
+    const internals = buildModelInternals(
+      {
+        attentions: attentionTensor.data as Float32Array,
+        hiddenStates: results["hidden_states"].data as Float32Array,
+        pooled: results["pooled_output"].data as Float32Array,
+        attentionMask: encoding.attentionMask,
+        seqLen: Number(attentionTensor.dims[3] ?? seqLen),
+      },
+      headWeights ?? undefined,
+    );
 
     const issueLogits = Array.from(results["issue_logits"].data as Float32Array);
     const polarityLogits = Array.from(results["polarity_logits"].data as Float32Array);
@@ -385,6 +484,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     // Rank all issue classes by softmax probability, keep the top 5.
     const ranked = issueLogits
       .map((logit, i) => ({
+        id: i,
         label: this.labelMap!.issue.id2label[String(i)] ?? `class_${i}`,
         logit,
         probability: issueProbs[i],
@@ -414,6 +514,7 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
       polarityLogitsRaw: polarityLogits,
       topKIssues: ranked,
       polarityDistribution,
+      internals,
     };
   }
 

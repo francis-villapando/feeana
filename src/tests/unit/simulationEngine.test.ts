@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { PRESETS } from "../../components/dev/simulationPresets";
 import { getMLWorkerAsync } from "../../lib/ml/mlWorkerStore";
 import { mapDiagnostics, computePriority, buildCue } from "../../components/dev/simulationEngine";
+import { HIDDEN_SIZE, NUM_HEADS, NUM_LAYERS } from "../../lib/algorithm/internals";
 
 const EXPECTED: Record<
   string,
@@ -87,6 +88,22 @@ describe("model-backed preset simulation", () => {
 
       const expected = EXPECTED[preset.label];
       expect(extraction.issue).toBe(expected.issue);
+
+      // Encoder internals must ride along on every extractSingle result so the
+      // workbench always has activations to render.
+      const { internals } = extraction;
+      expect(internals.activeTokens).toBeGreaterThan(1);
+      expect(internals.attention.length).toBe(
+        NUM_LAYERS * NUM_HEADS * internals.activeTokens * internals.activeTokens,
+      );
+      expect(internals.hiddenStates.length).toBe(
+        (NUM_LAYERS + 1) * internals.activeTokens * HIDDEN_SIZE,
+      );
+      expect(internals.pooled).toHaveLength(HIDDEN_SIZE);
+      for (const entry of extraction.topKIssues) {
+        expect(entry.id).toBeGreaterThanOrEqual(0);
+        expect(entry.id).toBeLessThan(extraction.issueLogitsRaw.length);
+      }
 
       if (preset.label === "Low-Confidence Fallback (Uncategorized)") {
         expect(extraction.routedDueToLowConfidence).toBe(true);

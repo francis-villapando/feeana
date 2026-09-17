@@ -14,6 +14,7 @@ Writes (tag derived from base model, e.g. "mbert" / "distilxlmr"):
     scripts/training/exports/{tag}/tokenizer.json
     scripts/training/exports/{tag}/config.json
     scripts/training/exports/{tag}/label_mappings.json
+    scripts/training/exports/{tag}/head_weights.json
 """
 
 from __future__ import annotations
@@ -50,15 +51,31 @@ def resolve_model_name(cli_value: str | None) -> str:
 
 
 class DualHeadModel(nn.Module):
-    """Dual-head architecture: shared encoder with issue and polarity heads."""
+    """Dual-head architecture: shared encoder with issue and polarity heads.
+
+    Exposes the full internal computation graph for the Phase 3 simulation
+    workbench: all 12 per-layer attention tensors (12 heads each), all 13
+    hidden-state tensors (layer 0 embeddings + layers 1-12), the mean-pooled
+    sentence vector, and the head weight/bias matrices so the UI can show the
+    genuine W·v + b logit decomposition.
+    """
 
     def __init__(self, model_name: str, num_issues: int, num_polarities: int) -> None:
         super().__init__()
         # Use eager attention implementation to prevent SDPA float16 tracing artifacts in ONNX
         try:
-            self.encoder = AutoModel.from_pretrained(model_name, attn_implementation="eager")
+            self.encoder = AutoModel.from_pretrained(
+                model_name,
+                output_attentions=True,
+                output_hidden_states=True,
+                attn_implementation="eager",
+            )
         except Exception:
-            self.encoder = AutoModel.from_pretrained(model_name)
+            self.encoder = AutoModel.from_pretrained(
+                model_name,
+                output_attentions=True,
+                output_hidden_states=True,
+            )
 
         hidden = self.encoder.config.hidden_size
         self.issue_head = nn.Linear(hidden, num_issues)
@@ -71,7 +88,7 @@ class DualHeadModel(nn.Module):
         self,
         input_ids: torch.Tensor,
         attention_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, ...]:
         outputs = self.encoder(input_ids=input_ids, attention_mask=attention_mask)
 
         mask_expanded = (
@@ -83,10 +100,22 @@ class DualHeadModel(nn.Module):
         sum_mask = torch.clamp(mask_expanded.sum(dim=1), min=1e-9)
         pooled = sum_embeddings / sum_mask
 
-        pooled = self.dropout(pooled)
-        pooled = pooled.to(self.issue_head.weight.dtype)
+        pooled_dropped = self.dropout(pooled).to(self.issue_head.weight.dtype)
+        issue_logits = self.issue_head(pooled_dropped)
+        polarity_logits = self.polarity_head(pooled_dropped)
 
-        return self.issue_head(pooled), self.polarity_head(pooled)
+        # Stack attentions into [num_layers, batch, num_heads, seq, seq] and
+        # hidden states into [num_layers + 1, batch, seq, hidden].
+        stacked_attentions = torch.stack(outputs.attentions, dim=0)
+        stacked_hidden_states = torch.stack(outputs.hidden_states, dim=0)
+
+        return (
+            issue_logits,
+            polarity_logits,
+            pooled,
+            stacked_attentions,
+            stacked_hidden_states,
+        )
 
 
 def load_checkpoint(ckpt_path: Path, device: torch.device, model_name: str) -> DualHeadModel:
@@ -128,12 +157,21 @@ def export_fp32_onnx(model: DualHeadModel, out_path: Path, opset: int) -> None:
         "f": str(out_path),
         "opset_version": opset,
         "input_names": ["input_ids", "attention_mask"],
-        "output_names": ["issue_logits", "polarity_logits"],
+        "output_names": [
+            "issue_logits",
+            "polarity_logits",
+            "pooled_output",
+            "attentions",
+            "hidden_states",
+        ],
         "dynamic_axes": {
             "input_ids": {0: "batch_size", 1: "sequence_length"},
             "attention_mask": {0: "batch_size", 1: "sequence_length"},
             "issue_logits": {0: "batch_size"},
             "polarity_logits": {0: "batch_size"},
+            "pooled_output": {0: "batch_size"},
+            "attentions": {1: "batch_size", 3: "sequence_length", 4: "sequence_length"},
+            "hidden_states": {1: "batch_size", 2: "sequence_length"},
         },
         "do_constant_folding": True,
     }
@@ -169,12 +207,23 @@ def smoke_test_onnx(onnx_path: Path) -> None:
     dummy_mask = np.ones((1, MAX_LEN), dtype=np.int64)
 
     outputs = session.run(
-        ["issue_logits", "polarity_logits"],
+        [
+            "issue_logits",
+            "polarity_logits",
+            "pooled_output",
+            "attentions",
+            "hidden_states",
+        ],
         {"input_ids": dummy_ids, "attention_mask": dummy_mask},
     )
 
     assert outputs[0].shape == (1, NUM_ISSUES), f"Invalid issue_logits shape: {outputs[0].shape}"
     assert outputs[1].shape == (1, NUM_POLARITIES), f"Invalid polarity_logits shape: {outputs[1].shape}"
+    assert outputs[2].shape == (1, 384), f"Invalid pooled_output shape: {outputs[2].shape}"
+    assert outputs[3].shape == (12, 1, 12, MAX_LEN, MAX_LEN), f"Invalid attentions shape: {outputs[3].shape}"
+    assert outputs[4].shape == (13, 1, MAX_LEN, 384), f"Invalid hidden_states shape: {outputs[4].shape}"
+    assert outputs[3].dtype == np.float32, f"attentions must stay float32, got {outputs[3].dtype}"
+    assert outputs[4].dtype == np.float32, f"hidden_states must stay float32, got {outputs[4].dtype}"
     print("[INFO] Output shapes validated successfully.")
 
 
@@ -198,6 +247,27 @@ def stage_assets(
 
     if label_mappings_src.exists():
         shutil.copy(label_mappings_src, out_dir / "label_mappings.json")
+
+
+def export_head_weights(model: DualHeadModel, out_dir: Path) -> None:
+    """Dump the dual-head linear matrices as JSON.
+
+    The ONNX quantizer rewrites and renames parameter-derived graph outputs, so
+    the head weights are shipped as a sidecar instead. Layout is
+    [num_classes, hidden], matching direct w_k · v dot products.
+    """
+    payload = {
+        "hidden_size": int(model.issue_head.in_features),
+        "issue_weights": model.issue_head.weight.detach().cpu().tolist(),
+        "issue_bias": model.issue_head.bias.detach().cpu().tolist(),
+        "polarity_weights": model.polarity_head.weight.detach().cpu().tolist(),
+        "polarity_bias": model.polarity_head.bias.detach().cpu().tolist(),
+    }
+    out_path = out_dir / "head_weights.json"
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f)
+    size_kb = out_path.stat().st_size / 1024
+    print(f"[INFO] Head weights written: {out_path} ({size_kb:.1f} KB)")
 
 
 def parse_args() -> argparse.Namespace:
@@ -285,6 +355,7 @@ def main() -> None:
 
     smoke_test_onnx(final_onnx)
     stage_assets(model_name, tokenizer, tag_dir, label_mappings_path)
+    export_head_weights(model, tag_dir)
 
     print(f"[SUCCESS] Model export finished. Assets available in: {tag_dir.resolve()}")
 
