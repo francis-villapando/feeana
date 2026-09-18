@@ -368,9 +368,7 @@ function Results({ result }: { result: AnalysisResult }) {
   const iloStatuses = computeIloStatuses(session, result, feedback, ilos);
 
   const uncategorizedCount =
-    (result.aspectDist.find((e) => e.label === "Uncategorized")?.value ?? 0) +
-    (result.issueDist.find((e) => e.label === "Uncategorized")?.value ?? 0) +
-    (result.rbtDist.find((e) => e.label === "Uncategorized")?.value ?? 0);
+    result.issueDist.find((e) => e.label.toLowerCase() === "uncategorized")?.value ?? 0;
 
   const uncategorizedTexts = [
     ...new Set([
