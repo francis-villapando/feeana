@@ -20,7 +20,7 @@ export function UncategorizedNotice({
   const texts = feedbackTexts ?? [];
 
   return (
-    <div className="rounded-md border border-border/40 bg-background/50 px-3 py-2 text-xs text-muted-foreground lg:col-span-3">
+    <div className="rounded-md border border-border/40 bg-background/50 px-3 py-2 text-xs text-muted-foreground lg:col-span-12">
       <div className="flex items-start gap-2">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <div className="flex-1 leading-relaxed">

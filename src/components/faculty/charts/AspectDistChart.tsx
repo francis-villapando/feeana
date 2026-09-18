@@ -19,16 +19,18 @@ import { CHART_COLORS, ASPECT_COLOR_ORDER } from "@/lib/constants/chartColors";
 interface AspectDistChartProps {
   data: DistEntry[];
   totalFeedback: number;
+  className?: string;
+  height?: number;
 }
 
 const aspectColorMap = Object.fromEntries(ASPECT_COLOR_ORDER);
 
-export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
+export function AspectDistChart({ data, totalFeedback, className, height }: AspectDistChartProps) {
   const categorizedData = data.filter((entry) => entry.label !== "Uncategorized");
   const interpretation = interpretDistribution(categorizedData, { kind: "aspect", totalFeedback });
 
   return (
-    <AnalysisCard className="lg:col-span-2">
+    <AnalysisCard className={className}>
       <CardHeader>
         <CardTitle className="text-base">Aspect distribution</CardTitle>
         <CardDescription>
@@ -37,7 +39,10 @@ export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={Math.max(220, categorizedData.length * 32)}>
+        <ResponsiveContainer
+          width="100%"
+          height={height ?? Math.max(220, categorizedData.length * 32)}
+        >
           <BarChart data={categorizedData} layout="vertical">
             <CartesianGrid stroke="var(--color-border)" horizontal={false} />
             <XAxis

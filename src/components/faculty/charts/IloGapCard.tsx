@@ -18,7 +18,7 @@ function gapSuffix(count: number): string {
 
 export function IloGapCard({ statuses, gaps = [] }: IloGapCardProps) {
   return (
-    <AnalysisCard className="lg:col-span-3">
+    <AnalysisCard className="lg:col-span-12">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Target className="h-4 w-4 text-primary" /> ILO gap analysis

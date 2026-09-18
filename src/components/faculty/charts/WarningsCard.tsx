@@ -47,7 +47,7 @@ export function WarningsCard({ data }: WarningsCardProps) {
   const sorted = [...data].sort((a, b) => b.priority - a.priority);
 
   return (
-    <AnalysisCard className="lg:col-span-3">
+    <AnalysisCard>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <AlertTriangle className="h-4 w-4 text-warning" /> Warnings

@@ -19,24 +19,29 @@ import { toTitleCase } from "@/lib/hooks/utils";
 
 interface IssueDistChartProps {
   data: DistEntry[];
+  className?: string;
+  height?: number;
 }
 
 const issueColorMap = Object.fromEntries(ISSUE_COLOR_ORDER);
 
-export function IssueDistChart({ data }: IssueDistChartProps) {
+export function IssueDistChart({ data, className, height }: IssueDistChartProps) {
   const categorizedData = data.filter((entry) => entry.label.toLowerCase() !== "uncategorized");
   const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
   const interpretation = interpretDistribution(categorizedData, { kind: "issue", totalFeedback });
 
   return (
-    <AnalysisCard className="lg:col-span-3">
+    <AnalysisCard className={className}>
       <CardHeader>
         <CardTitle className="text-base">Issue distribution</CardTitle>
         <CardDescription>Specific concerns extracted via PID-ABSA.</CardDescription>
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={Math.max(220, categorizedData.length * 32)}>
+        <ResponsiveContainer
+          width="100%"
+          height={height ?? Math.max(220, categorizedData.length * 32)}
+        >
           <BarChart data={categorizedData} layout="vertical">
             <CartesianGrid stroke="var(--color-border)" horizontal={false} />
             <XAxis

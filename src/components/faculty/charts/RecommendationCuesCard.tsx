@@ -13,7 +13,7 @@ export function RecommendationCuesCard({ recommendations, ilos }: Recommendation
   const sorted = [...recommendations].sort((a, b) => b.priority - a.priority);
 
   return (
-    <AnalysisCard className="lg:col-span-3">
+    <AnalysisCard>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Lightbulb className="h-4 w-4 text-primary" /> Recommendation cues
