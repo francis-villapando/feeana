@@ -1,68 +1,70 @@
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+} from "@/components/ui/chart";
 import { AnalysisCard } from "./AnalysisCard";
 import { InterpretationBlock } from "./InterpretationBlock";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import { interpretDistribution } from "./interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
-import { CHART_COLORS, CLT_COLOR_ORDER } from "@/lib/constants/chartColors";
-import { toTitleCase } from "@/lib/hooks/utils";
+import { CLT_COLOR_ORDER } from "@/lib/constants/chartColors";
 
 interface CltDistChartProps {
   data: DistEntry[];
+  className?: string;
 }
 
 const cltColorMap = Object.fromEntries(CLT_COLOR_ORDER);
 
-export function CltDistChart({ data }: CltDistChartProps) {
+const chartConfig = {
+  Intrinsic: {
+    label: "Intrinsic",
+    color: "var(--color-chart-3)",
+  },
+  Extraneous: {
+    label: "Extraneous",
+    color: "var(--color-chart-4)",
+  },
+} satisfies ChartConfig;
+
+export function CltDistChart({ data, className }: CltDistChartProps) {
   const categorizedData = data.filter((entry) => entry.label !== "Uncategorized");
   const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
   const interpretation = interpretDistribution(categorizedData, { kind: "clt", totalFeedback });
 
+  const intrinsic = categorizedData.find((e) => e.label === "Intrinsic")?.value ?? 0;
+  const extraneous = categorizedData.find((e) => e.label === "Extraneous")?.value ?? 0;
+
+  const chartData = [{ group: "Cognitive load", Intrinsic: intrinsic, Extraneous: extraneous }];
+
   return (
-    <AnalysisCard>
+    <AnalysisCard className={className}>
       <CardHeader>
         <CardTitle className="text-base">CLT distribution</CardTitle>
         <CardDescription>Cognitive-load type split.</CardDescription>
         <InterpretationBlock text={interpretation} />
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={categorizedData}>
-            <CartesianGrid stroke="var(--color-border)" vertical={false} />
-            <XAxis
-              dataKey="label"
-              tickFormatter={(label: string) => toTitleCase(label)}
-              stroke="var(--color-muted-foreground)"
-              fontSize={11}
-            />
-            <YAxis
-              type="number"
-              domain={[0, Math.max(totalFeedback, 1)]}
-              allowDecimals={false}
-              stroke="var(--color-muted-foreground)"
-              fontSize={11}
-            />
-            <Tooltip
+      <CardContent className="flex-1 flex flex-col min-h-[320px]">
+        <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
+          <BarChart accessibilityLayer data={chartData}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="group" tickLine={false} tickMargin={10} axisLine={false} />
+            <YAxis type="number" domain={[0, Math.max(totalFeedback, 1)]} allowDecimals={false} />
+            <ChartTooltip
               {...chartTooltipProps}
-              content={<ChartTooltipContent colorMap={cltColorMap} />}
+              cursor={false}
+              content={<ChartTooltipContent colorMap={cltColorMap} dist={categorizedData} />}
             />
-            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={80}>
-              {categorizedData.map((entry) => (
-                <Cell key={entry.label} fill={cltColorMap[entry.label] || CHART_COLORS[0]} />
-              ))}
-            </Bar>
+            <ChartLegend content={<ChartLegendContent />} />
+            <Bar dataKey="Intrinsic" fill="var(--color-Intrinsic)" radius={4} />
+            <Bar dataKey="Extraneous" fill="var(--color-Extraneous)" radius={4} />
           </BarChart>
-        </ResponsiveContainer>
+        </ChartContainer>
       </CardContent>
     </AnalysisCard>
   );
