@@ -27,6 +27,7 @@ import { topicsForClass } from "@/lib/hooks/courseLookup";
 import { cn } from "@/lib/hooks/utils";
 import { friendlyError } from "@/lib/hooks/utils";
 import { InlineError, destructiveBorder } from "@/components/common";
+import { endConflictsWithStart, isAtOrBefore } from "@/lib/datetime";
 
 interface PerClass {
   classId: string;
@@ -80,7 +81,21 @@ export function CrossClassSessionCreator() {
       }
       return next;
     });
-    setRows((prev) => prev.map((r) => (r.classId === classId ? { ...r, ...patch } : r)));
+    setRows((prev) =>
+      prev.map((r) => {
+        if (r.classId !== classId) return r;
+        const next = { ...r, ...patch };
+        if (
+          typeof patch.startsAt === "string" &&
+          patch.startsAt &&
+          r.endsAt &&
+          endConflictsWithStart(patch.startsAt, r.endsAt)
+        ) {
+          next.endsAt = "";
+        }
+        return next;
+      }),
+    );
   };
 
   const handleLaunch = async () => {
@@ -108,12 +123,8 @@ export function CrossClassSessionCreator() {
       }
       if (!r.endsAt) {
         errors.endsAt = "Pick an end date/time.";
-      }
-      if (r.startsAt && r.endsAt && new Date(r.endsAt) <= new Date(r.startsAt)) {
+      } else if (r.startsAt && isAtOrBefore(new Date(r.endsAt), new Date(r.startsAt))) {
         errors.endsAt = "End must be after start.";
-      }
-      if (r.endsAt && new Date(r.endsAt) <= new Date()) {
-        errors.endsAt = "End time cannot be in the past.";
       }
 
       if (Object.keys(errors).length > 0) {
@@ -279,6 +290,7 @@ export function CrossClassSessionCreator() {
                       <DateTimePicker
                         value={r.startsAt}
                         onChange={(iso) => updateRow(r.classId, { startsAt: iso })}
+                        quickPresets
                         className={fieldErrors?.startsAt ? destructiveBorder : ""}
                       />
                     </div>
@@ -286,6 +298,10 @@ export function CrossClassSessionCreator() {
                       <DateTimePicker
                         value={r.endsAt}
                         onChange={(iso) => updateRow(r.classId, { endsAt: iso })}
+                        minDateTime={r.startsAt}
+                        quickPresets
+                        disabled={!r.startsAt}
+                        placeholder={r.startsAt ? "Pick date & time" : "Pick start date/time first"}
                         className={fieldErrors?.endsAt ? destructiveBorder : ""}
                       />
                     </div>

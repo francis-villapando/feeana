@@ -26,6 +26,7 @@ import type { Session } from "@/lib/types/types";
 import { ConfirmationDialog, DateTimePicker } from "@/components/faculty";
 import { InlineError, destructiveBorder } from "@/components/common";
 import { friendlyError, unchangedFields, noChangesMessage } from "@/lib/hooks/utils";
+import { endConflictsWithStart, isAtOrBefore } from "@/lib/datetime";
 
 interface SessionEditDialogProps {
   session: Session;
@@ -68,16 +69,15 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
       setStartsAtError("Pick a start date/time.");
       return;
     }
+    const endInvalid = Boolean(
+      endsAt && startsAt && isAtOrBefore(new Date(endsAt), new Date(startsAt)),
+    );
     if (!endsAt) {
       setEndsAtError("Pick an end date/time.");
       return;
     }
-    if (new Date(endsAt) <= new Date(startsAt)) {
+    if (endInvalid) {
       setEndsAtError("End must be after start.");
-      return;
-    }
-    if (new Date(endsAt) <= new Date()) {
-      setEndsAtError("End time cannot be in the past.");
       return;
     }
 
@@ -172,7 +172,9 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
                 onChange={(v) => {
                   setStartsAt(v);
                   setStartsAtError("");
+                  setEndsAt((prev) => (prev && endConflictsWithStart(v, prev) ? "" : prev));
                 }}
+                quickPresets
                 className={startsAtError ? destructiveBorder : ""}
               />
               <InlineError errorMessage={startsAtError} />
@@ -185,6 +187,10 @@ export function SessionEditDialog({ session, onClose }: SessionEditDialogProps) 
                   setEndsAt(v);
                   setEndsAtError("");
                 }}
+                minDateTime={startsAt}
+                quickPresets
+                disabled={!startsAt}
+                placeholder={startsAt ? "Pick date & time" : "Pick start date/time first"}
                 className={endsAtError ? destructiveBorder : ""}
               />
               <InlineError errorMessage={endsAtError} />

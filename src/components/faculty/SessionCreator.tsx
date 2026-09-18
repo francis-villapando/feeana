@@ -17,6 +17,7 @@ import { useCourseStore } from "@/lib/stores/courseStore";
 import { topicsForClass } from "@/lib/hooks/courseLookup";
 import { InlineError, destructiveBorder } from "@/components/common";
 import { friendlyError } from "@/lib/hooks/utils";
+import { endConflictsWithStart, isAtOrBefore } from "@/lib/datetime";
 
 export function SessionCreator({ classId }: { classId: string }) {
   const { createSession, getClass } = useClassStore();
@@ -46,18 +47,16 @@ export function SessionCreator({ classId }: { classId: string }) {
     const topic = availableTopics.find((t) => t.id === topicId);
     if (!topic) setTopicError("Pick a topic for this session.");
     if (!startsAt) setStartsAtError("Pick a start date/time.");
-    if (!endsAt) setEndsAtError("Pick an end date/time.");
-    if (startsAt && endsAt && new Date(endsAt) <= new Date(startsAt))
+    const endInvalid = Boolean(
+      endsAt && startsAt && isAtOrBefore(new Date(endsAt), new Date(startsAt)),
+    );
+    if (!endsAt) {
+      setEndsAtError("Pick an end date/time.");
+    } else if (endInvalid) {
       setEndsAtError("End must be after start.");
-    if (endsAt && new Date(endsAt) <= new Date()) setEndsAtError("End time cannot be in the past.");
+    }
 
-    const hasError =
-      !topic ||
-      !startsAt ||
-      !endsAt ||
-      (startsAt !== "" && endsAt !== "" && new Date(endsAt) <= new Date(startsAt)) ||
-      (endsAt !== "" && new Date(endsAt) <= new Date());
-    if (hasError) return;
+    if (!topic || !startsAt || !endsAt || endInvalid) return;
 
     setStarting(true);
     try {
@@ -132,7 +131,9 @@ export function SessionCreator({ classId }: { classId: string }) {
             onChange={(v) => {
               setStartsAt(v);
               setStartsAtError("");
+              setEndsAt((prev) => (prev && endConflictsWithStart(v, prev) ? "" : prev));
             }}
+            quickPresets
             className={startsAtError ? destructiveBorder : ""}
           />
           <InlineError errorMessage={startsAtError} />
@@ -145,6 +146,10 @@ export function SessionCreator({ classId }: { classId: string }) {
               setEndsAt(v);
               setEndsAtError("");
             }}
+            minDateTime={startsAt}
+            quickPresets
+            disabled={!startsAt}
+            placeholder={startsAt ? "Pick date & time" : "Pick start date/time first"}
             className={endsAtError ? destructiveBorder : ""}
           />
           <InlineError errorMessage={endsAtError} />

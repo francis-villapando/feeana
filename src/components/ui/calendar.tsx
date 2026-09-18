@@ -93,7 +93,7 @@ function Calendar({
         range_middle: cn("rounded-none", defaultClassNames.range_middle),
         range_end: cn("bg-accent rounded-r-md", defaultClassNames.range_end),
         today: cn(
-          "bg-accent text-accent-foreground rounded-md data-[selected=true]:rounded-none",
+          "bg-accent text-accent-foreground rounded-md data-[selected=true]:bg-transparent data-[selected=true]:text-inherit data-[selected=true]:rounded-none",
           defaultClassNames.today,
         ),
         outside: cn(
