@@ -14,14 +14,16 @@ import { InterpretationBlock } from "./InterpretationBlock";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import { interpretDistribution } from "./interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
-import { CLT_COLOR_ORDER } from "@/lib/constants/chartColors";
+import { CHART_COLORS, CLT_COLOR_ORDER } from "@/lib/constants/chartColors";
+import { toTitleCase } from "@/lib/hooks/utils";
 
 interface CltDistChartProps {
   data: DistEntry[];
 }
 
+const cltColorMap = Object.fromEntries(CLT_COLOR_ORDER);
+
 export function CltDistChart({ data }: CltDistChartProps) {
-  const colorMap = Object.fromEntries(CLT_COLOR_ORDER);
   const categorizedData = data.filter((entry) => entry.label !== "Uncategorized");
   const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
   const interpretation = interpretDistribution(categorizedData, { kind: "clt", totalFeedback });
@@ -34,27 +36,29 @@ export function CltDistChart({ data }: CltDistChartProps) {
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={Math.max(220, categorizedData.length * 48)}>
-          <BarChart data={categorizedData} layout="vertical">
-            <CartesianGrid stroke="var(--color-border)" horizontal={false} />
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={categorizedData}>
+            <CartesianGrid stroke="var(--color-border)" vertical={false} />
             <XAxis
-              type="number"
-              domain={[0, "dataMax"]}
-              allowDecimals={false}
+              dataKey="label"
+              tickFormatter={(label: string) => toTitleCase(label)}
               stroke="var(--color-muted-foreground)"
               fontSize={11}
             />
             <YAxis
-              type="category"
-              dataKey="label"
+              type="number"
+              domain={[0, Math.max(totalFeedback, 1)]}
+              allowDecimals={false}
               stroke="var(--color-muted-foreground)"
               fontSize={11}
-              width={120}
             />
-            <Tooltip {...chartTooltipProps} content={<ChartTooltipContent colorMap={colorMap} />} />
-            <Bar dataKey="value" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]}>
+            <Tooltip
+              {...chartTooltipProps}
+              content={<ChartTooltipContent colorMap={cltColorMap} />}
+            />
+            <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={80}>
               {categorizedData.map((entry) => (
-                <Cell key={entry.label} fill={colorMap[entry.label] || "var(--color-chart-2)"} />
+                <Cell key={entry.label} fill={cltColorMap[entry.label] || CHART_COLORS[0]} />
               ))}
             </Bar>
           </BarChart>

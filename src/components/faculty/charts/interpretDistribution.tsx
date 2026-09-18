@@ -198,7 +198,8 @@ function interpretRbt(data: DistEntry[], totalFeedback: number): ReactNode {
         {otherLevels.map((entry, index) => (
           <Fragment key={entry.label}>
             {index > 0 ? ", " : ""}
-            <AccentLabel>{entry.label}</AccentLabel> ({RBT_LEVEL_NUMBERS[entry.label] ?? "?"})
+            <AccentLabel>{entry.label}</AccentLabel>{" "}
+            <AccentLabel>({RBT_LEVEL_NUMBERS[entry.label] ?? "?"})</AccentLabel>
           </Fragment>
         ))}
         .
