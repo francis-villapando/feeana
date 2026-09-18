@@ -30,7 +30,9 @@ function WarningTooltipContent({ terms }: { terms: RecommendationTerm[] }) {
           <p className="text-xs font-semibold uppercase tracking-wider text-primary">
             {TERM_KIND_LABEL[term.kind] ?? term.kind}
           </p>
-          <p className="text-sm leading-relaxed">{term.kind === "issue" ? term.detail : term.text}</p>
+          <p className="text-sm leading-relaxed">
+            {term.kind === "issue" ? term.detail : term.text}
+          </p>
         </div>
       ))}
     </div>
