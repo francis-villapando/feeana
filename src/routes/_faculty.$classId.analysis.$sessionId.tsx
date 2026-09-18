@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, PlayCircle, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -363,6 +363,7 @@ function Results({ result }: { result: AnalysisResult }) {
   const session = sessions.find((s) => s.id === sessionId);
   const { feedback } = useFeedbackStore();
   const { ilos } = useCourseStore();
+  const feedbackById = useMemo(() => new Map(feedback.map((f) => [f.id, f])), [feedback]);
   if (!session) return null;
   const iloStatuses = computeIloStatuses(session, result, feedback, ilos);
 
@@ -408,9 +409,9 @@ function Results({ result }: { result: AnalysisResult }) {
         </div>
       </section>
 
-      <section aria-label="Learning-outcome attainment" className="space-y-4">
-        <SectionHeading>Learning-outcome attainment</SectionHeading>
-        <IloGapCard statuses={iloStatuses} gaps={result.gaps} />
+      <section aria-label="Goal attainment" className="space-y-4">
+        <SectionHeading>Goal attainment</SectionHeading>
+        <IloGapCard statuses={iloStatuses} gaps={result.gaps} feedback={feedbackById} />
       </section>
 
       <section aria-label="Recommended next actions" className="space-y-4">
