@@ -24,8 +24,9 @@ interface IssueDistChartProps {
 const issueColorMap = Object.fromEntries(ISSUE_COLOR_ORDER);
 
 export function IssueDistChart({ data }: IssueDistChartProps) {
+  const categorizedData = data.filter((entry) => entry.label.toLowerCase() !== "uncategorized");
   const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
-  const interpretation = interpretDistribution(data, { kind: "issue", totalFeedback });
+  const interpretation = interpretDistribution(categorizedData, { kind: "issue", totalFeedback });
 
   return (
     <AnalysisCard className="lg:col-span-3">
@@ -35,8 +36,8 @@ export function IssueDistChart({ data }: IssueDistChartProps) {
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={Math.max(220, data.length * 32)}>
-          <BarChart data={data} layout="vertical">
+        <ResponsiveContainer width="100%" height={Math.max(220, categorizedData.length * 32)}>
+          <BarChart data={categorizedData} layout="vertical">
             <CartesianGrid stroke="var(--color-border)" horizontal={false} />
             <XAxis
               type="number"
@@ -58,7 +59,7 @@ export function IssueDistChart({ data }: IssueDistChartProps) {
               content={<ChartTooltipContent colorMap={issueColorMap} />}
             />
             <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-              {data.map((entry) => (
+              {categorizedData.map((entry) => (
                 <Cell key={entry.label} fill={issueColorMap[entry.label] || CHART_COLORS[0]} />
               ))}
             </Bar>

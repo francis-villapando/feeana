@@ -24,7 +24,8 @@ interface AspectDistChartProps {
 const aspectColorMap = Object.fromEntries(ASPECT_COLOR_ORDER);
 
 export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
-  const interpretation = interpretDistribution(data, { kind: "aspect", totalFeedback });
+  const categorizedData = data.filter((entry) => entry.label !== "Uncategorized");
+  const interpretation = interpretDistribution(categorizedData, { kind: "aspect", totalFeedback });
 
   return (
     <AnalysisCard className="lg:col-span-2">
@@ -36,8 +37,8 @@ export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={Math.max(220, data.length * 32)}>
-          <BarChart data={data} layout="vertical">
+        <ResponsiveContainer width="100%" height={Math.max(220, categorizedData.length * 32)}>
+          <BarChart data={categorizedData} layout="vertical">
             <CartesianGrid stroke="var(--color-border)" horizontal={false} />
             <XAxis
               type="number"
@@ -58,7 +59,7 @@ export function AspectDistChart({ data, totalFeedback }: AspectDistChartProps) {
               content={<ChartTooltipContent colorMap={aspectColorMap} />}
             />
             <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-              {data.map((entry) => (
+              {categorizedData.map((entry) => (
                 <Cell key={entry.label} fill={aspectColorMap[entry.label] || CHART_COLORS[0]} />
               ))}
             </Bar>

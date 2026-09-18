@@ -22,8 +22,9 @@ interface CltDistChartProps {
 
 export function CltDistChart({ data }: CltDistChartProps) {
   const colorMap = Object.fromEntries(CLT_COLOR_ORDER);
+  const categorizedData = data.filter((entry) => entry.label !== "Uncategorized");
   const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
-  const interpretation = interpretDistribution(data, { kind: "clt", totalFeedback });
+  const interpretation = interpretDistribution(categorizedData, { kind: "clt", totalFeedback });
 
   return (
     <AnalysisCard>
@@ -33,8 +34,8 @@ export function CltDistChart({ data }: CltDistChartProps) {
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={Math.max(220, data.length * 48)}>
-          <BarChart data={data} layout="vertical">
+        <ResponsiveContainer width="100%" height={Math.max(220, categorizedData.length * 48)}>
+          <BarChart data={categorizedData} layout="vertical">
             <CartesianGrid stroke="var(--color-border)" horizontal={false} />
             <XAxis
               type="number"
@@ -52,7 +53,7 @@ export function CltDistChart({ data }: CltDistChartProps) {
             />
             <Tooltip {...chartTooltipProps} content={<ChartTooltipContent colorMap={colorMap} />} />
             <Bar dataKey="value" fill="var(--color-chart-1)" radius={[0, 6, 6, 0]}>
-              {data.map((entry) => (
+              {categorizedData.map((entry) => (
                 <Cell key={entry.label} fill={colorMap[entry.label] || "var(--color-chart-2)"} />
               ))}
             </Bar>

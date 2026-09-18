@@ -347,6 +347,19 @@ function Results({ result }: { result: AnalysisResult }) {
   if (!session) return null;
   const iloStatuses = computeIloStatuses(session, result, feedback, ilos);
 
+  const uncategorizedCount =
+    (result.aspectDist.find((e) => e.label === "Uncategorized")?.value ?? 0) +
+    (result.issueDist.find((e) => e.label === "Uncategorized")?.value ?? 0) +
+    (result.rbtDist.find((e) => e.label === "Uncategorized")?.value ?? 0);
+
+  const uncategorizedTexts = [
+    ...new Set([
+      ...(result.aspectDist.find((e) => e.label === "Uncategorized")?.feedbackTexts ?? []),
+      ...(result.issueDist.find((e) => e.label === "Uncategorized")?.feedbackTexts ?? []),
+      ...(result.rbtDist.find((e) => e.label === "Uncategorized")?.feedbackTexts ?? []),
+    ]),
+  ];
+
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <AspectDistChart data={result.aspectDist} totalFeedback={result.totalFeedback} />
@@ -356,8 +369,12 @@ function Results({ result }: { result: AnalysisResult }) {
         <RbtDistChart data={result.rbtDist} />
         <CltDistChart data={result.cltDist} />
       </div>
-      <UncategorizedNotice rbtDist={result.rbtDist} cltDist={result.cltDist} />
-      <IloGapCard statuses={iloStatuses} />
+      <UncategorizedNotice
+        count={uncategorizedCount}
+        totalFeedback={result.totalFeedback}
+        feedbackTexts={uncategorizedTexts}
+      />
+      <IloGapCard statuses={iloStatuses} gaps={result.gaps} />
       <RecommendationCuesCard recommendations={result.recommendations} ilos={ilos} />
       <WarningsCard data={result.warnings} />
     </div>
