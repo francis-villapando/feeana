@@ -18,13 +18,14 @@ import { RBT_LEVEL_NUMBERS } from "@/lib/algorithm/rules";
 
 interface RbtDistChartProps {
   data: DistEntry[];
+  className?: string;
 }
 
 const RBT_LEVEL_ORDER = Object.entries(RBT_LEVEL_NUMBERS)
   .sort((a, b) => a[1] - b[1])
   .map(([label]) => label);
 
-export function RbtDistChart({ data }: RbtDistChartProps) {
+export function RbtDistChart({ data, className }: RbtDistChartProps) {
   const colorMap = Object.fromEntries(
     RBT_COLOR_ORDER.map(([label, color]) => {
       const num = RBT_LEVEL_NUMBERS[label];
@@ -50,14 +51,14 @@ export function RbtDistChart({ data }: RbtDistChartProps) {
   const maxCount = Math.max(1, ...radarData.map((d) => d.value));
 
   return (
-    <AnalysisCard>
+    <AnalysisCard className={className}>
       <CardHeader>
         <CardTitle className="text-base">RBT distribution</CardTitle>
         <CardDescription>Cognitive-process level distribution.</CardDescription>
         <InterpretationBlock text={interpretation} />
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={320}>
+      <CardContent className="flex-1 flex flex-col min-h-[320px]">
+        <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="72%">
             <PolarGrid stroke="var(--color-border)" gridType="polygon" />
             <PolarAngleAxis

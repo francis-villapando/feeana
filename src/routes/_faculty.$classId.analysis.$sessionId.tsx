@@ -322,19 +322,38 @@ function LoadingState() {
           <KpiCardSkeleton key={i} />
         ))}
       </div>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      <div className="grid gap-4 lg:grid-cols-12">
+        <div className="lg:col-span-6">
           <ChartCardSkeleton height="h-64" />
         </div>
-        <ChartCardSkeleton height="h-64" />
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-6">
+          <ChartCardSkeleton height="h-64" />
+        </div>
+        <div className="lg:col-span-4">
+          <ChartCardSkeleton height="h-64" />
+        </div>
+        <div className="lg:col-span-4">
+          <ChartCardSkeleton height="h-64" />
+        </div>
+        <div className="lg:col-span-4">
+          <ChartCardSkeleton height="h-64" />
+        </div>
+        <div className="lg:col-span-12">
           <ChartCardSkeleton height="h-48" />
         </div>
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-12">
           <ChartCardSkeleton height="h-72" />
         </div>
       </div>
     </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      {children}
+    </h2>
   );
 }
 
@@ -360,23 +379,47 @@ function Results({ result }: { result: AnalysisResult }) {
     ]),
   ];
 
+  const aspectCount = result.aspectDist.filter((e) => e.label !== "Uncategorized").length;
+  const issueCount = result.issueDist.filter(
+    (e) => e.label.toLowerCase() !== "uncategorized",
+  ).length;
+  const distHeight = Math.max(220, Math.max(aspectCount, issueCount) * 32);
+
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <AspectDistChart data={result.aspectDist} totalFeedback={result.totalFeedback} />
-      <PolarityDistChart data={result.polarityDist} />
-      <IssueDistChart data={result.issueDist} />
-      <div className="grid gap-4 lg:grid-cols-2 lg:col-span-3">
-        <RbtDistChart data={result.rbtDist} />
-        <CltDistChart data={result.cltDist} />
-      </div>
-      <UncategorizedNotice
-        count={uncategorizedCount}
-        totalFeedback={result.totalFeedback}
-        feedbackTexts={uncategorizedTexts}
-      />
-      <IloGapCard statuses={iloStatuses} gaps={result.gaps} />
-      <RecommendationCuesCard recommendations={result.recommendations} ilos={ilos} />
-      <WarningsCard data={result.warnings} />
+    <div className="space-y-8">
+      <section aria-label="What students wrote" className="space-y-4">
+        <SectionHeading>What students wrote</SectionHeading>
+        <div className="grid gap-4 lg:grid-cols-12">
+          <AspectDistChart
+            data={result.aspectDist}
+            totalFeedback={result.totalFeedback}
+            className="lg:col-span-6"
+            height={distHeight}
+          />
+          <IssueDistChart data={result.issueDist} className="lg:col-span-6" height={distHeight} />
+          <PolarityDistChart data={result.polarityDist} className="lg:col-span-4 flex flex-col" />
+          <RbtDistChart data={result.rbtDist} className="lg:col-span-4 flex flex-col" />
+          <CltDistChart data={result.cltDist} className="lg:col-span-4 flex flex-col" />
+          <UncategorizedNotice
+            count={uncategorizedCount}
+            totalFeedback={result.totalFeedback}
+            feedbackTexts={uncategorizedTexts}
+          />
+        </div>
+      </section>
+
+      <section aria-label="Learning-outcome attainment" className="space-y-4">
+        <SectionHeading>Learning-outcome attainment</SectionHeading>
+        <IloGapCard statuses={iloStatuses} gaps={result.gaps} />
+      </section>
+
+      <section aria-label="Recommended next actions" className="space-y-4">
+        <SectionHeading>Recommended next actions</SectionHeading>
+        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+          <RecommendationCuesCard recommendations={result.recommendations} ilos={ilos} />
+          <WarningsCard data={result.warnings} />
+        </div>
+      </section>
     </div>
   );
 }

@@ -11,21 +11,22 @@ const polarityColorMap = Object.fromEntries(POLARITY_COLOR_ORDER);
 
 interface PolarityDistChartProps {
   data: DistEntry[];
+  className?: string;
 }
 
-export function PolarityDistChart({ data }: PolarityDistChartProps) {
+export function PolarityDistChart({ data, className }: PolarityDistChartProps) {
   const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
   const interpretation = interpretDistribution(data, { kind: "polarity", totalFeedback });
 
   return (
-    <AnalysisCard>
+    <AnalysisCard className={className}>
       <CardHeader>
         <CardTitle className="text-base">Polarity distribution</CardTitle>
         <CardDescription>Feedback tone distribution.</CardDescription>
         <InterpretationBlock text={interpretation} />
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={260}>
+      <CardContent className="flex-1 flex flex-col min-h-[320px]">
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
