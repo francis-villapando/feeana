@@ -116,14 +116,14 @@ export function GeneratePedagogicalCue(
       detail: `The session topic.`,
     },
     {
-      text: rbtName,
-      kind: "RBT",
-      detail: RBT_DESCRIPTIONS[rbtName] ?? rbtName,
-    },
-    {
       text: uniqueIssue.tti,
       kind: "TTI",
       detail: TTI_DESCRIPTIONS[uniqueIssue.tti] ?? uniqueIssue.tti,
+    },
+    {
+      text: rbtName,
+      kind: "RBT",
+      detail: RBT_DESCRIPTIONS[rbtName] ?? rbtName,
     },
     ...(uniqueIssue.isGap
       ? [
