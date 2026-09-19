@@ -18,7 +18,7 @@ import {
   SessionCreator,
   SessionCard as FacultySessionCard,
 } from "@/components/faculty";
-import { TrendLineCard, TrendBarCard } from "@/components/faculty/charts";
+import { MetricTrendCard, CategoryTrendCard } from "@/components/faculty/charts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -177,7 +177,6 @@ function ClassLayout() {
         </Link>
       </Button>
 
-      {/* KPI cards */}
       <KeyMetricsRow
         submissionRate={submissionRate}
         iloRate={iloRate}
@@ -186,10 +185,9 @@ function ClassLayout() {
         }
         iloHint={iloRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
       />
-      <TrendLineCard trend={trend} />
-      <TrendBarCard trend={trend} />
+      <MetricTrendCard trend={trend} />
+      <CategoryTrendCard trend={trend} />
 
-      {/* Two-column: tabs left, details + creator right */}
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-4 lg:col-start-2 lg:row-start-1">
           <ClassDetailsCard
