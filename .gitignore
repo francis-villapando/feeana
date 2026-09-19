@@ -36,9 +36,6 @@ dist-ssr
 __pycache__/
 *.pyc
 
-plans
-.playwright-mcp/
-
 # PyTorch
 scripts/training/checkpoints/**/*.pt
 
