@@ -13,7 +13,7 @@ export function RecommendationCuesCard({ recommendations, ilos }: Recommendation
   const sorted = [...recommendations].sort((a, b) => b.priority - a.priority);
 
   return (
-    <AnalysisCard>
+    <AnalysisCard className="flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Lightbulb className="h-4 w-4 text-primary" /> Recommendation cues
@@ -22,9 +22,9 @@ export function RecommendationCuesCard({ recommendations, ilos }: Recommendation
           Hover the highlighted terms to see how each maps across pedagogical frameworks.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         {sorted.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
+          <p className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
             No recommendation cues needed for this session.
           </p>
         ) : (

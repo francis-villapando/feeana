@@ -49,14 +49,14 @@ export function WarningsCard({ data }: WarningsCardProps) {
   const sorted = [...data].sort((a, b) => b.priority - a.priority);
 
   return (
-    <AnalysisCard>
+    <AnalysisCard className="flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <AlertTriangle className="h-4 w-4 text-warning" /> Warnings
         </CardTitle>
         <CardDescription>Issues detected below the recommendation threshold.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         <div className="mb-3 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
           <p className="flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-destructive/30 bg-destructive/10" />
@@ -76,7 +76,7 @@ export function WarningsCard({ data }: WarningsCardProps) {
           </p>
         </div>
         {sorted.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
+          <p className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border/60 bg-background/30 px-3 py-6 text-center text-xs text-muted-foreground">
             No warning for this session.
           </p>
         ) : (
