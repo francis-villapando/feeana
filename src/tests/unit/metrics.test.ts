@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computeDashboardIloAchievement, iloAchievementForSession } from "../../lib/hooks/metrics";
+import {
+  avgPolarityForSession,
+  computeDashboardIloAchievement,
+  iloAchievementForSession,
+} from "../../lib/hooks/metrics";
 import type { AnalysisResult, Class, Session } from "../../lib/types/types";
 
 function makeSession(id: string, classId: string, iloIds: string[]): Session {
@@ -163,5 +167,99 @@ describe("computeDashboardIloAchievement", () => {
       ),
     };
     expect(computeDashboardIloAchievement([classA, classB], sessions, results)).toBe(50);
+  });
+});
+
+describe("avgPolarityForSession", () => {
+  function result(polarityDist: [string, number][]): AnalysisResult {
+    return {
+      sessionId: "s1",
+      totalFeedback: 0,
+      aspectDist: [],
+      issueDist: [],
+      polarityDist: polarityDist.map(([label, value]) => ({ label, value })),
+      rbtDist: [],
+      cltDist: [],
+      gaps: [],
+      recommendations: [],
+      warnings: [],
+    };
+  }
+
+  it("returns +1.00 when all feedback is positive", () => {
+    expect(
+      avgPolarityForSession(
+        result([
+          ["Positive", 2],
+          ["Neutral", 0],
+          ["Negative", 0],
+        ]),
+      ),
+    ).toBe(1);
+  });
+
+  it("returns -1.00 when all feedback is negative", () => {
+    expect(
+      avgPolarityForSession(
+        result([
+          ["Positive", 0],
+          ["Neutral", 0],
+          ["Negative", 3],
+        ]),
+      ),
+    ).toBe(-1);
+  });
+
+  it("returns 0 when feedback is evenly positive and negative", () => {
+    expect(
+      avgPolarityForSession(
+        result([
+          ["Positive", 1],
+          ["Neutral", 0],
+          ["Negative", 1],
+        ]),
+      ),
+    ).toBe(0);
+  });
+
+  it("returns 0 when all feedback is neutral", () => {
+    expect(
+      avgPolarityForSession(
+        result([
+          ["Positive", 0],
+          ["Neutral", 4],
+          ["Negative", 0],
+        ]),
+      ),
+    ).toBe(0);
+  });
+
+  it("computes a mixed average rounded to two decimals", () => {
+    expect(
+      avgPolarityForSession(
+        result([
+          ["Positive", 2],
+          ["Neutral", 0],
+          ["Negative", 1],
+        ]),
+      ),
+    ).toBe(0.33);
+  });
+
+  it("returns 0 when there is no analysis or no polarity distribution", () => {
+    expect(avgPolarityForSession(undefined)).toBe(0);
+    expect(avgPolarityForSession(result([]))).toBe(0);
+  });
+
+  it("matches labels case-insensitively", () => {
+    expect(
+      avgPolarityForSession(
+        result([
+          ["positive", 2],
+          ["neutral", 0],
+          ["negative", 0],
+        ]),
+      ),
+    ).toBe(1);
   });
 });

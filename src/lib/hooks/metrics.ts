@@ -51,7 +51,6 @@ export function averageRate(values: number[]): number | null {
   return Math.round(clean.reduce((a, b) => a + b, 0) / clean.length);
 }
 
-/** Filter sessions that have analysis results cached. */
 export function sessionsWithResults(
   sessions: Session[],
   results: Record<string, AnalysisResult>,
@@ -59,8 +58,7 @@ export function sessionsWithResults(
   return sessions.filter((s) => results[s.id]);
 }
 
-/** Class-level submission rate: average of per-session submission rates.
- *  Only sessions with `last_analyzed_at` are included. */
+/** Only sessions with `last_analyzed_at` are included. */
 export function computeClassSubmissionRate(
   classSessions: Session[],
   cls: Class | undefined,
@@ -71,8 +69,7 @@ export function computeClassSubmissionRate(
   return averageRate(analyzed.map((s) => submissionRateForSession(s, cls, feedback)));
 }
 
-/** Class-level ILO achievement: average of per-session ILO rates.
- *  Only sessions with cached results are included. */
+/** Only sessions with cached results are included. */
 export function computeClassIloAchievement(
   classSessions: Session[],
   results: Record<string, AnalysisResult>,
@@ -85,7 +82,6 @@ export function computeClassIloAchievement(
   return averageRate(rates);
 }
 
-/** Dashboard-level submission rate: per-class averages → dashboard average. */
 export function computeDashboardSubmissionRate(
   activeClasses: Class[],
   sessions: Session[],
@@ -100,7 +96,6 @@ export function computeDashboardSubmissionRate(
   return averageRate(classRates);
 }
 
-/** Dashboard-level ILO achievement: per-class ILO averages → dashboard average. */
 export function computeDashboardIloAchievement(
   activeClasses: Class[],
   sessions: Session[],
@@ -115,36 +110,25 @@ export function computeDashboardIloAchievement(
   return averageRate(classRates);
 }
 
-/** Class-level participation: responses / (students × sessions). */
 export function classParticipation(cls: Class, sessions: Session[], feedback: Feedback[]): number {
   if (!cls || cls.studentCount === 0 || sessions.length === 0) return 0;
   const responses = feedback.filter((f) => sessions.some((s) => s.id === f.sessionId)).length;
   return Math.min(100, Math.round((responses / (cls.studentCount * sessions.length)) * 100));
 }
 
-/** Map polarity label to numeric score: pos=+1, neu=0, neg=-1. */
-function polarityScore(label: string): number {
-  switch (label.toLowerCase()) {
-    case "pos":
-    case "positive":
-      return 1;
-    case "neg":
-    case "negative":
-      return -1;
-    default:
-      return 0;
+/** Average polarity from the session's cached polarity distribution: pos=+1, neu=0, neg=-1. */
+export function avgPolarityForSession(analysis?: AnalysisResult): number {
+  if (!analysis?.polarityDist || analysis.polarityDist.length === 0) return 0;
+  const counts: Record<string, number> = {};
+  for (const entry of analysis.polarityDist) {
+    counts[entry.label.toLowerCase()] = entry.value;
   }
-}
-
-/** Average polarity across all aspects of all feedback in the session. */
-export function avgPolarityForSession(session: Session, feedback: Feedback[]): number {
-  const items = feedback.filter((f) => f.sessionId === session.id);
-  const scores: number[] = [];
-  for (const f of items) {
-    for (const a of f.aspects) scores.push(polarityScore(a.polarity));
-  }
-  if (scores.length === 0) return 0;
-  return scores.reduce((a, b) => a + b, 0) / scores.length;
+  const pos = counts["positive"] ?? 0;
+  const neg = counts["negative"] ?? 0;
+  const neu = counts["neutral"] ?? 0;
+  const total = pos + neg + neu;
+  if (total === 0) return 0;
+  return Number(((pos - neg) / total).toFixed(2));
 }
 
 export interface TrendPoint {
@@ -161,10 +145,7 @@ export interface TrendPoint {
   cltDist: DistEntry[];
 }
 
-/**
- * Per-session trend data for a class: scalar metrics + distributions
- * across analyzed sessions, sorted chronologically by startsAt.
- */
+/** Per-session trend rows for analyzed sessions, sorted by `startsAt`. */
 export function classTrendData(
   sessions: Session[],
   analyses: Record<string, AnalysisResult>,
@@ -181,7 +162,7 @@ export function classTrendData(
         sessionId: s.id,
         submissionRate: submissionRateForSession(s, cls, feedback),
         iloAchievement: iloAchievementForSession(s, analyses),
-        avgPolarity: Number(avgPolarityForSession(s, feedback).toFixed(2)),
+        avgPolarity: avgPolarityForSession(analysis),
         recommendationCount: analysis.recommendations.length,
         warningCount: analysis.warnings.length,
         aspectDist: analysis.aspectDist,
