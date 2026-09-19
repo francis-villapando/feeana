@@ -52,8 +52,8 @@ export const ISSUE_COLOR_ORDER: [label: string, color: string][] = [
   ["Classroom Tension", "var(--color-chart-10)"],
   // Extraneous — Classroom Organization
   ["Clarity Deficit", "var(--color-chart-11)"],
-  ["Peer Distraction", "var(--color-chart-11)"],
-  ["Instructional Cadence", "var(--color-chart-12)"],
+  ["Peer Distraction", "var(--color-chart-12)"],
+  ["Instructional Cadence", "var(--color-chart-13)"],
   // Extraneous — Instructional Support
   ["Feedback Latency", "var(--color-chart-14)"],
   ["Uncategorized", "var(--color-muted-foreground)"],

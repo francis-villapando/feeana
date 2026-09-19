@@ -91,6 +91,8 @@ export function ChartTooltipContent({ active, payload, colorMap, dist }: ChartTo
         },
       ];
 
+  const sortedItems = [...items].sort((a, b) => (b.value as number) - (a.value as number));
+
   return (
     <div
       onMouseEnter={() => {
@@ -104,10 +106,10 @@ export function ChartTooltipContent({ active, payload, colorMap, dist }: ChartTo
       }}
       style={chartTooltipProps.contentStyle}
     >
-      {items.map((item, index) => (
+      {sortedItems.map((item, index) => (
         <div
           key={item.label}
-          style={dist && index < items.length - 1 ? { marginBottom: 8 } : undefined}
+          style={dist && index < sortedItems.length - 1 ? { marginBottom: 8 } : undefined}
         >
           <p style={{ fontWeight: 500, color: item.color, margin: 0 }}>{toTitleCase(item.label)}</p>
           <p style={{ color: "var(--color-muted-foreground)", margin: 0, marginTop: 2 }}>

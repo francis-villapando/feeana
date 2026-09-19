@@ -51,6 +51,7 @@ export function AspectDistChart({ data, totalFeedback, className, height }: Aspe
               allowDecimals={false}
               stroke="var(--color-muted-foreground)"
               fontSize={11}
+              padding={{ right: 8 }}
             />
             <YAxis
               type="category"

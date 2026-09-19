@@ -50,6 +50,7 @@ export function IssueDistChart({ data, className, height }: IssueDistChartProps)
               allowDecimals={false}
               stroke="var(--color-muted-foreground)"
               fontSize={11}
+              padding={{ right: 8 }}
             />
             <YAxis
               type="category"

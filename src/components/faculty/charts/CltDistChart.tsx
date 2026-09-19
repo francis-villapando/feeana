@@ -54,15 +54,20 @@ export function CltDistChart({ data, className }: CltDistChartProps) {
           <BarChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="group" tickLine={false} tickMargin={10} axisLine={false} />
-            <YAxis type="number" domain={[0, Math.max(totalFeedback, 1)]} allowDecimals={false} />
+            <YAxis
+              type="number"
+              domain={[0, Math.max(totalFeedback, 1)]}
+              allowDecimals={false}
+              padding={{ top: 8 }}
+            />
             <ChartTooltip
               {...chartTooltipProps}
               cursor={false}
               content={<ChartTooltipContent colorMap={cltColorMap} dist={categorizedData} />}
             />
             <ChartLegend content={<ChartLegendContent />} />
-            <Bar dataKey="Intrinsic" fill="var(--color-Intrinsic)" radius={4} />
-            <Bar dataKey="Extraneous" fill="var(--color-Extraneous)" radius={4} />
+            <Bar dataKey="Intrinsic" fill={cltColorMap["Intrinsic"]} radius={4} />
+            <Bar dataKey="Extraneous" fill={cltColorMap["Extraneous"]} radius={4} />
           </BarChart>
         </ChartContainer>
       </CardContent>

@@ -8,6 +8,6 @@ export { RecommendationCuesCard } from "./RecommendationCuesCard";
 export { WarningsCard } from "./WarningsCard";
 export { AnalysisCard } from "./AnalysisCard";
 export { InterpretationBlock } from "./InterpretationBlock";
-export { TrendLineCard } from "./TrendLineCard";
-export { TrendBarCard } from "./TrendBarCard";
+export { MetricTrendCard } from "./MetricTrendCard";
+export { CategoryTrendCard } from "./CategoryTrendCard";
 export { UncategorizedNotice } from "./UncategorizedNotice";
