@@ -12,7 +12,8 @@ import { CardContent, CardDescription, CardHeader, CardTitle } from "@/component
 import { AnalysisCard } from "./AnalysisCard";
 import { InterpretationBlock } from "./InterpretationBlock";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
-import { interpretDistribution } from "./interpretDistribution";
+import { interpretDistribution, isUncategorized } from "./interpretDistribution";
+import { DistributionEmptyState } from "./DistributionEmptyState";
 import type { DistEntry } from "@/lib/types/types";
 import { CHART_COLORS, ASPECT_COLOR_ORDER } from "@/lib/constants/chartColors";
 
@@ -26,8 +27,14 @@ interface AspectDistChartProps {
 const aspectColorMap = Object.fromEntries(ASPECT_COLOR_ORDER);
 
 export function AspectDistChart({ data, totalFeedback, className, height }: AspectDistChartProps) {
-  const categorizedData = data.filter((entry) => entry.label !== "Uncategorized");
-  const interpretation = interpretDistribution(categorizedData, { kind: "aspect", totalFeedback });
+  const categorizedData = data.filter((entry) => !isUncategorized(entry.label));
+  const uncategorizedCount = data.find((entry) => isUncategorized(entry.label))?.value ?? 0;
+  const interpretation = interpretDistribution(categorizedData, {
+    kind: "aspect",
+    totalFeedback,
+    uncategorizedCount,
+  });
+  const isEmpty = categorizedData.length === 0;
 
   return (
     <AnalysisCard className={className}>
@@ -39,38 +46,49 @@ export function AspectDistChart({ data, totalFeedback, className, height }: Aspe
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer
-          width="100%"
-          height={height ?? Math.max(220, categorizedData.length * 32)}
-        >
-          <BarChart data={categorizedData} layout="vertical">
-            <CartesianGrid stroke="var(--color-border)" horizontal={false} />
-            <XAxis
-              type="number"
-              domain={[0, "dataMax"]}
-              allowDecimals={false}
-              stroke="var(--color-muted-foreground)"
-              fontSize={11}
-              padding={{ right: 8 }}
-            />
-            <YAxis
-              type="category"
-              dataKey="label"
-              stroke="var(--color-muted-foreground)"
-              fontSize={11}
-              width={170}
-            />
-            <Tooltip
-              {...chartTooltipProps}
-              content={<ChartTooltipContent colorMap={aspectColorMap} />}
-            />
-            <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-              {categorizedData.map((entry) => (
-                <Cell key={entry.label} fill={aspectColorMap[entry.label] || CHART_COLORS[0]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {isEmpty ? (
+          <DistributionEmptyState
+            title="No aspects to display"
+            description={
+              uncategorizedCount > 0
+                ? "All responses were Uncategorized, so no aspect pattern could be shown."
+                : "No feedback was available for this distribution."
+            }
+          />
+        ) : (
+          <ResponsiveContainer
+            width="100%"
+            height={height ?? Math.max(220, categorizedData.length * 32)}
+          >
+            <BarChart data={categorizedData} layout="vertical">
+              <CartesianGrid stroke="var(--color-border)" horizontal={false} />
+              <XAxis
+                type="number"
+                domain={[0, "dataMax"]}
+                allowDecimals={false}
+                stroke="var(--color-muted-foreground)"
+                fontSize={11}
+                padding={{ right: 8 }}
+              />
+              <YAxis
+                type="category"
+                dataKey="label"
+                stroke="var(--color-muted-foreground)"
+                fontSize={11}
+                width={170}
+              />
+              <Tooltip
+                {...chartTooltipProps}
+                content={<ChartTooltipContent colorMap={aspectColorMap} />}
+              />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                {categorizedData.map((entry) => (
+                  <Cell key={entry.label} fill={aspectColorMap[entry.label] || CHART_COLORS[0]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </AnalysisCard>
   );

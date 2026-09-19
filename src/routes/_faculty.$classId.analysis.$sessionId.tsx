@@ -375,6 +375,7 @@ function Results({ result }: { result: AnalysisResult }) {
       ...(result.aspectDist.find((e) => e.label === "Uncategorized")?.feedbackTexts ?? []),
       ...(result.issueDist.find((e) => e.label === "Uncategorized")?.feedbackTexts ?? []),
       ...(result.rbtDist.find((e) => e.label === "Uncategorized")?.feedbackTexts ?? []),
+      ...(result.cltDist.find((e) => e.label === "Uncategorized")?.feedbackTexts ?? []),
     ]),
   ];
 

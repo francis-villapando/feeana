@@ -28,8 +28,9 @@ export function UncategorizedNotice({
             <span className="font-medium text-foreground">
               {count} of {totalFeedback} responses ({pct}%)
             </span>{" "}
-            could not be mapped to a standard classification and are excluded from the distributions
-            above.
+            {count === totalFeedback
+              ? "could not be mapped to a standard classification, so none of the distributions above could be populated."
+              : "could not be mapped to a standard classification and are excluded from the distributions above."}
           </p>
           <p className="mt-1 italic">
             Feedback may be designated as <AccentLabel>Uncategorized</AccentLabel> due to processing

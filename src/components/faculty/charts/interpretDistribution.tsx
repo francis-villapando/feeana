@@ -9,6 +9,13 @@ type ChartKind = "aspect" | "polarity" | "issue" | "rbt" | "clt";
 interface InterpretationContext {
   kind: ChartKind;
   totalFeedback: number;
+  /** Count of responses routed to "Uncategorized"; lets interpreters distinguish
+   *  "no feedback" from "all feedback was uncategorized". */
+  uncategorizedCount?: number;
+}
+
+export function isUncategorized(label: string): boolean {
+  return label.toLowerCase() === "uncategorized";
 }
 
 function formatPercent(count: number, total: number): string {
@@ -58,7 +65,7 @@ function interpretAspectOrIssue(
   const displayLabel = (label: string) => (kind === "issue" ? toTitleCase(label) : label);
 
   // Most prominent category
-  const categorizedEntries = data.filter((entry) => entry.label !== "Uncategorized");
+  const categorizedEntries = data.filter((entry) => !isUncategorized(entry.label));
   const maxCount = Math.max(...categorizedEntries.map((entry) => entry.value));
   const topEntries = categorizedEntries.filter((entry) => entry.value === maxCount);
   const topLabels = topEntries.map((entry) => displayLabel(entry.label));
@@ -162,7 +169,7 @@ function interpretPolarity(data: DistEntry[], totalFeedback: number): ReactNode 
 function interpretRbt(data: DistEntry[], totalFeedback: number): ReactNode {
   if (data.length === 0) return "No data available for interpretation.";
 
-  const categorizedEntries = data.filter((entry) => entry.label !== "Uncategorized");
+  const categorizedEntries = data.filter((entry) => !isUncategorized(entry.label));
 
   if (categorizedEntries.length === 0) {
     return <>No prominent cognitive-process pattern was identified.</>;
@@ -217,7 +224,7 @@ function interpretRbt(data: DistEntry[], totalFeedback: number): ReactNode {
 function interpretClt(data: DistEntry[], totalFeedback: number): ReactNode {
   if (data.length === 0) return "No data available for interpretation.";
 
-  const categorizedEntries = data.filter((entry) => entry.label !== "Uncategorized");
+  const categorizedEntries = data.filter((entry) => !isUncategorized(entry.label));
   const maxCount = Math.max(...categorizedEntries.map((entry) => entry.value));
   const topEntries = categorizedEntries.filter((entry) => entry.value === maxCount);
   const topLabels = topEntries.map((entry) => entry.label);
@@ -271,10 +278,43 @@ function interpretClt(data: DistEntry[], totalFeedback: number): ReactNode {
   );
 }
 
+const ALL_UNCATEGORIZED_COPY: Record<"aspect" | "issue" | "rbt" | "clt", string> = {
+  aspect: "no dominant aspect could be identified",
+  issue: "no specific pedagogical issue could be extracted",
+  rbt: "no cognitive-process (RBT) pattern could be derived",
+  clt: "no cognitive-load (CLT) pattern could be derived",
+};
+
+function allUncategorizedMessage(
+  kind: "aspect" | "issue" | "rbt" | "clt",
+  totalFeedback: number,
+): ReactNode {
+  return (
+    <>
+      All {totalFeedback} {totalFeedback === 1 ? "response was" : "responses were"}{" "}
+      <AccentLabel>Uncategorized</AccentLabel>, so {ALL_UNCATEGORIZED_COPY[kind]}. See the note
+      below for why responses become Uncategorized.
+    </>
+  );
+}
+
 export function interpretDistribution(
   data: DistEntry[],
   context: InterpretationContext,
 ): ReactNode {
+  const categorizedValueSum = data
+    .filter((entry) => !isUncategorized(entry.label))
+    .reduce((sum, entry) => sum + entry.value, 0);
+
+  if (
+    context.kind !== "polarity" &&
+    context.totalFeedback > 0 &&
+    categorizedValueSum === 0 &&
+    (context.uncategorizedCount ?? 0) > 0
+  ) {
+    return allUncategorizedMessage(context.kind, context.totalFeedback);
+  }
+
   switch (context.kind) {
     case "aspect":
       return interpretAspectOrIssue(data, context.totalFeedback, "aspect");

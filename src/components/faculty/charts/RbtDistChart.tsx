@@ -11,7 +11,8 @@ import { CardContent, CardDescription, CardHeader, CardTitle } from "@/component
 import { AnalysisCard } from "./AnalysisCard";
 import { InterpretationBlock } from "./InterpretationBlock";
 import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
-import { interpretDistribution } from "./interpretDistribution";
+import { interpretDistribution, isUncategorized } from "./interpretDistribution";
+import { DistributionEmptyState } from "./DistributionEmptyState";
 import type { DistEntry } from "@/lib/types/types";
 import { RBT_COLOR_ORDER } from "@/lib/constants/chartColors";
 import { RBT_LEVEL_NUMBERS } from "@/lib/algorithm/rules";
@@ -33,9 +34,15 @@ export function RbtDistChart({ data, className }: RbtDistChartProps) {
     }),
   );
 
-  const categorizedData = data.filter((entry) => entry.label !== "Uncategorized");
+  const categorizedData = data.filter((entry) => !isUncategorized(entry.label));
   const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
-  const interpretation = interpretDistribution(categorizedData, { kind: "rbt", totalFeedback });
+  const uncategorizedCount = data.find((entry) => isUncategorized(entry.label))?.value ?? 0;
+  const interpretation = interpretDistribution(categorizedData, {
+    kind: "rbt",
+    totalFeedback,
+    uncategorizedCount,
+  });
+  const isEmpty = categorizedData.length === 0;
 
   // Normalize to all 6 Bloom levels in clockwise order (1 -> 6) so the radar
   // always renders a full hexagon; missing levels render as zero-count vertices.
@@ -58,30 +65,45 @@ export function RbtDistChart({ data, className }: RbtDistChartProps) {
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent className="flex-1 flex flex-col min-h-[320px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="72%">
-            <PolarGrid stroke="var(--color-border)" gridType="polygon" />
-            <PolarAngleAxis
-              dataKey="label"
-              tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-            />
-            <PolarRadiusAxis
-              domain={[0, maxCount]}
-              tickCount={Math.min(5, maxCount + 1)}
-              tick={false}
-              axisLine={false}
-            />
-            <Tooltip {...chartTooltipProps} content={<ChartTooltipContent colorMap={colorMap} />} />
-            <Radar
-              dataKey="value"
-              fill="var(--color-chart-5)"
-              fillOpacity={0.35}
-              stroke="var(--color-chart-5)"
-              strokeWidth={2}
-              dot={{ r: 4, fillOpacity: 1 }}
-            />
-          </RadarChart>
-        </ResponsiveContainer>
+        {isEmpty ? (
+          <DistributionEmptyState
+            className="flex-1"
+            title="No RBT pattern to display"
+            description={
+              uncategorizedCount > 0
+                ? "All responses were Uncategorized, so no cognitive-process pattern could be shown."
+                : "No feedback was available for this distribution."
+            }
+          />
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="72%">
+              <PolarGrid stroke="var(--color-border)" gridType="polygon" />
+              <PolarAngleAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+              />
+              <PolarRadiusAxis
+                domain={[0, maxCount]}
+                tickCount={Math.min(5, maxCount + 1)}
+                tick={false}
+                axisLine={false}
+              />
+              <Tooltip
+                {...chartTooltipProps}
+                content={<ChartTooltipContent colorMap={colorMap} />}
+              />
+              <Radar
+                dataKey="value"
+                fill="var(--color-chart-5)"
+                fillOpacity={0.35}
+                stroke="var(--color-chart-5)"
+                strokeWidth={2}
+                dot={{ r: 4, fillOpacity: 1 }}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </AnalysisCard>
   );
