@@ -41,7 +41,7 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
       return data;
     } catch (e) {
       setError(friendlyError(e, "Failed to load feedback"));
-      return [];
+      throw e;
     } finally {
       setIsLoading(false);
     }
