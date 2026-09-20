@@ -8,6 +8,7 @@ interface FeedbackStoreValue {
   isLoading: boolean;
   error: string | null;
   addFeedback: (sessionId: string, rawText: string) => Promise<Feedback>;
+  addBulkFeedback: (sessionId: string, texts: string[]) => Promise<Feedback[]>;
   fetchFeedback: (sessionId: string) => Promise<Feedback[]>;
   fetchFeedbackByClass: (classId: string) => Promise<Feedback[]>;
   fetchFeedbackBySessions: (sessionIds: string[]) => Promise<Feedback[]>;
@@ -84,6 +85,15 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
     return entry;
   }, []);
 
+  const addBulkFeedback = useCallback(async (sessionId: string, texts: string[]) => {
+    const inserted = await feedbackService.bulkInsertFeedback(sessionId, texts);
+    setFeedback((prev) => {
+      const existingIds = new Set(prev.map((f) => f.id));
+      return [...prev, ...inserted.filter((f) => !existingIds.has(f.id))];
+    });
+    return inserted;
+  }, []);
+
   const insertRealtimeFeedback = useCallback((fb: Feedback) => {
     setFeedback((prev) => {
       if (prev.some((f) => f.id === fb.id)) return prev;
@@ -102,6 +112,7 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
       isLoading,
       error,
       addFeedback,
+      addBulkFeedback,
       fetchFeedback,
       fetchFeedbackByClass,
       fetchFeedbackBySessions,
@@ -113,6 +124,7 @@ export function FeedbackStoreProvider({ children }: { children: ReactNode }) {
       isLoading,
       error,
       addFeedback,
+      addBulkFeedback,
       fetchFeedback,
       fetchFeedbackByClass,
       fetchFeedbackBySessions,

@@ -70,6 +70,28 @@ export async function submitFeedback(sessionId: string, content: string): Promis
   };
 }
 
+const BULK_INSERT_CHUNK_SIZE = 100;
+
+/**
+ * Insert many feedback texts for a session (faculty bulk import). Rows are
+ * inserted in chunks so a large file never produces an oversized request.
+ */
+export async function bulkInsertFeedback(sessionId: string, texts: string[]): Promise<Feedback[]> {
+  const inserted: Feedback[] = [];
+  for (let i = 0; i < texts.length; i += BULK_INSERT_CHUNK_SIZE) {
+    const chunk = texts.slice(i, i + BULK_INSERT_CHUNK_SIZE);
+    const rows = chunk.map((text) => ({
+      session_id: sessionId,
+      content: text,
+      meta: { cleanedText: text.toLowerCase() },
+    }));
+    const { data, error } = await supabase.from("feedback").insert(rows).select();
+    if (error) throw new Error(error.message);
+    inserted.push(...(data ?? []).map(fromDbFeedback));
+  }
+  return inserted;
+}
+
 export async function getStudentSubmissions(studentId: string): Promise<string[]> {
   const { data, error } = await supabase
     .from("session_participations")
