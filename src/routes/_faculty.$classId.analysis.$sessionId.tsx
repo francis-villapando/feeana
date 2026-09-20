@@ -5,7 +5,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ModelLoaderOverlay, AnalysisTriggerModal } from "@/components/analysis";
+import {
+  ModelLoaderOverlay,
+  AnalysisTriggerModal,
+  SessionFeedbackModal,
+} from "@/components/analysis";
 import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
 import { friendlyError } from "@/lib/hooks/utils";
 import {
@@ -19,7 +23,9 @@ import {
   RecommendationCuesCard,
   WarningsCard,
 } from "@/components/faculty/charts";
+import type { ChartId, FeedbackOpenState } from "@/components/faculty/charts";
 import { runAnalysisPipeline, fetchComputedResult } from "@/lib/algorithm/pipeline";
+import type { DiagnosticRecord } from "@/lib/algorithm/types";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
@@ -27,7 +33,7 @@ import { useAnalysisStore } from "@/lib/stores/analysisStore";
 import type { LoadProgress } from "@/lib/algorithm/models/distilXlmr";
 import { iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
 import { computeIloStatuses } from "@/lib/hooks/iloStatus";
-import type { AnalysisResult } from "@/lib/types/types";
+import type { AnalysisResult, DistEntry } from "@/lib/types/types";
 import { CountBadge } from "@/components/common";
 import { KeyMetricsRow } from "@/components/faculty";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
@@ -77,6 +83,11 @@ function AnalysisPage() {
     progress: 100,
   });
   const [modalOpen, setModalOpen] = useState(false);
+  const [feedbackModalState, setFeedbackModalState] = useState<{
+    isOpen: boolean;
+    categoryFilter: { title: string; feedbackTexts?: string[] } | null;
+  }>({ isOpen: false, categoryFilter: null });
+  const [feedbackOpen, setFeedbackOpen] = useState<FeedbackOpenState>({ status: "idle" });
 
   // Track cancellation to prevent error toasts when worker is terminated.
   const isCancelledRef = React.useRef(false);
@@ -141,7 +152,7 @@ function AnalysisPage() {
         if (active) {
           setResult(data);
         }
-        // Fetch fresh feedback entries for count verification.
+        // Fetch fresh feedback for verification.
         await fetchFeedback(sessionId);
         // Load student enrollment count.
         if (classId) {
@@ -170,6 +181,36 @@ function AnalysisPage() {
     terminateMLWorker();
     setIsAnalyzing(false);
     toast.success("Analysis cancelled.");
+  };
+
+  // Remember the selection so "Retry" re-runs the same request.
+  const pendingOpenRef = React.useRef<{ chartId: ChartId; entry: DistEntry } | null>(null);
+
+  const handleOpenFeedback = async (chartId: ChartId, entry: DistEntry) => {
+    pendingOpenRef.current = { chartId, entry };
+    setFeedbackOpen({ status: "opening", chartId });
+    try {
+      // Re-fetch so network failures surface before opening.
+      await fetchFeedback(sessionId);
+      setFeedbackOpen({ status: "idle" });
+      setFeedbackModalState({
+        isOpen: true,
+        categoryFilter: { title: entry.label, feedbackTexts: entry.feedbackTexts },
+      });
+    } catch (err) {
+      setFeedbackOpen({
+        status: "error",
+        chartId,
+        error: friendlyError(err, "Couldn't open feedback."),
+      });
+    }
+  };
+
+  const handleCancelOpen = () => setFeedbackOpen({ status: "idle" });
+
+  const handleRetryOpen = () => {
+    const pending = pendingOpenRef.current;
+    if (pending) void handleOpenFeedback(pending.chartId, pending.entry);
   };
 
   const handleTrigger = async () => {
@@ -212,6 +253,15 @@ function AnalysisPage() {
     }
   };
 
+  // Pills per feedback for the modal, keyed by id.
+  const diagnosticsByFeedbackId = useMemo(() => {
+    const map = new Map<string, DiagnosticRecord>();
+    for (const d of result?.diagnostics ?? []) {
+      if (d.feedbackId) map.set(d.feedbackId, d);
+    }
+    return map;
+  }, [result]);
+
   if (!session) return null;
 
   // State machine values
@@ -243,12 +293,26 @@ function AnalysisPage() {
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">{session.topic}</h1>
           </div>
-          <div className="relative">
-            <Button size="lg" onClick={() => setModalOpen(true)} disabled={loading || isAnalyzing}>
-              <PlayCircle className="h-4 w-4" />
-              {result ? "Re-run analysis" : "Trigger analysis"}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => setFeedbackModalState({ isOpen: true, categoryFilter: null })}
+              disabled={loading}
+            >
+              View feedback
             </Button>
-            <CountBadge count={newFeedbackCount} />
+            <div className="relative">
+              <Button
+                size="lg"
+                onClick={() => setModalOpen(true)}
+                disabled={loading || isAnalyzing}
+              >
+                <PlayCircle className="h-4 w-4" />
+                {result ? "Re-run analysis" : "Trigger analysis"}
+              </Button>
+              <CountBadge count={newFeedbackCount} />
+            </div>
           </div>
         </div>
       </div>
@@ -266,7 +330,13 @@ function AnalysisPage() {
                 submissionHint="This session"
                 iloHint="This session"
               />
-              <Results result={result} />
+              <Results
+                result={result}
+                onSelectCategory={handleOpenFeedback}
+                opening={feedbackOpen}
+                onCancelOpen={handleCancelOpen}
+                onRetryOpen={handleRetryOpen}
+              />
             </>
           )}
         </>
@@ -287,6 +357,14 @@ function AnalysisPage() {
         studentCount={studentCount}
         lastAnalyzedAt={lastAnalyzedAt}
         newFeedbackCount={newFeedbackCount}
+      />
+
+      <SessionFeedbackModal
+        isOpen={feedbackModalState.isOpen}
+        onClose={() => setFeedbackModalState((s) => ({ ...s, isOpen: false }))}
+        sessionFeedback={sessionFeedback}
+        categoryFilter={feedbackModalState.categoryFilter}
+        diagnosticsByFeedbackId={diagnosticsByFeedbackId}
       />
     </div>
   );
@@ -357,7 +435,19 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Results({ result }: { result: AnalysisResult }) {
+function Results({
+  result,
+  onSelectCategory,
+  opening,
+  onCancelOpen,
+  onRetryOpen,
+}: {
+  result: AnalysisResult;
+  onSelectCategory: (chartId: ChartId, entry: DistEntry) => void;
+  opening: FeedbackOpenState;
+  onCancelOpen: () => void;
+  onRetryOpen: () => void;
+}) {
   const { sessionId } = Route.useParams();
   const { sessions } = useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
@@ -395,11 +485,44 @@ function Results({ result }: { result: AnalysisResult }) {
             totalFeedback={result.totalFeedback}
             className="lg:col-span-6"
             height={distHeight}
+            onSelectCategory={(entry) => onSelectCategory("aspect", entry)}
+            opening={opening.chartId === "aspect" ? opening : null}
+            onCancelOpen={onCancelOpen}
+            onRetryOpen={onRetryOpen}
           />
-          <IssueDistChart data={result.issueDist} className="lg:col-span-6" height={distHeight} />
-          <PolarityDistChart data={result.polarityDist} className="lg:col-span-4 flex flex-col" />
-          <RbtDistChart data={result.rbtDist} className="lg:col-span-4 flex flex-col" />
-          <CltDistChart data={result.cltDist} className="lg:col-span-4 flex flex-col" />
+          <IssueDistChart
+            data={result.issueDist}
+            className="lg:col-span-6"
+            height={distHeight}
+            onSelectCategory={(entry) => onSelectCategory("issue", entry)}
+            opening={opening.chartId === "issue" ? opening : null}
+            onCancelOpen={onCancelOpen}
+            onRetryOpen={onRetryOpen}
+          />
+          <PolarityDistChart
+            data={result.polarityDist}
+            className="lg:col-span-4 flex flex-col"
+            onSelectCategory={(entry) => onSelectCategory("polarity", entry)}
+            opening={opening.chartId === "polarity" ? opening : null}
+            onCancelOpen={onCancelOpen}
+            onRetryOpen={onRetryOpen}
+          />
+          <RbtDistChart
+            data={result.rbtDist}
+            className="lg:col-span-4 flex flex-col"
+            onSelectCategory={(entry) => onSelectCategory("rbt", entry)}
+            opening={opening.chartId === "rbt" ? opening : null}
+            onCancelOpen={onCancelOpen}
+            onRetryOpen={onRetryOpen}
+          />
+          <CltDistChart
+            data={result.cltDist}
+            className="lg:col-span-4 flex flex-col"
+            onSelectCategory={(entry) => onSelectCategory("clt", entry)}
+            opening={opening.chartId === "clt" ? opening : null}
+            onCancelOpen={onCancelOpen}
+            onRetryOpen={onRetryOpen}
+          />
           <UncategorizedNotice
             count={uncategorizedCount}
             totalFeedback={result.totalFeedback}
