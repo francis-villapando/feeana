@@ -1,0 +1,15 @@
+# Large ML models (Browser fetches from Hugging Face)
+public/models/
+
+# Datasets and benchmarks
+public/model-data/
+
+# Development / CI tests & scripts
+src/tests/
+scripts/
+agent-plans/
+docs/
+supabase/
+
+# Local env & config
+.env*
