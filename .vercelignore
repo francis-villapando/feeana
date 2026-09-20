@@ -6,7 +6,8 @@ public/model-data/
 
 # Development / CI tests & scripts
 src/tests/
-scripts/
+scripts/training/
+scripts/seed/
 agent-plans/
 docs/
 supabase/
