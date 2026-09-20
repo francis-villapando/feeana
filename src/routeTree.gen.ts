@@ -9,74 +9,39 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as FacultyRouteImport } from './routes/_faculty'
-import { Route as StudentRouteImport } from './routes/_student'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
-import { Route as FacultyClassIdRouteImport } from './routes/_faculty.$classId'
-import { Route as FacultyArchivedRouteImport } from './routes/_faculty.archived'
-import { Route as FacultyDashboardRouteImport } from './routes/_faculty.dashboard'
-import { Route as FacultyHomeRouteImport } from './routes/_faculty.home'
-import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
-import { Route as AuthFacultyRouteImport } from './routes/auth.faculty'
-import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
+import { Route as StudentRouteImport } from './routes/_student'
+import { Route as FacultyRouteImport } from './routes/_faculty'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthStudentRouteImport } from './routes/auth.student'
-import { Route as FacultyDevCompareModelsRouteImport } from './routes/_faculty.dev.compare-models'
-import { Route as FacultyDevSimulationRouteImport } from './routes/_faculty.dev.simulation'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
+import { Route as AuthFacultyRouteImport } from './routes/auth.faculty'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
+import { Route as FacultyHomeRouteImport } from './routes/_faculty.home'
+import { Route as FacultyDashboardRouteImport } from './routes/_faculty.dashboard'
+import { Route as FacultyArchivedRouteImport } from './routes/_faculty.archived'
+import { Route as FacultyClassIdRouteImport } from './routes/_faculty.$classId'
 import { Route as StudentStudentHomeRouteImport } from './routes/_student.student.home'
+import { Route as FacultyDevSimulationRouteImport } from './routes/_faculty.dev.simulation'
+import { Route as FacultyDevCompareModelsRouteImport } from './routes/_faculty.dev.compare-models'
 import { Route as FacultyClassIdAnalysisSessionIdRouteImport } from './routes/_faculty.$classId.analysis.$sessionId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FacultyRoute = FacultyRouteImport.update({
-  id: '/_faculty',
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StudentRoute = StudentRouteImport.update({
   id: '/_student',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
-  id: '/privacy-policy',
-  path: '/privacy-policy',
+const FacultyRoute = FacultyRouteImport.update({
+  id: '/_faculty',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FacultyClassIdRoute = FacultyClassIdRouteImport.update({
-  id: '/$classId',
-  path: '/$classId',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const FacultyArchivedRoute = FacultyArchivedRouteImport.update({
-  id: '/archived',
-  path: '/archived',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const FacultyDashboardRoute = FacultyDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const FacultyHomeRoute = FacultyHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
-  getParentRoute: () => FacultyRoute,
-} as any)
-const AuthConfirmRoute = AuthConfirmRouteImport.update({
-  id: '/auth/confirm',
-  path: '/auth/confirm',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthFacultyRoute = AuthFacultyRouteImport.update({
-  id: '/auth/faculty',
-  path: '/auth/faculty',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
-  id: '/auth/reset-password',
-  path: '/auth/reset-password',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthStudentRoute = AuthStudentRouteImport.update({
@@ -84,20 +49,55 @@ const AuthStudentRoute = AuthStudentRouteImport.update({
   path: '/auth/student',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FacultyDevCompareModelsRoute = FacultyDevCompareModelsRouteImport.update({
-  id: '/dev/compare-models',
-  path: '/dev/compare-models',
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthFacultyRoute = AuthFacultyRouteImport.update({
+  id: '/auth/faculty',
+  path: '/auth/faculty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FacultyHomeRoute = FacultyHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => FacultyRoute,
 } as any)
-const FacultyDevSimulationRoute = FacultyDevSimulationRouteImport.update({
-  id: '/dev/simulation',
-  path: '/dev/simulation',
+const FacultyDashboardRoute = FacultyDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyArchivedRoute = FacultyArchivedRouteImport.update({
+  id: '/archived',
+  path: '/archived',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyClassIdRoute = FacultyClassIdRouteImport.update({
+  id: '/$classId',
+  path: '/$classId',
   getParentRoute: () => FacultyRoute,
 } as any)
 const StudentStudentHomeRoute = StudentStudentHomeRouteImport.update({
   id: '/student/home',
   path: '/student/home',
   getParentRoute: () => StudentRoute,
+} as any)
+const FacultyDevSimulationRoute = FacultyDevSimulationRouteImport.update({
+  id: '/dev/simulation',
+  path: '/dev/simulation',
+  getParentRoute: () => FacultyRoute,
+} as any)
+const FacultyDevCompareModelsRoute = FacultyDevCompareModelsRouteImport.update({
+  id: '/dev/compare-models',
+  path: '/dev/compare-models',
+  getParentRoute: () => FacultyRoute,
 } as any)
 const FacultyClassIdAnalysisSessionIdRoute =
   FacultyClassIdAnalysisSessionIdRouteImport.update({
@@ -223,18 +223,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_faculty': {
-      id: '/_faculty'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof FacultyRouteImport
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_student': {
@@ -244,60 +237,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/privacy-policy': {
-      id: '/privacy-policy'
-      path: '/privacy-policy'
-      fullPath: '/privacy-policy'
-      preLoaderRoute: typeof PrivacyPolicyRouteImport
+    '/_faculty': {
+      id: '/_faculty'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof FacultyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_faculty/$classId': {
-      id: '/_faculty/$classId'
-      path: '/$classId'
-      fullPath: '/$classId'
-      preLoaderRoute: typeof FacultyClassIdRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/_faculty/archived': {
-      id: '/_faculty/archived'
-      path: '/archived'
-      fullPath: '/archived'
-      preLoaderRoute: typeof FacultyArchivedRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/_faculty/dashboard': {
-      id: '/_faculty/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof FacultyDashboardRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/_faculty/home': {
-      id: '/_faculty/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof FacultyHomeRouteImport
-      parentRoute: typeof FacultyRoute
-    }
-    '/auth/confirm': {
-      id: '/auth/confirm'
-      path: '/auth/confirm'
-      fullPath: '/auth/confirm'
-      preLoaderRoute: typeof AuthConfirmRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/faculty': {
-      id: '/auth/faculty'
-      path: '/auth/faculty'
-      fullPath: '/auth/faculty'
-      preLoaderRoute: typeof AuthFacultyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/reset-password': {
-      id: '/auth/reset-password'
-      path: '/auth/reset-password'
-      fullPath: '/auth/reset-password'
-      preLoaderRoute: typeof AuthResetPasswordRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/student': {
@@ -307,18 +258,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthStudentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_faculty/dev/compare-models': {
-      id: '/_faculty/dev/compare-models'
-      path: '/dev/compare-models'
-      fullPath: '/dev/compare-models'
-      preLoaderRoute: typeof FacultyDevCompareModelsRouteImport
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/faculty': {
+      id: '/auth/faculty'
+      path: '/auth/faculty'
+      fullPath: '/auth/faculty'
+      preLoaderRoute: typeof AuthFacultyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_faculty/home': {
+      id: '/_faculty/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof FacultyHomeRouteImport
       parentRoute: typeof FacultyRoute
     }
-    '/_faculty/dev/simulation': {
-      id: '/_faculty/dev/simulation'
-      path: '/dev/simulation'
-      fullPath: '/dev/simulation'
-      preLoaderRoute: typeof FacultyDevSimulationRouteImport
+    '/_faculty/dashboard': {
+      id: '/_faculty/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof FacultyDashboardRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/_faculty/archived': {
+      id: '/_faculty/archived'
+      path: '/archived'
+      fullPath: '/archived'
+      preLoaderRoute: typeof FacultyArchivedRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/_faculty/$classId': {
+      id: '/_faculty/$classId'
+      path: '/$classId'
+      fullPath: '/$classId'
+      preLoaderRoute: typeof FacultyClassIdRouteImport
       parentRoute: typeof FacultyRoute
     }
     '/_student/student/home': {
@@ -327,6 +313,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/student/home'
       preLoaderRoute: typeof StudentStudentHomeRouteImport
       parentRoute: typeof StudentRoute
+    }
+    '/_faculty/dev/simulation': {
+      id: '/_faculty/dev/simulation'
+      path: '/dev/simulation'
+      fullPath: '/dev/simulation'
+      preLoaderRoute: typeof FacultyDevSimulationRouteImport
+      parentRoute: typeof FacultyRoute
+    }
+    '/_faculty/dev/compare-models': {
+      id: '/_faculty/dev/compare-models'
+      path: '/dev/compare-models'
+      fullPath: '/dev/compare-models'
+      preLoaderRoute: typeof FacultyDevCompareModelsRouteImport
+      parentRoute: typeof FacultyRoute
     }
     '/_faculty/$classId/analysis/$sessionId': {
       id: '/_faculty/$classId/analysis/$sessionId'
