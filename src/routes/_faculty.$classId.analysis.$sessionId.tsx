@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, PlayCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, PlayCircle, Sparkles, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
   ModelLoaderOverlay,
   AnalysisTriggerModal,
   SessionFeedbackModal,
+  BulkFeedbackImportModal,
 } from "@/components/analysis";
 import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
 import { friendlyError } from "@/lib/hooks/utils";
@@ -83,6 +84,7 @@ function AnalysisPage() {
     progress: 100,
   });
   const [modalOpen, setModalOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [feedbackModalState, setFeedbackModalState] = useState<{
     isOpen: boolean;
     categoryFilter: { title: string; feedbackTexts?: string[] } | null;
@@ -297,6 +299,15 @@ function AnalysisPage() {
             <Button
               variant="outline"
               size="lg"
+              onClick={() => setBulkImportOpen(true)}
+              disabled={loading || isAnalyzing}
+            >
+              <Upload className="h-4 w-4" />
+              Import feedback
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
               onClick={() => setFeedbackModalState({ isOpen: true, categoryFilter: null })}
               disabled={loading}
             >
@@ -365,6 +376,16 @@ function AnalysisPage() {
         sessionFeedback={sessionFeedback}
         categoryFilter={feedbackModalState.categoryFilter}
         diagnosticsByFeedbackId={diagnosticsByFeedbackId}
+      />
+
+      <BulkFeedbackImportModal
+        isOpen={bulkImportOpen}
+        onClose={() => setBulkImportOpen(false)}
+        sessionId={sessionId}
+        existingTexts={sessionFeedback.map((f) => f.rawText)}
+        onImported={() => {
+          void fetchFeedback(sessionId);
+        }}
       />
     </div>
   );
