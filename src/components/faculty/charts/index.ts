@@ -3,6 +3,8 @@ export { PolarityDistChart } from "./PolarityDistChart";
 export { IssueDistChart } from "./IssueDistChart";
 export { RbtDistChart } from "./RbtDistChart";
 export { CltDistChart } from "./CltDistChart";
+export { FeedbackOpenPanel } from "./FeedbackOpenPanel";
+export type { ChartId, FeedbackOpenState } from "./FeedbackOpenPanel";
 export { IloGapCard } from "./IloGapCard";
 export { RecommendationCuesCard } from "./RecommendationCuesCard";
 export { WarningsCard } from "./WarningsCard";

@@ -1,8 +1,10 @@
+import { useCallback, useRef } from "react";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalysisCard } from "./AnalysisCard";
 import { InterpretationBlock } from "./InterpretationBlock";
-import { chartTooltipProps } from "@/components/analysis";
+import { FeedbackOpenPanel, type FeedbackOpenState } from "./FeedbackOpenPanel";
+import { chartTooltipProps, ChartTooltipContent } from "@/components/analysis";
 import { interpretDistribution } from "./interpretDistribution";
 import type { DistEntry } from "@/lib/types/types";
 import { POLARITY_COLOR_ORDER } from "@/lib/constants/chartColors";
@@ -12,11 +14,31 @@ const polarityColorMap = Object.fromEntries(POLARITY_COLOR_ORDER);
 interface PolarityDistChartProps {
   data: DistEntry[];
   className?: string;
+  onSelectCategory?: (entry: DistEntry) => void;
+  opening?: FeedbackOpenState | null;
+  onCancelOpen?: () => void;
+  onRetryOpen?: () => void;
 }
 
-export function PolarityDistChart({ data, className }: PolarityDistChartProps) {
+export function PolarityDistChart({
+  data,
+  className,
+  onSelectCategory,
+  opening,
+  onCancelOpen,
+  onRetryOpen,
+}: PolarityDistChartProps) {
   const totalFeedback = data.reduce((sum, d) => sum + d.value, 0);
   const interpretation = interpretDistribution(data, { kind: "polarity", totalFeedback });
+  // Ref avoids re-rendering the chart on every tooltip coordinate change.
+  const anchorRef = useRef<{ x: number; y: number } | null>(null);
+  const handleCoordinate = useCallback((c: { x: number; y: number } | null) => {
+    if (!c) return;
+    const prev = anchorRef.current;
+    if (prev && prev.x === c.x && prev.y === c.y) return;
+    anchorRef.current = { x: c.x, y: c.y };
+  }, []);
+  const panelOpen = opening != null && opening.status !== "idle";
 
   return (
     <AnalysisCard className={className}>
@@ -26,89 +48,60 @@ export function PolarityDistChart({ data, className }: PolarityDistChartProps) {
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent className="flex-1 flex flex-col min-h-[320px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="label"
-              innerRadius={50}
-              outerRadius={85}
-              paddingAngle={3}
-            >
-              {data.map((entry) => (
-                <Cell
-                  key={entry.label}
-                  fill={polarityColorMap[entry.label] ?? "var(--color-chart-1)"}
+        <div className="relative flex-1">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="label"
+                innerRadius={50}
+                outerRadius={85}
+                stroke="none"
+                paddingAngle={3}
+                onClick={(entry) => {
+                  const label = (entry as { label?: string } | null)?.label;
+                  const found = label ? data.find((d) => d.label === label) : undefined;
+                  if (found) onSelectCategory?.(found);
+                }}
+              >
+                {data.map((entry) => (
+                  <Cell
+                    key={entry.label}
+                    fill={polarityColorMap[entry.label] ?? "var(--color-chart-1)"}
+                  />
+                ))}
+              </Pie>
+              {!panelOpen && (
+                <Tooltip
+                  {...chartTooltipProps}
+                  content={
+                    <ChartTooltipContent
+                      colorMap={polarityColorMap}
+                      dist={data}
+                      freezeOnClick
+                      onCoordinateChange={handleCoordinate}
+                      onSelect={(item) => {
+                        const entry = data.find((d) => d.label === item.label);
+                        if (entry) onSelectCategory?.(entry);
+                      }}
+                    />
+                  }
                 />
-              ))}
-            </Pie>
-            <Tooltip
-              wrapperStyle={{ pointerEvents: "none" }}
-              content={({ active, payload }) => {
-                if (!active || !payload || !payload.length) return null;
-                const entry = payload[0].payload as DistEntry;
-                const color = polarityColorMap[entry.label] ?? "var(--color-foreground)";
-                const texts = entry.feedbackTexts ?? [];
-                const preview = texts.slice(0, 3);
-                const remaining = texts.length - preview.length;
-                return (
-                  <div
-                    style={{
-                      ...chartTooltipProps.contentStyle,
-                      pointerEvents: "none",
-                      maxWidth: 400,
-                    }}
-                  >
-                    <p style={{ fontWeight: 500, color, margin: 0 }}>{entry.label}</p>
-                    <p style={{ color: "var(--color-muted-foreground)", margin: 0, marginTop: 2 }}>
-                      Count: {entry.value}
-                    </p>
-                    {preview.length > 0 && (
-                      <div
-                        style={{
-                          marginTop: 6,
-                          borderTop: "1px solid var(--color-border)",
-                          paddingTop: 6,
-                        }}
-                      >
-                        {preview.map((text, i) => (
-                          <p
-                            key={i}
-                            style={{
-                              margin: 0,
-                              padding: "4px 0",
-                              fontSize: 11,
-                              lineHeight: 1.4,
-                              color: "var(--color-foreground)",
-                              borderBottom:
-                                i < preview.length - 1 ? "1px solid var(--color-border)" : "none",
-                            }}
-                          >
-                            &ldquo;{text}&rdquo;
-                          </p>
-                        ))}
-                        {remaining > 0 && (
-                          <p
-                            style={{
-                              margin: 0,
-                              marginTop: 4,
-                              fontSize: 11,
-                              color: "var(--color-muted-foreground)",
-                            }}
-                          >
-                            +{remaining} more
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              }}
+              )}
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+            </PieChart>
+          </ResponsiveContainer>
+          {panelOpen && (
+            <FeedbackOpenPanel
+              status={opening.status}
+              error={opening.status === "error" ? opening.error : undefined}
+              anchor={anchorRef.current}
+              onCancel={onCancelOpen ?? (() => {})}
+              onRetry={onRetryOpen}
             />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-          </PieChart>
-        </ResponsiveContainer>
+          )}
+        </div>
       </CardContent>
     </AnalysisCard>
   );

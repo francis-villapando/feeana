@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { type TooltipProps } from "recharts";
 import type { DistEntry } from "@/lib/types/types";
 import { toTitleCase } from "@/lib/hooks/utils";
@@ -19,44 +19,29 @@ export const chartTooltipProps = {
 export interface ChartTooltipContentProps extends TooltipProps<number, string> {
   colorMap?: Record<string, string>;
   dist?: DistEntry[];
+  onSelect?: (entry: { label: string; feedbackTexts?: string[] }) => void;
+  /** Freeze on pointerdown so the tooltip tracks while the cursor sweeps the chart. */
+  freezeOnClick?: boolean;
+  /** Reports the tooltip's chart-relative coordinate while active. */
+  onCoordinateChange?: (coordinate: { x: number; y: number } | null) => void;
 }
 
-function FeedbackQuotes({ texts }: { texts: string[] }) {
-  return (
-    <div
-      className="chart-tooltip-scrollbar"
-      onWheel={(e) => e.stopPropagation()}
-      style={{
-        marginTop: 6,
-        maxHeight: 220,
-        overflowY: "auto",
-        borderTop: "1px solid var(--color-border)",
-        paddingTop: 6,
-        width: 380,
-      }}
-    >
-      {texts.map((text, i) => (
-        <p
-          key={i}
-          style={{
-            margin: 0,
-            padding: "4px 0",
-            fontSize: 11,
-            lineHeight: 1.4,
-            color: "var(--color-foreground)",
-            borderBottom: i < texts.length - 1 ? "1px solid var(--color-border)" : "none",
-          }}
-        >
-          &ldquo;{text}&rdquo;
-        </p>
-      ))}
-    </div>
-  );
-}
-
-export function ChartTooltipContent({ active, payload, colorMap, dist }: ChartTooltipContentProps) {
+export function ChartTooltipContent({
+  active,
+  payload,
+  colorMap,
+  dist,
+  onSelect,
+  freezeOnClick,
+  onCoordinateChange,
+  coordinate,
+}: ChartTooltipContentProps) {
   const frozenRef = useRef(false);
   const snapshotRef = useRef(payload ?? null);
+
+  useEffect(() => {
+    onCoordinateChange?.(active && payload?.length ? (coordinate ?? null) : null);
+  }, [active, payload, coordinate, onCoordinateChange]);
 
   if (active && payload?.length) {
     snapshotRef.current = payload;
@@ -68,7 +53,14 @@ export function ChartTooltipContent({ active, payload, colorMap, dist }: ChartTo
 
   const items = dist
     ? data.map((item) => {
-        const label = String(item.dataKey ?? item.name ?? "");
+        // Row payload labels first (bar/pie); radar vertices fall back to `name` then key.
+        const label = String(
+          (item.payload as DistEntry | undefined)?.label ??
+            (item.payload as { name?: string } | undefined)?.name ??
+            item.dataKey ??
+            item.name ??
+            "",
+        );
         const entry = dist.find((d) => d.label === label);
         return {
           label,
@@ -96,10 +88,13 @@ export function ChartTooltipContent({ active, payload, colorMap, dist }: ChartTo
   return (
     <div
       onMouseEnter={() => {
-        frozenRef.current = true;
+        if (!freezeOnClick) frozenRef.current = true;
       }}
       onMouseLeave={() => {
         frozenRef.current = false;
+      }}
+      onPointerDown={() => {
+        if (freezeOnClick) frozenRef.current = true;
       }}
       onMouseMove={(e) => {
         if (frozenRef.current) e.stopPropagation();
@@ -107,18 +102,30 @@ export function ChartTooltipContent({ active, payload, colorMap, dist }: ChartTo
       style={chartTooltipProps.contentStyle}
     >
       {sortedItems.map((item, index) => (
-        <div
+        <button
           key={item.label}
-          style={dist && index < sortedItems.length - 1 ? { marginBottom: 8 } : undefined}
+          type="button"
+          disabled={!onSelect}
+          onClick={() => onSelect?.({ label: item.label, feedbackTexts: item.feedbackTexts })}
+          className={onSelect ? "hover:bg-accent/60" : undefined}
+          style={{
+            display: "block",
+            width: "100%",
+            textAlign: "left",
+            background: "transparent",
+            border: "none",
+            padding: 0,
+            margin: 0,
+            borderRadius: 4,
+            cursor: onSelect ? "pointer" : "default",
+            ...(dist && index < sortedItems.length - 1 ? { marginBottom: 8 } : undefined),
+          }}
         >
           <p style={{ fontWeight: 500, color: item.color, margin: 0 }}>{toTitleCase(item.label)}</p>
           <p style={{ color: "var(--color-muted-foreground)", margin: 0, marginTop: 2 }}>
             Count: {item.value}
           </p>
-          {item.feedbackTexts && item.feedbackTexts.length > 0 && (
-            <FeedbackQuotes texts={item.feedbackTexts} />
-          )}
-        </div>
+        </button>
       ))}
     </div>
   );

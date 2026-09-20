@@ -237,6 +237,11 @@
     scrollbar-color: var(--color-border) transparent;
   }
 
+  /* Remove the focus outline recharts draws on clicked pie sectors. */
+  .recharts-pie-sector:focus {
+    outline: none;
+  }
+
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
