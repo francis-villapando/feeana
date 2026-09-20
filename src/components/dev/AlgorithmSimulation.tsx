@@ -84,10 +84,10 @@ const ALL_TAXONOMY_ISSUES = [
   "abstract logic gap", // RBT 4 · Analyze (Concept Development)
   "design synthesis failure", // RBT 6 · Create (Concept Development)
 
-  // Extraneous Load (Classroom Climate, Interaction & Delivery Friction, RBT 1 → 2)
+  // Extraneous Load (Classroom Climate, Interaction & Delivery Friction, RBT 1 → 5)
   "relational coldness", // RBT 1 · Remember (Positive Climate)
   "classroom tension", // RBT 1 · Remember (Negative Climate)
-  "evaluation unfairness", // RBT 1 · Remember (Teacher Sensitivity)
+  "evaluation unfairness", // RBT 5 · Evaluate (Teacher Sensitivity)
   "perceived marginalization", // RBT 1 · Remember (Regard for Student Perspectives)
   "subject alienation", // RBT 1 · Remember (Regard for Student Perspectives)
   "peer distraction", // RBT 1 · Remember (Behavior Management)

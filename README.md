@@ -92,7 +92,7 @@ Each of the 14 issue tags is mapped to a TTI domain/dimension, an RBT level (1â€
 | :------------------------ | :--------------------- | :------------------------------ | :--------- | :--------- |
 | Relational Coldness       | Emotional Support      | Positive Climate                | Remember   | Extraneous |
 | Classroom Tension         | Emotional Support      | Negative Climate                | Remember   | Extraneous |
-| Evaluation Unfairness     | Emotional Support      | Teacher Sensitivity             | Remember   | Extraneous |
+| Evaluation Unfairness     | Emotional Support      | Teacher Sensitivity             | Evaluate   | Extraneous |
 | Perceived Marginalization | Emotional Support      | Regard for Student Perspectives | Remember   | Extraneous |
 | Subject Alienation        | Emotional Support      | Regard for Student Perspectives | Remember   | Extraneous |
 | Peer Distraction          | Classroom Organization | Behavior Management             | Remember   | Extraneous |

@@ -2,7 +2,7 @@
 | :--------------------- | :------------------------------ | :------------------------ | :--------- | :--------- |
 | Emotional Support      | Positive Climate                | Relational Coldness       | Remember   | Extraneous |
 |                        | Negative Climate                | Classroom Tension         | Remember   | Extraneous |
-|                        | Teacher Sensitivity             | Evaluation Unfairness     | Remember   | Extraneous |
+|                        | Teacher Sensitivity             | Evaluation Unfairness     | Evaluate   | Extraneous |
 |                        | Regard for Student Perspectives | Perceived Marginalization | Remember   | Extraneous |
 |                        | Regard for Student Perspectives | Subject Alienation        | Remember   | Extraneous |
 | Classroom Organization | Behavior Management             | Peer Distraction          | Remember   | Extraneous |

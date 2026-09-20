@@ -1,8 +1,8 @@
-// Pedagogical rule tables shared by Modules 4-6 (rules_version = "1.2")
+// Pedagogical rule tables shared by Modules 4-6 (rules_version = "1.3")
 
 import type { CltCategory } from "./types";
 
-export const RULES_VERSION = "1.2";
+export const RULES_VERSION = "1.3";
 
 export const TTI_RULES: Record<string, string> = {
   "relational coldness": "Positive Climate",
@@ -25,7 +25,7 @@ export const TTI_RULES: Record<string, string> = {
 export const RBT_RULES: Record<string, number> = {
   "relational coldness": 1,
   "classroom tension": 1,
-  "evaluation unfairness": 1,
+  "evaluation unfairness": 5,
   "perceived marginalization": 1,
   "subject alienation": 1,
   "peer distraction": 1,

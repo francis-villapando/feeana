@@ -45,6 +45,20 @@ describe("buildDiagnosticRecord", () => {
     });
   });
 
+  it("maps evaluation unfairness to Teacher Sensitivity at RBT 5 (Evaluate) with Extraneous CLT", () => {
+    const record = buildDiagnosticRecord("evaluation unfairness", "neg", 5, "fb-eu");
+
+    expect(record).toMatchObject({
+      feedbackId: "fb-eu",
+      issue: "evaluation unfairness",
+      polarity: "neg",
+      tti: "Teacher Sensitivity",
+      rbt: 5,
+      clt: "Extraneous",
+      isGap: false,
+    });
+  });
+
   it("does not mark an intrinsic issue as a gap if RBT exceeds target ILO RBT", () => {
     const record = buildDiagnosticRecord("design synthesis failure", "neg", 3, "fb-5");
 
