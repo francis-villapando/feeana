@@ -1,3 +1,5 @@
+import type { DiagnosticRecord } from "../algorithm/types";
+
 export type UserRole = "faculty" | "student";
 
 export interface AuthUser {
@@ -174,4 +176,6 @@ export interface AnalysisResult {
   gaps: GapItem[];
   recommendations: Recommendation[];
   warnings: Warning[];
+  /** Per-feedback diagnostic mapping, keyed by feedbackId. */
+  diagnostics?: DiagnosticRecord[];
 }

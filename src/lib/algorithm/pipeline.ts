@@ -335,6 +335,7 @@ export async function runAnalysisPipeline(
     rbtDist,
     cltDist,
     gaps,
+    diagnostics: buffer,
     recommendations: recommendationList.map((r) => {
       const issueLabel = ISSUE_RULES[r.issue.toLowerCase()] ?? r.issue;
       return {
