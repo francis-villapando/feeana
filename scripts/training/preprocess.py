@@ -27,7 +27,10 @@ EMOJI_PATTERN = re.compile(
 REPETITION_PATTERN = re.compile(r"([a-zA-Z])\1{2,}")
 
 # Extracted from common feedback patterns in educational contexts (English + Tagalog/Taglish).
-ABBREVIATION_MAP = _LEXICON_DATA["abbreviations"]
+ABBREVIATION_MAP = {
+    **_LEXICON_DATA["abbreviated_slang"],
+    **_LEXICON_DATA["abbreviated_cs_terms"],
+}
 ABBREVIATION_LOOKUP = {k.lower(): v for k, v in ABBREVIATION_MAP.items()}
 
 # Double-letter vocabulary consulted by normalize_vowels to decide whether a
@@ -40,11 +43,12 @@ def is_valid_word(word: str) -> bool:
 
 
 def remove_noise(text: str) -> str:
-    """Strips URLs, tags, hashtags, and emojis."""
+    """Strips URLs, tags, hashtags, and emojis, then collapses whitespace and trims."""
     cleaned = URL_PATTERN.sub("", text)
     cleaned = TAG_PATTERN.sub("", cleaned)
     cleaned = HASHTAG_PATTERN.sub("", cleaned)
     cleaned = EMOJI_PATTERN.sub("", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned
 
 
@@ -112,20 +116,15 @@ def expand_abbreviations(text: str) -> str:
     return "".join(result)
 
 
-def normalize_whitespace(text: str) -> str:
-    """Collapses whitespace and trims."""
-    return re.sub(r"\s+", " ", text).strip()
-
-
 def preprocess(text: str) -> str:
     """
-    Cleans feedback text: removes noise, normalizes repetitions,
-    expands abbreviations, trims whitespace.
+    Cleans feedback text: removes noise and whitespace, normalizes repetitions,
+    expands abbreviations.
     """
     if not isinstance(text, str):
         return ""
     after_noise = remove_noise(text)
     after_vowels = normalize_vowels(after_noise)
     after_abbrev = expand_abbreviations(after_vowels)
-    cleaned = normalize_whitespace(after_abbrev)
+    cleaned = after_abbrev
     return cleaned

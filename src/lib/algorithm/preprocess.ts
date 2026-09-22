@@ -33,6 +33,7 @@ function removeNoise(text: string): string {
   cleaned = cleaned.replace(TAG_PATTERN, "");
   cleaned = cleaned.replace(HASHTAG_PATTERN, "");
   cleaned = cleaned.replace(EMOJI_PATTERN, "");
+  cleaned = cleaned.replace(/\s+/g, " ").trim();
 
   return cleaned;
 }
@@ -117,13 +118,6 @@ function expandAbbreviations(text: string): string {
     .join("");
 }
 
-function normalizeWhitespace(text: string): string {
-  let normalized = text.replace(/\s+/g, " ");
-  normalized = normalized.trim();
-
-  return normalized;
-}
-
 // Fixed sequence length the fine-tuned ONNX models were trained with.
 export const MAX_SEQ_LEN = 256;
 
@@ -148,17 +142,17 @@ export interface PreprocessingSteps {
   cleanedText: string;
 }
 
-// Runs the four cleaning stages and returns every intermediate string so the
-// UI can show the transformation timeline (noise → vowels → abbrevs → whitespace).
+// Runs the three cleaning stages and returns every intermediate string so the
+// UI can show the transformation timeline (noise removal → vowels → abbrevs).
 export function inspectPreprocessingSteps(rawText: string): PreprocessingSteps {
   const afterNoise = removeNoise(rawText);
   const afterVowels = normalizeVowels(afterNoise);
   const afterAbbrevs = expandAbbreviations(afterVowels);
-  const cleanedText = normalizeWhitespace(afterAbbrevs);
+  const cleanedText = afterAbbrevs;
   return { rawText, afterNoise, afterVowels, afterAbbrevs, cleanedText };
 }
 
-// Normalizes feedback text (noise removal, vowel reduction, abbreviation mapping, whitespace).
+// Normalizes feedback text (noise removal, vowel reduction, abbreviation mapping).
 export function CleanFeedback(feedback: FeedbackInput | string): string {
   const rawText = typeof feedback === "string" ? feedback : feedback.rawText;
   return inspectPreprocessingSteps(rawText).cleanedText;

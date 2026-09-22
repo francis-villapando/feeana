@@ -1,7 +1,7 @@
 /*
  * Unit tests for Module 2: Preprocessing.
- * Validates that vowel normalization, noise removal, abbreviation expansion,
- * and whitespace normalization work correctly in isolation and in combination
+ * Validates that noise removal & whitespace normalization, vowel normalization,
+ * and abbreviation expansion work correctly in isolation and in combination
  * (CleanFeedback), plus tokenization/numerical encoding (EncodeFeedback).
  */
 
@@ -11,6 +11,7 @@ import {
   EncodeFeedback,
   MAX_SEQ_LEN,
   Preprocess,
+  inspectPreprocessingSteps,
   type MachineTokenizer,
 } from "../../lib/algorithm/preprocess";
 
@@ -73,7 +74,7 @@ describe("CleanFeedback (Module 2: Preprocessing — Text Cleaning)", () => {
     });
   });
 
-  describe("Noise Removal", () => {
+  describe("Noise Removal & Whitespace Normalization", () => {
     it("should remove URLs (http/https)", () => {
       const input = {
         id: "test-5",
@@ -125,6 +126,53 @@ describe("CleanFeedback (Module 2: Preprocessing — Text Cleaning)", () => {
       expect(result).not.toContain("😄");
       expect(result).not.toContain("👏");
       expect(result).toContain("Great lecture! Amazing!");
+    });
+
+    it("should collapse multiple spaces", () => {
+      const input = {
+        id: "test-16",
+        rawText: "too    many     spaces",
+      };
+      const result = CleanFeedback(input);
+      expect(result).not.toContain("    ");
+      expect(result).toContain("too many spaces");
+    });
+
+    it("should trim leading/trailing whitespace", () => {
+      const input = {
+        id: "test-17",
+        rawText: "   leading and trailing spaces   ",
+      };
+      const result = CleanFeedback(input);
+      expect(result).toBe(result.trim());
+      expect(result).toBe("leading and trailing spaces");
+    });
+
+    it("should handle tabs and newlines", () => {
+      const input = {
+        id: "test-18",
+        rawText: "line one\n\tline two",
+      };
+      const result = CleanFeedback(input);
+      expect(result).toContain("line one line two");
+    });
+
+    it("should preserve punctuation exactly as-is", () => {
+      const input = {
+        id: "test-19",
+        rawText: "Hello   ,   world   !   How   ?",
+      };
+      const result = CleanFeedback(input);
+      expect(result).toContain("Hello , world ! How ?");
+    });
+
+    it("should preserve multiple punctuation marks", () => {
+      const input = {
+        id: "test-19b",
+        rawText: "thanks!!  yessss!!!  what???",
+      };
+      const result = CleanFeedback(input);
+      expect(result).toContain("thanks!! yes!!! what???");
     });
   });
 
@@ -185,55 +233,6 @@ describe("CleanFeedback (Module 2: Preprocessing — Text Cleaning)", () => {
       const result = CleanFeedback(input);
       expect(result).toContain("intended learning outcome");
       expect(result).toContain("revised bloom taxonomy");
-    });
-  });
-
-  describe("Whitespace Normalization", () => {
-    it("should collapse multiple spaces", () => {
-      const input = {
-        id: "test-16",
-        rawText: "too    many     spaces",
-      };
-      const result = CleanFeedback(input);
-      expect(result).not.toContain("    ");
-      expect(result).toContain("too many spaces");
-    });
-
-    it("should trim leading/trailing whitespace", () => {
-      const input = {
-        id: "test-17",
-        rawText: "   leading and trailing spaces   ",
-      };
-      const result = CleanFeedback(input);
-      expect(result).toBe(result.trim());
-      expect(result).toBe("leading and trailing spaces");
-    });
-
-    it("should handle tabs and newlines", () => {
-      const input = {
-        id: "test-18",
-        rawText: "line one\n\tline two",
-      };
-      const result = CleanFeedback(input);
-      expect(result).toContain("line one line two");
-    });
-
-    it("should preserve punctuation exactly as-is", () => {
-      const input = {
-        id: "test-19",
-        rawText: "Hello   ,   world   !   How   ?",
-      };
-      const result = CleanFeedback(input);
-      expect(result).toContain("Hello , world ! How ?");
-    });
-
-    it("should preserve multiple punctuation marks", () => {
-      const input = {
-        id: "test-19b",
-        rawText: "thanks!!  yessss!!!  what???",
-      };
-      const result = CleanFeedback(input);
-      expect(result).toContain("thanks!! yes!!! what???");
     });
   });
 
@@ -311,6 +310,32 @@ describe("CleanFeedback (Module 2: Preprocessing — Text Cleaning)", () => {
       expect(result).toContain("because");
       expect(result).toContain("students");
       expect(result).toContain("keep");
+    });
+  });
+
+  describe("Preprocessing Step Timeline (inspectPreprocessingSteps)", () => {
+    it("collapses whitespace and trims in step 1 (noise removal)", () => {
+      const steps = inspectPreprocessingSteps("   too    many     spaces   ");
+      expect(steps.afterNoise).toBe("too many spaces");
+    });
+
+    it("collapses whitespace left behind by removed noise in step 1", () => {
+      const steps = inspectPreprocessingSteps("@prof Great lecture! 😄  Check https://example.com");
+      expect(steps.afterNoise).toBe("Great lecture! Check");
+    });
+
+    it("exposes exactly three cleaning stages ending at cleanedText", () => {
+      const steps = inspectPreprocessingSteps("yessss @student ur proj is cooool!");
+      expect(steps.afterNoise).toBe("yessss ur proj is cooool!");
+      expect(steps.afterVowels).toBe("yes ur proj is cool!");
+      expect(steps.afterAbbrevs).toBe("yes your project is cool!");
+      expect(steps.cleanedText).toBe(steps.afterAbbrevs);
+    });
+
+    it("keeps cleanedText identical to the final abbreviation stage", () => {
+      const steps = inspectPreprocessingSteps("pls slow down bc it's fast");
+      expect(steps.cleanedText).toBe(steps.afterAbbrevs);
+      expect(steps.cleanedText).toBe("please slow down because it's fast");
     });
   });
 

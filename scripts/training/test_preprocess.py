@@ -11,6 +11,11 @@ class TestPreprocess(unittest.TestCase):
         expected = "Check this good!"
         self.assertEqual(preprocess(text), expected)
 
+    def test_whitespace_folding(self):
+        # Whitespace collapse + trim.
+        self.assertEqual(preprocess("\ttoo    many   spaces  "), "too many spaces")
+        self.assertEqual(preprocess("line one\n\tline two"), "line one line two")
+
     def test_repetition_normalization(self):
         # 'soooo' becomes 'so' (soo not in vocab), 'coolll' becomes 'cool' (cool in vocab)
         self.assertEqual(preprocess("soooo coolll"), "so cool")

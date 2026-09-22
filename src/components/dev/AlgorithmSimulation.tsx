@@ -729,8 +729,7 @@ function StepPreprocess({
       <CardHeader>
         <CardTitle>Phase 2 · Preprocessing (Module 2)</CardTitle>
         <CardDescription>
-          Noise removal, vowel reduction, abbreviation expansion, whitespace normalization, and
-          tensor encoding.
+          Noise removal, vowel reduction, abbreviation expansion, and tensor encoding.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -770,18 +769,11 @@ function StepPreprocess({
                 changed={steps.afterVowels !== steps.afterNoise}
               />
               <StageRow
-                label="3 · Abbreviation Expansion"
-                detail="Expand slang"
+                label="3 · Abbreviation Mapping"
+                detail="Expand slang & CS abbreviations"
                 value={steps.afterAbbrevs}
                 highlight={steps.afterAbbrevs !== steps.afterVowels}
                 changed={steps.afterAbbrevs !== steps.afterVowels}
-              />
-              <StageRow
-                label="4 · Whitespace Normalization"
-                detail="Trim and collapse whitespace"
-                value={steps.cleanedText}
-                highlight={steps.cleanedText !== steps.afterAbbrevs}
-                changed={steps.cleanedText !== steps.afterAbbrevs}
               />
             </div>
           </div>
