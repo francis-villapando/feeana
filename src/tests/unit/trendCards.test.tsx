@@ -17,6 +17,8 @@ function makeTrendPoint(topic: string, overrides: Partial<TrendPoint> = {}): Tre
     iloAchievement: 70,
     avgPolarity: 0.4,
     recommendationCount: 3,
+    primaryRecommendationCount: 2,
+    secondaryRecommendationCount: 1,
     warningCount: 1,
     aspectDist: dist([
       ["Clarity", 5],

@@ -38,8 +38,15 @@ const POLARITY_CONFIG: ChartConfig = {
 };
 
 const ISSUES_CONFIG: ChartConfig = {
-  recommendationCount: { label: "Recommendations", color: "var(--color-chart-1)" },
-  warningCount: { label: "Warnings", color: "var(--color-chart-3)" },
+  primaryRecommendationCount: {
+    label: "Primary recommendations",
+    color: "var(--color-chart-1)",
+  },
+  secondaryRecommendationCount: {
+    label: "Secondary recommendations",
+    color: "var(--color-chart-3)",
+  },
+  warningCount: { label: "Warnings", color: "var(--color-chart-4)" },
 };
 
 const VIEWS: { value: TrendView; label: string }[] = Object.entries(LINE_VIEW_CONFIG).map(
@@ -320,15 +327,21 @@ function IssuesChart({ trend }: { trend: TrendPoint[] }) {
       config={ISSUES_CONFIG}
       series={[
         {
-          dataKey: "recommendationCount",
+          dataKey: "primaryRecommendationCount",
           color: "var(--color-chart-1)",
-          gradientId: "grad-recommendations",
+          gradientId: "grad-primary",
         },
-        { dataKey: "warningCount", color: "var(--color-chart-3)", gradientId: "grad-warnings" },
+        {
+          dataKey: "secondaryRecommendationCount",
+          color: "var(--color-chart-3)",
+          gradientId: "grad-secondary",
+        },
+        { dataKey: "warningCount", color: "var(--color-chart-4)", gradientId: "grad-warnings" },
       ]}
       gradients={[
-        areaGradient("grad-recommendations", "var(--color-chart-1)"),
-        areaGradient("grad-warnings", "var(--color-chart-3)"),
+        areaGradient("grad-primary", "var(--color-chart-1)"),
+        areaGradient("grad-secondary", "var(--color-chart-3)"),
+        areaGradient("grad-warnings", "var(--color-chart-4)"),
       ]}
       yDomain={[0, "dataMax"]}
       allowDecimals={false}

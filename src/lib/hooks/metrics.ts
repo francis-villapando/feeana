@@ -138,6 +138,8 @@ export interface TrendPoint {
   iloAchievement: number | null;
   avgPolarity: number;
   recommendationCount: number;
+  primaryRecommendationCount: number;
+  secondaryRecommendationCount: number;
   warningCount: number;
   aspectDist: DistEntry[];
   issueDist: DistEntry[];
@@ -164,6 +166,10 @@ export function classTrendData(
         iloAchievement: iloAchievementForSession(s, analyses),
         avgPolarity: avgPolarityForSession(analysis),
         recommendationCount: analysis.recommendations.length,
+        primaryRecommendationCount: analysis.recommendations.filter((r) => r.tier === "primary")
+          .length,
+        secondaryRecommendationCount: analysis.recommendations.filter((r) => r.tier === "secondary")
+          .length,
         warningCount: analysis.warnings.length,
         aspectDist: analysis.aspectDist,
         issueDist: analysis.issueDist,

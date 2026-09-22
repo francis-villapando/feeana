@@ -64,6 +64,6 @@ export const LINE_VIEW_CONFIG: Record<TrendView, LineViewConfig> = {
   },
   issues: {
     label: "Issues",
-    description: "Recommendation and warning counts per analyzed session.",
+    description: "Primary, secondary, and warning counts per analyzed session.",
   },
 };
