@@ -71,11 +71,13 @@ export function GeneratePedagogicalCue(
   uniqueIssue: BufferedDiagnostic,
   totalFeedback: number,
   weightedCoefficient: number,
+  tier: "primary" | "secondary" = "primary",
 ): RecommendationItem {
   console.debug("[strategyGeneration] Generating pedagogical cue", {
     topic: sessionContext.topic,
     isGap: uniqueIssue.isGap,
     issue: uniqueIssue.issue,
+    tier,
   });
 
   const percentageStr = `${((uniqueIssue.count / totalFeedback) * weightedCoefficient * 100).toFixed(0)}%`;
@@ -154,5 +156,6 @@ export function GeneratePedagogicalCue(
     priority: uniqueIssue.count,
     theories: ["RBT", "CLT"],
     isGap: uniqueIssue.isGap,
+    tier,
   };
 }

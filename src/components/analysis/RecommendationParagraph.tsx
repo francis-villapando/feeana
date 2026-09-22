@@ -63,49 +63,57 @@ function resolveDetail(
 
 interface RecommendationParagraphProps {
   rec: Recommendation;
-  index: number;
   ilos?: ILO[];
 }
 
-export function RecommendationParagraph({ rec, index, ilos }: RecommendationParagraphProps) {
+export function RecommendationParagraph({ rec, ilos }: RecommendationParagraphProps) {
   const segments = tokenize(rec.paragraph, rec.terms);
   const feedbackTexts = rec.feedbackTexts ?? [];
+  const isSecondary = rec.tier === "secondary";
+
   return (
-    <li className="rounded-lg border border-border/60 bg-background/40 p-4">
-      <div className="flex items-baseline gap-3">
-        <span className="font-mono text-xs font-semibold text-primary">
-          {String(index + 1).padStart(2, "0")}
-        </span>
-        <div className="flex-1 text-sm leading-relaxed">
-          {segments.map((seg, i) => {
-            if (!seg.term) return <span key={i}>{seg.text}</span>;
-            const { heading, body } = resolveDetail(seg.term, ilos);
-            const isRbt = seg.term.kind === "RBT";
-            return (
-              <HoverCard key={i} openDelay={120} closeDelay={80}>
-                <HoverCardTrigger asChild>
-                  <span className="cursor-help text-primary underline decoration-primary/40 decoration-dotted underline-offset-4 hover:decoration-primary">
-                    {seg.text}
-                  </span>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80" align="start">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-                    {heading}
-                  </p>
-                  {isRbt ? (
-                    <ul className="mt-2 list-disc space-y-1 pl-4 text-sm leading-relaxed">
-                      {body.split(" --- ").map((item, j) => (
-                        <li key={j}>{item}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-2 text-sm leading-relaxed">{body}</p>
-                  )}
-                </HoverCardContent>
-              </HoverCard>
-            );
-          })}
-        </div>
+    <div className="rounded-lg border border-border/60 bg-background/40 p-4">
+      <div className="flex-1 text-sm leading-relaxed">
+        {segments.map((seg, i) => {
+          if (!seg.term) return <span key={i}>{seg.text}</span>;
+          const { heading, body } = resolveDetail(seg.term, ilos);
+          const isRbt = seg.term.kind === "RBT";
+          return (
+            <HoverCard key={i} openDelay={120} closeDelay={80}>
+              <HoverCardTrigger asChild>
+                <span
+                  className={
+                    isSecondary
+                      ? "cursor-help text-warning underline decoration-warning/40 decoration-dotted underline-offset-4 hover:decoration-warning"
+                      : "cursor-help text-primary underline decoration-primary/40 decoration-dotted underline-offset-4 hover:decoration-primary"
+                  }
+                >
+                  {seg.text}
+                </span>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80" align="start">
+                <p
+                  className={
+                    isSecondary
+                      ? "text-xs font-semibold uppercase tracking-wider text-warning"
+                      : "text-xs font-semibold uppercase tracking-wider text-primary"
+                  }
+                >
+                  {heading}
+                </p>
+                {isRbt ? (
+                  <ul className="mt-2 list-disc space-y-1 pl-4 text-sm leading-relaxed">
+                    {body.split(" --- ").map((item, j) => (
+                      <li key={j}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm leading-relaxed">{body}</p>
+                )}
+              </HoverCardContent>
+            </HoverCard>
+          );
+        })}
       </div>
       {feedbackTexts.length > 0 && (
         <div className="mt-3 border-t border-border/60 pt-3">
@@ -127,6 +135,6 @@ export function RecommendationParagraph({ rec, index, ilos }: RecommendationPara
           </div>
         </div>
       )}
-    </li>
+    </div>
   );
 }

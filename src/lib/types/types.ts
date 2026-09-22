@@ -130,6 +130,8 @@ export interface RecommendationTerm {
   iloId?: string;
 }
 
+export type RecommendationTier = "primary" | "secondary";
+
 export interface Recommendation {
   id: string;
   paragraph: string;
@@ -137,6 +139,7 @@ export interface Recommendation {
   theories: Theory[];
   priority: number;
   feedbackTexts?: string[];
+  tier?: RecommendationTier;
 }
 
 export interface Warning {
@@ -176,6 +179,5 @@ export interface AnalysisResult {
   gaps: GapItem[];
   recommendations: Recommendation[];
   warnings: Warning[];
-  /** Per-feedback diagnostic mapping, keyed by feedbackId. */
   diagnostics?: DiagnosticRecord[];
 }

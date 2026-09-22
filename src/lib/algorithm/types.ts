@@ -60,6 +60,8 @@ export interface StrategyStats {
   cltCounts: Record<string, number>;
 }
 
+export type RecommendationTier = "primary" | "secondary";
+
 export interface RecommendationItem {
   id: string;
   issue: string;
@@ -72,6 +74,7 @@ export interface RecommendationItem {
   priority: number;
   theories: string[];
   isGap: boolean;
+  tier?: RecommendationTier;
 }
 
 export interface PipelineOutput {

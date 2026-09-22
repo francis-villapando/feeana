@@ -1291,23 +1291,48 @@ class DashboardSeeder {
     const recommendationList: RecommendationItem[] = [];
     const warningList: RecommendationItem[] = [];
 
-    for (const uniqueIssue of uniqueIssueMap.values()) {
-      if (uniqueIssue.issue === "Uncategorized") continue;
+    // Module 5: same primary/secondary fallback as pipeline.ts (boost-adjusted score, ties all promoted).
+    const candidateIssues = Array.from(uniqueIssueMap.values()).filter(
+      (item) => item.issue !== "Uncategorized" && item.count > 0,
+    );
 
+    const primaryCandidates: { item: BufferedDiagnostic; score: number; weight: number }[] = [];
+    const subThresholdCandidates: { item: BufferedDiagnostic; score: number; weight: number }[] = [];
+
+    for (const uniqueIssue of candidateIssues) {
       const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
       const priorityScore = (uniqueIssue.count / total) * weightedCoefficient;
 
-      const pedagogicalCue = GeneratePedagogicalCue(
-        sessionContext,
-        uniqueIssue,
-        total,
-        weightedCoefficient,
-      );
-
       if (priorityScore >= DashboardSeeder.PRIORITY_THRESHOLD) {
-        recommendationList.push(pedagogicalCue);
+        primaryCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
       } else {
-        warningList.push(pedagogicalCue);
+        subThresholdCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
+      }
+    }
+
+    if (primaryCandidates.length > 0) {
+      for (const cand of primaryCandidates) {
+        recommendationList.push(
+          GeneratePedagogicalCue(sessionContext, cand.item, total, cand.weight, "primary"),
+        );
+      }
+      for (const cand of subThresholdCandidates) {
+        warningList.push(
+          GeneratePedagogicalCue(sessionContext, cand.item, total, cand.weight, "primary"),
+        );
+      }
+    } else if (subThresholdCandidates.length > 0) {
+      const maxScore = Math.max(...subThresholdCandidates.map((c) => c.score));
+      for (const cand of subThresholdCandidates) {
+        if (Math.abs(cand.score - maxScore) < 1e-9) {
+          recommendationList.push(
+            GeneratePedagogicalCue(sessionContext, cand.item, total, cand.weight, "secondary"),
+          );
+        } else {
+          warningList.push(
+            GeneratePedagogicalCue(sessionContext, cand.item, total, cand.weight, "primary"),
+          );
+        }
       }
     }
 
@@ -1411,6 +1436,7 @@ class DashboardSeeder {
           theories: r.theories as Theory[],
           priority: r.priority,
           feedbackTexts: issueToTexts.get(issueLabel),
+          tier: r.tier,
         };
       }),
       warnings: warningList.map((recommendationItem) => ({

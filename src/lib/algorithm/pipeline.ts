@@ -224,23 +224,69 @@ export async function runAnalysisPipeline(
   const recommendationList: RecommendationItem[] = [];
   const warningList: RecommendationItem[] = [];
 
-  for (const uniqueIssue of uniqueIssueMap.values()) {
-    if (uniqueIssue.issue === "Uncategorized") continue;
+  const candidateIssues = Array.from(uniqueIssueMap.values()).filter(
+    (item) => item.issue !== "Uncategorized" && item.count > 0,
+  );
 
+  const primaryCandidates: { item: BufferedDiagnostic; score: number; weight: number }[] = [];
+  const subThresholdCandidates: { item: BufferedDiagnostic; score: number; weight: number }[] = [];
+
+  for (const uniqueIssue of candidateIssues) {
     const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
     const priorityScore = (uniqueIssue.count / totalFeedback) * weightedCoefficient;
 
-    const pedagogicalCue = GeneratePedagogicalCue(
-      sessionContext,
-      uniqueIssue,
-      totalFeedback,
-      weightedCoefficient,
-    );
-
     if (priorityScore >= PRIORITY_THRESHOLD) {
-      recommendationList.push(pedagogicalCue);
+      primaryCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
     } else {
-      warningList.push(pedagogicalCue);
+      subThresholdCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
+    }
+  }
+
+  if (primaryCandidates.length > 0) {
+    for (const cand of primaryCandidates) {
+      const cue = GeneratePedagogicalCue(
+        sessionContext,
+        cand.item,
+        totalFeedback,
+        cand.weight,
+        "primary",
+      );
+      recommendationList.push(cue);
+    }
+    // Sub-threshold issues become warnings
+    for (const cand of subThresholdCandidates) {
+      const cue = GeneratePedagogicalCue(
+        sessionContext,
+        cand.item,
+        totalFeedback,
+        cand.weight,
+        "primary",
+      );
+      warningList.push(cue);
+    }
+  } else if (subThresholdCandidates.length > 0) {
+    // Promote the sub-threshold issue(s) with the highest boost-adjusted score; ties all go to secondary.
+    const maxScore = Math.max(...subThresholdCandidates.map((c) => c.score));
+    for (const cand of subThresholdCandidates) {
+      if (Math.abs(cand.score - maxScore) < 1e-9) {
+        const cue = GeneratePedagogicalCue(
+          sessionContext,
+          cand.item,
+          totalFeedback,
+          cand.weight,
+          "secondary",
+        );
+        recommendationList.push(cue);
+      } else {
+        const cue = GeneratePedagogicalCue(
+          sessionContext,
+          cand.item,
+          totalFeedback,
+          cand.weight,
+          "primary",
+        );
+        warningList.push(cue);
+      }
     }
   }
 
@@ -345,6 +391,7 @@ export async function runAnalysisPipeline(
         theories: r.theories as Theory[],
         priority: r.priority,
         feedbackTexts: issueToTexts.get(issueLabel),
+        tier: r.tier,
       };
     }),
     warnings: warningList.map((recommendationItem) => ({
