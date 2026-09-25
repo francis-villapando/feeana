@@ -114,6 +114,12 @@ export function preprocessFeedback(rawText: string): string {
 
 // Module 4: Pedagogical Diagnostic Mapping (algorithm.pseudo L12-15)
 export function mapDiagnostics(issue: string, targetRbt: number): DiagnosticMapping {
+  // Sentinel (rbt: 0, clt: "Uncategorized") is intentionally out-of-range (valid RBT: 1-6)
+  // to ensure Uncategorized issues cannot collide with or be silently included in downstream
+  // gap/priority/aggregation calculations. This intentionally diverges from rules.ts and
+  // pedagogicalDiagnosticMapping.ts fallback defaults (RBT 1 / "Extraneous"), which act as a generic
+  // catch-all for unknown strings rather than a deliberate Uncategorized classification.
+  // Do not "fix" or align this to rules.ts without explicitly revisiting this decision.
   if (isUncategorized(issue)) {
     return { tti: "Uncategorized", rbt: 0, clt: "Uncategorized", isGap: false };
   }

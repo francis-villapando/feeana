@@ -8,6 +8,8 @@ const EXPECTED: Record<
   string,
   {
     issue: string;
+    diagnosticRbt: number;
+    diagnosticClt: "Intrinsic" | "Extraneous" | "Uncategorized";
     isGap: boolean;
     priorityScore: number;
     triggersRecommendation: boolean;
@@ -16,6 +18,8 @@ const EXPECTED: Record<
 > = {
   "Intrinsic Gap (Recommendation)": {
     issue: "abstract logic gap",
+    diagnosticRbt: 4,
+    diagnosticClt: "Intrinsic",
     isGap: true,
     priorityScore: 0.45,
     triggersRecommendation: true,
@@ -23,6 +27,8 @@ const EXPECTED: Record<
   },
   "Extraneous (Recommendation)": {
     issue: "instructional cadence",
+    diagnosticRbt: 2,
+    diagnosticClt: "Extraneous",
     isGap: false,
     priorityScore: 0.4,
     triggersRecommendation: true,
@@ -30,6 +36,8 @@ const EXPECTED: Record<
   },
   "Intrinsic Non-Gap (Recommendation)": {
     issue: "design synthesis failure",
+    diagnosticRbt: 6,
+    diagnosticClt: "Intrinsic",
     isGap: false,
     priorityScore: 0.3,
     triggersRecommendation: true,
@@ -37,6 +45,8 @@ const EXPECTED: Record<
   },
   "Gap Multiplier Boost": {
     issue: "procedural bottleneck",
+    diagnosticRbt: 3,
+    diagnosticClt: "Intrinsic",
     isGap: true,
     priorityScore: 0.3,
     triggersRecommendation: true,
@@ -44,6 +54,8 @@ const EXPECTED: Record<
   },
   "Intrinsic (Warning)": {
     issue: "notation struggle",
+    diagnosticRbt: 1,
+    diagnosticClt: "Intrinsic",
     isGap: true,
     priorityScore: 0.15,
     triggersRecommendation: false,
@@ -51,6 +63,8 @@ const EXPECTED: Record<
   },
   "Extraneous (Warning)": {
     issue: "peer distraction",
+    diagnosticRbt: 1,
+    diagnosticClt: "Extraneous",
     isGap: false,
     priorityScore: 0.1,
     triggersRecommendation: false,
@@ -58,6 +72,8 @@ const EXPECTED: Record<
   },
   "Uncategorized Feedback": {
     issue: "Uncategorized",
+    diagnosticRbt: 0,
+    diagnosticClt: "Uncategorized",
     isGap: false,
     priorityScore: 0,
     triggersRecommendation: false,
@@ -65,6 +81,8 @@ const EXPECTED: Record<
   },
   "Low-Confidence Fallback (Uncategorized)": {
     issue: "Uncategorized",
+    diagnosticRbt: 0,
+    diagnosticClt: "Uncategorized",
     isGap: false,
     priorityScore: 0,
     triggersRecommendation: false,
@@ -121,6 +139,8 @@ describe("model-backed preset simulation", () => {
       );
       const cue = buildCue(preset.input, extraction.issue, diag, preset.input.issueOccurrences);
 
+      expect(diag.rbt).toBe(expected.diagnosticRbt);
+      expect(diag.clt).toBe(expected.diagnosticClt);
       expect(diag.isGap).toBe(expected.isGap);
       expect(strat.priorityScore).toBeCloseTo(expected.priorityScore, 2);
       expect(strat.triggersRecommendation).toBe(expected.triggersRecommendation);
