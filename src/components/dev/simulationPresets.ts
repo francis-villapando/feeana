@@ -17,25 +17,28 @@ export const PRESETS: Preset[] = [
   {
     label: "Intrinsic Gap (Recommendation)",
     description:
-      "Major learning bottleneck where students struggle with essential lesson concepts (Abstract Logic), receiving a 1.5x importance multiplier to trigger an actionable teaching recommendation.",
+      "This Create-level recursion case targets original algorithm design (RBT 6). The model maps the feedback to an Intrinsic Abstract Logic Gap at RBT 4, so the prerequisite issue is a gap; 3 of 10 comments receive the 1.5× multiplier, producing priority 0.45 and a recommendation.",
     input: {
       topic: "Recursion & Divide-and-Conquer",
-      iloStatement: "Design and analyze recursive algorithms for complex problems.",
-      targetRbt: 5,
+      iloStatement:
+        "Design and develop recursive algorithms to solve complex computational problems using divide-and-conquer strategies.",
+      targetRbt: 6,
       feedbackText:
-        "😭 @sir_ramirez #Recursion medyo nawawala   ako kapag nagcoconnect na   ng iba't ibang concepts https://feeana.edu/feedback",
+        "😭 @sir_ramirez #Recursion medyoooo nawawala ako bc di ko magets kapag nagconnect na ng iba't ibang concepts https://feeana.me/student/home",
       totalFeedback: 10,
       issueOccurrences: 3,
     },
-    expectedClean: "medyo nawawala ako kapag nagcoconnect na ng iba't ibang concepts",
+    expectedClean:
+      "medyo nawawala ako because di ko magets kapag nagconnect na ng iba't ibang concepts",
   },
   {
     label: "Extraneous (Recommendation)",
     description:
-      "Classroom delivery friction (Lesson Pacing is too fast) affecting 40% of the class, generating an actionable teaching adjustment without being a concept gap.",
+      "This linked-list case simulates a lesson-pacing complaint rather than a linked-list knowledge gap. The model maps it to an Extraneous Instructional Cadence issue (RBT 2), so the RBT 3 target receives no intrinsic-gap multiplier; 4 of 10 comments produce priority 0.40 and a recommendation.",
     input: {
       topic: "Linked Lists",
-      iloStatement: "Implement and manipulate singly linked list operations.",
+      iloStatement:
+        "Apply singly linked list operations to implement solutions for given programming problems.",
       targetRbt: 3,
       feedbackText:
         "@prof_santos #LessonPacing Hindi ko   masundan ung bilis ng lipat kc   parang laging biglaan ang paglipat   sa bagong topic. 😭 https://feeana.edu/survey",
@@ -48,7 +51,7 @@ export const PRESETS: Preset[] = [
   {
     label: "Intrinsic Non-Gap (Recommendation)",
     description:
-      "Advanced concept struggle (Design Synthesis) exceeding the session's intended learning goals, receiving standard priority without gap status.",
+      "This algorithm-implementation case uses an Apply target (RBT 3), but feedback about constructing a personal algorithm is mapped to an Intrinsic Design Synthesis Failure (RBT 6). Because the issue exceeds the target, it remains a non-gap; 3 of 10 comments produce priority 0.30 and a recommendation.",
     input: {
       topic: "Algorithm Implementation",
       iloStatement: "Implement a working program from a given algorithm specification.",
@@ -64,10 +67,11 @@ export const PRESETS: Preset[] = [
   {
     label: "Gap Multiplier Boost",
     description:
-      "Moderate concept difficulty (20% of class) elevated into an actionable recommendation because failing a target learning goal gives it a 1.5x priority boost.",
+      "This sorting case targets choosing an appropriate algorithm (RBT 4). Students who understand the algorithm but struggle to implement it are mapped to an Intrinsic Procedural Bottleneck (RBT 3), which is a lower-level gap; 2 of 10 comments receive the 1.5× multiplier, producing priority 0.30 and a recommendation.",
     input: {
       topic: "Sorting Algorithms",
-      iloStatement: "Apply sorting algorithms to order data sets.",
+      iloStatement:
+        "Analyze sorting algorithms to determine which approach is appropriate for a given data set and problem requirement.",
       targetRbt: 4,
       feedbackText:
         "gets ko naman   yung algorithm pero nacoconfuse ako kung paano   ko sisimulan yung implementation",
@@ -80,10 +84,10 @@ export const PRESETS: Preset[] = [
   {
     label: "Intrinsic (Warning)",
     description:
-      "Isolated concept confusion (Notation Struggle) affecting only 10% of students, flagged as a low-priority warning for instructor monitoring.",
+      "This proof-notation case targets applying formal notation (RBT 3). The model maps confusion over symbols to an Intrinsic Notation Struggle (RBT 1), so it remains a lower-level gap; 1 of 10 comments receives the 1.5× multiplier, producing priority 0.15, below the recommendation threshold, so the simulator shows a warning.",
     input: {
       topic: "Discrete Mathematics",
-      iloStatement: "Interpret logical notation used in mathematical proofs.",
+      iloStatement: "Apply standard logical notation when interpreting mathematical proofs.",
       targetRbt: 3,
       feedbackText:
         "nalito talagaaa ako nung   nag-start magsulat yung prof ng mga baligtad na A   at paatras na E sa board, parang nakatingin ako sa   ibang langauge 😭 #DiscreteMath",
@@ -96,10 +100,11 @@ export const PRESETS: Preset[] = [
   {
     label: "Extraneous (Warning)",
     description:
-      "Minor classroom environment distraction (Chatty Peers) affecting 10% of students, kept below the action threshold as a monitoring warning.",
+      "This binary-tree case targets applying traversal algorithms (RBT 3), but the feedback is about peers distracting the class. The model maps it to an Extraneous Peer Distraction issue (RBT 1), so it is a non-gap and receives no multiplier; 1 of 10 comments produces priority 0.10, below the recommendation threshold, so the simulator shows a warning.",
     input: {
       topic: "Binary Trees",
-      iloStatement: "Traverse binary trees using in-order and pre-order strategies.",
+      iloStatement:
+        "Apply in-order and pre-order traversal algorithms to obtain the required node sequences of binary trees.",
       targetRbt: 3,
       feedbackText:
         "ang hirap ifollow   nung lecture kapag panay ang daldalan nung group sa likod   tungkol sa mga weekend plans nila @classmate_jo",
@@ -112,10 +117,11 @@ export const PRESETS: Preset[] = [
   {
     label: "Uncategorized Feedback",
     description:
-      "Neutral class-activity feedback with no academic or teaching issue, safely recognized as Uncategorized with no interventions generated.",
+      "A neutral comment about creating a microservices diagram does not express a recognized academic or instructional problem. The simulator classifies it as Uncategorized (RBT 0, CLT Uncategorized), excludes it from priority scoring, and generates no recommendation or warning.",
     input: {
       topic: "Graph Theory",
-      iloStatement: "Represent graphs using adjacency lists and matrices.",
+      iloStatement:
+        "Analyze graph operations and constraints to select an adjacency-list or adjacency-matrix representation for a graph.",
       targetRbt: 4,
       feedbackText:
         "may ginawa kaming   diagram about sa microservices architecture   kanina #GraphTheory",
@@ -127,10 +133,10 @@ export const PRESETS: Preset[] = [
   {
     label: "Low-Confidence Fallback (Uncategorized)",
     description:
-      "Ambiguous instructor-competence feedback (test.csv #6294) where the model's top softmax confidence (27.5%) falls below the 31.0% confidence cutoff. The raw candidate 'subject alienation' is nearly tied with 'evaluation unfairness' (26.6%), so the item is routed to Uncategorized to prevent a low-confidence false positive from polluting downstream diagnostic cues.",
+      "An ambiguous instructor-competence comment produces a top raw candidate below the 31% confidence cutoff. The confidence gate routes the item to Uncategorized before gap scoring, so it is excluded and produces no recommendation or warning.",
     input: {
       topic: "Programming Fundamentals",
-      iloStatement: "Write and debug simple programs using core language constructs.",
+      iloStatement: "Apply core programming constructs to implement simple programs.",
       targetRbt: 3,
       feedbackText:
         "😭 @prof_santos #CS102 Makes mistakes frequentlyyyy and is not equipped to teach at this level. https://feeana.edu/survey",
