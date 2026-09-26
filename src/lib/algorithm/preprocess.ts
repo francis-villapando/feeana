@@ -187,7 +187,7 @@ export function EncodeFeedback(
   };
 }
 
-// Module 2: Preprocessing --- algorithm.pseudo line 9
+// Module 2: Preprocessing (algorithm.pseudo L9)
 export function Preprocess(feedback: FeedbackInput, tokenizer: MachineTokenizer): PreprocessResult {
   console.debug("[preprocess] INPUT BOUNDARY: Received feedback", {
     feedbackId: feedback.id,

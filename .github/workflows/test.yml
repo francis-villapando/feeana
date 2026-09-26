@@ -51,6 +51,9 @@ jobs:
           fi
           echo "OK: No unprotected .delete() calls on protected tables."
 
+      - name: Check algorithm.pseudo line references
+        run: npm run check:refs
+
       - name: Lint
         run: npm run lint
 

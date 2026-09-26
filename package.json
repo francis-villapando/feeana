@@ -20,6 +20,7 @@
     "db:seed:dashboard": "npx tsx --env-file .env scripts/seed/seed.ts",
     "db:smoke": "npx tsx --env-file=.env scripts/dev/pipelineSmoke.ts",
     "sync:ort": "npx tsx scripts/dev/syncOrtWasm.ts",
+    "check:refs": "npx tsx scripts/dev/checkPseudoRefs.ts",
     "postinstall": "npm run sync:ort"
   },
   "dependencies": {

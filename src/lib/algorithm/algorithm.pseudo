@@ -1,15 +1,15 @@
 Begin
-  // Module 1: Data Collection --- dataCollection.ts
+  // Module 1: Data Collection (dataCollection.ts L12)
   session = session_context(course, topic, target_ILO_rbt)
 
   Initialize recommendation_list, warning_list, buffer
   
-  // Module 2, 3, & 4 --- worker.ts
+  // Module 2, 3, & 4 (worker.ts L49)
   For each feedback in feedback_stream Do
-    clean_text = Preprocess(feedback) // Module 2: Preprocessing --- preprocess.ts
-    { issue, polarity } = ExtractPID(clean_text) // Module 3: Information Extraction --- informationExtraction.ts
+    clean_text = Preprocess(feedback) // Module 2: Preprocessing (preprocess.ts L191)
+    { issue, polarity } = ExtractPID(clean_text) // Module 3: Information Extraction (informationExtraction.ts L48)
 
-    // Module 4: Pedagogical Diagnostic Mapping --- pedagogicalDiagnosticMapping.ts
+    // Module 4: Pedagogical Diagnostic Mapping (pedagogicalDiagnosticMapping.ts L22)
     tti = map_tti(issue)
     rbt = map_rbt(issue)
     clt = map_clt(issue)
@@ -18,7 +18,7 @@ Begin
     buffer.add({ tti, rbt, clt, issue, polarity, is_gap })
   End For
   
-  // Module 5: Strategy Generation --- strategyGeneration.ts
+  // Module 5: Strategy Generation (strategyGeneration.ts L21)
   Total_F = Count(feedback_stream) // Total number of feedback entries
   stats = CalculateDistributions(buffer) // Compute data for dashboard charts
   
@@ -37,6 +37,6 @@ Begin
     End If
   End For
 
-  // Module 6: Dashboard Output --- dashboardOutput.ts
+  // Module 6: Dashboard Output (dashboardOutput.ts L75)
   Return { recommendation_list, warning_list, stats }
 End

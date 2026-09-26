@@ -1,5 +1,5 @@
 /**
- * Algorithm Simulation engine — mirrors algorithm.pseudo (Modules 1-6) using the
+ * Algorithm Simulation engine — mirrors algorithm.pseudo L1-42 (Modules 1-6) using the
  * REAL pipeline functions so the step-by-step simulator matches production output.
  *
  * Module 3 (Information Extraction) runs the real DistilXLM-R model via the shared
@@ -130,7 +130,7 @@ export function mapDiagnostics(issue: string, targetRbt: number): DiagnosticMapp
   return { tti, rbt, clt, isGap };
 }
 
-// Module 5: Unified Priority Scoring (algorithm.pseudo L22-24)
+// Module 5: Unified Priority Scoring (algorithm.pseudo L26-28)
 export function computePriority(
   issue: string,
   issueCount: number,
@@ -163,7 +163,7 @@ export function computePriority(
 
 // Module 5-6: Build the pedagogical cue (recommendation or warning) from the
 // simulated diagnostic, matching GeneratePedagogicalCue's output shape.
-// Uncategorized feedback is skipped entirely, mirroring pipeline.ts L220.
+// Uncategorized feedback is skipped entirely, mirroring pipeline.ts L226-228.
 export function buildCue(
   input: SimulationInput,
   issue: string,
