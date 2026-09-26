@@ -1,28 +1,27 @@
 /**
  * Pipeline orchestrator: runs all 6 modules in sequence, persists results to Supabase.
  *
- * Modules 1-6 as defined in algorithm.pseudo:
- *   Module 1 — Data Collection (via dataCollection.ts)
- *   Module 2 — Preprocessing (via preprocess.ts, inside Web Worker)
- *   Module 3 — Information Extraction (via informationExtraction.ts, inside Web Worker)
- *   Module 4 — Pedagogical Diagnostic Mapping (via pedagogicalDiagnosticMapping.ts)
- *   Module 5 — Strategy Generation (via strategyGeneration.ts)
- *   Module 6 — Dashboard Output (via dashboardOutput.ts)
+ * Modules 1-6 as defined in algorithm.pseudo L1-42:
+ *   Module 1 — Data Collection (via dataCollection.ts L12)
+ *   Module 2 — Preprocessing (via preprocess.ts L191, inside Web Worker)
+ *   Module 3 — Information Extraction (via informationExtraction.ts L48, inside Web Worker)
+ *   Module 4 — Pedagogical Diagnostic Mapping (via pedagogicalDiagnosticMapping.ts L22)
+ *   Module 5 — Strategy Generation (via strategyGeneration.ts L21)
+ *   Module 6 — Dashboard Output (via dashboardOutput.ts L75)
  *
  * Tables:
  *   analysis_results     → raw ML output per feedback { issue, polarity } — written once, immutable
  *   feedback_diagnostics → cached computed result per session (JSONB + rules_version)
  */
 
-import type { AnalysisResult, DistEntry, RecommendationTerm, Theory } from "../types/types";
+import type { AnalysisResult } from "../types/types";
 import { supabase as defaultSupabase } from "../db/supabase";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getMLWorkerAsync } from "../ml/mlWorkerStore";
 import { collectPipelineData } from "./dataCollection";
 import { CalculateDistributions, GeneratePedagogicalCue } from "./strategyGeneration";
-import { getIloLevel } from "./dashboardOutput";
-import { ISSUE_RULES, RBT_LEVELS, RULES_VERSION } from "./rules";
-import { buildIloGapItems } from "./dashboardOutput";
+import { getIloLevel, buildIloGapItems, buildAnalysisResult } from "./dashboardOutput";
+import { RULES_VERSION } from "./rules";
 import type { DiagnosticRecord, BufferedDiagnostic, RecommendationItem } from "./types";
 
 const PRIORITY_THRESHOLD = 0.3;
@@ -236,9 +235,17 @@ export async function runAnalysisPipeline(
     const priorityScore = (uniqueIssue.count / totalFeedback) * weightedCoefficient;
 
     if (priorityScore >= PRIORITY_THRESHOLD) {
-      primaryCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
+      primaryCandidates.push({
+        item: uniqueIssue,
+        score: priorityScore,
+        weight: weightedCoefficient,
+      });
     } else {
-      subThresholdCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
+      subThresholdCandidates.push({
+        item: uniqueIssue,
+        score: priorityScore,
+        weight: weightedCoefficient,
+      });
     }
   }
 
@@ -291,119 +298,16 @@ export async function runAnalysisPipeline(
   }
 
   // Module 6: Dashboard Output
-  // Build final AnalysisResult shape
-  const aspectDist: DistEntry[] = Object.entries(stats.aspectCounts)
-    .map(([label, value]) => ({ label, value }) as DistEntry)
-    .sort((a, b) => b.value - a.value);
-
-  const issueDist: DistEntry[] = Object.entries(stats.issueCounts)
-    .map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry)
-    .sort((a, b) => b.value - a.value);
-
-  const polarityDist: DistEntry[] = [
-    { label: "Positive", value: stats.polarityCounts.pos || 0 },
-    { label: "Neutral", value: stats.polarityCounts.neu || 0 },
-    { label: "Negative", value: stats.polarityCounts.neg || 0 },
-  ];
-
-  const rbtDist: DistEntry[] = Object.entries(stats.rbtCounts)
-    .map(([label, value]) => ({ label, value }) as DistEntry)
-    .sort(
-      (a, b) =>
-        (RBT_LEVELS as readonly string[]).indexOf(a.label) -
-        (RBT_LEVELS as readonly string[]).indexOf(b.label),
-    );
-
-  const cltDist: DistEntry[] = Object.entries(stats.cltCounts)
-    .map(([label, value]) => ({ label, value }) as DistEntry)
-    .sort((a, b) => b.value - a.value);
-
-  // Enrich distribution entries with contributing feedback texts
-  const feedbackMap = new Map<string, string>();
-  for (const fb of feedbackStream) feedbackMap.set(fb.id, fb.rawText);
-
-  const aspectToTexts = new Map<string, string[]>();
-  const issueToTexts = new Map<string, string[]>();
-  const polarityToTexts: Record<string, string[]> = { pos: [], neu: [], neg: [] };
-  const rbtToTexts = new Map<string, string[]>();
-  const cltToTexts = new Map<string, string[]>();
-
-  for (const diag of buffer) {
-    const text = feedbackMap.get(diag.feedbackId ?? "");
-    if (!text) continue;
-
-    const aspectList = aspectToTexts.get(diag.tti) ?? [];
-    aspectList.push(text);
-    aspectToTexts.set(diag.tti, aspectList);
-
-    const issueLabel = ISSUE_RULES[diag.issue.toLowerCase()] ?? diag.issue;
-    const issueList = issueToTexts.get(issueLabel) ?? [];
-    issueList.push(text);
-    issueToTexts.set(issueLabel, issueList);
-
-    if (diag.polarity in polarityToTexts) {
-      polarityToTexts[diag.polarity].push(text);
-    }
-
-    const rbtName =
-      diag.issue === "Uncategorized" ? "Uncategorized" : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
-    const rbtList = rbtToTexts.get(rbtName) ?? [];
-    rbtList.push(text);
-    rbtToTexts.set(rbtName, rbtList);
-
-    const cltLabel = diag.issue === "Uncategorized" ? "Uncategorized" : diag.clt;
-    const cltList = cltToTexts.get(cltLabel) ?? [];
-    cltList.push(text);
-    cltToTexts.set(cltLabel, cltList);
-  }
-
-  for (const entry of aspectDist) entry.feedbackTexts = aspectToTexts.get(entry.label);
-  for (const entry of issueDist) entry.feedbackTexts = issueToTexts.get(entry.label);
-  const polarityLabelKey: Record<string, string> = {
-    Positive: "pos",
-    Neutral: "neu",
-    Negative: "neg",
-  };
-  for (const entry of polarityDist)
-    entry.feedbackTexts = polarityToTexts[polarityLabelKey[entry.label]];
-  for (const entry of rbtDist) entry.feedbackTexts = rbtToTexts.get(entry.label);
-  for (const entry of cltDist) entry.feedbackTexts = cltToTexts.get(entry.label);
-
-  // Gap items follow the RBT cascade rule: a diagnostic at level N flags ILOs at level N or above.
-  const gaps = buildIloGapItems(buffer, activeIlos);
-
-  const finalResult: AnalysisResult = {
+  const finalResult = buildAnalysisResult({
     sessionId,
     totalFeedback,
-    aspectDist,
-    issueDist,
-    polarityDist,
-    rbtDist,
-    cltDist,
-    gaps,
-    diagnostics: buffer,
-    recommendations: recommendationList.map((r) => {
-      const issueLabel = ISSUE_RULES[r.issue.toLowerCase()] ?? r.issue;
-      return {
-        id: r.id,
-        paragraph: r.paragraph,
-        terms: r.terms as RecommendationTerm[],
-        theories: r.theories as Theory[],
-        priority: r.priority,
-        feedbackTexts: issueToTexts.get(issueLabel),
-        tier: r.tier,
-      };
-    }),
-    warnings: warningList.map((recommendationItem) => ({
-      id: recommendationItem.id,
-      issue: recommendationItem.issue,
-      terms: recommendationItem.terms as RecommendationTerm[],
-      theories: recommendationItem.theories as Theory[],
-      priority: recommendationItem.priority,
-      count: recommendationItem.priority,
-      isGap: recommendationItem.isGap,
-    })),
-  };
+    stats,
+    buffer,
+    ilos: activeIlos,
+    recommendationList,
+    warningList,
+    feedback: feedbackStream.map((fb) => ({ id: fb.id, text: fb.rawText })),
+  });
 
   // Save computed result to feedback_diagnostics
   assertNotAborted(signal);

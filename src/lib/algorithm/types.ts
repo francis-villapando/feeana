@@ -76,14 +76,3 @@ export interface RecommendationItem {
   isGap: boolean;
   tier?: RecommendationTier;
 }
-
-export interface PipelineOutput {
-  recommendationList: RecommendationItem[];
-  warningList: RecommendationItem[];
-  stats: StrategyStats;
-  diagnostics?: DiagnosticRecord[];
-}
-
-export interface AlgorithmPipeline {
-  run(sessionContext: SessionContext, feedbackStream: FeedbackInput[]): Promise<PipelineOutput>;
-}

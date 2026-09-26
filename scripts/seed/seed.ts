@@ -7,25 +7,15 @@ import {
   CalculateDistributions,
   GeneratePedagogicalCue,
 } from "../../src/lib/algorithm/strategyGeneration";
-import {
-  formatDashboardOutput,
-  buildIloGapItems,
-  getIloLevel,
-} from "../../src/lib/algorithm/dashboardOutput";
+import { buildAnalysisResult, getIloLevel } from "../../src/lib/algorithm/dashboardOutput";
 import { buildDiagnosticRecord } from "../../src/lib/algorithm/pedagogicalDiagnosticMapping";
-import { TTI_RULES, ISSUE_RULES, RBT_LEVELS, RULES_VERSION } from "../../src/lib/algorithm/rules";
+import { TTI_RULES, RULES_VERSION } from "../../src/lib/algorithm/rules";
 import type {
   SessionContext,
   DiagnosticRecord,
   BufferedDiagnostic,
   RecommendationItem,
 } from "../../src/lib/algorithm/types";
-import type {
-  DistEntry,
-  AnalysisResult,
-  RecommendationTerm,
-  Theory,
-} from "../../src/lib/types/types";
 
 // Dual-faculty + dev seed. Seeds:
 //   - CSEG2 / CS102 demo curricula (always analyzed).
@@ -1291,22 +1281,31 @@ class DashboardSeeder {
     const recommendationList: RecommendationItem[] = [];
     const warningList: RecommendationItem[] = [];
 
-    // Module 5: same primary/secondary fallback as pipeline.ts (boost-adjusted score, ties all promoted).
+    // Module 5: same primary/secondary fallback as pipeline.ts L274-298 (boost-adjusted score, ties all promoted).
     const candidateIssues = Array.from(uniqueIssueMap.values()).filter(
       (item) => item.issue !== "Uncategorized" && item.count > 0,
     );
 
     const primaryCandidates: { item: BufferedDiagnostic; score: number; weight: number }[] = [];
-    const subThresholdCandidates: { item: BufferedDiagnostic; score: number; weight: number }[] = [];
+    const subThresholdCandidates: { item: BufferedDiagnostic; score: number; weight: number }[] =
+      [];
 
     for (const uniqueIssue of candidateIssues) {
       const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
       const priorityScore = (uniqueIssue.count / total) * weightedCoefficient;
 
       if (priorityScore >= DashboardSeeder.PRIORITY_THRESHOLD) {
-        primaryCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
+        primaryCandidates.push({
+          item: uniqueIssue,
+          score: priorityScore,
+          weight: weightedCoefficient,
+        });
       } else {
-        subThresholdCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
+        subThresholdCandidates.push({
+          item: uniqueIssue,
+          score: priorityScore,
+          weight: weightedCoefficient,
+        });
       }
     }
 
@@ -1336,119 +1335,16 @@ class DashboardSeeder {
       }
     }
 
-    formatDashboardOutput(recommendationList, warningList, stats);
-
-    const aspectDist: DistEntry[] = Object.entries(stats.aspectCounts)
-      .map(([label, value]) => ({ label, value }) as DistEntry)
-      .sort((a, b) => b.value - a.value);
-
-    const issueDist: DistEntry[] = Object.entries(stats.issueCounts)
-      .map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry)
-      .sort((a, b) => b.value - a.value);
-
-    const polarityDist: DistEntry[] = [
-      { label: "Positive", value: stats.polarityCounts.pos || 0 },
-      { label: "Neutral", value: stats.polarityCounts.neu || 0 },
-      { label: "Negative", value: stats.polarityCounts.neg || 0 },
-    ];
-
-    const rbtDist: DistEntry[] = Object.entries(stats.rbtCounts)
-      .map(([label, value]) => ({ label, value }) as DistEntry)
-      .sort(
-        (a, b) =>
-          (RBT_LEVELS as readonly string[]).indexOf(a.label) -
-          (RBT_LEVELS as readonly string[]).indexOf(b.label),
-      );
-
-    const cltDist: DistEntry[] = Object.entries(stats.cltCounts)
-      .map(([label, value]) => ({ label, value }) as DistEntry)
-      .sort((a, b) => b.value - a.value);
-
-    const feedbackMap = new Map<string, string>();
-    for (const fb of feedbacks) feedbackMap.set(fb.id, fb.content);
-
-    const aspectToTexts = new Map<string, string[]>();
-    const issueToTexts = new Map<string, string[]>();
-    const polarityToTexts: Record<string, string[]> = { pos: [], neu: [], neg: [] };
-    const rbtToTexts = new Map<string, string[]>();
-    const cltToTexts = new Map<string, string[]>();
-
-    for (const diag of buffer) {
-      const text = feedbackMap.get(diag.feedbackId ?? "");
-      if (!text) continue;
-
-      const aspectList = aspectToTexts.get(diag.tti) ?? [];
-      aspectList.push(text);
-      aspectToTexts.set(diag.tti, aspectList);
-
-      const issueLabel = ISSUE_RULES[diag.issue.toLowerCase()] ?? diag.issue;
-      const issueList = issueToTexts.get(issueLabel) ?? [];
-      issueList.push(text);
-      issueToTexts.set(issueLabel, issueList);
-
-      if (diag.polarity in polarityToTexts) {
-        polarityToTexts[diag.polarity].push(text);
-      }
-
-      const rbtName =
-        diag.issue === "Uncategorized"
-          ? "Uncategorized"
-          : (RBT_LEVELS[diag.rbt] ?? String(diag.rbt));
-      const rbtList = rbtToTexts.get(rbtName) ?? [];
-      rbtList.push(text);
-      rbtToTexts.set(rbtName, rbtList);
-
-      const cltLabel = diag.issue === "Uncategorized" ? "Uncategorized" : diag.clt;
-      const cltList = cltToTexts.get(cltLabel) ?? [];
-      cltList.push(text);
-      cltToTexts.set(cltLabel, cltList);
-    }
-
-    for (const entry of aspectDist) entry.feedbackTexts = aspectToTexts.get(entry.label);
-    for (const entry of issueDist) entry.feedbackTexts = issueToTexts.get(entry.label);
-    const polarityLabelKey: Record<string, string> = {
-      Positive: "pos",
-      Neutral: "neu",
-      Negative: "neg",
-    };
-    for (const entry of polarityDist)
-      entry.feedbackTexts = polarityToTexts[polarityLabelKey[entry.label]];
-    for (const entry of rbtDist) entry.feedbackTexts = rbtToTexts.get(entry.label);
-    for (const entry of cltDist) entry.feedbackTexts = cltToTexts.get(entry.label);
-
-    const gaps = buildIloGapItems(buffer, sessionIlos);
-
-    const finalResult: AnalysisResult = {
+    const finalResult = buildAnalysisResult({
       sessionId: session.id,
       totalFeedback: total,
-      aspectDist,
-      issueDist,
-      polarityDist,
-      rbtDist,
-      cltDist,
-      gaps,
-      recommendations: recommendationList.map((r) => {
-        const issueLabel = ISSUE_RULES[r.issue.toLowerCase()] ?? r.issue;
-        return {
-          id: r.id,
-          paragraph: r.paragraph,
-          terms: r.terms as RecommendationTerm[],
-          theories: r.theories as Theory[],
-          priority: r.priority,
-          feedbackTexts: issueToTexts.get(issueLabel),
-          tier: r.tier,
-        };
-      }),
-      warnings: warningList.map((recommendationItem) => ({
-        id: recommendationItem.id,
-        issue: recommendationItem.issue,
-        terms: recommendationItem.terms as RecommendationTerm[],
-        theories: recommendationItem.theories as Theory[],
-        priority: recommendationItem.priority,
-        count: recommendationItem.priority,
-        isGap: recommendationItem.isGap,
-      })),
-    };
+      stats,
+      buffer,
+      ilos: sessionIlos,
+      recommendationList,
+      warningList,
+      feedback: feedbacks.map((fb) => ({ id: fb.id, text: fb.content })),
+    });
 
     await this.supabase.from("analysis_results").insert(
       feedbacks.map((fb) => ({
