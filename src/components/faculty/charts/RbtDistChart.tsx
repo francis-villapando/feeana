@@ -134,7 +134,7 @@ export function RbtDistChart({
         <CardDescription>Cognitive-process level distribution.</CardDescription>
         <InterpretationBlock text={interpretation} />
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col min-h-[320px]">
+      <CardContent className="flex-1 flex flex-col justify-end">
         {isEmpty ? (
           <DistributionEmptyState
             className="flex-1"
@@ -147,7 +147,8 @@ export function RbtDistChart({
           />
         ) : (
           <div
-            className="relative flex-1 cursor-pointer"
+            className="relative cursor-pointer"
+            style={{ height: 240 }}
             ref={containerRef}
             onClick={handleContainerClick}
           >
@@ -156,8 +157,8 @@ export function RbtDistChart({
                 data={radarData}
                 cx="50%"
                 cy="50%"
-                outerRadius="62%"
-                margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
+                outerRadius="58%"
+                margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
                 startAngle={90}
                 endAngle={-270}
               >

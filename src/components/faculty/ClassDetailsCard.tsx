@@ -8,11 +8,13 @@ export function ClassDetailsCard({
   studentCount,
   onCopy,
   onArchive,
+  archiveDisabled = false,
 }: {
   cls: Class;
   studentCount: number;
   onCopy: () => void;
   onArchive: () => void;
+  archiveDisabled?: boolean;
 }) {
   return (
     <Card className="border-border/60 bg-card/70 backdrop-blur-xl">
@@ -42,7 +44,14 @@ export function ClassDetailsCard({
             <Copy className="h-3 w-3 text-muted-foreground" />
           </span>
         </button>
-        <Button type="button" variant="default" size="sm" className="w-full" onClick={onArchive}>
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          className="w-full"
+          onClick={onArchive}
+          disabled={archiveDisabled}
+        >
           Archive class
         </Button>
       </CardContent>

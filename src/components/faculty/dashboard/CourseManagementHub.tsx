@@ -29,6 +29,7 @@ import { useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/hooks/utils";
 import { ConfirmationDialog, type ActionType } from "@/components/faculty";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 
 type EditState =
   | { kind: "course"; entity?: Course }
@@ -65,6 +66,13 @@ export function CourseManagementHub() {
     restoreILO,
     refreshAll,
   } = useCourseStore();
+
+  const {
+    isActive: tutorialActive,
+    step: tutorialStep,
+    activeCourseId: tutorialCourseId,
+    courseCodePlaceholder,
+  } = useTutorialStore();
 
   const [showArchived, setShowArchived] = useState(() => {
     const saved = localStorage.getItem("feeana_show_archived");
@@ -193,7 +201,11 @@ export function CourseManagementHub() {
                 Show archived
               </Label>
             </div>
-            <Button size="sm" onClick={() => setEdit({ kind: "course" })}>
+            <Button
+              size="sm"
+              onClick={() => setEdit({ kind: "course" })}
+              data-tutorial="hub-add-course-btn"
+            >
               <Plus className="h-3.5 w-3.5 mr-1" /> Course
             </Button>
           </div>
@@ -230,7 +242,14 @@ export function CourseManagementHub() {
                 } ${focusedId === course.id ? "ring-2 ring-primary ring-inset" : ""}`}
               >
                 <div className="group/course flex items-center w-full">
-                  <AccordionTrigger className="hover:no-underline py-3 pl-3 pr-2 flex-1 min-w-0">
+                  <AccordionTrigger
+                    className="hover:no-underline py-3 pl-3 pr-2 flex-1 min-w-0"
+                    data-tutorial={
+                      tutorialActive && course.id === tutorialCourseId
+                        ? "hub-course-trigger"
+                        : undefined
+                    }
+                  >
                     <div className="flex items-center gap-3 text-left overflow-hidden flex-1 min-w-0">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30">
                         <BookOpen className="h-4 w-4" />
@@ -316,6 +335,11 @@ export function CourseManagementHub() {
                         e.stopPropagation();
                         setEdit({ kind: "topic", initialCourseId: course.id });
                       }}
+                      data-tutorial={
+                        tutorialActive && course.id === tutorialCourseId
+                          ? "hub-add-topic-btn"
+                          : undefined
+                      }
                     >
                       <Plus className="h-3 w-3 mr-1" /> Add topic
                     </Button>
@@ -395,6 +419,11 @@ export function CourseManagementHub() {
                                         initialCourseId: course.id,
                                         initialTopicId: topic.id,
                                       })
+                                    }
+                                    data-tutorial={
+                                      tutorialActive && course.id === tutorialCourseId
+                                        ? "hub-add-ilo-btn"
+                                        : undefined
                                     }
                                   >
                                     <Plus className="h-3.5 w-3.5" />
@@ -496,7 +525,16 @@ export function CourseManagementHub() {
         )}
       </CardContent>
 
-      {edit && <EntityFormDialog state={edit} onClose={() => setEdit(null)} />}
+      {edit && (
+        <EntityFormDialog
+          state={
+            edit.kind === "course" && tutorialActive && tutorialStep?.id === "step-add-course-btn"
+              ? { ...edit, courseCodePlaceholder, isTutorial: true }
+              : edit
+          }
+          onClose={() => setEdit(null)}
+        />
+      )}
 
       {confirm && (
         <ConfirmationDialog

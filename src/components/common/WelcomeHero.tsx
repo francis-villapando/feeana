@@ -9,6 +9,7 @@ export interface HeroAction {
   variant?: "default" | "outline" | "secondary" | "ghost" | "destructive" | "link";
   onClick?: () => void;
   href?: string;
+  dataTutorial?: string;
 }
 
 interface SectionHeroProps {
@@ -18,6 +19,7 @@ interface SectionHeroProps {
   description: string;
   actions: HeroAction[];
   inline?: boolean;
+  children?: ReactNode;
 }
 
 export function WelcomeHero({
@@ -27,6 +29,7 @@ export function WelcomeHero({
   description,
   actions,
   inline = false,
+  children,
 }: SectionHeroProps) {
   return (
     <section className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/70 to-card/40 p-8 backdrop-blur-xl">
@@ -44,12 +47,19 @@ export function WelcomeHero({
           </span>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">{description}</p>
+          {children}
         </div>
         {actions.length > 0 && (
           <div className="flex flex-col gap-2 sm:max-w-60">
             {actions.map((action) =>
               action.href ? (
-                <Button key={action.label} asChild size="lg" variant={action.variant ?? "default"}>
+                <Button
+                  key={action.label}
+                  asChild
+                  size="lg"
+                  variant={action.variant ?? "default"}
+                  data-tutorial={action.dataTutorial}
+                >
                   <Link to={action.href}>
                     {action.icon}
                     {action.label}
@@ -61,6 +71,7 @@ export function WelcomeHero({
                   size="lg"
                   variant={action.variant ?? "default"}
                   onClick={action.onClick}
+                  data-tutorial={action.dataTutorial}
                 >
                   {action.icon}
                   {action.label}

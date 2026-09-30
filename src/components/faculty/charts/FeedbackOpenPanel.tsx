@@ -54,7 +54,7 @@ export function FeedbackOpenPanel({
           </>
         ) : (
           <>
-            <p style={{ fontWeight: 500, margin: 0 }}>Couldn&rsquo;t open feedback</p>
+            <p style={{ fontWeight: 500, margin: 0 }}>Couldn't open feedback</p>
             {error && (
               <p style={{ color: "var(--color-muted-foreground)", margin: 0, fontSize: 11 }}>
                 {error}

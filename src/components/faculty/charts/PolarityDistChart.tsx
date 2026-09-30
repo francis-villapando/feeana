@@ -47,8 +47,8 @@ export function PolarityDistChart({
         <CardDescription>Feedback tone distribution.</CardDescription>
         <InterpretationBlock text={interpretation} />
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col min-h-[320px]">
-        <div className="relative flex-1">
+      <CardContent className="flex-1 flex flex-col justify-end">
+        <div className="relative" style={{ height: 240 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

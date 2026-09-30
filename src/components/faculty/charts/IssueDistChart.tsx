@@ -76,7 +76,7 @@ export function IssueDistChart({
         <CardDescription>Specific concerns extracted via PID-ABSA.</CardDescription>
         <InterpretationBlock text={interpretation} />
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col justify-end">
         {isEmpty ? (
           <DistributionEmptyState
             title="No issues to display"

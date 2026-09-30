@@ -63,6 +63,12 @@ export function ClassCard({ cls, onRestore }: { cls: Class; onRestore?: (id: str
         </CardContent>
       ) : (
         <CardContent className="relative space-y-4">
+          {cls.isTutorial && (
+            <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+              Tutorial sample data. Archive it whenever you like — either way, rerunning the tour
+              archives it and starts a fresh session.
+            </p>
+          )}
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="h-3.5 w-3.5" /> {studentCount}

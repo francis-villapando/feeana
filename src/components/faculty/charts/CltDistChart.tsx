@@ -86,7 +86,7 @@ export function CltDistChart({
         <CardDescription>Cognitive-load type split.</CardDescription>
         <InterpretationBlock text={interpretation} />
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col min-h-[320px]">
+      <CardContent className="flex-1 flex flex-col justify-end">
         {isEmpty ? (
           <DistributionEmptyState
             className="flex-1"
@@ -98,7 +98,7 @@ export function CltDistChart({
             }
           />
         ) : (
-          <div className="relative h-full w-full">
+          <div className="relative w-full" style={{ height: 240 }}>
             <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
               <BarChart accessibilityLayer data={chartData}>
                 <CartesianGrid vertical={false} />
