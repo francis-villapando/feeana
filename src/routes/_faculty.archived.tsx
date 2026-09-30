@@ -7,7 +7,7 @@ import { ClassCard } from "@/components/faculty/ClassCard";
 import { ConfirmationDialog } from "@/components/faculty";
 import { ArchivedClassCardSkeleton } from "@/components/skeletons";
 import { friendlyError } from "@/lib/hooks/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/_faculty/archived")({
   head: () => ({
@@ -26,6 +26,11 @@ function ArchivedPage() {
   const { archivedClasses, isLoading, restoreClass } = useClassStore();
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [restoreError, setRestoreError] = useState("");
+
+  const visibleArchived = useMemo(
+    () => archivedClasses.filter((cls) => !cls.isTutorial),
+    [archivedClasses],
+  );
 
   const handleRestore = async () => {
     if (!restoringId) return;
@@ -53,7 +58,7 @@ function ArchivedPage() {
         </div>
       </div>
 
-      {archivedClasses.length === 0 ? (
+      {visibleArchived.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
           <Archive className="mx-auto h-8 w-8 text-muted-foreground" />
           <h3 className="mt-3 text-base font-semibold">Nothing archived</h3>
@@ -61,7 +66,7 @@ function ArchivedPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {archivedClasses.map((cls) => (
+          {visibleArchived.map((cls) => (
             <ClassCard
               key={cls.id}
               cls={cls}
@@ -79,7 +84,7 @@ function ArchivedPage() {
         onClose={() => setRestoringId(null)}
         onConfirm={handleRestore}
         title="Restore class"
-        description={`Restore the "${archivedClasses.find((cls) => cls.id === restoringId)?.courseCode} · ${archivedClasses.find((cls) => cls.id === restoringId)?.section}" class? This will move it back to your active dashboard.`}
+        description={`Restore the "${visibleArchived.find((cls) => cls.id === restoringId)?.courseCode} · ${visibleArchived.find((cls) => cls.id === restoringId)?.section}" class? This will move it back to your active dashboard.`}
         actionType="restore"
         errorMessage={restoreError}
       />

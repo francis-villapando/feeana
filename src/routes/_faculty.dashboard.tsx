@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_faculty/dashboard")({
 
 function DashboardPage() {
   const { feedback, fetchFeedbackBySessions } = useFeedbackStore();
-  const { activeClasses, sessions, isLoading } = useClassStore();
+  const { productionClasses, sessions, isLoading } = useClassStore();
   const { results, fetchForSessions } = useAnalysisStore();
 
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
@@ -50,14 +50,14 @@ function DashboardPage() {
   }, [sessionIdsKey, fetchForSessions, fetchFeedbackBySessions]);
 
   const stats = useMemo(() => {
-    const activeClassIds = new Set(activeClasses.map((c) => c.id));
+    const activeClassIds = new Set(productionClasses.map((c) => c.id));
     const active = sessions.filter(
       (s) => isSessionActive(s, new Date(now)) && activeClassIds.has(s.classId),
     ).length;
-    const submission = computeDashboardSubmissionRate(activeClasses, sessions, feedback);
-    const ilo = computeDashboardIloAchievement(activeClasses, sessions, results);
+    const submission = computeDashboardSubmissionRate(productionClasses, sessions, feedback);
+    const ilo = computeDashboardIloAchievement(productionClasses, sessions, results);
     return { active, submission, ilo };
-  }, [feedback, sessions, activeClasses, results, now]);
+  }, [feedback, sessions, productionClasses, results, now]);
 
   if (isLoading) return <DashboardSkeleton />;
 
@@ -74,29 +74,35 @@ function DashboardPage() {
       </div>
 
       {/* KPI row */}
-      <KeyMetricsRow
-        submissionRate={stats.submission}
-        iloRate={stats.ilo}
-        submissionHint={stats.submission !== null ? "Across all sessions" : "No analyzed sessions"}
-        iloHint={stats.ilo !== null ? "Across all sessions" : "No analyzed sessions"}
-        wide
-      >
-        <KpiCard
-          icon={<GraduationCap className="h-4 w-4" />}
-          label="Active classes"
-          value={activeClasses.length.toString()}
-        />
-        <KpiCard
-          icon={<Database className="h-4 w-4" />}
-          label="Active sessions"
-          value={stats.active.toString()}
-        />
-      </KeyMetricsRow>
+      <div data-tutorial="dashboard-kpi-row">
+        <KeyMetricsRow
+          submissionRate={stats.submission}
+          iloRate={stats.ilo}
+          submissionHint={
+            stats.submission !== null ? "Across all sessions" : "No analyzed sessions"
+          }
+          iloHint={stats.ilo !== null ? "Across all sessions" : "No analyzed sessions"}
+          wide
+        >
+          <KpiCard
+            icon={<GraduationCap className="h-4 w-4" />}
+            label="Active classes"
+            value={productionClasses.length.toString()}
+          />
+          <KpiCard
+            icon={<Database className="h-4 w-4" />}
+            label="Active sessions"
+            value={stats.active.toString()}
+          />
+        </KeyMetricsRow>
+      </div>
 
       {/* Hub + activity feed */}
       <div className="grid min-h-0 min-w-0 flex-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <CourseManagementHub />
-        <ActivityFeed />
+        <div data-tutorial="dashboard-activity-feed">
+          <ActivityFeed />
+        </div>
       </div>
 
       {/* Cross-class creator */}

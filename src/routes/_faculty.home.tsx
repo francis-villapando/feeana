@@ -37,12 +37,14 @@ function HomePage() {
             label: "Create class",
             icon: <Plus className="h-4 w-4" />,
             onClick: () => setCreateOpen(true),
+            dataTutorial: "sidebar-create-class-btn",
           },
           {
             label: "View dashboard",
             icon: <LayoutDashboard className="h-4 w-4" />,
             variant: "outline",
             href: "/dashboard",
+            dataTutorial: "home-nav-dashboard",
           },
         ]}
         inline

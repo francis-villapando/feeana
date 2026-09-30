@@ -6,7 +6,7 @@ import {
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, SearchX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { supabase } from "@/lib/db/supabase";
 import { fromDbFeedback } from "@/lib/services/feedbackService";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 import {
   classTrendData,
   computeClassSubmissionRate,
@@ -48,14 +49,30 @@ export const Route = createFileRoute("/_faculty/$classId")({
     ],
   }),
   notFoundComponent: () => (
-    <div className="py-16 text-center">
-      <h1 className="text-2xl font-semibold">Class not found</h1>
-      <Button asChild variant="ghost" className="mt-4">
-        <Link to="/home">
-          <ArrowLeft className="h-4 w-4" /> Back to home
-        </Link>
-      </Button>
-    </div>
+    <Card className="border-dashed border-border/60 bg-card/40">
+      <CardContent className="flex flex-col items-center gap-4 px-6 py-16 text-center">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
+          <SearchX className="h-6 w-6" />
+        </span>
+        <div>
+          <h2 className="text-lg font-semibold">Class not found</h2>
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">
+            This class may have been archived, deleted, or isn't visible to your account. Check your
+            class list on the dashboard, or head back home.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Button asChild variant="ghost">
+            <Link to="/dashboard">Open dashboard</Link>
+          </Button>
+          <Button asChild>
+            <Link to="/home">
+              <ArrowLeft className="h-4 w-4" /> Back to home
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   ),
   component: ClassLayout,
 });
@@ -76,9 +93,11 @@ function ClassLayout() {
   const navigate = useNavigate();
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveError, setArchiveError] = useState("");
+  const { isActive: tutorialActive, step: tutorialStep } = useTutorialStore();
 
   const cls = getClass(classId);
   const sessions = sessionsForClass(classId);
+  const archiveLocked = tutorialActive && tutorialStep?.id === "step-class-details";
 
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
 
@@ -177,30 +196,39 @@ function ClassLayout() {
         </Link>
       </Button>
 
-      <KeyMetricsRow
-        submissionRate={submissionRate}
-        iloRate={iloRate}
-        submissionHint={
-          submissionRate !== null ? "Across sessions in this class" : "No analyzed sessions"
-        }
-        iloHint={iloRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
-      />
-      <MetricTrendCard trend={trend} />
-      <CategoryTrendCard trend={trend} />
+      <div data-tutorial="class-overview-section">
+        <KeyMetricsRow
+          submissionRate={submissionRate}
+          iloRate={iloRate}
+          submissionHint={
+            submissionRate !== null ? "Across sessions in this class" : "No analyzed sessions"
+          }
+          iloHint={iloRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
+        />
+        <div className="space-y-6 mt-6" data-tutorial="class-trends">
+          <MetricTrendCard trend={trend} />
+          <CategoryTrendCard trend={trend} />
+        </div>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-4 lg:col-start-2 lg:row-start-1">
-          <ClassDetailsCard
-            cls={cls}
-            studentCount={studentCountForClass(classId)}
-            onCopy={copy}
-            onArchive={() => {
-              setArchiveError("");
-              setArchiveOpen(true);
-            }}
-          />
+          <div data-tutorial="class-details-card">
+            <ClassDetailsCard
+              cls={cls}
+              studentCount={studentCountForClass(classId)}
+              onCopy={copy}
+              archiveDisabled={archiveLocked}
+              onArchive={() => {
+                setArchiveError("");
+                setArchiveOpen(true);
+              }}
+            />
+          </div>
 
-          <SessionCreator classId={cls.id} />
+          <div data-tutorial="class-session-creator">
+            <SessionCreator classId={cls.id} />
+          </div>
         </div>
 
         <Tabs defaultValue="sessions" className="space-y-4 lg:col-start-1 lg:row-start-1">
@@ -232,6 +260,7 @@ function ClassLayout() {
 
 function SessionsList({ classId }: { classId: string }) {
   const { sessionsForClass } = useClassStore();
+  const { activeClassId: tutorialClassId, activeSessionId: tutorialSessionId } = useTutorialStore();
   const sessions = sessionsForClass(classId);
   if (sessions.length === 0) {
     return (
@@ -246,7 +275,16 @@ function SessionsList({ classId }: { classId: string }) {
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
       {sessions.map((s) => (
-        <FacultySessionCard key={s.id} session={s} />
+        <div
+          key={s.id}
+          data-tutorial={
+            classId === tutorialClassId && s.id === tutorialSessionId
+              ? "class-session-card"
+              : undefined
+          }
+        >
+          <FacultySessionCard session={s} />
+        </div>
       ))}
     </div>
   );

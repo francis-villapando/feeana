@@ -38,6 +38,8 @@ import type { AnalysisResult, DistEntry } from "@/lib/types/types";
 import { CountBadge } from "@/components/common";
 import { KeyMetricsRow } from "@/components/faculty";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
+import { SAMPLE_TUTORIAL_CSV } from "@/lib/tutorial/sampleTutorialData";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 import React from "react";
 
 export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
@@ -66,8 +68,14 @@ export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
 
 function AnalysisPage() {
   const { classId, sessionId } = Route.useParams();
-  const { sessions, getClass, studentCountForClass, refreshStudents, refreshSessions } =
-    useClassStore();
+  const {
+    sessions,
+    getClass,
+    studentCountForClass,
+    refreshStudents,
+    refreshSessions,
+    activeTutorialClassIds,
+  } = useClassStore();
   const session = sessions.find((s) => s.id === sessionId);
   const { feedback, fetchFeedback } = useFeedbackStore();
   const { results: analysisResults, set: setAnalysisResult } = useAnalysisStore();
@@ -90,6 +98,14 @@ function AnalysisPage() {
     categoryFilter: { title: string; feedbackTexts?: string[] } | null;
   }>({ isOpen: false, categoryFilter: null });
   const [feedbackOpen, setFeedbackOpen] = useState<FeedbackOpenState>({ status: "idle" });
+
+  const {
+    isActive: tutorialActive,
+    step: tutorialStep,
+    next: tutorialNext,
+    advanceIfStep,
+    setSpotlightAnchor,
+  } = useTutorialStore();
 
   // Track cancellation to prevent error toasts when worker is terminated.
   const isCancelledRef = React.useRef(false);
@@ -189,6 +205,14 @@ function AnalysisPage() {
   const pendingOpenRef = React.useRef<{ chartId: ChartId; entry: DistEntry } | null>(null);
 
   const handleOpenFeedback = async (chartId: ChartId, entry: DistEntry) => {
+    if (
+      tutorialActive &&
+      (tutorialStep?.id === "step-results-aspect-category" ||
+        tutorialStep?.id === "step-results-aspect-all-feedback") &&
+      chartId !== "aspect"
+    ) {
+      return;
+    }
     pendingOpenRef.current = { chartId, entry };
     setFeedbackOpen({ status: "opening", chartId });
     try {
@@ -255,6 +279,64 @@ function AnalysisPage() {
     }
   };
 
+  // Tour bridges.
+  // step-analysis-import-btn: user clicks the import button → bulkImportOpen becomes true → advance.
+  useEffect(() => {
+    if (!tutorialActive || !bulkImportOpen) return;
+    if (tutorialStep?.id === "step-analysis-import-btn") advanceIfStep("step-analysis-import-btn");
+  }, [tutorialActive, bulkImportOpen, tutorialStep?.id, advanceIfStep]);
+
+  useEffect(() => {
+    if (!tutorialActive || !modalOpen) return;
+    if (tutorialStep?.id === "step-analysis-trigger") advanceIfStep("step-analysis-trigger");
+  }, [tutorialActive, modalOpen, tutorialStep?.id, advanceIfStep]);
+
+  const wasAnalyzingRef = React.useRef(false);
+  useEffect(() => {
+    const wasAnalyzing = wasAnalyzingRef.current;
+    wasAnalyzingRef.current = isAnalyzing;
+    if (!tutorialActive) return;
+    if (isAnalyzing && !wasAnalyzing) {
+      // step-analysis-confirm: the confirmation button's onClick calls onConfirm,
+      // so the false→true edge means the analysis actually started.
+      if (tutorialStep?.id === "step-analysis-confirm") advanceIfStep("step-analysis-confirm");
+      // Already on ml-progress: wait for completion.
+      return;
+    }
+    if (!isAnalyzing && wasAnalyzing && tutorialStep?.id === "step-ml-progress") {
+      advanceIfStep("step-ml-progress");
+    }
+  }, [isAnalyzing, tutorialActive, tutorialStep?.id, advanceIfStep]);
+
+  // step-results-aspect-category: a category click opens the modal with a filter → advance.
+  useEffect(() => {
+    if (!tutorialActive || !feedbackModalState.isOpen || !feedbackModalState.categoryFilter) return;
+    if (tutorialStep?.id === "step-results-aspect-category") {
+      advanceIfStep("step-results-aspect-category");
+    }
+  }, [
+    tutorialActive,
+    feedbackModalState.isOpen,
+    feedbackModalState.categoryFilter,
+    tutorialStep?.id,
+    advanceIfStep,
+  ]);
+
+  // step-results-aspect-all-feedback: closing the modal finishes the step.
+  const wasFeedbackOpenRef = React.useRef(false);
+  useEffect(() => {
+    const wasOpen = wasFeedbackOpenRef.current;
+    wasFeedbackOpenRef.current = feedbackModalState.isOpen;
+    if (!tutorialActive) return;
+    if (
+      !feedbackModalState.isOpen &&
+      wasOpen &&
+      tutorialStep?.id === "step-results-aspect-all-feedback"
+    ) {
+      advanceIfStep("step-results-aspect-all-feedback");
+    }
+  }, [tutorialActive, feedbackModalState.isOpen, tutorialStep?.id, advanceIfStep]);
+
   // Pills per feedback for the modal, keyed by id.
   const diagnosticsByFeedbackId = useMemo(() => {
     const map = new Map<string, DiagnosticRecord>();
@@ -270,6 +352,8 @@ function AnalysisPage() {
   const sessionFeedback = feedback.filter((f) => f.sessionId === sessionId);
   const feedbackCount = sessionFeedback.length;
   const cls = getClass(classId);
+  // The sample preset is only offered inside the tour's own sandbox session.
+  const isTutorialSession = !!classId && activeTutorialClassIds.includes(classId);
   const studentCount = classId ? studentCountForClass(classId) : 0;
   const lastAnalyzedAt = session?.last_analyzed_at ?? null;
 
@@ -283,7 +367,13 @@ function AnalysisPage() {
   return (
     <div className="space-y-8">
       <div>
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          asChild
+          className="-ml-2"
+          data-tutorial="analysis-back-to-class-btn"
+        >
           <Link to="/$classId" params={{ classId }}>
             <ArrowLeft className="h-4 w-4" /> Back to class
           </Link>
@@ -301,6 +391,7 @@ function AnalysisPage() {
               size="lg"
               onClick={() => setBulkImportOpen(true)}
               disabled={loading || isAnalyzing}
+              data-tutorial="analysis-import-btn"
             >
               <Upload className="h-4 w-4" />
               Import feedback
@@ -318,6 +409,7 @@ function AnalysisPage() {
                 size="lg"
                 onClick={() => setModalOpen(true)}
                 disabled={loading || isAnalyzing}
+                data-tutorial="analysis-trigger-btn"
               >
                 <PlayCircle className="h-4 w-4" />
                 {result ? "Re-run analysis" : "Trigger analysis"}
@@ -335,12 +427,14 @@ function AnalysisPage() {
           {!result && !isAnalyzing && <EmptyState onTrigger={() => setModalOpen(true)} />}
           {result && (
             <>
-              <KeyMetricsRow
-                submissionRate={submissionRate}
-                iloRate={iloRate}
-                submissionHint="This session"
-                iloHint="This session"
-              />
+              <div data-tutorial="analysis-kpi-summary">
+                <KeyMetricsRow
+                  submissionRate={submissionRate}
+                  iloRate={iloRate}
+                  submissionHint="This session"
+                  iloHint="This session"
+                />
+              </div>
               <Results
                 result={result}
                 onSelectCategory={handleOpenFeedback}
@@ -358,6 +452,7 @@ function AnalysisPage() {
         loadProgress={loadProgress}
         inferenceProgress={inferenceProgress}
         onCancel={handleCancel}
+        dataTutorial="analysis-ml-progress"
       />
 
       <AnalysisTriggerModal
@@ -385,6 +480,17 @@ function AnalysisPage() {
         existingTexts={sessionFeedback.map((f) => f.rawText)}
         onImported={() => {
           void fetchFeedback(sessionId);
+          // step-analysis-sample: advance only once the batch is actually saved.
+          if (tutorialActive && tutorialStep?.id === "step-analysis-sample") {
+            advanceIfStep("step-analysis-sample");
+          }
+        }}
+        loadSample={isTutorialSession ? () => SAMPLE_TUTORIAL_CSV : undefined}
+        onSampleLoaded={() => {
+          // Move the spotlight onto the Import button once the preset is staged.
+          if (tutorialActive && tutorialStep?.id === "step-analysis-sample") {
+            setSpotlightAnchor("analysis-import-confirm");
+          }
         }}
       />
     </div>
@@ -475,6 +581,8 @@ function Results({
   const { feedback } = useFeedbackStore();
   const { ilos } = useCourseStore();
   const feedbackById = useMemo(() => new Map(feedback.map((f) => [f.id, f])), [feedback]);
+  const openForChart = (id: ChartId) =>
+    opening.status !== "idle" && opening.chartId === id ? opening : null;
   if (!session) return null;
   const iloStatuses = computeIloStatuses(session, result, feedback, ilos);
 
@@ -501,63 +609,74 @@ function Results({
       <section aria-label="What students wrote" className="space-y-4">
         <SectionHeading>What students wrote</SectionHeading>
         <div className="grid gap-4 lg:grid-cols-12">
-          <AspectDistChart
-            data={result.aspectDist}
-            totalFeedback={result.totalFeedback}
-            className="lg:col-span-6"
-            height={distHeight}
-            onSelectCategory={(entry) => onSelectCategory("aspect", entry)}
-            opening={opening.chartId === "aspect" ? opening : null}
-            onCancelOpen={onCancelOpen}
-            onRetryOpen={onRetryOpen}
-          />
-          <IssueDistChart
-            data={result.issueDist}
-            className="lg:col-span-6"
-            height={distHeight}
-            onSelectCategory={(entry) => onSelectCategory("issue", entry)}
-            opening={opening.chartId === "issue" ? opening : null}
-            onCancelOpen={onCancelOpen}
-            onRetryOpen={onRetryOpen}
-          />
-          <PolarityDistChart
-            data={result.polarityDist}
-            className="lg:col-span-4 flex flex-col"
-            onSelectCategory={(entry) => onSelectCategory("polarity", entry)}
-            opening={opening.chartId === "polarity" ? opening : null}
-            onCancelOpen={onCancelOpen}
-            onRetryOpen={onRetryOpen}
-          />
-          <RbtDistChart
-            data={result.rbtDist}
-            className="lg:col-span-4 flex flex-col"
-            onSelectCategory={(entry) => onSelectCategory("rbt", entry)}
-            opening={opening.chartId === "rbt" ? opening : null}
-            onCancelOpen={onCancelOpen}
-            onRetryOpen={onRetryOpen}
-          />
-          <CltDistChart
-            data={result.cltDist}
-            className="lg:col-span-4 flex flex-col"
-            onSelectCategory={(entry) => onSelectCategory("clt", entry)}
-            opening={opening.chartId === "clt" ? opening : null}
-            onCancelOpen={onCancelOpen}
-            onRetryOpen={onRetryOpen}
-          />
-          <UncategorizedNotice
-            count={uncategorizedCount}
-            totalFeedback={result.totalFeedback}
-            feedbackTexts={uncategorizedTexts}
-          />
+          <div className="lg:col-span-6" data-tutorial="analysis-aspect-chart">
+            <AspectDistChart
+              data={result.aspectDist}
+              totalFeedback={result.totalFeedback}
+              height={distHeight}
+              onSelectCategory={(entry) => onSelectCategory("aspect", entry)}
+              opening={openForChart("aspect")}
+              onCancelOpen={onCancelOpen}
+              onRetryOpen={onRetryOpen}
+            />
+          </div>
+          <div className="lg:col-span-6" data-tutorial="analysis-issue-chart">
+            <IssueDistChart
+              data={result.issueDist}
+              height={distHeight}
+              onSelectCategory={(entry) => onSelectCategory("issue", entry)}
+              opening={openForChart("issue")}
+              onCancelOpen={onCancelOpen}
+              onRetryOpen={onRetryOpen}
+            />
+          </div>
+          <div className="lg:col-span-4" data-tutorial="analysis-polarity-chart">
+            <PolarityDistChart
+              data={result.polarityDist}
+              onSelectCategory={(entry) => onSelectCategory("polarity", entry)}
+              opening={openForChart("polarity")}
+              onCancelOpen={onCancelOpen}
+              onRetryOpen={onRetryOpen}
+            />
+          </div>
+          <div className="lg:col-span-8" data-tutorial="analysis-cognitive-charts">
+            <div className="grid gap-4 grid-cols-2">
+              <RbtDistChart
+                data={result.rbtDist}
+                onSelectCategory={(entry) => onSelectCategory("rbt", entry)}
+                opening={openForChart("rbt")}
+                onCancelOpen={onCancelOpen}
+                onRetryOpen={onRetryOpen}
+              />
+              <CltDistChart
+                data={result.cltDist}
+                onSelectCategory={(entry) => onSelectCategory("clt", entry)}
+                opening={openForChart("clt")}
+                onCancelOpen={onCancelOpen}
+                onRetryOpen={onRetryOpen}
+              />
+            </div>
+          </div>
+          <div className="lg:col-span-12" data-tutorial="analysis-uncategorized-notice">
+            <UncategorizedNotice
+              count={uncategorizedCount}
+              totalFeedback={result.totalFeedback}
+              feedbackTexts={uncategorizedTexts}
+            />
+          </div>
         </div>
       </section>
 
-      <section aria-label="Goal attainment" className="space-y-4">
+      <section aria-label="Goal attainment" className="space-y-4" data-tutorial="analysis-ilo-gaps">
         <SectionHeading>Goal attainment</SectionHeading>
         <IloGapCard statuses={iloStatuses} gaps={result.gaps} feedback={feedbackById} />
       </section>
 
-      <section aria-label="Recommended next actions" className="space-y-4">
+      <section
+        aria-label="Recommended next actions"
+        className="space-y-4"
+        data-tutorial="analysis-recommendations"
+      >
         <SectionHeading>Recommended next actions</SectionHeading>
         <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
           <RecommendationCuesCard recommendations={result.recommendations} ilos={ilos} />
