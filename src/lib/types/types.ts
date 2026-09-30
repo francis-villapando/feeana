@@ -18,6 +18,7 @@ export interface Course {
   version: number;
   createdById?: string | null;
   createdByEmail?: string | null;
+  isTutorial?: boolean;
 }
 
 export type BloomLevel = "Remember" | "Understand" | "Apply" | "Analyze" | "Evaluate" | "Create";
@@ -76,6 +77,7 @@ export interface Class {
   archived: boolean;
   studentCount: number;
   facultyName?: string;
+  isTutorial?: boolean;
 }
 
 export type SessionStatus = "active" | "archived" | "closed" | "upcoming";
