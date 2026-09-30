@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { GeneratePedagogicalCue, CalculateDistributions } from "../../lib/algorithm/strategyGeneration";
+import {
+  GeneratePedagogicalCue,
+  CalculateDistributions,
+} from "../../lib/algorithm/strategyGeneration";
 import { ISSUE_RULES, RBT_LEVELS } from "../../lib/algorithm/rules";
 import type {
   BufferedDiagnostic,
@@ -41,9 +44,17 @@ function runStrategyGenerationMock(
     const priorityScore = (uniqueIssue.count / totalFeedback) * weightedCoefficient;
 
     if (priorityScore >= PRIORITY_THRESHOLD) {
-      primaryCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
+      primaryCandidates.push({
+        item: uniqueIssue,
+        score: priorityScore,
+        weight: weightedCoefficient,
+      });
     } else {
-      subThresholdCandidates.push({ item: uniqueIssue, score: priorityScore, weight: weightedCoefficient });
+      subThresholdCandidates.push({
+        item: uniqueIssue,
+        score: priorityScore,
+        weight: weightedCoefficient,
+      });
     }
   }
 
@@ -105,7 +116,7 @@ const mockContext: SessionContext = {
 };
 
 describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommodating Fallback", () => {
-  it("generates primary recommendation when issue crosses PRIMARY_PRIORITY_THRESHOLD (>=31%)", () => {
+  it("generates primary recommendation when issue crosses PRIMARY_PRIORITY_THRESHOLD (>=30%)", () => {
     // 10 feedbacks: 4 clarity deficit (40%), 2 peer distraction (20%)
     const buffer: DiagnosticRecord[] = [
       ...Array(4).fill({

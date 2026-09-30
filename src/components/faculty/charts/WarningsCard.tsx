@@ -59,16 +59,16 @@ export function WarningsCard({ data }: WarningsCardProps) {
       <CardContent className="flex-1 flex flex-col">
         <div className="mb-3 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
           <p className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-destructive/30 bg-destructive/10" />
             <span>
+              <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-destructive/30 bg-destructive/10 mr-1.5" />
               <span className="font-medium text-destructive">Red</span> badges denote{" "}
               <span className="font-medium text-foreground">Intrinsic</span> cognitive load —{" "}
               {CLT_DESCRIPTIONS.Intrinsic.label}.
             </span>
           </p>
           <p className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-border/60 bg-background/40" />
             <span>
+              <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-border/60 bg-background/40 mr-1.5" />
               <span className="font-medium text-foreground">Neutral</span> badges denote{" "}
               <span className="font-medium text-foreground">Extraneous</span> cognitive load —{" "}
               {CLT_DESCRIPTIONS.Extraneous.label}.

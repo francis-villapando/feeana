@@ -26,19 +26,19 @@ export function RecommendationCuesCard({ recommendations, ilos }: Recommendation
         {sorted.length > 0 && (
           <div className="mb-3 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
             <p className="flex items-center gap-1.5">
-              <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-primary/30 bg-primary/10" />
               <span>
+                <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-primary/30 bg-primary/10 mr-1.5" />
                 <span className="font-medium text-primary">Green</span> indicators denote{" "}
                 <span className="font-medium text-foreground">Primary</span> recommendation cues —
-                threshold-clearing pedagogical priorities (&ge;31%).
+                threshold-clearing pedagogical priorities (≥30% prevalence).
               </span>
             </p>
             <p className="flex items-center gap-1.5">
-              <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-warning/30 bg-warning/10" />
               <span>
+                <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-warning/30 bg-warning/10 mr-1.5" />
                 <span className="font-medium text-warning">Amber</span> indicators denote{" "}
                 <span className="font-medium text-foreground">Secondary</span> recommendation cues —
-                highest frequency sub-threshold friction points (&lt;31%).
+                highest scoring sub-threshold friction points ({"<"} 30% prevalence).
               </span>
             </p>
           </div>
