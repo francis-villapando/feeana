@@ -40,7 +40,11 @@ export function ChartTooltipContent({
   const snapshotRef = useRef(payload ?? null);
 
   useEffect(() => {
-    onCoordinateChange?.(active && payload?.length ? (coordinate ?? null) : null);
+    const report =
+      active && payload?.length && coordinate && coordinate.x != null && coordinate.y != null
+        ? { x: coordinate.x, y: coordinate.y }
+        : null;
+    onCoordinateChange?.(report);
   }, [active, payload, coordinate, onCoordinateChange]);
 
   if (active && payload?.length) {
