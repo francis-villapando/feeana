@@ -30,7 +30,7 @@ interface CourseStoreValue {
   isLoading: boolean;
   error: string | null;
   currentUserId: string | null;
-  createCourse: (input: { code: string; title: string }) => Promise<Course>;
+  createCourse: (input: { code: string; title: string; isTutorial?: boolean }) => Promise<Course>;
   updateCourse: (
     id: string,
     input: { code: string; title: string; version: number },
@@ -57,6 +57,8 @@ interface CourseStoreValue {
   ) => Promise<void>;
   archiveILO: (id: string) => Promise<void>;
   restoreILO: (id: string) => Promise<void>;
+  activeTutorialCourseIds: string[];
+  setActiveTutorialCourseIds: (ids: string[]) => void;
   refreshActivity: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
@@ -70,13 +72,14 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [ilos, setIlos] = useState<ILO[]>([]);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [activeTutorialCourseIds, setActiveTutorialCourseIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Hide dev-authored courses (and their topics/ILOs/activity) from non-dev faculty.
   const visible = useMemo(
-    () => filterCurriculumForUser(user, courses, topics, ilos, activity),
-    [user, courses, topics, ilos, activity],
+    () => filterCurriculumForUser(user, courses, topics, ilos, activity, activeTutorialCourseIds),
+    [user, courses, topics, ilos, activity, activeTutorialCourseIds],
   );
 
   useEffect(() => {
@@ -124,12 +127,15 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const createCourse = useCallback(async (input: { code: string; title: string }) => {
-    const crs = await courseService.createCourse(input);
-    setCourses((prev) => [crs, ...prev]);
-    await refreshActivity();
-    return crs;
-  }, []);
+  const createCourse = useCallback(
+    async (input: { code: string; title: string; isTutorial?: boolean }) => {
+      const crs = await courseService.createCourse(input);
+      setCourses((prev) => [crs, ...prev]);
+      await refreshActivity();
+      return crs;
+    },
+    [],
+  );
 
   const updateCourse = useCallback(
     async (id: string, input: { code: string; title: string; version: number }) => {
@@ -268,6 +274,8 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       updateILO,
       archiveILO,
       restoreILO,
+      activeTutorialCourseIds,
+      setActiveTutorialCourseIds,
       refreshActivity,
       refreshAll,
     }),
@@ -285,6 +293,8 @@ export function CourseStoreProvider({ children }: { children: ReactNode }) {
       updateILO,
       archiveILO,
       restoreILO,
+      activeTutorialCourseIds,
+      setActiveTutorialCourseIds,
       isLoading,
       error,
       refreshActivity,

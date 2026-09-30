@@ -84,6 +84,7 @@ function fromDbCourse(row: Record<string, unknown>): Course {
     version: (row.version as number) ?? 1,
     createdById: (row.created_by as string) ?? null,
     createdByEmail: (creator?.email as string) ?? null,
+    isTutorial: (row.is_tutorial as boolean) ?? false,
   };
 }
 
@@ -135,7 +136,11 @@ export async function getCourses(): Promise<Course[]> {
   return (data ?? []).map(fromDbCourse);
 }
 
-export async function createCourse(input: { code: string; title: string }): Promise<Course> {
+export async function createCourse(input: {
+  code: string;
+  title: string;
+  isTutorial?: boolean;
+}): Promise<Course> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -147,6 +152,7 @@ export async function createCourse(input: { code: string; title: string }): Prom
       code: input.code.trim(),
       title: input.title.trim(),
       created_by: user.id,
+      is_tutorial: input.isTutorial ?? false,
     })
     .select("*, profiles!created_by(id, email)")
     .single();

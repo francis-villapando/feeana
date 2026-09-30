@@ -1,4 +1,4 @@
-﻿import {
+import {
   createContext,
   useCallback,
   useContext,
@@ -21,6 +21,9 @@ interface ClassStoreValue {
   studentsByClass: Record<string, Student[]>;
   activeClasses: Class[];
   archivedClasses: Class[];
+  productionClasses: Class[];
+  activeTutorialClassIds: string[];
+  setActiveTutorialClassIds: (ids: string[]) => void;
   isLoading: boolean;
   error: string | null;
   getClass: (id: string) => Class | undefined;
@@ -32,6 +35,7 @@ interface ClassStoreValue {
     courseCode: string;
     courseTitle: string;
     section: string;
+    isTutorial?: boolean;
   }) => Promise<Class>;
   archiveClass: (id: string) => Promise<void>;
   restoreClass: (id: string) => Promise<void>;
@@ -78,6 +82,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
   const [enrolledClassIds, setEnrolledClassIds] = useState<string[]>([]);
   const [studentsByClass, setStudentsByClass] = useState<Record<string, Student[]>>({});
   const [submittedSessionIds, setSubmittedSessionIds] = useState<Set<string>>(new Set());
+  const [activeTutorialClassIds, setActiveTutorialClassIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadedUserId = useRef<string | null>(null);
@@ -230,6 +235,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       courseCode: string;
       courseTitle: string;
       section: string;
+      isTutorial?: boolean;
     }) => {
       if (!user) throw new Error("Not authenticated");
       const cls = await classService.createClass(user.id, input);
@@ -338,14 +344,19 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<ClassStoreValue>(() => {
+    const byCodeThenSection = (a: Class, b: Class) => {
+      const cmp = a.courseCode.localeCompare(b.courseCode);
+      if (cmp !== 0) return cmp;
+      return a.section.localeCompare(b.section);
+    };
+    const visible = (cls: Class) => !cls.isTutorial || activeTutorialClassIds.includes(cls.id);
     const activeClasses = classes
-      .filter((cls) => !cls.archived)
-      .sort((a, b) => {
-        const cmp = a.courseCode.localeCompare(b.courseCode);
-        if (cmp !== 0) return cmp;
-        return a.section.localeCompare(b.section);
-      });
-    const archivedClasses = classes.filter((cls) => cls.archived);
+      .filter((cls) => !cls.archived && visible(cls))
+      .sort(byCodeThenSection);
+    const productionClasses = classes
+      .filter((cls) => !cls.archived && !cls.isTutorial)
+      .sort(byCodeThenSection);
+    const archivedClasses = classes.filter((cls) => cls.archived && visible(cls));
     const activeSessions = sessions.filter((s) => s.status === "active");
     return {
       classes,
@@ -354,6 +365,9 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
       studentsByClass,
       activeClasses,
       archivedClasses,
+      productionClasses,
+      activeTutorialClassIds,
+      setActiveTutorialClassIds,
       activeSessions,
       submittedSessionIds,
       isLoading,
@@ -385,6 +399,7 @@ export function ClassStoreProvider({ children }: { children: ReactNode }) {
     enrolledClassIds,
     studentsByClass,
     submittedSessionIds,
+    activeTutorialClassIds,
     createClass,
     archiveClass,
     restoreClass,

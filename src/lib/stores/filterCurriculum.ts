@@ -14,26 +14,55 @@ export function filterCurriculumForUser(
   topics: Topic[],
   ilos: ILO[],
   activity: ActivityEntry[],
+  activeTutorialCourseIds: string[] = [],
 ): {
   courses: Course[];
   topics: Topic[];
   ilos: ILO[];
   activity: ActivityEntry[];
 } {
-  if (user?.isDev) return { courses, topics, ilos, activity };
-
-  const devCourseIds = new Set(
-    courses.filter((c) => isDevEmail(c.createdByEmail)).map((c) => c.id),
+  const activeTutSet = new Set(activeTutorialCourseIds);
+  const tutorialCourseIds = new Set(
+    courses.filter((c) => c.isTutorial && !activeTutSet.has(c.id)).map((c) => c.id),
+  );
+  const tutorialTopicIds = new Set(
+    topics.filter((t) => tutorialCourseIds.has(t.courseId)).map((t) => t.id),
+  );
+  const tutorialIloIds = new Set(
+    ilos.filter((i) => tutorialCourseIds.has(i.courseId)).map((i) => i.id),
   );
 
-  const filteredCourses = courses.filter((c) => !devCourseIds.has(c.id));
-  const filteredTopics = topics.filter((t) => !devCourseIds.has(t.courseId));
-  const filteredIlos = ilos.filter((i) => !devCourseIds.has(i.courseId));
+  const nonTutorialCourses = courses.filter((c) => !c.isTutorial || activeTutSet.has(c.id));
+  const nonTutorialTopics = topics.filter((t) => !tutorialCourseIds.has(t.courseId));
+  const nonTutorialIlos = ilos.filter((i) => !tutorialCourseIds.has(i.courseId));
+  const tutorialEntityIds = new Set([...tutorialCourseIds, ...tutorialTopicIds, ...tutorialIloIds]);
+  const nonTutorialActivity = activity.filter((entry) => !tutorialEntityIds.has(entry.entityId));
 
-  const devTopicIds = new Set(topics.filter((t) => devCourseIds.has(t.courseId)).map((t) => t.id));
-  const devIloIds = new Set(ilos.filter((i) => devCourseIds.has(i.courseId)).map((i) => i.id));
+  if (user?.isDev) {
+    return {
+      courses: nonTutorialCourses,
+      topics: nonTutorialTopics,
+      ilos: nonTutorialIlos,
+      activity: nonTutorialActivity,
+    };
+  }
 
-  const filteredActivity = activity.filter((entry) => {
+  const devCourseIds = new Set(
+    nonTutorialCourses.filter((c) => isDevEmail(c.createdByEmail)).map((c) => c.id),
+  );
+
+  const filteredCourses = nonTutorialCourses.filter((c) => !devCourseIds.has(c.id));
+  const filteredTopics = nonTutorialTopics.filter((t) => !devCourseIds.has(t.courseId));
+  const filteredIlos = nonTutorialIlos.filter((i) => !devCourseIds.has(i.courseId));
+
+  const devTopicIds = new Set(
+    nonTutorialTopics.filter((t) => devCourseIds.has(t.courseId)).map((t) => t.id),
+  );
+  const devIloIds = new Set(
+    nonTutorialIlos.filter((i) => devCourseIds.has(i.courseId)).map((i) => i.id),
+  );
+
+  const filteredActivity = nonTutorialActivity.filter((entry) => {
     if (isDevEmail(entry.userEmail)) return false;
     if (entry.entity === "course" && devCourseIds.has(entry.entityId)) return false;
     if (entry.entity === "topic" && devTopicIds.has(entry.entityId)) return false;

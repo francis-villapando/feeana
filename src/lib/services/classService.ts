@@ -42,6 +42,7 @@ export function fromDbClass(row: Record<string, unknown>): Class {
     studentCount:
       enrollments.length > 0 ? activeEnrollmentCount : ((row.student_count as number) ?? 0),
     facultyName: (faculty?.full_name as string) ?? (row.faculty_name as string) ?? undefined,
+    isTutorial: (row.is_tutorial as boolean) ?? false,
   };
 }
 
@@ -102,6 +103,7 @@ export async function createClass(
     courseCode: string;
     courseTitle: string;
     section: string;
+    isTutorial?: boolean;
   },
 ): Promise<Class> {
   const {
@@ -120,6 +122,7 @@ export async function createClass(
       enroll_code: enrollCode,
       archived: false,
       student_count: 0,
+      is_tutorial: input.isTutorial ?? false,
     })
     .select()
     .single();
@@ -375,6 +378,7 @@ export async function getEnrolledClasses(studentId: string): Promise<Class[]> {
         enroll_code,
         created_at,
         archived,
+        is_tutorial,
         student_count,
         profiles!faculty_id (full_name),
         courses (id, code, title)
