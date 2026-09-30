@@ -9,7 +9,7 @@ import {
   Plus,
   Scale,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +31,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { useAuth } from "@/lib/stores/auth";
 import { CreateClassDialog } from "@/components/faculty";
 import { Button } from "@/components/ui/button";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 
 export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean }) {
   const { activeClasses, isLoading } = useClassStore();
@@ -38,6 +39,23 @@ export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean
   const { setOpenMobile, isMobile, setOpen } = useSidebar();
   const location = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
+  const [classesOpen, setClassesOpen] = useState(true);
+  const {
+    isActive: tutorialActive,
+    step: tutorialStep,
+    activeClassId: tutorialClassId,
+  } = useTutorialStore();
+
+  const onSidebarTutorialStep =
+    tutorialActive &&
+    (tutorialStep?.id === "step-create-class-btn" || tutorialStep?.id === "step-open-class-card");
+
+  useEffect(() => {
+    if (!onSidebarTutorialStep) return;
+    if (isMobile) setOpenMobile(true);
+    else setOpen(true);
+    setClassesOpen(true);
+  }, [onSidebarTutorialStep, isMobile, setOpen, setOpenMobile]);
 
   const handleMouseEnter = useCallback(() => {
     if (isMobile || !hoverEnabled) return;
@@ -46,8 +64,9 @@ export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean
 
   const handleMouseLeave = useCallback(() => {
     if (isMobile || !hoverEnabled) return;
+    if (onSidebarTutorialStep) return;
     setOpen(false);
-  }, [isMobile, setOpen, hoverEnabled]);
+  }, [isMobile, setOpen, hoverEnabled, onSidebarTutorialStep]);
 
   const inClass = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.test(
     location.pathname,
@@ -55,7 +74,6 @@ export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean
   const currentClassId = location.pathname.match(
     /^\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/,
   )?.[1];
-  const [classesOpen, setClassesOpen] = useState(true);
 
   return (
     <>
@@ -126,6 +144,9 @@ export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean
                                   to="/$classId"
                                   params={{ classId: cls.id }}
                                   onClick={() => setOpenMobile(false)}
+                                  data-tutorial={
+                                    cls.id === tutorialClassId ? "sidebar-class-link" : undefined
+                                  }
                                 >
                                   <span className="truncate">
                                     {cls.courseCode} · {cls.section}
@@ -197,6 +218,7 @@ export function FacultySidebar({ hoverEnabled = true }: { hoverEnabled?: boolean
             variant="outline"
             onClick={() => setCreateOpen(true)}
             className="w-full justify-start gap-2"
+            data-tutorial="sidebar-create-class-btn"
           >
             <Plus className="h-4 w-4" /> New class
           </Button>

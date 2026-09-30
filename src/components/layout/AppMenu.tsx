@@ -1,10 +1,11 @@
-import { LogOut, Lock, Menu, Monitor, Moon, ShieldCheck, Sun } from "lucide-react";
+import { GraduationCap, LogOut, Lock, Menu, Monitor, Moon, ShieldCheck, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/common";
 import { useTheme } from "@/lib/providers/themeProvider";
 import { SignOutDialog, ResetPasswordDialog } from "@/components/auth";
+import { useTutorialActions } from "@/components/tutorial";
 import { useState } from "react";
 
 interface AppMenuProps {
@@ -17,6 +18,7 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
   const { theme, setTheme } = useTheme();
   const [resetOpen, setResetOpen] = useState(false);
   const [badgeOpen, setBadgeOpen] = useState(false);
+  const tutorial = useTutorialActions();
 
   return (
     <>
@@ -54,6 +56,19 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
               <Lock className="h-4 w-4 text-muted-foreground" />
               Reset password
             </button>
+            {tutorial && (
+              <button
+                type="button"
+                onClick={() => {
+                  setBadgeOpen(false);
+                  void tutorial.restart();
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+              >
+                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                Restart tutorial
+              </button>
+            )}
           </PopoverContent>
         </Popover>
         <SignOutDialog onConfirm={onSignOut}>
@@ -96,6 +111,16 @@ export function AppMenu({ role, userName, onSignOut }: AppMenuProps) {
               <Lock className="h-4 w-4 text-muted-foreground" />
               Reset password
             </button>
+            {tutorial && (
+              <button
+                type="button"
+                onClick={() => void tutorial.restart()}
+                className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-accent"
+              >
+                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                Restart tutorial
+              </button>
+            )}
           </div>
 
           <Separator className="my-1.5" />

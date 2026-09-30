@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { AppFooter, AppHeader, FacultySidebar } from "@/components/layout";
 import { useAuth } from "@/lib/stores/auth";
+import { TutorialProvider } from "@/components/tutorial";
 import { LayoutSkeleton } from "@/components/skeletons";
 
 export const Route = createFileRoute("/_faculty")({
@@ -29,9 +30,14 @@ function FacultyLayout() {
   }
 
   return (
-    <SidebarProvider defaultOpen={false} style={{ "--sidebar-top": "4rem" } as React.CSSProperties}>
-      <FacultyLayoutInner user={user} logout={logout} />
-    </SidebarProvider>
+    <TutorialProvider>
+      <SidebarProvider
+        defaultOpen={false}
+        style={{ "--sidebar-top": "4rem" } as React.CSSProperties}
+      >
+        <FacultyLayoutInner user={user} logout={logout} />
+      </SidebarProvider>
+    </TutorialProvider>
   );
 }
 

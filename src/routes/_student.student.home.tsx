@@ -81,7 +81,12 @@ function StudentHome() {
           },
         ]}
         inline
-      />
+      >
+        <p className="mt-3 max-w-xl text-sm text-muted-foreground">
+          Submit anonymous feedback on your enrolled classes. Responses in English, Tagalog, or
+          Taglish are supported.
+        </p>
+      </WelcomeHero>
 
       {enrolled.length === 0 ? (
         <EmptyEnroll onEnroll={() => setEnrollOpen(true)} />
