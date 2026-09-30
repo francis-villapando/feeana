@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileText, Loader2, Upload, X } from "lucide-react";
+import { FileText, Loader2, Sparkles, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -17,14 +17,16 @@ import { parseFeedbackFile, type ParsedFeedbackFile } from "@/lib/utils/feedback
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 
 const ACCEPTED_EXTENSIONS = [".csv", ".tsv", ".txt"];
+const SAMPLE_FILE_NAME = "feeana-sample-feedback.csv";
 
 interface BulkFeedbackImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   sessionId: string;
-  /** Raw texts already stored for the session; exact matches are skipped. */
   existingTexts: string[];
   onImported: (count: number) => void;
+  loadSample?: () => string;
+  onSampleLoaded?: () => void;
 }
 
 export function BulkFeedbackImportModal({
@@ -33,6 +35,8 @@ export function BulkFeedbackImportModal({
   sessionId,
   existingTexts,
   onImported,
+  loadSample,
+  onSampleLoaded,
 }: BulkFeedbackImportModalProps) {
   const { addBulkFeedback } = useFeedbackStore();
   const [mode, setMode] = useState<"file" | "paste">("file");
@@ -78,6 +82,15 @@ export function BulkFeedbackImportModal({
     },
     [readFile],
   );
+
+  const handleLoadSample = () => {
+    if (!loadSample) return;
+    setMode("file");
+    setFileName(SAMPLE_FILE_NAME);
+    setContent(loadSample());
+    setError(null);
+    onSampleLoaded?.();
+  };
 
   const handleImport = async () => {
     if (!parsed || parsed.items.length === 0 || importing) return;
@@ -210,6 +223,19 @@ export function BulkFeedbackImportModal({
             }}
           />
 
+          {loadSample && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLoadSample}
+              className="w-full gap-2 border-dashed"
+              data-tutorial="analysis-sample-btn"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Load sample feedback
+            </Button>
+          )}
+
           {parsed && (
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -261,6 +287,7 @@ export function BulkFeedbackImportModal({
             onClick={handleImport}
             disabled={!parsed || parsed.items.length === 0 || importing}
             className="w-full gap-2 sm:w-auto"
+            data-tutorial="analysis-import-confirm"
           >
             {importing && <Loader2 className="h-4 w-4 animate-spin" />}
             {importing ? "Importing…" : "Import feedback"}

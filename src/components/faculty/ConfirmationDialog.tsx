@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { InlineError } from "@/components/common";
 
-export type ActionType = "archive" | "restore" | "confirm";
+export type ActionType = "archive" | "restore" | "confirm" | "delete";
 
 interface ConfirmationDialogProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ interface ConfirmationDialogProps {
   actionType: ActionType;
   confirmLabel?: string;
   errorMessage?: string;
+  showCancel?: boolean;
 }
 
 export function ConfirmationDialog({
@@ -33,18 +34,26 @@ export function ConfirmationDialog({
   actionType,
   confirmLabel,
   errorMessage,
+  showCancel = true,
 }: ConfirmationDialogProps) {
   const [busy, setBusy] = useState(false);
 
   // Default labels if not provided
   const label =
     confirmLabel ||
-    (actionType === "archive" ? "Archive" : actionType === "restore" ? "Restore" : "Confirm");
+    (actionType === "archive"
+      ? "Archive"
+      : actionType === "restore"
+        ? "Restore"
+        : actionType === "delete"
+          ? "Delete"
+          : "Confirm");
 
   const PROGRESSIVE: Record<string, string> = {
     Archive: "Archiving",
     Restore: "Restoring",
     Confirm: "Confirming",
+    Delete: "Deleting",
   };
 
   const renderDescription = (text: string) => {
@@ -73,9 +82,11 @@ export function ConfirmationDialog({
         </AlertDialogHeader>
         <InlineError errorMessage={errorMessage} />
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose} disabled={busy}>
-            Cancel
-          </AlertDialogCancel>
+          {showCancel && (
+            <AlertDialogCancel onClick={onClose} disabled={busy}>
+              Cancel
+            </AlertDialogCancel>
+          )}
           <AlertDialogAction
             disabled={busy}
             onClick={async (e) => {

@@ -18,11 +18,18 @@ import { topicsForClass } from "@/lib/hooks/courseLookup";
 import { InlineError, destructiveBorder } from "@/components/common";
 import { friendlyError } from "@/lib/hooks/utils";
 import { endConflictsWithStart, isAtOrBefore } from "@/lib/datetime";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 
 export function SessionCreator({ classId }: { classId: string }) {
   const { createSession, getClass } = useClassStore();
   const { courses, topics, ilos } = useCourseStore();
   const cls = getClass(classId);
+  const {
+    isActive: tutorialActive,
+    step: tutorialStep,
+    advanceIfStep,
+    setActiveSessionId,
+  } = useTutorialStore();
 
   const availableTopics = useMemo(
     () => topicsForClass(cls, courses, topics),
@@ -71,6 +78,10 @@ export function SessionCreator({ classId }: { classId: string }) {
         iloIds: sessionIlos.map((i) => i.id),
       });
       toast.success(`Session started: ${s.topic}`);
+      if (tutorialActive) {
+        setActiveSessionId(s.id);
+        if (tutorialStep) advanceIfStep(tutorialStep.id);
+      }
       setTopicId("");
       setStartsAt("");
       setEndsAt("");

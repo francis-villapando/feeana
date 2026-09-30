@@ -76,7 +76,10 @@ export function SessionFeedbackModal({
 }: SessionFeedbackModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex h-[80vh] max-h-[640px] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:rounded-2xl">
+      <DialogContent
+        data-tutorial="analysis-feedback-dialog"
+        className="flex h-[80vh] max-h-[640px] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:rounded-2xl"
+      >
         <DialogHeader className="border-b border-border/60 px-6 py-4">
           <DialogTitle>Session feedback</DialogTitle>
           <DialogDescription>

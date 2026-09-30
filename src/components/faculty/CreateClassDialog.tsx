@@ -22,6 +22,7 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import { InlineError, destructiveBorder } from "@/components/common";
 import { friendlyError } from "@/lib/hooks/utils";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 
 export function CreateClassDialog({
   open,
@@ -32,6 +33,14 @@ export function CreateClassDialog({
 }) {
   const { createClass } = useClassStore();
   const { courses } = useCourseStore();
+  const {
+    isActive: tutorialActive,
+    step: tutorialStep,
+    activeCourseId: tutorialCourseId,
+    advanceIfStep,
+    setActiveClassId,
+  } = useTutorialStore();
+
   const [courseId, setCourseId] = useState("");
   const [section, setSection] = useState("");
   const [courseError, setCourseError] = useState("");
@@ -41,6 +50,10 @@ export function CreateClassDialog({
 
   const selectedCourse = courses.find((crs) => crs.id === courseId);
 
+  // During the tour's class-form step, show all courses but disable non-tutorial ones.
+  const tutorialClassForm = tutorialActive && tutorialStep?.id === "step-create-class-form";
+  const availableCourses = courses.filter((crs) => !crs.archived);
+
   const handleCreate = async () => {
     setCourseError("");
     setSectionError("");
@@ -49,6 +62,10 @@ export function CreateClassDialog({
     let hasError = false;
     if (!courseId) {
       setCourseError("Course is required.");
+      hasError = true;
+    }
+    if (tutorialClassForm && tutorialCourseId && courseId !== tutorialCourseId) {
+      setCourseError("Select the course you just created.");
       hasError = true;
     }
     if (!section.trim()) {
@@ -64,11 +81,18 @@ export function CreateClassDialog({
         courseCode: selectedCourse?.code ?? "",
         courseTitle: selectedCourse?.title ?? "",
         section: section.trim(),
+        isTutorial: tutorialActive && tutorialStep?.id === "step-create-class-form",
       });
       toast.success(`Class created. Enroll code: ${cls.enrollCode}`);
+      if (tutorialActive) {
+        setActiveClassId(cls.id);
+      }
       setCourseId("");
       setSection("");
       onOpenChange(false);
+      if (tutorialActive && tutorialStep) {
+        advanceIfStep(tutorialStep.id);
+      }
     } catch (err) {
       setSubmitError(friendlyError(err, "Failed to create class"));
     } finally {
@@ -78,7 +102,7 @@ export function CreateClassDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent data-tutorial="create-class-dialog-content">
         <DialogHeader>
           <DialogTitle>Create a class</DialogTitle>
           <DialogDescription>
@@ -99,18 +123,20 @@ export function CreateClassDialog({
                 <SelectValue placeholder="Select a course" />
               </SelectTrigger>
               <SelectContent>
-                {courses.filter((crs) => !crs.archived).length === 0 ? (
+                {availableCourses.length === 0 ? (
                   <div className="px-3 py-2 text-xs text-muted-foreground">
                     No courses yet — add one in Dashboard → Course Management Hub.
                   </div>
                 ) : (
-                  courses
-                    .filter((crs) => !crs.archived)
-                    .map((crs) => (
-                      <SelectItem key={crs.id} value={crs.id}>
-                        {crs.code} — {crs.title}
-                      </SelectItem>
-                    ))
+                  availableCourses.map((crs) => (
+                    <SelectItem
+                      key={crs.id}
+                      value={crs.id}
+                      disabled={tutorialClassForm && crs.id !== tutorialCourseId}
+                    >
+                      {crs.code} — {crs.title}
+                    </SelectItem>
+                  ))
                 )}
               </SelectContent>
             </Select>
@@ -122,7 +148,7 @@ export function CreateClassDialog({
               id="class-section"
               value={section}
               onChange={(e) => {
-                setSection(e.target.value);
+                setSection(e.target.value.toUpperCase());
                 setSectionError("");
               }}
               placeholder="e.g. 1CS-A, 2CS-B"

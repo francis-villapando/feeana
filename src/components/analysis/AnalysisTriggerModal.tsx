@@ -43,7 +43,10 @@ export function AnalysisTriggerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md overflow-hidden border border-border/80 bg-background/95 p-6 shadow-2xl backdrop-blur-xl duration-300 animate-in fade-in-50 zoom-in-95 sm:rounded-2xl">
+      <DialogContent
+        data-tutorial="analysis-confirm"
+        className="max-w-md overflow-hidden border border-border/80 bg-background/95 p-6 shadow-2xl backdrop-blur-xl duration-300 animate-in fade-in-50 zoom-in-95 sm:rounded-2xl"
+      >
         <DialogHeader className="space-y-3 text-center sm:text-left">
           {/* Header Icon & Title */}
           {!hasFeedback ? (
@@ -166,6 +169,7 @@ export function AnalysisTriggerModal({
                 onClose();
                 onConfirm();
               }}
+              data-tutorial="analysis-confirm-btn"
               className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto shadow-md shadow-primary/20"
             >
               <PlayCircle className="h-4 w-4" />

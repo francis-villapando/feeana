@@ -24,11 +24,22 @@ import {
 import { toast } from "sonner";
 import { InlineError, destructiveBorder } from "@/components/common";
 import { friendlyError, unchangedFields, noChangesMessage } from "@/lib/hooks/utils";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 
 type State =
-  | { kind: "course"; entity?: Course }
+  | {
+      kind: "course";
+      entity?: Course;
+      courseCodePlaceholder?: string;
+      isTutorial?: boolean;
+    }
   | { kind: "topic"; entity?: Topic; initialCourseId?: string }
-  | { kind: "ILO"; entity?: ILO; initialCourseId?: string; initialTopicId?: string };
+  | {
+      kind: "ILO";
+      entity?: ILO;
+      initialCourseId?: string;
+      initialTopicId?: string;
+    };
 
 const BLOOMS: BloomLevel[] = ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
 
@@ -44,6 +55,15 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
     updateILO,
     refreshAll,
   } = useCourseStore();
+
+  const {
+    isActive: tutorialActive,
+    step: tutorialStep,
+    advanceIfStep,
+    setActiveCourseId,
+    setActiveTopicId,
+    setActiveIloId,
+  } = useTutorialStore();
 
   const isEdit = !!state.entity;
   const labels: Record<EntityKind, string> = {
@@ -78,9 +98,10 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
     }
     return "";
   });
-  const [iloBloom, setIloBloom] = useState<BloomLevel>(
-    state.kind === "ILO" ? (state.entity?.bloomLevel ?? "Remember") : "Remember",
-  );
+  const [iloBloom, setIloBloom] = useState<BloomLevel | "">(() => {
+    if (state.kind === "ILO") return state.entity?.bloomLevel ?? "";
+    return "";
+  });
 
   const [saving, setSaving] = useState(false);
 
@@ -91,6 +112,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
   const [iloStatementError, setIloStatementError] = useState("");
   const [iloCourseError, setIloCourseError] = useState("");
   const [iloTopicError, setIloTopicError] = useState("");
+  const [iloBloomError, setIloBloomError] = useState("");
   const [submitError, setSubmitError] = useState("");
 
   const availableTopics = topics.filter((t) => t.courseId === iloCourseId && !t.archived);
@@ -103,6 +125,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
     setIloStatementError("");
     setIloCourseError("");
     setIloTopicError("");
+    setIloBloomError("");
     setSubmitError("");
   };
 
@@ -130,12 +153,16 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
         return;
       }
     } else {
+      let hasError = false;
       if (!iloStatement.trim()) {
         setIloStatementError("Statement is required.");
-        return;
+        hasError = true;
+      }
+      if (!iloBloom) {
+        setIloBloomError("Bloom level is required.");
+        hasError = true;
       }
       if (!state.entity) {
-        let hasError = false;
         if (!iloCourseId) {
           setIloCourseError("Course is required.");
           hasError = true;
@@ -144,8 +171,8 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           setIloTopicError("Topic is required.");
           hasError = true;
         }
-        if (hasError) return;
       }
+      if (hasError) return;
     }
 
     if (state.entity) {
@@ -179,34 +206,50 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
           await updateCourse(state.entity.id, { code, title, version: state.entity.version });
           toast.success("Course updated.");
         } else {
-          await createCourse({ code, title });
+          const isTutorial =
+            tutorialActive && tutorialStep?.id === "step-course-form"
+              ? true
+              : (state.isTutorial ?? false);
+          const newCourse = await createCourse({ code, title, isTutorial });
           toast.success("Course created.");
+          if (tutorialActive) {
+            setActiveCourseId(newCourse.id);
+          }
         }
       } else if (state.kind === "topic") {
         if (state.entity) {
           await updateTopic(state.entity.id, { title: topicTitle, version: state.entity.version });
           toast.success("Topic updated.");
         } else {
-          await createTopic({ courseId: topicCourseId, title: topicTitle });
+          const newTopic = await createTopic({ courseId: topicCourseId, title: topicTitle });
           toast.success("Topic created.");
+          if (tutorialActive) {
+            setActiveTopicId(newTopic.id);
+          }
         }
       } else if (state.entity) {
         await updateILO(state.entity.id, {
           statement: iloStatement,
-          bloomLevel: iloBloom,
+          bloomLevel: iloBloom as BloomLevel,
           version: state.entity.version,
         });
         toast.success("ILO updated.");
       } else {
-        await createILO({
+        const newIlo = await createILO({
           courseId: iloCourseId,
           topicId: iloTopicId,
           statement: iloStatement,
-          bloomLevel: iloBloom,
+          bloomLevel: iloBloom as BloomLevel,
         });
         toast.success("ILO created.");
+        if (tutorialActive) {
+          setActiveIloId(newIlo.id);
+        }
       }
       onClose();
+      if (tutorialActive && tutorialStep) {
+        advanceIfStep(tutorialStep.id);
+      }
     } catch (err) {
       if (err instanceof DuplicateError) {
         if (state.kind === "course") {
@@ -229,9 +272,12 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
     }
   };
 
+  const codeInputPlaceholder =
+    state.kind === "course" ? (state.courseCodePlaceholder ?? "CSEG2") : "CSEG2";
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" data-tutorial="entity-dialog-content">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Edit" : "Add"} {labels[state.kind]}
@@ -252,7 +298,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                   setCode(e.target.value.toUpperCase().trim());
                   setCodeError("");
                 }}
-                placeholder="CSEG2"
+                placeholder={codeInputPlaceholder}
                 className={codeError ? destructiveBorder : ""}
               />
               <InlineError errorMessage={codeError} />
@@ -389,9 +435,15 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
             )}
             <div className="space-y-1.5">
               <Label>Bloom level</Label>
-              <Select value={iloBloom} onValueChange={(v) => setIloBloom(v as BloomLevel)}>
-                <SelectTrigger>
-                  <SelectValue />
+              <Select
+                value={iloBloom}
+                onValueChange={(v) => {
+                  setIloBloom(v as BloomLevel);
+                  setIloBloomError("");
+                }}
+              >
+                <SelectTrigger className={iloBloomError ? destructiveBorder : ""}>
+                  <SelectValue placeholder="Select a level" />
                 </SelectTrigger>
                 <SelectContent>
                   {BLOOMS.map((b) => (
@@ -401,6 +453,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
                   ))}
                 </SelectContent>
               </Select>
+              <InlineError errorMessage={iloBloomError} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ilo-stmt">Statement</Label>

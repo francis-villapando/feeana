@@ -43,7 +43,7 @@ type RowFieldErrors = {
 };
 
 export function CrossClassSessionCreator() {
-  const { activeClasses, createSession } = useClassStore();
+  const { productionClasses, createSession } = useClassStore();
   const { courses, topics, ilos } = useCourseStore();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<PerClass[]>([]);
@@ -110,7 +110,7 @@ export function CrossClassSessionCreator() {
     const errorsByClass: Record<string, RowFieldErrors> = {};
 
     for (const r of rows) {
-      const cls = activeClasses.find((c) => c.id === r.classId);
+      const cls = productionClasses.find((c) => c.id === r.classId);
       const crsTopics = topicsForClass(cls, courses, topics);
       const topic = crsTopics.find((t) => t.id === r.topicId);
       const errors: RowFieldErrors = {};
@@ -141,7 +141,7 @@ export function CrossClassSessionCreator() {
     try {
       await Promise.all(
         rows.map((r) => {
-          const cls = activeClasses.find((c) => c.id === r.classId);
+          const cls = productionClasses.find((c) => c.id === r.classId);
           const crsTopics = topicsForClass(cls, courses, topics);
           const topic = crsTopics.find((t) => t.id === r.topicId);
           if (!topic) return Promise.resolve();
@@ -200,7 +200,7 @@ export function CrossClassSessionCreator() {
                 <CommandList>
                   <CommandEmpty>No classes.</CommandEmpty>
                   <CommandGroup>
-                    {activeClasses.map((cls) => {
+                    {productionClasses.map((cls) => {
                       const selected = rows.some((r) => r.classId === cls.id);
                       return (
                         <CommandItem
@@ -231,7 +231,7 @@ export function CrossClassSessionCreator() {
               Per-class topic & schedule
             </Label>
             {rows.map((r) => {
-              const cls = activeClasses.find((c) => c.id === r.classId);
+              const cls = productionClasses.find((c) => c.id === r.classId);
               const crsTopics = topicsForClass(cls, courses, topics);
               const fieldErrors = rowErrors[r.classId];
               return (

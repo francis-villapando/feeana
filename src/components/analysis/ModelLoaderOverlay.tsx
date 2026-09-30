@@ -27,6 +27,7 @@ interface ModelLoaderOverlayProps {
   loadProgress: LoadProgressData;
   inferenceProgress: { current: number; total: number; text: string } | null;
   onCancel?: () => void;
+  dataTutorial?: string;
 }
 
 type StepState = "done" | "active" | "pending";
@@ -93,6 +94,7 @@ export function ModelLoaderOverlay({
   loadProgress,
   inferenceProgress,
   onCancel,
+  dataTutorial,
 }: ModelLoaderOverlayProps) {
   if (!isVisible) return null;
 
@@ -185,6 +187,7 @@ export function ModelLoaderOverlay({
         aria-modal="true"
         aria-labelledby="ml-overlay-title"
         aria-describedby={detail ? "ml-overlay-desc" : undefined}
+        data-tutorial={dataTutorial ?? "analysis-ml-progress"}
         className="mx-4 flex min-h-[280px] w-full max-w-md flex-col items-center justify-center rounded-2xl border border-border bg-card p-8 text-center shadow-2xl backdrop-blur-md duration-300 animate-in fade-in zoom-in-95"
       >
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20 shadow-inner">
