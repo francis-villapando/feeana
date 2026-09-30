@@ -148,23 +148,35 @@ describe("scoped ILO goal statement in pedagogical cues", () => {
   it("lists all ILOs for an RBT 1 gap", () => {
     const cue = GeneratePedagogicalCue(makeSessionContext(), makeBufferedIssue(1), 10, 1.5);
     expect(cue.paragraph).toContain(
-      "the goal: ILO 1: Recall basic definitions; ILO 2: Explain core concepts; ILO 3: Apply techniques to solve problems.",
+      "the goals: ILO 1: Recall basic definitions — ILO 2: Explain core concepts — ILO 3: Apply techniques to solve problems.",
     );
-    const iloTerm = cue.terms.find((t) => t.kind === "ILO");
-    expect(iloTerm?.text).toBe(
-      "ILO 1: Recall basic definitions; ILO 2: Explain core concepts; ILO 3: Apply techniques to solve problems",
-    );
+    const iloTerms = cue.terms.filter((t) => t.kind === "ILO");
+    expect(iloTerms.map((t) => t.text)).toEqual([
+      "ILO 1: Recall basic definitions",
+      "ILO 2: Explain core concepts",
+      "ILO 3: Apply techniques to solve problems",
+    ]);
+    expect(iloTerms.map((t) => t.detail)).toEqual([
+      "RBT Level 1 · Remember",
+      "RBT Level 2 · Understand",
+      "RBT Level 3 · Apply",
+    ]);
   });
 
   it("lists only ILOs at or above the issue RBT for an RBT 2 gap", () => {
     const cue = GeneratePedagogicalCue(makeSessionContext(), makeBufferedIssue(2), 10, 1.5);
     expect(cue.paragraph).toContain(
-      "the goal: ILO 2: Explain core concepts; ILO 3: Apply techniques to solve problems.",
+      "the goals: ILO 2: Explain core concepts — ILO 3: Apply techniques to solve problems.",
     );
-    const iloTerm = cue.terms.find((t) => t.kind === "ILO");
-    expect(iloTerm?.text).toBe(
-      "ILO 2: Explain core concepts; ILO 3: Apply techniques to solve problems",
-    );
+    const iloTerms = cue.terms.filter((t) => t.kind === "ILO");
+    expect(iloTerms.map((t) => t.text)).toEqual([
+      "ILO 2: Explain core concepts",
+      "ILO 3: Apply techniques to solve problems",
+    ]);
+    expect(iloTerms.map((t) => t.detail)).toEqual([
+      "RBT Level 2 · Understand",
+      "RBT Level 3 · Apply",
+    ]);
   });
 
   it("lists only the top ILO for an RBT 3 gap", () => {
@@ -172,6 +184,7 @@ describe("scoped ILO goal statement in pedagogical cues", () => {
     expect(cue.paragraph).toContain("the goal: ILO 3: Apply techniques to solve problems.");
     const iloTerm = cue.terms.find((t) => t.kind === "ILO");
     expect(iloTerm?.text).toBe("ILO 3: Apply techniques to solve problems");
+    expect(iloTerm?.detail).toBe("RBT Level 3 · Apply");
   });
 
   it("falls back to iloStatement when no ILO scope is provided", () => {
@@ -182,8 +195,14 @@ describe("scoped ILO goal statement in pedagogical cues", () => {
       1.5,
     );
     expect(cue.paragraph).toContain(
-      "the goal: ILO 1: Recall basic definitions; ILO 2: Explain core concepts; ILO 3: Apply techniques to solve problems.",
+      "the goals: ILO 1: Recall basic definitions — ILO 2: Explain core concepts — ILO 3: Apply techniques to solve problems.",
     );
+    const iloTerms = cue.terms.filter((t) => t.kind === "ILO");
+    expect(iloTerms.map((t) => t.text)).toEqual([
+      "ILO 1: Recall basic definitions",
+      "ILO 2: Explain core concepts",
+      "ILO 3: Apply techniques to solve problems",
+    ]);
   });
 
   it("uses the bare statement for a single-ILO session", () => {
@@ -197,5 +216,50 @@ describe("scoped ILO goal statement in pedagogical cues", () => {
       1.5,
     );
     expect(cue.paragraph).toContain("the goal: Implement a sorting algorithm.");
+    const iloTerm = cue.terms.find((t) => t.kind === "ILO");
+    expect(iloTerm?.detail).toBe("RBT Level 3 · Apply");
+  });
+
+  it("handles ILO statements with trailing periods without producing double periods", () => {
+    const cue = GeneratePedagogicalCue(
+      makeSessionContext({
+        iloStatement: "Implement a sorting algorithm.",
+        ilos: [{ index: 0, statement: "Implement a sorting algorithm.", level: 3 }],
+      }),
+      makeBufferedIssue(3),
+      10,
+      1.5,
+    );
+    expect(cue.paragraph).toContain("the goal: Implement a sorting algorithm. CLT identifies");
+    expect(cue.paragraph).not.toContain("algorithm.. CLT");
+    const iloTerm = cue.terms.find((t) => t.kind === "ILO");
+    expect(iloTerm?.text).toBe("Implement a sorting algorithm");
+    expect(iloTerm?.detail).toBe("RBT Level 3 · Apply");
+  });
+
+  it("handles multi-ILO statements with trailing periods cleanly as separate terms", () => {
+    const cue = GeneratePedagogicalCue(
+      makeSessionContext({
+        ilos: [
+          { index: 0, statement: "Recall definitions.", level: 1 },
+          { index: 1, statement: "Apply techniques...", level: 2 },
+        ],
+      }),
+      makeBufferedIssue(1),
+      10,
+      1.5,
+    );
+    expect(cue.paragraph).toContain(
+      "the goals: ILO 1: Recall definitions — ILO 2: Apply techniques. CLT identifies",
+    );
+    const iloTerms = cue.terms.filter((t) => t.kind === "ILO");
+    expect(iloTerms.map((t) => t.text)).toEqual([
+      "ILO 1: Recall definitions",
+      "ILO 2: Apply techniques",
+    ]);
+    expect(iloTerms.map((t) => t.detail)).toEqual([
+      "RBT Level 1 · Remember",
+      "RBT Level 2 · Understand",
+    ]);
   });
 });

@@ -31,6 +31,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   Select,
   SelectContent,
@@ -1463,11 +1464,12 @@ function StepStrategy({ strategy }: { strategy: StrategyResult }) {
 interface CueSegment {
   text: string;
   kind?: string;
+  detail?: string;
 }
 
 function segmentCueParagraph(
   paragraph: string,
-  terms: Array<{ text: string; kind: string }>,
+  terms: Array<{ text: string; kind: string; detail?: string }>,
 ): CueSegment[] {
   let segments: CueSegment[] = [{ text: paragraph }];
   for (const term of terms) {
@@ -1487,7 +1489,7 @@ function segmentCueParagraph(
       const match = seg.text.slice(idx, idx + term.text.length);
       const after = seg.text.slice(idx + term.text.length);
       if (before) next.push({ text: before });
-      next.push({ text: match, kind: term.kind });
+      next.push({ text: match, kind: term.kind, detail: term.detail });
       if (after) next.push({ text: after });
     }
     segments = next;
@@ -1606,29 +1608,53 @@ function StepOutput({
                   if (!seg.kind) return <span key={i}>{seg.text}</span>;
                   if (seg.kind === "prevalence") {
                     return (
-                      <span
-                        key={i}
-                        className="font-mono font-medium text-foreground underline decoration-primary/50 underline-offset-4"
-                      >
-                        {seg.text}
-                      </span>
+                      <HoverCard key={i} openDelay={120} closeDelay={80}>
+                        <HoverCardTrigger asChild>
+                          <span className="cursor-help font-mono font-medium text-foreground underline decoration-primary/50 underline-offset-4 hover:decoration-primary">
+                            {seg.text}
+                          </span>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-80" align="start">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+                            Prevalence
+                          </p>
+                          <p className="mt-2 text-sm leading-relaxed">{seg.detail ?? seg.text}</p>
+                        </HoverCardContent>
+                      </HoverCard>
                     );
                   }
                   if (seg.kind === "ILO") {
                     return (
-                      <span key={i} className="italic text-foreground">
-                        &ldquo;{seg.text}&rdquo;
-                      </span>
+                      <HoverCard key={i} openDelay={120} closeDelay={80}>
+                        <HoverCardTrigger asChild>
+                          <span className="cursor-help text-foreground underline decoration-primary/40 decoration-dotted underline-offset-4 hover:decoration-primary">
+                            &ldquo;{seg.text}&rdquo;
+                          </span>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-80" align="start">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+                            Intended Learning Outcome
+                          </p>
+                          <p className="mt-2 text-sm leading-relaxed">{seg.detail ?? seg.text}</p>
+                        </HoverCardContent>
+                      </HoverCard>
                     );
                   }
                   // issue, TTI, RBT, CLT, recommendation, topic — all get the same underline highlight
                   return (
-                    <span
-                      key={i}
-                      className="font-medium text-foreground underline decoration-primary/50 underline-offset-4"
-                    >
-                      {seg.text}
-                    </span>
+                    <HoverCard key={i} openDelay={120} closeDelay={80}>
+                      <HoverCardTrigger asChild>
+                        <span className="cursor-help font-medium text-foreground underline decoration-primary/50 underline-offset-4 hover:decoration-primary">
+                          {seg.text}
+                        </span>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-80" align="start">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+                          {seg.kind}
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed">{seg.detail ?? seg.text}</p>
+                      </HoverCardContent>
+                    </HoverCard>
                   );
                 })}
               </p>

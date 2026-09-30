@@ -57,13 +57,59 @@ export function CalculateDistributions(
   return stats;
 }
 
-function scopeIloStatement(sessionContext: SessionContext, rbtLevel: number): string {
+function cleanStatement(text?: string | null): string {
+  if (!text) return "";
+  return text.trim().replace(/\.+$/, "");
+}
+
+interface ScopedIloItem {
+  text: string;
+  detail: string;
+}
+
+function scopeIloItems(sessionContext: SessionContext, rbtLevel: number): ScopedIloItem[] {
   const ilos = sessionContext.ilos;
-  if (!ilos || ilos.length === 0) return sessionContext.iloStatement;
+  if (!ilos || ilos.length === 0) {
+    const raw = cleanStatement(sessionContext.iloStatement);
+    if (!raw) return [];
+    const rbtLabel =
+      RBT_LEVELS[sessionContext.targetIloRbt] ?? `Level ${sessionContext.targetIloRbt}`;
+    const detail = `RBT Level ${sessionContext.targetIloRbt} · ${rbtLabel}`;
+    if (raw.includes(";")) {
+      return raw
+        .split(";")
+        .map((s) => cleanStatement(s))
+        .filter(Boolean)
+        .map((text) => ({ text, detail }));
+    }
+    return [{ text: raw, detail }];
+  }
+
   const relevant = ilos.filter((ilo) => ilo.level >= rbtLevel);
-  if (relevant.length === 0) return sessionContext.iloStatement;
-  if (ilos.length === 1) return relevant[0].statement;
-  return relevant.map((ilo) => `ILO ${ilo.index + 1}: ${ilo.statement}`).join("; ");
+  if (relevant.length === 0) {
+    const raw = cleanStatement(sessionContext.iloStatement);
+    const rbtLabel =
+      RBT_LEVELS[sessionContext.targetIloRbt] ?? `Level ${sessionContext.targetIloRbt}`;
+    return raw
+      ? [{ text: raw, detail: `RBT Level ${sessionContext.targetIloRbt} · ${rbtLabel}` }]
+      : [];
+  }
+
+  if (ilos.length === 1) {
+    const ilo = relevant[0];
+    const text = cleanStatement(ilo.statement);
+    const rbtLabel = RBT_LEVELS[ilo.level] ?? `Level ${ilo.level}`;
+    return [{ text, detail: `RBT Level ${ilo.level} · ${rbtLabel}` }];
+  }
+
+  return relevant.map((ilo) => {
+    const text = `ILO ${ilo.index + 1}: ${cleanStatement(ilo.statement)}`;
+    const rbtLabel = RBT_LEVELS[ilo.level] ?? `Level ${ilo.level}`;
+    return {
+      text,
+      detail: `RBT Level ${ilo.level} · ${rbtLabel}`,
+    };
+  });
 }
 
 export function GeneratePedagogicalCue(
@@ -91,10 +137,12 @@ export function GeneratePedagogicalCue(
     ISSUE_RECOMMENDATIONS[uniqueIssue.issue] ??
     `Thus, "recommendation cue for ${uniqueIssue.issue}."`;
 
-  const goalStatement = scopeIloStatement(sessionContext, uniqueIssue.rbt);
+  const scopedIlos = scopeIloItems(sessionContext, uniqueIssue.rbt);
+  const goalStatement = scopedIlos.map((i) => i.text).join(" — ");
+  const goalNoun = scopedIlos.length > 1 ? "goals" : "goal";
 
   const paragraph = uniqueIssue.isGap
-    ? `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the goal: ${goalStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
+    ? `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the ${goalNoun}: ${goalStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
     : `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
 
   const prevalenceDetail = uniqueIssue.isGap
@@ -128,13 +176,11 @@ export function GeneratePedagogicalCue(
       detail: RBT_DESCRIPTIONS[rbtName] ?? rbtName,
     },
     ...(uniqueIssue.isGap
-      ? [
-          {
-            text: goalStatement,
-            kind: "ILO" as const,
-            detail: goalStatement,
-          },
-        ]
+      ? scopedIlos.map((ilo) => ({
+          text: ilo.text,
+          kind: "ILO" as const,
+          detail: ilo.detail,
+        }))
       : []),
     {
       text: uniqueIssue.clt,
