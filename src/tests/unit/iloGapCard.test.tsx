@@ -296,7 +296,7 @@ describe("IloGapCard rendering", () => {
     const markup = renderToStaticMarkup(<IloGapCard statuses={statuses} gaps={gaps} />);
     // Level 2 (scope) has no ILO but does have gaps.
     expect(markup).toContain("1 feedback gap");
-    expect(markup).toContain("at Understand");
+    expect(markup).not.toContain(" at Understand");
     expect(markup).toContain("border-secondary/60");
   });
 
@@ -304,7 +304,7 @@ describe("IloGapCard rendering", () => {
     const markup = renderToStaticMarkup(<IloGapCard statuses={statuses} gaps={gaps} />);
     // Level 5 has a gap fixture but is out of scope: header only, no card.
     expect(markup).toContain("Evaluate");
-    expect(markup).not.toContain("at Evaluate");
+    expect(markup).not.toContain(" at Evaluate");
     expect(markup).not.toContain("opacity-70");
   });
 

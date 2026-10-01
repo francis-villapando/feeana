@@ -18,13 +18,13 @@ export function RecommendationCuesCard({ recommendations, ilos }: Recommendation
         <CardTitle className="flex items-center gap-2 text-base">
           <Lightbulb className="h-4 w-4 text-primary" /> Recommendation cues
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="print:hidden">
           Hover the highlighted terms to see how each maps across pedagogical frameworks.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
         {sorted.length > 0 && (
-          <div className="mb-3 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+          <div className="mb-3 space-y-1.5 text-xs leading-relaxed text-muted-foreground print-keep-with-next">
             <p className="flex items-center gap-1.5">
               <span>
                 <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-primary/30 bg-primary/10 mr-1.5" />

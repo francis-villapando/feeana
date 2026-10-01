@@ -9,7 +9,7 @@ export const AnalysisCard = React.forwardRef<
   <Card
     ref={ref}
     className={cn(
-      "h-full flex flex-col border-border/60 bg-card/70 backdrop-blur-xl relative hover:z-50 transition-all duration-200",
+      "h-full flex flex-col border-border/60 bg-card/70 backdrop-blur-xl relative hover:z-50 transition-all duration-200 print-unit",
       className,
     )}
     {...props}

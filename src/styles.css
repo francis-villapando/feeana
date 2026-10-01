@@ -258,3 +258,52 @@
     transition: background-color 5000s ease-in-out 0s;
   }
 }
+
+@media print {
+  @page {
+    size: legal;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    min-height: auto !important;
+  }
+
+  /* Fixed gradient overlay would otherwise flood the page with ink. */
+  body::after {
+    display: none !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Matches both <main> elements: SidebarInset renders an outer one. */
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+  }
+
+  /* Page groups 1-3 fit Legal at natural size with headroom, so charts and
+     wrappers are never resized or scaled: content that outgrows a page breaks
+     between atomic units rather than being shrunk to fit. */
+
+  /* Atomic unit: never split across a page boundary. */
+  .print-unit {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Keeps a heading or legend attached to the block that follows it. */
+  .print-keep-with-next {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+}

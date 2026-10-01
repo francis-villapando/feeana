@@ -57,8 +57,8 @@ function FacultyLayoutInner({
   }, [open]);
 
   return (
-    <div className="flex min-h-svh w-full flex-col">
-      <header className="shrink-0 sticky top-0 z-[60] border-b border-border/60 bg-background/70 backdrop-blur-xl">
+    <div className="flex min-h-svh w-full flex-col print:block print:min-h-0">
+      <header className="shrink-0 sticky top-0 z-[60] border-b border-border/60 bg-background/70 backdrop-blur-xl print:hidden">
         <AppHeader
           role="faculty"
           userName={user.name}
@@ -70,10 +70,14 @@ function FacultyLayoutInner({
           onSidebarTriggerClick={handleSidebarTriggerClick}
         />
       </header>
-      <div className="flex min-h-0 flex-1">
-        <FacultySidebar hoverEnabled={hoverEnabled} />
-        <SidebarInset className="bg-transparent">
-          <main className="mx-auto w-full max-w-7xl flex-1 overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex min-h-0 flex-1 print:block">
+        {/* The wrapper also removes the sidebar's fixed-width gap spacer, which the
+            <Sidebar> primitive does not forward a className to. */}
+        <div className="print:hidden">
+          <FacultySidebar hoverEnabled={hoverEnabled} />
+        </div>
+        <SidebarInset className="bg-transparent print:block">
+          <main className="mx-auto w-full max-w-7xl flex-1 overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8 print:p-0 print:m-0 print:max-w-none print:min-h-0">
             <Outlet />
           </main>
           <AppFooter />

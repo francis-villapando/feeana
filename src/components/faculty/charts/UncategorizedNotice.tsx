@@ -14,13 +14,20 @@ export function UncategorizedNotice({
   feedbackTexts,
 }: UncategorizedNoticeProps) {
   const [expanded, setExpanded] = useState(false);
-  if (count === 0) return null;
+  if (count === 0) {
+    // Screen keeps the slot empty; paper states the absence explicitly.
+    return (
+      <p className="hidden print:block text-xs text-muted-foreground lg:col-span-12">
+        No uncategorized feedback in this session.
+      </p>
+    );
+  }
 
   const pct = totalFeedback === 0 ? 0 : Math.round((count / totalFeedback) * 100);
   const texts = feedbackTexts ?? [];
 
   return (
-    <div className="rounded-md border border-border/40 bg-background/50 px-3 py-2 text-xs text-muted-foreground lg:col-span-12">
+    <div className="rounded-md border border-border/40 bg-background/50 px-3 py-2 text-xs text-muted-foreground lg:col-span-12 print-unit">
       <div className="flex items-start gap-2">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <div className="flex-1 leading-relaxed">
@@ -44,7 +51,7 @@ export function UncategorizedNotice({
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className="mt-1 text-[10px] font-medium text-primary underline-offset-2 hover:underline"
+              className="mt-1 text-[10px] font-medium text-primary underline-offset-2 hover:underline print:hidden"
             >
               {expanded ? "Hide" : "Show"} {texts.length} unmapped feedback{" "}
               {texts.length === 1 ? "quote" : "quotes"}
@@ -53,7 +60,7 @@ export function UncategorizedNotice({
         </div>
       </div>
       {expanded && texts.length > 0 && (
-        <div className="mt-2 space-y-1 border-t border-border/40 pt-2">
+        <div className="mt-2 space-y-1 border-t border-border/40 pt-2 print:hidden">
           {texts.map((text, i) => (
             <p key={i} className="text-[11px] leading-relaxed text-foreground/80">
               &ldquo;{text}&rdquo;

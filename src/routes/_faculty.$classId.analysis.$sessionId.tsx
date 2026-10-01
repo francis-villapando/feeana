@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, PlayCircle, Sparkles, Upload } from "lucide-react";
+import { ArrowLeft, PlayCircle, Printer, Sparkles, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import {
   BulkFeedbackImportModal,
 } from "@/components/analysis";
 import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
-import { friendlyError } from "@/lib/hooks/utils";
+import { cn, friendlyError } from "@/lib/hooks/utils";
 import {
   AspectDistChart,
   PolarityDistChart,
@@ -40,6 +40,8 @@ import { KeyMetricsRow } from "@/components/faculty";
 import { computeFeedbackStatus } from "@/lib/services/feedbackStatusService";
 import { SAMPLE_TUTORIAL_CSV } from "@/lib/tutorial/sampleTutorialData";
 import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
+import { useAuth } from "@/lib/stores/auth";
+import { usePrintReport } from "@/lib/hooks/usePrintReport";
 import React from "react";
 
 export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
@@ -68,6 +70,8 @@ export const Route = createFileRoute("/_faculty/$classId/analysis/$sessionId")({
 
 function AnalysisPage() {
   const { classId, sessionId } = Route.useParams();
+  const { user } = useAuth();
+  const printReport = usePrintReport();
   const {
     sessions,
     getClass,
@@ -352,6 +356,20 @@ function AnalysisPage() {
   const sessionFeedback = feedback.filter((f) => f.sessionId === sessionId);
   const feedbackCount = sessionFeedback.length;
   const cls = getClass(classId);
+  // One clock for both the printed header and the exported filename.
+  const printDate = new Date();
+  const printedLabel = printDate.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  const printTitle = [
+    "Feeana",
+    cls ? `${cls.courseCode} ${cls.section}` : null,
+    session.topic,
+    compactTimestamp(printDate),
+  ]
+    .filter(Boolean)
+    .join(" - ");
   // The sample preset is only offered inside the tour's own sandbox session.
   const isTutorialSession = !!classId && activeTutorialClassIds.includes(classId);
   const studentCount = classId ? studentCountForClass(classId) : 0;
@@ -366,7 +384,16 @@ function AnalysisPage() {
 
   return (
     <div className="space-y-8">
-      <div>
+      <PrintHeader
+        topic={session.topic}
+        courseLine={cls ? `${cls.courseCode} · ${cls.section}` : "Class analysis"}
+        facultyName={user?.name}
+        responseCount={feedbackCount}
+        printedLabel={printedLabel}
+      />
+      {/* Replaced on paper by PrintHeader; hiding the wrapper covers the back link,
+          the title block, and every action button in one place. */}
+      <div className="print:hidden">
         <Button
           variant="ghost"
           size="sm"
@@ -416,6 +443,15 @@ function AnalysisPage() {
               </Button>
               <CountBadge count={newFeedbackCount} />
             </div>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => printReport(printTitle)}
+              disabled={loading || isAnalyzing || !result}
+            >
+              <Printer className="h-4 w-4" />
+              Export report
+            </Button>
           </div>
         </div>
       </div>
@@ -497,6 +533,48 @@ function AnalysisPage() {
   );
 }
 
+/** `YYYYMMDDHHMM`, local time, for a sortable filename-safe stamp. */
+function compactTimestamp(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}`;
+}
+
+function PrintHeader({
+  topic,
+  courseLine,
+  facultyName,
+  responseCount,
+  printedLabel,
+}: {
+  topic: string;
+  courseLine: string;
+  facultyName?: string;
+  responseCount: number;
+  printedLabel: string;
+}) {
+  return (
+    <div className="hidden border-b border-border pb-4 print:block">
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            Feeana — Pedagogical Feedback Analysis Report
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{topic}</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {courseLine}
+            {facultyName ? ` — Faculty: ${facultyName}` : ""}
+          </p>
+        </div>
+        <div className="shrink-0 text-right text-xs text-muted-foreground">
+          <p>Printed: {printedLabel}</p>
+          <p>{responseCount} student responses</p>
+          <p className="print:block hidden">Student quotes are omitted; view them in Feeana.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({ onTrigger }: { onTrigger: () => void }) {
   return (
     <Card className="border-dashed border-border/60 bg-card/40">
@@ -554,9 +632,20 @@ function LoadingState() {
   );
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+function SectionHeading({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+    <h2
+      className={cn(
+        "text-xs font-semibold uppercase tracking-widest text-muted-foreground",
+        className,
+      )}
+    >
       {children}
     </h2>
   );
@@ -608,7 +697,7 @@ function Results({
     <div className="space-y-8">
       <section aria-label="What students wrote" className="space-y-4">
         <SectionHeading>What students wrote</SectionHeading>
-        <div className="grid gap-4 lg:grid-cols-12">
+        <div className="grid gap-4 lg:grid-cols-12 print:block print:space-y-4">
           <div className="lg:col-span-6" data-tutorial="analysis-aspect-chart">
             <AspectDistChart
               data={result.aspectDist}
@@ -620,42 +709,50 @@ function Results({
               onRetryOpen={onRetryOpen}
             />
           </div>
-          <div className="lg:col-span-6" data-tutorial="analysis-issue-chart">
-            <IssueDistChart
-              data={result.issueDist}
-              height={distHeight}
-              onSelectCategory={(entry) => onSelectCategory("issue", entry)}
-              opening={openForChart("issue")}
-              onCancelOpen={onCancelOpen}
-              onRetryOpen={onRetryOpen}
-            />
-          </div>
-          <div className="lg:col-span-4" data-tutorial="analysis-polarity-chart">
-            <PolarityDistChart
-              data={result.polarityDist}
-              onSelectCategory={(entry) => onSelectCategory("polarity", entry)}
-              opening={openForChart("polarity")}
-              onCancelOpen={onCancelOpen}
-              onRetryOpen={onRetryOpen}
-            />
-          </div>
-          <div className="lg:col-span-8" data-tutorial="analysis-cognitive-charts">
-            <div className="grid gap-4 grid-cols-2">
-              <RbtDistChart
-                data={result.rbtDist}
-                onSelectCategory={(entry) => onSelectCategory("rbt", entry)}
-                opening={openForChart("rbt")}
-                onCancelOpen={onCancelOpen}
-                onRetryOpen={onRetryOpen}
-              />
-              <CltDistChart
-                data={result.cltDist}
-                onSelectCategory={(entry) => onSelectCategory("clt", entry)}
-                opening={openForChart("clt")}
+
+          {/* Break 1: Issue and Polarity move to page 2. The wrapper carries no
+              data-tutorial anchor so anchors remain on the child elements. */}
+          <div className="contents print:block print:break-before-page print:space-y-4">
+            <div className="lg:col-span-6" data-tutorial="analysis-issue-chart">
+              <IssueDistChart
+                data={result.issueDist}
+                height={distHeight}
+                onSelectCategory={(entry) => onSelectCategory("issue", entry)}
+                opening={openForChart("issue")}
                 onCancelOpen={onCancelOpen}
                 onRetryOpen={onRetryOpen}
               />
             </div>
+            <div className="lg:col-span-4" data-tutorial="analysis-polarity-chart">
+              <PolarityDistChart
+                data={result.polarityDist}
+                onSelectCategory={(entry) => onSelectCategory("polarity", entry)}
+                opening={openForChart("polarity")}
+                onCancelOpen={onCancelOpen}
+                onRetryOpen={onRetryOpen}
+              />
+            </div>
+          </div>
+
+          {/* Break 2: RBT and CLT move to page 3. */}
+          <div
+            className="grid grid-cols-2 gap-4 lg:col-span-8 print:break-before-page"
+            data-tutorial="analysis-cognitive-charts"
+          >
+            <RbtDistChart
+              data={result.rbtDist}
+              onSelectCategory={(entry) => onSelectCategory("rbt", entry)}
+              opening={openForChart("rbt")}
+              onCancelOpen={onCancelOpen}
+              onRetryOpen={onRetryOpen}
+            />
+            <CltDistChart
+              data={result.cltDist}
+              onSelectCategory={(entry) => onSelectCategory("clt", entry)}
+              opening={openForChart("clt")}
+              onCancelOpen={onCancelOpen}
+              onRetryOpen={onRetryOpen}
+            />
           </div>
           <div className="lg:col-span-12" data-tutorial="analysis-uncategorized-notice">
             <UncategorizedNotice
@@ -668,7 +765,7 @@ function Results({
       </section>
 
       <section aria-label="Goal attainment" className="space-y-4" data-tutorial="analysis-ilo-gaps">
-        <SectionHeading>Goal attainment</SectionHeading>
+        <SectionHeading className="print:break-before-page">Goal attainment</SectionHeading>
         <IloGapCard statuses={iloStatuses} gaps={result.gaps} feedback={feedbackById} />
       </section>
 
@@ -677,7 +774,9 @@ function Results({
         className="space-y-4"
         data-tutorial="analysis-recommendations"
       >
-        <SectionHeading>Recommended next actions</SectionHeading>
+        <SectionHeading className="print:break-before-page">
+          Recommended next actions
+        </SectionHeading>
         <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
           <RecommendationCuesCard recommendations={result.recommendations} ilos={ilos} />
           <WarningsCard data={result.warnings} />

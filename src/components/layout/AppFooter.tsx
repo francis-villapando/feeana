@@ -9,7 +9,7 @@ const RESEARCHERS = ["Lexin Andrei Artillero", "Roseanne Borbe", "Francis Villap
 
 export function AppFooter() {
   return (
-    <footer className="shrink-0 border-t border-border/60 bg-background/70 backdrop-blur-xl">
+    <footer className="shrink-0 border-t border-border/60 bg-background/70 backdrop-blur-xl print:hidden">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-6 py-8 text-center">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/30">

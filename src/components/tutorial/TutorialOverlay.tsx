@@ -257,7 +257,7 @@ export function TutorialOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[80] pointer-events-none"
+      className="fixed inset-0 z-[80] pointer-events-none print:hidden"
       role="dialog"
       aria-label="Guided tour"
     >

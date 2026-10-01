@@ -15,9 +15,7 @@ interface IloGapCardProps {
   feedback?: Map<string, Feedback>;
 }
 
-// ---------------------------------------------------------------------------
-// Pure helpers (exported for unit testing)
-// ---------------------------------------------------------------------------
+/** Pure helpers (exported for unit testing) */
 
 export interface AccentStyle {
   color: string;
@@ -91,7 +89,7 @@ export function computeOutOfScopeLevels(maxDeclaredLevel: number): number[] {
   );
 }
 
-// -- Pill kind ---------------------------------------------------------------
+/** Pill kind */
 
 export type PillKind = "goal" | "scope" | "out-of-scope";
 
@@ -100,7 +98,7 @@ export function pillForLevel(num: number, hasIlo: boolean, maxDeclaredLevel: num
   return hasIlo ? "goal" : "scope";
 }
 
-// -- Gap helpers --------------------------------------------------------------
+/** Gap helpers */
 
 /** Distinct gap items at a given diagnostic level, deduped by feedbackId. */
 export function distinctGapsAtLevel(gaps: GapItem[], level: number): GapItem[] {
@@ -139,9 +137,7 @@ export function formatGapLabel(actual: string): string {
   return actual;
 }
 
-// ---------------------------------------------------------------------------
-// Internal components
-// ---------------------------------------------------------------------------
+/** Internal components */
 
 function gapSuffix(count: number): string {
   return count > 0 ? ` · ${count} gap${count === 1 ? "" : "s"}` : "";
@@ -170,7 +166,15 @@ function LevelPill({ kind }: { kind: PillKind }) {
 function LevelHeader({ num, pill }: { num: number; pill: PillKind }) {
   const outOfScope = pill === "out-of-scope";
   return (
-    <div className={cn("flex items-center gap-2", outOfScope && "opacity-60")}>
+    <div
+      className={cn(
+        "flex items-center gap-2",
+        outOfScope && "opacity-60",
+        // Out-of-scope levels render no cards, so there is nothing for the
+        // header to stay attached to; keeping it would strand it at a page bottom.
+        !outOfScope && "print-keep-with-next",
+      )}
+    >
       <span
         className={cn(
           "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
@@ -201,7 +205,7 @@ export function GapFeedbackList({
   feedback?: Map<string, Feedback>;
 }) {
   return (
-    <div className="mt-2 space-y-1 border-t border-border/40 pt-2">
+    <div className="mt-2 space-y-1 border-t border-border/40 pt-2 print:hidden">
       {items.map((gap, i) => {
         const quote = gap.feedbackId ? feedback?.get(gap.feedbackId)?.rawText : undefined;
         return (
@@ -230,7 +234,7 @@ function FeedbackDropdown({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="text-[10px] font-medium text-primary underline-offset-2 hover:underline"
+        className="text-[10px] font-medium text-primary underline-offset-2 hover:underline print:hidden"
       >
         {expanded ? "Hide" : "Show"} {items.length} {label}
       </button>
@@ -261,7 +265,7 @@ function IloCard({
 
   return (
     <div
-      className="rounded-lg border p-3"
+      className="rounded-lg border p-3 print-unit"
       style={{ borderColor: accent.borderColor, backgroundColor: accent.bgTint }}
     >
       <p className="flex items-start gap-2 text-sm leading-relaxed">
@@ -305,23 +309,14 @@ function IloCard({
   );
 }
 
-function LevelCard({
-  num,
-  items,
-  feedback,
-}: {
-  num: number;
-  items: GapItem[];
-  feedback?: Map<string, Feedback>;
-}) {
+function LevelCard({ items, feedback }: { items: GapItem[]; feedback?: Map<string, Feedback> }) {
   const label = items.length === 1 ? "feedback quote" : "feedback quotes";
   return (
-    <div className="rounded-lg border border-secondary/60 bg-secondary/5 p-3">
+    <div className="rounded-lg border border-secondary/60 bg-secondary/5 p-3 print-unit">
       <p className="text-xs">
         <span className="font-medium text-destructive">
           {items.length} feedback gap{items.length === 1 ? "" : "s"}
         </span>
-        <span className="text-muted-foreground"> at {RBT_LEVELS[num]}</span>
       </p>
       <div className="mt-1">
         <FeedbackDropdown items={items} feedback={feedback} label={label} />
@@ -330,9 +325,7 @@ function LevelCard({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
+/** Main component */
 
 export function IloGapCard({ statuses, gaps = [], feedback }: IloGapCardProps) {
   const byLevel = new Map<number, IloStatus[]>();
@@ -358,7 +351,7 @@ export function IloGapCard({ statuses, gaps = [], feedback }: IloGapCardProps) {
           <IloCard key={status.ilo.id} status={status} gaps={gaps} feedback={feedback} />
         ))}
         {pill === "scope" && levelGaps.length > 0 && (
-          <LevelCard num={num} items={levelGaps} feedback={feedback} />
+          <LevelCard items={levelGaps} feedback={feedback} />
         )}
         {num < 6 && (
           <div className="border-l-2 border-border/60 pl-3.5">{renderLevel(num + 1)}</div>

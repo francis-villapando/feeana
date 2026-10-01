@@ -21,7 +21,9 @@ export function KeyMetricsRow({
   children,
 }: KeyMetricsRowProps) {
   return (
-    <div className={`grid gap-4 grid-cols-2 ${wide ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}>
+    <div
+      className={`grid gap-4 grid-cols-2 print-unit ${wide ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}
+    >
       <KpiCard
         icon={<Users className="h-4 w-4" />}
         label="Submission rate"

@@ -72,7 +72,7 @@ export function RecommendationParagraph({ rec, ilos }: RecommendationParagraphPr
   const isSecondary = rec.tier === "secondary";
 
   return (
-    <div className="rounded-lg border border-border/60 bg-background/40 p-4">
+    <div className="rounded-lg border border-border/60 bg-background/40 p-4 print-unit">
       <div className="flex-1 text-sm leading-relaxed">
         {segments.map((seg, i) => {
           if (!seg.term) return <span key={i}>{seg.text}</span>;
@@ -116,7 +116,7 @@ export function RecommendationParagraph({ rec, ilos }: RecommendationParagraphPr
         })}
       </div>
       {feedbackTexts.length > 0 && (
-        <div className="mt-3 border-t border-border/60 pt-3">
+        <div className="mt-3 border-t border-border/60 pt-3 print:hidden">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Student feedback
           </p>
