@@ -49,3 +49,9 @@ feeana-distilxlmr-output/
 feeana-mbert-output/
 scripts/training/exports/
 scripts/training/scratch_quant/
+
+# Local agent tooling: scratch space, runtime state, generated indexes
+agents/
+.opencode/
+.playwright-mcp/
+graphify-out/
