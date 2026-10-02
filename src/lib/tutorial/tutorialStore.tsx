@@ -7,15 +7,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useAuth } from "@/lib/stores/auth";
 import {
   TUTORIAL_STEPS,
-  clearTutorialCompleted,
+  consumeLegacyTutorialCompletion,
   generateCourseCodePlaceholder,
-  hasCompletedTutorial,
-  markTutorialCompleted,
+  shouldAutoStartTutorial,
   type TutorialStep,
   type TutorialStepId,
 } from "@/lib/tutorial/tutorialSteps";
+import { ensureTutorialShown, fetchTutorialShownAt } from "@/lib/tutorial/tutorialLifecycle";
 
 interface TutorialStoreValue {
   stepIndex: number | null;
@@ -23,7 +24,6 @@ interface TutorialStoreValue {
   isActive: boolean;
   isFinished: boolean;
 
-  // Dynamic entity IDs (populated as user creates entities)
   activeCourseId: string | null;
   setActiveCourseId: (id: string | null) => void;
   activeTopicId: string | null;
@@ -52,9 +52,9 @@ interface TutorialStoreValue {
 const TutorialStoreContext = createContext<TutorialStoreValue | null>(null);
 
 export function TutorialStoreProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [stepIndex, setStepIndex] = useState<number | null>(null);
 
-  // Dynamic entity IDs
   const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
   const [activeTopicId, setActiveTopicId] = useState<string | null>(null);
   const [activeIloId, setActiveIloId] = useState<string | null>(null);
@@ -64,9 +64,36 @@ export function TutorialStoreProvider({ children }: { children: ReactNode }) {
   const [spotlightAnchor, setSpotlightAnchor] = useState<string | null>(null);
 
   useEffect(() => {
-    setStepIndex(hasCompletedTutorial() ? null : 0);
     setCourseCodePlaceholder(generateCourseCodePlaceholder());
   }, []);
+
+  // Auto-starts once per account if unshown; fails closed on lookup error.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      const completedInThisBrowser = consumeLegacyTutorialCompletion();
+      try {
+        const serverShownAt = await fetchTutorialShownAt(user.id);
+        if (cancelled) return;
+
+        if (completedInThisBrowser && serverShownAt === null) {
+          // Backfill the account flag from pre-migration browser completions.
+          await ensureTutorialShown(user.id);
+          if (cancelled) return;
+        } else if (shouldAutoStartTutorial({ serverShownAt, completedInThisBrowser })) {
+          setStepIndex(0);
+          if (cancelled) return;
+          await ensureTutorialShown(user.id);
+        }
+      } catch {
+        // Fail closed: no auto-start on lookup or backfill failure.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     setSpotlightAnchor(null);
@@ -100,17 +127,14 @@ export function TutorialStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const finish = useCallback(() => {
-    markTutorialCompleted();
     setStepIndex(null);
   }, []);
 
   const skip = useCallback(() => {
-    markTutorialCompleted();
     setStepIndex(null);
   }, []);
 
   const restart = useCallback(() => {
-    clearTutorialCompleted();
     setActiveCourseId(null);
     setActiveTopicId(null);
     setActiveIloId(null);

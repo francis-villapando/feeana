@@ -1,4 +1,5 @@
-export const TUTORIAL_COMPLETED_KEY = "feeana_tutorial_completed";
+// Deploy bridge for pre-migration browser completions; remove once old keys have drained.
+const TUTORIAL_COMPLETED_KEY = "feeana_tutorial_completed";
 
 // Step IDs
 
@@ -88,7 +89,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-welcome",
     title: "Welcome to Feeana",
-    body: "Let's walk through managing your curriculum, launching feedback sessions, and analyzing student responses.",
+    body: "Let's walk through managing your curriculum, launching feedback sessions, and analyzing student responses. Everything you create during the tour is sample data and is cleaned up when it ends.",
     anchor: null,
     placement: "center",
     routePattern: "/home",
@@ -109,7 +110,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-kpi-cards",
     title: "Workspace KPIs",
-    body: "These KPI cards summarize total active classes, live sessions, aggregate submission rates, and overall ILO attainment across your workspace.",
+    body: "These KPI cards summarize active classes, active sessions, overall submission rate, and overall ILO achievement across your workspace.",
     anchor: "dashboard-kpi-row",
     placement: "bottom",
     routePattern: "/dashboard",
@@ -364,7 +365,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-ml-progress",
     title: "Analysis Running",
-    body: "DistilXLM-R and SVM models execute in a Web Worker directly in your browser with zero server data transfer.",
+    body: "DistilXLM-R and SVM models run in a Web Worker on your device — feedback is never sent anywhere for analysis.",
     anchor: "analysis-ml-progress",
     placement: "bottom",
     routePattern: "/:classId/analysis/:sessionId",
@@ -384,7 +385,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-results-aspect",
     title: "Aspect Distribution",
-    body: "The Aspect Distribution shows what pedagogical dimensions students commented on (Pacing, Content, Delivery, etc.).",
+    body: "The Aspect Distribution shows which classroom dimensions students commented on (e.g., Teacher Sensitivity, Concept Development, Quality of Feedback).",
     anchor: "analysis-aspect-chart",
     placement: "right",
     routePattern: "/:classId/analysis/:sessionId",
@@ -474,7 +475,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-results-recommendations",
     title: "Recommendations & Warnings",
-    body: "Feeana generates primary teaching interventions and secondary pedagogical cues grounded in didactic rules, paired with anomaly warnings.",
+    body: "Feeana generates primary teaching interventions and secondary pedagogical cues from rule-based pedagogical mappings, paired with anomaly warnings.",
     anchor: "analysis-recommendations",
     placement: "top",
     routePattern: "/:classId/analysis/:sessionId",
@@ -498,7 +499,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-class-trends-populated",
     title: "Class Trends Populated",
-    body: "With the session analyzed, the Metric Trend line and Category Trend distribution now display real aggregated data.",
+    body: "With the session analyzed, the Metric Trend line and Category Trend distribution now display aggregated results from your analyzed session.",
     anchor: "class-trends",
     placement: "bottom",
     routePattern: "/:classId",
@@ -508,7 +509,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-conclusion",
     title: "Tour Complete!",
-    body: "You've completed the full Feeana feedback loop! Tutorial sandbox data will now be cleanly archived.",
+    body: "You've completed the full Feeana feedback loop! Tutorial sandbox data will now be permanently deleted.",
     anchor: null,
     placement: "center",
     routePattern: "/:classId",
@@ -580,30 +581,35 @@ export function shouldBlockTutorial(hasHole: boolean, placement: TutorialPlaceme
   return hasHole && placement !== "center";
 }
 
-// localStorage helpers
+// Auto-start gating
 
-export function hasCompletedTutorial(): boolean {
+/**
+ * Deploy bridge: reports and clears a pre-migration browser completion so the
+ * account flag can backfill and other devices never re-show the tour.
+ */
+export function consumeLegacyTutorialCompletion(): boolean {
   try {
-    return localStorage.getItem(TUTORIAL_COMPLETED_KEY) === "true";
+    const completed = localStorage.getItem(TUTORIAL_COMPLETED_KEY) === "true";
+    if (completed) localStorage.removeItem(TUTORIAL_COMPLETED_KEY);
+    return completed;
   } catch {
     return false;
   }
 }
 
-export function markTutorialCompleted(): void {
-  try {
-    localStorage.setItem(TUTORIAL_COMPLETED_KEY, "true");
-  } catch {
-    // Non-fatal.
-  }
+export interface TutorialAutoStartInput {
+  /** profiles.tutorial_shown_at for the signed-in faculty; null = never auto-opened. */
+  serverShownAt: string | null;
+  completedInThisBrowser: boolean;
 }
 
-export function clearTutorialCompleted(): void {
-  try {
-    localStorage.removeItem(TUTORIAL_COMPLETED_KEY);
-  } catch {
-    // See markTutorialCompleted.
-  }
+/**
+ * The tour auto-opens exactly once per faculty account: only a signin that
+ * finds no persisted marker may start it. Every later signin — and any run
+ * started from the app menu — is manual-only.
+ */
+export function shouldAutoStartTutorial(input: TutorialAutoStartInput): boolean {
+  return input.serverShownAt === null && !input.completedInThisBrowser;
 }
 
 /**

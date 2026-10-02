@@ -814,6 +814,8 @@ Avoid:
 
 Comments should explain constraints, decisions, or non-obvious behavior.
 
+Every comment must be limited to at most two lines; never write multi-line explanatory essays in source files.
+
 Do not add comments solely to increase apparent documentation.
 
 ### Required principles
@@ -866,6 +868,7 @@ Names and types carry the intent; comments carry only what names cannot.
 - Write comments only for constraints, decisions, non-obvious behavior, and source references.
 - Never add a comment that merely restates the code.
 - Never add a comment to increase apparent documentation.
+- Keep comments strictly concise: every comment block (single-line or JSDoc/block comment) must be limited to at most two lines. If an explanation requires more than two lines, refactor the code structure, names, or types so the intent is self-evident rather than writing narrative paragraphs.
 
 Delete any comment whose removal leaves the code fully understandable.
 

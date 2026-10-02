@@ -1,11 +1,20 @@
+// @vitest-environment jsdom
+
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import React, { act } from "react";
+import { createRoot } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as authModule from "../../lib/stores/auth";
+import * as tutorialLifecycle from "../../lib/tutorial/tutorialLifecycle";
+import { TutorialStoreProvider, useTutorialStore } from "../../lib/tutorial/tutorialStore";
 import {
   TUTORIAL_STEPS,
+  consumeLegacyTutorialCompletion,
   decideNavigationAdvance,
   isOnStepRoutePattern,
   resolveNavigationPath,
+  shouldAutoStartTutorial,
   shouldBlockTutorial,
   type NavigationStepEntry,
   type TutorialDynamicIds,
@@ -13,6 +22,15 @@ import {
   type TutorialStep,
   type TutorialStepTrigger,
 } from "../../lib/tutorial/tutorialSteps";
+
+vi.mock("../../lib/stores/auth", () => ({
+  useAuth: vi.fn(),
+}));
+
+vi.mock("../../lib/tutorial/tutorialLifecycle", () => ({
+  ensureTutorialShown: vi.fn(),
+  fetchTutorialShownAt: vi.fn(),
+}));
 
 const CLASS_ID = "class-abc";
 const SESSION_ID = "session-xyz";
@@ -343,6 +361,177 @@ describe("decideNavigationAdvance", () => {
       entry: entry("/home"),
     });
     expect(result.advance).toBe(true);
+  });
+});
+
+describe("shouldAutoStartTutorial", () => {
+  it("auto-starts only when the account has never shown the tour and the browser is clear", () => {
+    expect(shouldAutoStartTutorial({ serverShownAt: null, completedInThisBrowser: false })).toBe(
+      true,
+    );
+  });
+
+  it("never auto-starts once the account flag exists", () => {
+    expect(
+      shouldAutoStartTutorial({
+        serverShownAt: "2026-01-01T00:00:00.000Z",
+        completedInThisBrowser: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("bridges pre-migration browser completions even when the account flag is missing", () => {
+    expect(shouldAutoStartTutorial({ serverShownAt: null, completedInThisBrowser: true })).toBe(
+      false,
+    );
+  });
+
+  it("bridges when both markers exist", () => {
+    expect(
+      shouldAutoStartTutorial({
+        serverShownAt: "2026-01-01T00:00:00.000Z",
+        completedInThisBrowser: true,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("TutorialStoreProvider auto-start arbitration", () => {
+  const user = { id: "faculty-123" } as const;
+
+  function ConsumerFixture() {
+    const store = useTutorialStore();
+    return React.createElement(
+      React.Fragment,
+      null,
+      React.createElement("button", { onClick: () => store.start() }, "start"),
+      React.createElement("button", { onClick: () => store.restart() }, "restart"),
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.mocked(authModule.useAuth).mockReturnValue({
+      user,
+    } as ReturnType<typeof authModule.useAuth>);
+    vi.mocked(tutorialLifecycle.fetchTutorialShownAt).mockResolvedValue(null);
+    vi.mocked(tutorialLifecycle.ensureTutorialShown).mockResolvedValue();
+  });
+
+  it("persists the server marker when the tour auto-starts", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    function Consumer() {
+      const store = useTutorialStore();
+      return React.createElement(
+        "button",
+        { onClick: () => store.start() },
+        String(store.stepIndex),
+      );
+    }
+
+    await act(async () => {
+      root.render(React.createElement(TutorialStoreProvider, null, React.createElement(Consumer)));
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(tutorialLifecycle.fetchTutorialShownAt).toHaveBeenCalledWith("faculty-123");
+    expect(tutorialLifecycle.ensureTutorialShown).toHaveBeenCalledWith("faculty-123");
+    expect(container.textContent).toBe("0");
+
+    root.unmount();
+    container.remove();
+  });
+
+  it("does not persist when the account already has a server marker", async () => {
+    vi.mocked(tutorialLifecycle.fetchTutorialShownAt).mockResolvedValue("2026-01-01T00:00:00.000Z");
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        React.createElement(TutorialStoreProvider, null, React.createElement(ConsumerFixture)),
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(tutorialLifecycle.ensureTutorialShown).not.toHaveBeenCalled();
+
+    root.unmount();
+    container.remove();
+  });
+
+  it("manual start and restart never write the auto-start marker", async () => {
+    vi.mocked(tutorialLifecycle.fetchTutorialShownAt).mockResolvedValue("2026-01-01T00:00:00.000Z");
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        React.createElement(TutorialStoreProvider, null, React.createElement(ConsumerFixture)),
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const buttons = Array.from(container.querySelectorAll("button"));
+    await act(async () => {
+      buttons[0].click();
+      buttons[1].click();
+    });
+
+    expect(tutorialLifecycle.ensureTutorialShown).not.toHaveBeenCalled();
+
+    root.unmount();
+    container.remove();
+  });
+});
+
+describe("consumeLegacyTutorialCompletion", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function stubLocalStorage(store: Map<string, string>): void {
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+    });
+  }
+
+  it("reports and clears a pre-migration completion key", () => {
+    const store = new Map([["feeana_tutorial_completed", "true"]]);
+    stubLocalStorage(store);
+    expect(consumeLegacyTutorialCompletion()).toBe(true);
+    expect(store.has("feeana_tutorial_completed")).toBe(false);
+  });
+
+  it("returns false and keeps the browser untouched when no key exists", () => {
+    const store = new Map<string, string>();
+    stubLocalStorage(store);
+    expect(consumeLegacyTutorialCompletion()).toBe(false);
+    expect(store.size).toBe(0);
+  });
+
+  it("treats an unreadable localStorage as not completed", () => {
+    vi.stubGlobal("localStorage", undefined);
+    expect(consumeLegacyTutorialCompletion()).toBe(false);
   });
 });
 

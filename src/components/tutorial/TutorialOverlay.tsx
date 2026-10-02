@@ -240,7 +240,7 @@ export function TutorialOverlay() {
       isOpen: true,
       title: "Exit Tutorial & Delete Data",
       description:
-        "Are you sure you want to exit the guided tour? All temporary courses, classes, and feedback sessions created so far in this run will be permanently deleted.",
+        "Are you sure you want to exit the guided tour? All sample curriculum, classes, and feedback created during this run will be permanently deleted.",
       actionLabel: "Exit & Delete Data",
       showCancel: true,
       onConfirm: () => {
@@ -354,8 +354,8 @@ export function TutorialOverlay() {
 
           {degraded && !isAcknowledgement && (
             <p className="mt-2 cursor-text text-xs text-muted-foreground/80">
-              This step's target isn't on screen. Use the ✕ to exit the tour, or restart it from the
-              menu.
+              This step's target couldn't be found. Use the ✕ to exit the tour, or restart it from
+              your profile menu (top right).
             </p>
           )}
 
