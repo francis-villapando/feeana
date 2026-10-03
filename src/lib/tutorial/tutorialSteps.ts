@@ -38,6 +38,7 @@ export type TutorialStepId =
   | "step-results-ilo-gaps"
   | "step-results-recommendations"
   | "step-back-to-class"
+  | "step-populate-trends"
   | "step-class-trends-populated"
   | "step-conclusion";
 
@@ -335,7 +336,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-analysis-trigger",
     title: "Trigger Analysis",
-    body: "Run Feeana's client-side PID-ABSA pipeline to classify aspects, issues, sentiment, and cognitive levels.",
+    body: "Start the analysis to automatically classify aspects, issues, sentiment, and cognitive levels from your feedback.",
     anchor: "analysis-trigger-btn",
     placement: "bottom",
     routePattern: "/:classId/analysis/:sessionId",
@@ -350,7 +351,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-analysis-confirm",
     title: "Start Analysis",
-    body: "Click Start analysis to confirm and run the PID-ABSA pipeline on the imported feedback. DistilXLM-R and SVM execute locally in your browser.",
+    body: "Click Start Analysis to process the imported feedback. All analysis happens privately in your browser — no feedback is sent to external servers.",
     anchor: "analysis-confirm-btn",
     placement: "top",
     routePattern: "/:classId/analysis/:sessionId",
@@ -365,7 +366,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-ml-progress",
     title: "Analysis Running",
-    body: "DistilXLM-R and SVM models run in a Web Worker on your device — feedback is never sent anywhere for analysis.",
+    body: "Your feedback is being analyzed privately in your browser. Nothing is sent to external servers.",
     anchor: "analysis-ml-progress",
     placement: "bottom",
     routePattern: "/:classId/analysis/:sessionId",
@@ -455,7 +456,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-results-uncategorized",
     title: "Uncategorized Submissions",
-    body: "Submissions falling below classification confidence thresholds are surfaced here for manual faculty review.",
+    body: "You can click 'Show 2 unmapped feedback quotes' to see which submissions couldn't be automatically categorized. These remain available for your manual review.",
     anchor: "analysis-uncategorized-notice",
     placement: "top",
     routePattern: "/:classId/analysis/:sessionId",
@@ -495,11 +496,26 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
     },
     interactive: ["analysis-back-to-class-btn"],
   },
-  // Step 14b — Class Trends (populated)
+  // Step 14b — Populate Trends with sample sessions
+  {
+    id: "step-populate-trends",
+    title: "Populate Trend Charts",
+    body: "This will create 2 additional sample tutorial sessions with pre-populated feedback for demonstration purposes. These sample sessions are created only for this tour and will be permanently deleted when you finish or exit the tutorial.",
+    anchor: "class-populate-trends-btn",
+    placement: "bottom",
+    routePattern: "/:classId",
+    trigger: {
+      type: "dom-action",
+      event: "click",
+      targetAnchor: "class-populate-trends-btn",
+      bridged: true,
+    },
+  },
+  // Step 14c — Class Trends (populated)
   {
     id: "step-class-trends-populated",
     title: "Class Trends Populated",
-    body: "With the session analyzed, the Metric Trend line and Category Trend distribution now display aggregated results from your analyzed session.",
+    body: "The trend charts now show data from multiple sessions created during this tour (the original session plus the 2 sample sessions you just generated). These are demonstration data only.",
     anchor: "class-trends",
     placement: "bottom",
     routePattern: "/:classId",

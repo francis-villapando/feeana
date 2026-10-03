@@ -84,7 +84,7 @@ function collectDeclaredAnchors(): Set<string> {
 }
 
 describe("TUTORIAL_STEPS", () => {
-  it("has the thirty-six planned steps in order", () => {
+  it("has the thirty-seven planned steps in order", () => {
     expect(TUTORIAL_STEPS.map((s) => s.id)).toEqual([
       "step-welcome",
       "step-nav-dashboard",
@@ -120,6 +120,7 @@ describe("TUTORIAL_STEPS", () => {
       "step-results-ilo-gaps",
       "step-results-recommendations",
       "step-back-to-class",
+      "step-populate-trends",
       "step-class-trends-populated",
       "step-conclusion",
     ]);
@@ -168,6 +169,7 @@ describe("TUTORIAL_STEPS", () => {
       "step-analysis-confirm",
       "step-results-aspect-category",
       "step-results-aspect-all-feedback",
+      "step-populate-trends",
     ]);
     expect(
       bridged.every((s) => s.trigger.type === "dom-action" && s.trigger.event === "click"),

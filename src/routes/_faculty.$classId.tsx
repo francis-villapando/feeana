@@ -6,7 +6,7 @@ import {
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
-import { ArrowLeft, SearchX } from "lucide-react";
+import { ArrowLeft, Loader2, SearchX, Sparkles, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,11 +26,13 @@ import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
 import { friendlyError } from "@/lib/hooks/utils";
 
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
+import { useAuth } from "@/lib/stores/auth";
 import { useClassStore } from "@/lib/stores/classStore";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { supabase } from "@/lib/db/supabase";
 import { fromDbFeedback } from "@/lib/services/feedbackService";
 import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
+import { createTutorialTrendSessions } from "@/lib/tutorial/sampleTutorialData";
 import {
   classTrendData,
   computeClassSubmissionRate,
@@ -86,18 +88,47 @@ function ClassLayout() {
     isLoading,
     archiveClass,
     refreshStudents,
+    refreshSessions,
+    refreshClasses,
   } = useClassStore();
   const { feedback, fetchFeedbackByClass, insertRealtimeFeedback } = useFeedbackStore();
   const { results, fetchForSessions } = useAnalysisStore();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveError, setArchiveError] = useState("");
-  const { isActive: tutorialActive, step: tutorialStep } = useTutorialStore();
+  const [isGeneratingTrends, setIsGeneratingTrends] = useState(false);
+  const { isActive: tutorialActive, step: tutorialStep, advanceIfStep } = useTutorialStore();
 
   const cls = getClass(classId);
   const sessions = sessionsForClass(classId);
   const archiveLocked = tutorialActive && tutorialStep?.id === "step-class-details";
+
+  const handleGenerateTrends = async () => {
+    if (!cls || sessions.length === 0 || !user || isGeneratingTrends) return;
+    setIsGeneratingTrends(true);
+    try {
+      const baseSession = sessions[0];
+      const { session2Id, session3Id } = await createTutorialTrendSessions({
+        classId: cls.id,
+        baseSession,
+        facultyId: user.id,
+      });
+      await Promise.all([
+        refreshClasses(),
+        refreshSessions(cls.id),
+        fetchFeedbackByClass(cls.id),
+        fetchForSessions([session2Id, session3Id]),
+      ]);
+      toast.success("Generated 2 sample sessions for trend tracking");
+      advanceIfStep("step-populate-trends");
+    } catch (err) {
+      toast.error(friendlyError(err, "Failed to generate sample sessions."));
+    } finally {
+      setIsGeneratingTrends(false);
+    }
+  };
 
   const sessionIdsKey = useMemo(() => sessions.map((s) => s.id).join(","), [sessions]);
 
@@ -205,6 +236,44 @@ function ClassLayout() {
           }
           iloHint={iloRate !== null ? "Across sessions in this class" : "No analyzed sessions"}
         />
+
+        {tutorialActive && tutorialStep?.id === "step-populate-trends" && (
+          <Card
+            className="mt-6 border-primary/40 bg-primary/5 backdrop-blur-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all animate-in fade-in slide-in-from-top-2 duration-300"
+            data-tutorial="class-populate-trends-card"
+          >
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 font-medium text-sm text-foreground">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Populate Longitudinal Trend Data
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Generate 2 subsequent analyzed sessions across future dates to visualize metric and
+                category progression on the trend charts.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              disabled={isGeneratingTrends}
+              onClick={handleGenerateTrends}
+              data-tutorial="class-populate-trends-btn"
+              className="shrink-0 gap-2 min-w-[200px]"
+            >
+              {isGeneratingTrends ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating sessions...
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="h-4 w-4" />
+                  Generate 2 Sample Sessions
+                </>
+              )}
+            </Button>
+          </Card>
+        )}
+
         <div className="space-y-6 mt-6" data-tutorial="class-trends">
           <MetricTrendCard trend={trend} />
           <CategoryTrendCard trend={trend} />
