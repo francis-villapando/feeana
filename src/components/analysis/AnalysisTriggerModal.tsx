@@ -10,12 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, PlayCircle, RefreshCw, Info, Sparkles, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 
 interface AnalysisTriggerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   feedbackCount: number;
+  studentSubmissionCount: number;
   studentCount: number;
   lastAnalyzedAt: string | null;
   newFeedbackCount: number;
@@ -26,10 +28,14 @@ export function AnalysisTriggerModal({
   onClose,
   onConfirm,
   feedbackCount,
+  studentSubmissionCount,
   studentCount,
   lastAnalyzedAt,
   newFeedbackCount,
 }: AnalysisTriggerModalProps) {
+  const { isActive: tutorialActive, step: tutorialStep } = useTutorialStore();
+  const isTutorialStep = tutorialActive && tutorialStep?.id === "step-analysis-confirm";
+
   // Determine state
   const hasFeedback = feedbackCount > 0;
   const isFirstTime = lastAnalyzedAt === null;
@@ -38,14 +44,17 @@ export function AnalysisTriggerModal({
   const radius = 27;
   const circumference = 2 * Math.PI * radius;
   const expectedCount = Math.max(studentCount, 1);
-  const percentage = Math.min(Math.round((feedbackCount / expectedCount) * 100), 100);
+  // Imported rows are not participation, so the ring tracks students only.
+  const percentage = Math.min(Math.round((studentSubmissionCount / expectedCount) * 100), 100);
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isTutorialStep && onClose()}>
       <DialogContent
         data-tutorial="analysis-confirm"
-        className="max-w-md overflow-hidden border border-border/80 bg-background/95 p-6 shadow-2xl backdrop-blur-xl duration-300 animate-in fade-in-50 zoom-in-95 sm:rounded-2xl"
+        onInteractOutside={(e) => isTutorialStep && e.preventDefault()}
+        onEscapeKeyDown={(e) => isTutorialStep && e.preventDefault()}
+        className="max-w-md overflow-hidden border border-border/80 p-6 sm:rounded-2xl"
       >
         <DialogHeader className="space-y-3 text-center sm:text-left">
           {/* Header Icon & Title */}
@@ -121,7 +130,7 @@ export function AnalysisTriggerModal({
                     Submission rate
                   </h4>
                   <p className="text-sm font-medium text-foreground">
-                    {feedbackCount} submission(s) received
+                    {studentSubmissionCount} submission(s) received
                   </p>
                   <p className="text-xs text-muted-foreground">
                     out of {expectedCount} expected student(s)
@@ -159,7 +168,12 @@ export function AnalysisTriggerModal({
         )}
 
         <DialogFooter className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="ghost" onClick={onClose} className="w-full sm:w-auto">
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            disabled={isTutorialStep}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileText, Loader2, Sparkles, Upload, X } from "lucide-react";
+import { FileText, Info, Loader2, Sparkles, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -15,6 +15,7 @@ import { InlineError } from "@/components/common";
 import { cn, friendlyError } from "@/lib/hooks/utils";
 import { parseFeedbackFile, type ParsedFeedbackFile } from "@/lib/utils/feedbackParser";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 
 const ACCEPTED_EXTENSIONS = [".csv", ".tsv", ".txt"];
 const SAMPLE_FILE_NAME = "feeana-sample-feedback.csv";
@@ -24,6 +25,7 @@ interface BulkFeedbackImportModalProps {
   onClose: () => void;
   sessionId: string;
   existingTexts: string[];
+  studentCount: number;
   onImported: (count: number) => void;
   loadSample?: () => string;
   onSampleLoaded?: () => void;
@@ -34,11 +36,14 @@ export function BulkFeedbackImportModal({
   onClose,
   sessionId,
   existingTexts,
+  studentCount,
   onImported,
   loadSample,
   onSampleLoaded,
 }: BulkFeedbackImportModalProps) {
   const { addBulkFeedback } = useFeedbackStore();
+  const { isActive: tutorialActive, step: tutorialStep } = useTutorialStore();
+  const isTutorialStep = tutorialActive && tutorialStep?.id === "step-analysis-sample";
   const [mode, setMode] = useState<"file" | "paste">("file");
   const [fileName, setFileName] = useState<string | null>(null);
   const [content, setContent] = useState("");
@@ -62,6 +67,15 @@ export function BulkFeedbackImportModal({
     () => (content.trim() ? parseFeedbackFile(content, new Set(existingTexts)) : null),
     [content, existingTexts],
   );
+
+  // Derived from `parsed`, so removing rows clears the warning with no extra state.
+  const projectedTotal = existingTexts.length + (parsed?.items.length ?? 0);
+  const capacityMessage =
+    parsed && studentCount > 0 && projectedTotal > studentCount
+      ? `This would bring the session to ${projectedTotal} responses for ${studentCount} ${
+          studentCount === 1 ? "student" : "students"
+        }. Imported responses do not count toward the submission rate.`
+      : null;
 
   const readFile = useCallback(async (file: File) => {
     if (!ACCEPTED_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext))) {
@@ -98,7 +112,9 @@ export function BulkFeedbackImportModal({
     setError(null);
     try {
       const inserted = await addBulkFeedback(sessionId, parsed.items);
-      toast.success(`Imported ${inserted.length} feedback item(s)`);
+      toast.success(
+        `Imported ${inserted.length} feedback ${inserted.length === 1 ? "item" : "items"}`,
+      );
       onImported(inserted.length);
       onClose();
     } catch (err) {
@@ -109,11 +125,11 @@ export function BulkFeedbackImportModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isTutorialStep && onClose()}>
       <DialogContent
-        onInteractOutside={(e) => importing && e.preventDefault()}
-        onEscapeKeyDown={(e) => importing && e.preventDefault()}
-        className="flex max-h-[88vh] w-[calc(100vw-2rem)] max-w-lg flex-col gap-0 overflow-hidden border border-border/80 bg-background/95 p-0 shadow-2xl backdrop-blur-xl sm:rounded-2xl"
+        onInteractOutside={(e) => (importing || isTutorialStep) && e.preventDefault()}
+        onEscapeKeyDown={(e) => (importing || isTutorialStep) && e.preventDefault()}
+        className="flex max-h-[88vh] w-[calc(100vw-2rem)] max-w-lg flex-col gap-0 overflow-hidden border border-border/80 p-0 sm:rounded-2xl"
       >
         <DialogHeader className="shrink-0 border-b border-border/60 px-6 py-4">
           <DialogTitle>Import feedback</DialogTitle>
@@ -123,6 +139,14 @@ export function BulkFeedbackImportModal({
         </DialogHeader>
 
         <div className="chart-tooltip-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+          <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+            <Info className="h-4 w-4 shrink-0" />
+            <p className="leading-normal">
+              Imported responses are analyzed like any other feedback, but they are not student
+              submissions and will not raise the submission rate.
+            </p>
+          </div>
+
           <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
             {(["file", "paste"] as const).map((m) => (
               <button
@@ -271,14 +295,14 @@ export function BulkFeedbackImportModal({
             </div>
           )}
 
-          <InlineError errorMessage={error} />
+          <InlineError errorMessage={error ?? capacityMessage} />
         </div>
 
         <DialogFooter className="shrink-0 gap-2 border-t border-border/60 bg-muted/20 px-6 py-3">
           <Button
             variant="ghost"
             onClick={onClose}
-            disabled={importing}
+            disabled={importing || isTutorialStep}
             className="w-full sm:w-auto"
           >
             Cancel

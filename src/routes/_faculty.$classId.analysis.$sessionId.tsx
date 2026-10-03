@@ -32,7 +32,11 @@ import { useClassStore } from "@/lib/stores/classStore";
 import { useCourseStore } from "@/lib/stores/courseStore";
 import { useAnalysisStore } from "@/lib/stores/analysisStore";
 import type { LoadProgress } from "@/lib/algorithm/models/distilXlmr";
-import { iloAchievementForSession, submissionRateForSession } from "@/lib/hooks/metrics";
+import {
+  iloAchievementForSession,
+  studentSubmissionsForSession,
+  submissionRateForSession,
+} from "@/lib/hooks/metrics";
 import { computeIloStatuses } from "@/lib/hooks/iloStatus";
 import type { AnalysisResult, DistEntry } from "@/lib/types/types";
 import { CountBadge } from "@/components/common";
@@ -380,6 +384,7 @@ function AnalysisPage() {
   const newFeedbackCount = feedbackStatus.newCount;
 
   const submissionRate = submissionRateForSession(session, cls, feedback);
+  const studentSubmissionCount = studentSubmissionsForSession(session, feedback).length;
   const iloRate = result ? iloAchievementForSession(session, { [session.id]: result }) : 100;
 
   return (
@@ -496,6 +501,7 @@ function AnalysisPage() {
         onClose={() => setModalOpen(false)}
         onConfirm={handleTrigger}
         feedbackCount={feedbackCount}
+        studentSubmissionCount={studentSubmissionCount}
         studentCount={studentCount}
         lastAnalyzedAt={lastAnalyzedAt}
         newFeedbackCount={newFeedbackCount}
@@ -514,6 +520,7 @@ function AnalysisPage() {
         onClose={() => setBulkImportOpen(false)}
         sessionId={sessionId}
         existingTexts={sessionFeedback.map((f) => f.rawText)}
+        studentCount={studentCount}
         onImported={() => {
           void fetchFeedback(sessionId);
           // step-analysis-sample: advance only once the batch is actually saved.
@@ -585,8 +592,8 @@ function EmptyState({ onTrigger }: { onTrigger: () => void }) {
         <div>
           <h2 className="text-lg font-semibold">Analysis not yet triggered</h2>
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            Trigger the pipeline to see PID-ABSA aspect, issue, and polarity distributions, an ILO
-            checklist, and theory-grounded teaching recommendations.
+            Start the analysis to see aspects, issues, sentiment, ILO alignment, and actionable
+            teaching suggestions.
           </p>
         </div>
         <Button onClick={onTrigger} size="lg">
