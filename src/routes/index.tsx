@@ -95,7 +95,7 @@ function LandingPage() {
             <FeatureTile
               icon={<LineChart className="h-4 w-4" />}
               title="Aspect, issue, & polarity"
-              body="PID-ABSA distributions across every collected feedback batch."
+              body="Breakdowns of aspects, issues, and sentiment across your feedback."
             />
             <FeatureTile
               icon={<Sparkles className="h-4 w-4" />}

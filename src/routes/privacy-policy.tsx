@@ -41,7 +41,7 @@ function PrivacyPage() {
           Feeana — AI-Powered Feedback Analyzer for Enhancing Teaching Strategies in Digital
           Classrooms
         </p>
-        <p className="text-xs text-muted-foreground/60">Last Updated: June 22, 2026</p>
+        <p className="text-xs text-muted-foreground/60">Last Updated: Octobeer 3, 2026</p>
 
         <div className="mt-8 space-y-6 text-sm leading-relaxed text-muted-foreground">
           <section>
@@ -84,9 +84,9 @@ function PrivacyPage() {
               </li>
               <li>
                 <strong>AI/Third-Party Disclosure:</strong> All analysis models run entirely inside
-                the faculty's browser via a Web Worker. On their first visit, a pre-trained ML model
-                (DistilXLM-R) is downloaded from HuggingFace Hub into their browser cache. No raw
-                text leaves their browser for inference.
+                the faculty's browser via a Web Worker. On their first visit, a lightweight AI model
+                is downloaded once to your browser and runs entirely on your device. No raw feedback
+                text is ever sent to our servers or third parties.
               </li>
             </ul>
           </section>

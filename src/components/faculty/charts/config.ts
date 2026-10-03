@@ -27,7 +27,7 @@ export const BAR_VIEW_CONFIG: Record<BarView, BarViewConfig> = {
   },
   issue: {
     label: "Issue",
-    description: "Specific PID-ABSA issues extracted per session.",
+    description: "Specific concerns identified from feedback in this session.",
     dataKey: "issueDist",
     alwaysShow: [],
     colorOrder: ISSUE_COLOR_ORDER,

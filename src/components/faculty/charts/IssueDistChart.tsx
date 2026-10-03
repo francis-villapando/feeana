@@ -73,7 +73,9 @@ export function IssueDistChart({
     <AnalysisCard className={className}>
       <CardHeader>
         <CardTitle className="text-base">Issue distribution</CardTitle>
-        <CardDescription>Specific concerns extracted via PID-ABSA.</CardDescription>
+        <CardDescription>
+          Specific concerns automatically identified from student feedback.
+        </CardDescription>
         <InterpretationBlock text={interpretation} />
       </CardHeader>
       <CardContent className="flex-1 flex flex-col justify-end">
