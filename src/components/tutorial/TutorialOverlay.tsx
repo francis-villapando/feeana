@@ -71,6 +71,25 @@ function holeStyle(rect: Rect): React.CSSProperties {
   };
 }
 
+function roundedRectPath(x: number, y: number, w: number, h: number, r: number = 12): string {
+  const radius = Math.max(0, Math.min(r, w / 2, h / 2));
+  return `M ${x + radius} ${y} h ${w - 2 * radius} a ${radius} ${radius} 0 0 1 ${radius} ${radius} v ${h - 2 * radius} a ${radius} ${radius} 0 0 1 ${-radius} ${radius} h ${-(w - 2 * radius)} a ${radius} ${radius} 0 0 1 ${-radius} ${-radius} v ${-(h - 2 * radius)} a ${radius} ${radius} 0 0 1 ${radius} ${-radius} Z`;
+}
+
+function buildSpotlightSvgPath(rect: Rect | null, extras: Rect[]): string {
+  const w = typeof window !== "undefined" ? window.innerWidth : 1920;
+  const h = typeof window !== "undefined" ? window.innerHeight : 1080;
+  const outer = `M 0 0 H ${w} V ${h} H 0 Z`;
+  const targets = (rect ? [rect, ...extras] : extras).map((target) => {
+    const x = target.left - CUTOUT_PADDING;
+    const y = target.top - CUTOUT_PADDING;
+    const tw = target.width + CUTOUT_PADDING * 2;
+    const th = target.height + CUTOUT_PADDING * 2;
+    return roundedRectPath(x, y, tw, th, 12);
+  });
+  return [outer, ...targets].join(" ");
+}
+
 export function TutorialOverlay() {
   const { step, stepIndex, isActive, isFinished, advanceIfStep, finish, skip, spotlightAnchor } =
     useTutorialStore();
@@ -202,16 +221,24 @@ export function TutorialOverlay() {
 
   const actionHint = (() => {
     if (centered || !hasAnchor || degraded) return null;
-    if (isAcknowledgement) return null;
-    if (step.trigger.type === "worker-complete") return null;
-    if (step.trigger.type === "navigation") {
-      return extras.length > 0
-        ? "Highlighted above — click it, then navigate."
-        : "Highlighted above — click it to continue.";
+
+    switch (step.id) {
+      case "step-course-form":
+      case "step-topic-form":
+      case "step-ilo-form":
+      case "step-create-class-form":
+        return "Note: During this guided tour, the Cancel button is disabled to keep you on track with the walkthrough.";
+      case "step-class-details":
+        return "Note: During this guided tour, the Archive action is disabled. This is only to keep the sample class intact for the remainder of the tour.";
+      case "step-activity-feed":
+        return "Note: During this guided tour, clicking activity feed entries is disabled. This restriction is only active for this tutorial step to ensure a controlled progression.";
+      case "step-analysis-sample":
+        return "Note: During this guided tour, the Cancel button is disabled to maintain the guided flow. The sample data is for demonstration purposes only and will be deleted when you exit the tour.";
+      case "step-analysis-confirm":
+        return "Note: During this guided tour, the Cancel button is disabled to maintain the guided flow. All processing happens privately on your device.";
+      default:
+        return null;
     }
-    return extras.length > 0
-      ? "Highlighted above — click it, then the outlined control."
-      : "Highlighted above — go ahead and click it.";
   })();
 
   const modalOpen = confirmDialog !== null;
@@ -250,11 +277,6 @@ export function TutorialOverlay() {
     });
   };
 
-  const topEdge = rect ? Math.max(0, rect.top - CUTOUT_PADDING) : 0;
-  const leftEdge = rect ? Math.max(0, rect.left - CUTOUT_PADDING) : 0;
-  const rightEdge = rect ? rect.left + rect.width + CUTOUT_PADDING : 0;
-  const bottomEdge = rect ? rect.top + rect.height + CUTOUT_PADDING : 0;
-
   return (
     <div
       className="fixed inset-0 z-[80] pointer-events-none print:hidden"
@@ -263,36 +285,16 @@ export function TutorialOverlay() {
     >
       {!modalOpen &&
         (spotlit ? (
-          <>
-            <div
+          <svg className="fixed inset-0 z-[80] h-full w-full pointer-events-none">
+            <path
+              d={buildSpotlightSvgPath(rect, extras)}
+              fill="rgb(9 9 11 / 0.65)"
+              fillRule="evenodd"
               className={cn(
-                "fixed left-0 right-0 top-0 bg-zinc-950/65 transition-all duration-200 ease-out",
                 blocking ? "pointer-events-auto cursor-default" : "pointer-events-none",
               )}
-              style={{ height: topEdge }}
             />
-            <div
-              className={cn(
-                "fixed bottom-0 left-0 right-0 bg-zinc-950/65 transition-all duration-200 ease-out",
-                blocking ? "pointer-events-auto cursor-default" : "pointer-events-none",
-              )}
-              style={{ top: bottomEdge }}
-            />
-            <div
-              className={cn(
-                "fixed left-0 bg-zinc-950/65 transition-all duration-200 ease-out",
-                blocking ? "pointer-events-auto cursor-default" : "pointer-events-none",
-              )}
-              style={{ top: topEdge, width: leftEdge, height: Math.max(0, bottomEdge - topEdge) }}
-            />
-            <div
-              className={cn(
-                "fixed right-0 bg-zinc-950/65 transition-all duration-200 ease-out",
-                blocking ? "pointer-events-auto cursor-default" : "pointer-events-none",
-              )}
-              style={{ top: topEdge, left: rightEdge, height: Math.max(0, bottomEdge - topEdge) }}
-            />
-          </>
+          </svg>
         ) : (
           <div
             className={cn(
