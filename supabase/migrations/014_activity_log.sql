@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS activity_log (
   entity_id uuid NOT NULL,
   action text NOT NULL,
   label text NOT NULL,
+  new_label text,
   user_id uuid NOT NULL REFERENCES profiles(id),
   timestamp timestamptz DEFAULT now()
 );
