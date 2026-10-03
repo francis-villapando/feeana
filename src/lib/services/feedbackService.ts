@@ -10,6 +10,8 @@ export function fromDbFeedback(row: Record<string, unknown>): Feedback {
     cleanedText: (meta.cleanedText as string) ?? (row.content as string),
     aspects: (meta.aspects as Feedback["aspects"]) ?? [],
     createdAt: row.created_at as string,
+    // Absent marker means a student submission: only bulk import stamps this.
+    imported: (meta.imported as boolean | undefined) ?? false,
   };
 }
 
@@ -67,6 +69,7 @@ export async function submitFeedback(sessionId: string, content: string): Promis
     cleanedText: trimmed.toLowerCase(),
     aspects: [],
     createdAt: new Date().toISOString(),
+    imported: false,
   };
 }
 
@@ -83,7 +86,7 @@ export async function bulkInsertFeedback(sessionId: string, texts: string[]): Pr
     const rows = chunk.map((text) => ({
       session_id: sessionId,
       content: text,
-      meta: { cleanedText: text.toLowerCase() },
+      meta: { cleanedText: text.toLowerCase(), imported: true },
     }));
     const { data, error } = await supabase.from("feedback").insert(rows).select();
     if (error) throw new Error(error.message);

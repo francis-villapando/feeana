@@ -16,6 +16,7 @@ function makeFeedback(id: string, rawText: string, cleanedText = rawText): Feedb
     cleanedText,
     aspects: [],
     createdAt: "2026-01-01T00:00:00Z",
+    imported: false,
   };
 }
 

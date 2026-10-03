@@ -111,6 +111,8 @@ export interface Feedback {
   cleanedText: string;
   aspects: AspectExtraction[];
   createdAt: string;
+  /** Faculty bulk import. Imported rows are not student participation. */
+  imported: boolean;
 }
 
 export interface SessionParticipation {

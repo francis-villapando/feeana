@@ -3,8 +3,10 @@ import {
   avgPolarityForSession,
   computeDashboardIloAchievement,
   iloAchievementForSession,
+  studentSubmissionsForSession,
+  submissionRateForSession,
 } from "../../lib/hooks/metrics";
-import type { AnalysisResult, Class, Session } from "../../lib/types/types";
+import type { AnalysisResult, Class, Feedback, Session } from "../../lib/types/types";
 
 function makeSession(id: string, classId: string, iloIds: string[]): Session {
   return {
@@ -148,6 +150,109 @@ describe("iloAchievementForSession", () => {
     const session = makeSession("s1", "c1", []);
     const analyses = { s1: makeResult("s1", 10, []) };
     expect(iloAchievementForSession(session, analyses)).toBe(100);
+  });
+});
+
+function makeFeedback(
+  id: string,
+  sessionId: string,
+  createdAt: string,
+  imported = false,
+): Feedback {
+  return {
+    id,
+    sessionId,
+    rawText: `feedback ${id}`,
+    cleanedText: `feedback ${id}`,
+    aspects: [],
+    createdAt,
+    imported,
+  };
+}
+
+function manyFeedback(
+  sessionId: string,
+  count: number,
+  options: { createdAt?: string; imported?: boolean } = {},
+): Feedback[] {
+  return Array.from({ length: count }, (_, i) =>
+    makeFeedback(
+      `f${i}`,
+      sessionId,
+      options.createdAt ?? "2026-01-02T00:00:00Z",
+      options.imported ?? false,
+    ),
+  );
+}
+
+describe("studentSubmissionsForSession", () => {
+  it("keeps student rows and drops faculty imports", () => {
+    const session = makeSession("s1", "c1", ["ilo-1"]);
+    const feedback = [...manyFeedback("s1", 2), ...manyFeedback("s1", 3, { imported: true })];
+    expect(studentSubmissionsForSession(session, feedback)).toHaveLength(2);
+  });
+
+  it("scopes to the requested session", () => {
+    const session = makeSession("s1", "c1", ["ilo-1"]);
+    const feedback = [...manyFeedback("s1", 2), ...manyFeedback("s2", 5)];
+    expect(studentSubmissionsForSession(session, feedback)).toHaveLength(2);
+  });
+});
+
+describe("submissionRateForSession", () => {
+  const session = makeSession("s1", "c1", ["ilo-1"]);
+  const cls = makeClass("c1");
+
+  it("counts student submissions against the enrollment", () => {
+    expect(submissionRateForSession(session, cls, manyFeedback("s1", 25))).toBe(50);
+  });
+
+  it("excludes faculty imports from the numerator", () => {
+    const feedback = [...manyFeedback("s1", 25), ...manyFeedback("s1", 40, { imported: true })];
+    expect(submissionRateForSession(session, cls, feedback)).toBe(50);
+  });
+
+  it("reports 0% when a session holds only imported feedback", () => {
+    expect(submissionRateForSession(session, cls, manyFeedback("s1", 60, { imported: true }))).toBe(
+      0,
+    );
+  });
+
+  it("does not exceed 100% when imports outnumber students", () => {
+    const feedback = [...manyFeedback("s1", 50), ...manyFeedback("s1", 60, { imported: true })];
+    expect(submissionRateForSession(session, cls, feedback)).toBe(100);
+  });
+
+  it("ignores other sessions' feedback", () => {
+    const feedback = [...manyFeedback("s1", 25), ...manyFeedback("s2", 25)];
+    expect(submissionRateForSession(session, cls, feedback)).toBe(50);
+  });
+
+  it("excludes feedback that arrived after the last analysis", () => {
+    const feedback = [
+      ...manyFeedback("s1", 25),
+      ...manyFeedback("s1", 5, { createdAt: "2026-01-09T00:00:00Z" }),
+    ];
+    expect(submissionRateForSession(session, cls, feedback)).toBe(50);
+  });
+
+  it("stays at 0% when every row postdates the last analysis", () => {
+    const feedback = manyFeedback("s1", 30, { createdAt: "2026-01-09T00:00:00Z" });
+    expect(submissionRateForSession(session, cls, feedback)).toBe(0);
+  });
+  it("counts every student submission before any analysis has run", () => {
+    const unanalyzed = { ...session, last_analyzed_at: null };
+    const feedback = [...manyFeedback("s1", 25), ...manyFeedback("s1", 40, { imported: true })];
+    expect(submissionRateForSession(unanalyzed, cls, feedback)).toBe(50);
+  });
+
+  it("returns 0 when the class has no enrolled students", () => {
+    const empty = { ...cls, studentCount: 0 };
+    expect(submissionRateForSession(session, empty, manyFeedback("s1", 25))).toBe(0);
+  });
+
+  it("returns 0 when the session has no feedback at all", () => {
+    expect(submissionRateForSession(session, cls, [])).toBe(0);
   });
 });
 

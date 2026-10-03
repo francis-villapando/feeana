@@ -21,16 +21,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useClassStore } from "@/lib/stores/classStore";
-import { useFeedbackStore } from "@/lib/stores/feedbackStore";
-import { classParticipation } from "@/lib/hooks/metrics";
 
 export function ClassStudentsTab({ classId }: { classId: string }) {
-  const { studentsForClass, dismissStudent, getClass, sessionsForClass } = useClassStore();
-  const { feedback } = useFeedbackStore();
+  const { studentsForClass, dismissStudent, getClass } = useClassStore();
   const students = [...studentsForClass(classId)].sort((a, b) => a.name.localeCompare(b.name));
   const cls = getClass(classId);
-  const sessions = sessionsForClass(classId);
-  const participation = cls ? classParticipation(cls, sessions, feedback) : 0;
   const [pending, setPending] = useState<{ id: string; name: string } | null>(null);
   const [dismissing, setDismissing] = useState(false);
 

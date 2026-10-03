@@ -1,16 +1,21 @@
 import type { AnalysisResult, Class, DistEntry, Feedback, Session } from "../types/types";
 
+/** A session's student submissions. Faculty bulk imports are not participation. */
+export function studentSubmissionsForSession(session: Session, feedback: Feedback[]): Feedback[] {
+  return feedback.filter((f) => f.sessionId === session.id && !f.imported);
+}
+
 /** % of students who submitted at least one feedback per session.
- *  Counts only feedback that existed at analysis time (created_at <= last_analyzed_at)
- *  when the session has been analyzed. Falls back to all feedback otherwise. */
+ *  Counts only student submissions that existed at analysis time
+ *  (created_at <= last_analyzed_at) when the session has been analyzed.
+ *  Falls back to all student submissions otherwise. */
 export function submissionRateForSession(
   session: Session,
   cls: Class | undefined,
   feedback: Feedback[],
 ): number {
   if (!cls || cls.studentCount === 0) return 0;
-  const responses = feedback.filter((f) => {
-    if (f.sessionId !== session.id) return false;
+  const responses = studentSubmissionsForSession(session, feedback).filter((f) => {
     if (session.last_analyzed_at) {
       return f.createdAt <= session.last_analyzed_at;
     }
@@ -108,12 +113,6 @@ export function computeDashboardIloAchievement(
     })
     .filter((r): r is number => r !== null);
   return averageRate(classRates);
-}
-
-export function classParticipation(cls: Class, sessions: Session[], feedback: Feedback[]): number {
-  if (!cls || cls.studentCount === 0 || sessions.length === 0) return 0;
-  const responses = feedback.filter((f) => sessions.some((s) => s.id === f.sessionId)).length;
-  return Math.min(100, Math.round((responses / (cls.studentCount * sessions.length)) * 100));
 }
 
 /** Average polarity from the session's cached polarity distribution: pos=+1, neu=0, neg=-1. */
