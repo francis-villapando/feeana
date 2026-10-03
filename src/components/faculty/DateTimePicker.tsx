@@ -129,7 +129,8 @@ export function DateTimePicker({
   };
 
   const handleQuickPreset = (minutes: number) => {
-    const anchor = min ?? new Date();
+    // Anchor on the current value so repeated preset clicks stack; min/now only seed the first click.
+    const anchor = toDate(value) ?? min ?? new Date();
     const next = addMinutes(anchor, minutes);
     setSelectedDate(next);
     setSelectedHour(String(next.getHours() % 12 || 12).padStart(2, "0"));
