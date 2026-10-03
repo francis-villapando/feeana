@@ -152,6 +152,13 @@ class DashboardSeeder {
     role: "faculty",
   };
 
+  private static readonly TEST_STUDENT_ACCOUNT: AccountDef = {
+    email: "student@test.com",
+    password: "student123",
+    fullName: "Test Student",
+    role: "student",
+  };
+
   private static readonly FACULTY_ACCOUNTS: AccountDef[] = [
     {
       email: "maria.santos@feeana.me",
@@ -517,13 +524,13 @@ class DashboardSeeder {
       `Mode: faculty always analyzed · dev ${analyzed ? "analyzed (--analyzed)" : "collection-only (not analyzed)"}\n`,
     );
 
-    console.log("[1] Accounts...");
-    await this.provisionAccounts();
-    console.log(`  ✓ ${this.accountIds.size} accounts ready`);
-
-    console.log("[2] Purging previous seed data...");
+    console.log("[1] Purging previous seed data...");
     await this.cleanupAllSeedData();
     console.log("  ✓ Previous seed data removed");
+
+    console.log("[2] Accounts...");
+    await this.provisionAccounts();
+    console.log(`  ✓ ${this.accountIds.size} accounts ready`);
 
     console.log("[3] Curriculum (courses, topics, ILOs)...");
     const curriculum = await this.seedCurriculum();
@@ -622,6 +629,7 @@ class DashboardSeeder {
       DashboardSeeder.DEV_ACCOUNT,
       ...DashboardSeeder.FACULTY_ACCOUNTS,
       DashboardSeeder.TEST_ACCOUNT,
+      DashboardSeeder.TEST_STUDENT_ACCOUNT,
     ];
 
     for (const acc of accounts) {
@@ -631,35 +639,75 @@ class DashboardSeeder {
   }
 
   private async ensureAuthUser(acc: AccountDef): Promise<string> {
-    // Reuse the existing profile.
+    const { data: byEmail } = await this.supabase.auth.admin.listUsers();
+    const match = byEmail?.users.find((u) => u.email === acc.email);
+    if (match) {
+      await this.supabase.auth.admin.updateUserById(match.id, {
+        password: acc.password,
+        email_confirm: true,
+        user_metadata: { full_name: acc.fullName, role: acc.role },
+      });
+      await this.upsertProfile(match.id, acc);
+      return match.id;
+    }
+
     const { data: existing } = await this.supabase
       .from("profiles")
       .select("id")
       .eq("email", acc.email)
       .maybeSingle();
-    if (existing) return existing.id;
 
-    // Create the auth user via admin API (email confirmed so login works immediately).
+    if (existing) {
+      await adminExec([
+        {
+          text: "UPDATE profiles SET email = $1 WHERE id = $2",
+          params: [`${acc.email}.tmp`, existing.id],
+        },
+      ]);
+    }
+
     const { data: createdUser, error: createErr } = await this.supabase.auth.admin.createUser({
       email: acc.email,
       password: acc.password,
       email_confirm: true,
       user_metadata: { full_name: acc.fullName, role: acc.role },
     });
+
     if (createErr) {
-      // If the auth user already exists but the profile is missing, look it up by email.
-      const { data: byEmail } = await this.supabase.auth.admin.listUsers();
-      const match = byEmail?.users.find((u) => u.email === acc.email);
-      if (match) {
-        await this.upsertProfile(match.id, acc);
-        return match.id;
+      if (existing) {
+        await adminExec([
+          {
+            text: "UPDATE profiles SET email = $1 WHERE id = $2",
+            params: [acc.email, existing.id],
+          },
+        ]);
       }
       throw new Error(`Failed to create auth user ${acc.email}: ${createErr.message}`);
     }
-    if (!createdUser?.user) throw new Error(`Failed to create auth user ${acc.email}`);
 
-    await this.upsertProfile(createdUser.user.id, acc);
-    return createdUser.user.id;
+    if (!createdUser?.user) throw new Error(`Failed to create auth user ${acc.email}`);
+    const newId = createdUser.user.id;
+
+    if (existing && existing.id !== newId) {
+      await adminExec([
+        {
+          text: "UPDATE classes SET faculty_id = $1 WHERE faculty_id = $2",
+          params: [newId, existing.id],
+        },
+        {
+          text: "UPDATE enrollments SET student_id = $1 WHERE student_id = $2",
+          params: [newId, existing.id],
+        },
+        {
+          text: "UPDATE activity_log SET user_id = $1 WHERE user_id = $2",
+          params: [newId, existing.id],
+        },
+        { text: "DELETE FROM profiles WHERE id = $1", params: [existing.id] },
+      ]);
+    }
+
+    await this.upsertProfile(newId, acc);
+    return newId;
   }
 
   private async upsertProfile(id: string, acc: AccountDef): Promise<void> {

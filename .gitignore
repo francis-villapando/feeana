@@ -31,6 +31,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+.env.cloud
 
 # Python
 __pycache__/
