@@ -66,6 +66,11 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
   } = useTutorialStore();
 
   const isEdit = !!state.entity;
+  const isTutorialStep =
+    tutorialActive &&
+    (tutorialStep?.id === "step-course-form" ||
+      tutorialStep?.id === "step-topic-form" ||
+      tutorialStep?.id === "step-ilo-form");
   const labels: Record<EntityKind, string> = {
     course: "course",
     topic: "topic",
@@ -276,8 +281,13 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
     state.kind === "course" ? (state.courseCodePlaceholder ?? "CSEG2") : "CSEG2";
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md" data-tutorial="entity-dialog-content">
+    <Dialog open onOpenChange={(o) => !o && !isTutorialStep && onClose()}>
+      <DialogContent
+        className="max-w-md"
+        data-tutorial="entity-dialog-content"
+        onPointerDownOutside={(e) => isTutorialStep && e.preventDefault()}
+        onEscapeKeyDown={(e) => isTutorialStep && e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Edit" : "Add"} {labels[state.kind]}
@@ -475,7 +485,7 @@ export function EntityFormDialog({ state, onClose }: { state: State; onClose: ()
         <InlineError errorMessage={submitError} />
 
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={isTutorialStep}>
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={saving}>

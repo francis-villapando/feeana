@@ -7,6 +7,8 @@ import { useCourseStore } from "@/lib/stores/courseStore";
 import type { ActivityEntry, EntityKind, Course, Topic, ILO } from "@/lib/types/types";
 import { getIloPath, getTopicPath } from "@/lib/hooks/hierarchy";
 import { toast } from "sonner";
+import { cn } from "@/lib/hooks/utils";
+import { useTutorialStore } from "@/lib/tutorial/tutorialStore";
 import { ActivityFeedDialog } from "./ActivityFeedDialog";
 
 const ICONS: Record<EntityKind, typeof BookOpen> = {
@@ -33,6 +35,8 @@ function relativeTime(iso: string): string {
 
 export function ActivityFeed() {
   const { activity, currentUserId, courses, topics, ilos } = useCourseStore();
+  const { isActive: tutorialActive, step: tutorialStep } = useTutorialStore();
+  const isLocked = tutorialActive && tutorialStep?.id === "step-activity-feed";
   const [open, setOpen] = useState(false);
 
   const recent = useMemo(() => activity.filter((a) => withinDays(a.timestamp, 30)), [activity]);
@@ -61,6 +65,7 @@ export function ActivityFeed() {
                 courses={courses}
                 topics={topics}
                 ilos={ilos}
+                disabled={isLocked}
               />
             ))
           )}
@@ -71,7 +76,7 @@ export function ActivityFeed() {
             size="sm"
             className="w-full"
             onClick={() => setOpen(true)}
-            disabled={recent.length === 0}
+            disabled={recent.length === 0 || isLocked}
           >
             View all
           </Button>
@@ -97,6 +102,7 @@ export function ActivityRow({
   topics,
   ilos,
   onClick,
+  disabled = false,
 }: {
   entry: ActivityEntry;
   currentUserId: string | null;
@@ -104,6 +110,7 @@ export function ActivityRow({
   topics: Topic[];
   ilos: ILO[];
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   const Icon = ICONS[entry.entity];
   const isCurrentUser = entry.userId === currentUserId;
@@ -118,8 +125,14 @@ export function ActivityRow({
 
   return (
     <div
-      className="flex items-start gap-3 rounded-md border border-border/60 bg-background/30 px-3 py-2 cursor-pointer hover:bg-background/50 hover:border-primary/30 transition-colors group"
+      className={cn(
+        "flex items-start gap-3 rounded-md border border-border/60 bg-background/30 px-3 py-2 transition-colors group",
+        disabled
+          ? "cursor-default opacity-85"
+          : "cursor-pointer hover:bg-background/50 hover:border-primary/30",
+      )}
       onClick={() => {
+        if (disabled) return;
         const now = Date.now();
         if (now - lastClickRef.current < 500) toast.info("Navigating…");
         lastClickRef.current = now;
@@ -131,7 +144,12 @@ export function ActivityRow({
         });
       }}
     >
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30 group-hover:bg-primary/20 transition-colors">
+      <span
+        className={cn(
+          "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/30 transition-colors",
+          !disabled && "group-hover:bg-primary/20",
+        )}
+      >
         <Icon className="h-3.5 w-3.5" />
       </span>
       <div className="min-w-0 flex-1">

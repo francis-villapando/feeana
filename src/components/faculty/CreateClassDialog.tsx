@@ -101,8 +101,15 @@ export function CreateClassDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-tutorial="create-class-dialog-content">
+    <Dialog
+      open={open}
+      onOpenChange={(v) => (!v && tutorialClassForm ? undefined : onOpenChange(v))}
+    >
+      <DialogContent
+        data-tutorial="create-class-dialog-content"
+        onPointerDownOutside={(e) => tutorialClassForm && e.preventDefault()}
+        onEscapeKeyDown={(e) => tutorialClassForm && e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Create a class</DialogTitle>
           <DialogDescription>
@@ -159,7 +166,7 @@ export function CreateClassDialog({
           <InlineError errorMessage={submitError} />
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={tutorialClassForm}>
             Cancel
           </Button>
           <Button onClick={handleCreate} disabled={creating}>
