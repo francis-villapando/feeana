@@ -19,7 +19,7 @@ import type {
 
 // Dual-faculty + dev seed. Seeds:
 //   - CSEG2 / CS102 demo curricula (always analyzed).
-//   - TEST-COURSE-CODE dev sandbox under dev@feeana.me, isolated from non-dev
+//   - CS101 dev sandbox under dev@feeana.me, isolated from non-dev
 //     faculty via filterCurriculumForUser; analysis gated by --analyzed.
 //   - Collaborative activity logs spanning the last 14 days.
 //
@@ -28,9 +28,11 @@ import type {
 //   npx tsx --env-file .env scripts/seed/seed.ts --analyzed   (dev analyzed)
 //
 // Entity IDs and timestamps are deterministic; only the sampled feedback subset
-// from public/model-data/test.csv varies between runs.
+// from the CSV pools varies between runs.
 
 type SeedSupabase = SupabaseClient;
+
+type FeedbackPolarity = "pos" | "neu" | "neg";
 
 interface CsvFeedbackRow {
   id: string;
@@ -42,7 +44,17 @@ interface CsvFeedbackRow {
   text: string;
   reference: string;
   group_id: string;
-  cleaned_text: string;
+  /** Absent in the training corpus, which stores only raw text. */
+  cleaned_text?: string;
+}
+
+/**
+ * Shapes a session's sampled feedback mix. Without polarityRatio the draw is
+ * unconstrained pool sampling; targetIssues biases the draw toward specific issues.
+ */
+interface SessionProfileConfig {
+  polarityRatio?: Record<FeedbackPolarity, number>;
+  targetIssues?: string[];
 }
 
 interface FeedbackSeed {
@@ -94,8 +106,7 @@ interface SessionDef {
   topicTitle: string;
   feedbackCount: number;
   analyzedCount: number;
-  biasIssue?: string;
-  biasCount?: number;
+  profile?: SessionProfileConfig;
 }
 
 interface ClassDef {
@@ -159,6 +170,22 @@ class DashboardSeeder {
     role: "student",
   };
 
+  // Loginable stand-ins so any student persona can be exercised from the UI.
+  // Shared password keeps manual multi-student testing frictionless.
+  private static readonly LOGIN_STUDENT_COUNT = 20;
+  private static readonly STUDENT_ACCOUNTS: AccountDef[] = Array.from(
+    { length: DashboardSeeder.LOGIN_STUDENT_COUNT },
+    (_, i) => ({
+      email: `student.${i + 1}@test.com`,
+      password: "student123",
+      fullName: `Student ${i + 1}`,
+      role: "student" as const,
+    }),
+  );
+
+  /** Profile-only students that pad class rosters without needing login access. */
+  private static readonly ROSTER_STUDENT_COUNT = 50;
+
   private static readonly FACULTY_ACCOUNTS: AccountDef[] = [
     {
       email: "maria.santos@feeana.me",
@@ -182,10 +209,10 @@ class DashboardSeeder {
       ownerEmail: "maria.santos@feeana.me",
       topics: [
         {
-          title: "Introduction to 2D Physics and Collision Detection",
+          title: "Introduction to 2D Physics & Collision",
           ilos: [
             {
-              statement: "Explain the mathematical principles behind AABB collision detection",
+              statement: "Explain mathematical principles behind AABB collision detection",
               bloomLevel: "Understand",
             },
             {
@@ -193,7 +220,7 @@ class DashboardSeeder {
               bloomLevel: "Apply",
             },
             {
-              statement: "Analyze frame-rate performance bottlenecks in physics calculations",
+              statement: "Analyze frame-rate bottlenecks in continuous collision resolution",
               bloomLevel: "Analyze",
             },
           ],
@@ -202,32 +229,29 @@ class DashboardSeeder {
           title: "Game State Management & Design Patterns",
           ilos: [
             {
-              statement: "Identify common architectural patterns in game design",
+              statement: "Identify common architectural patterns in game systems",
               bloomLevel: "Remember",
             },
             {
-              statement: "Construct a state machine for character movement and transitions",
+              statement: "Construct a finite state machine for character transitions",
               bloomLevel: "Create",
             },
           ],
         },
         {
-          title: "Sprite Animation and Particle Effects",
+          title: "Sprite Animation & Particle Systems",
           ilos: [
             {
-              statement:
-                "Differentiate frame-based sprite animation and procedural sprite transformations",
+              statement: "Differentiate frame-based and procedural sprite animation",
               bloomLevel: "Understand",
             },
             {
-              statement:
-                "Implement a custom particle emitter system for interactive gameplay feedback",
+              statement: "Implement custom particle emitters for combat feedback",
               bloomLevel: "Apply",
             },
             {
-              statement:
-                "Optimize sprite rendering performance using texture atlases and sprite batching",
-              bloomLevel: "Analyze",
+              statement: "Evaluate memory footprint of texture atlases and sprite batching",
+              bloomLevel: "Evaluate",
             },
           ],
         },
@@ -239,24 +263,90 @@ class DashboardSeeder {
       ownerEmail: "juan.delacruz@feeana.me",
       topics: [
         {
-          title: "RESTful API Design & Authentication",
+          title: "RESTful API Architecture & Authentication",
           ilos: [
             {
-              statement: "Differentiate session-based and token-based authentication mechanisms",
+              statement: "Differentiate session-based cookies and JWT auth schemes",
               bloomLevel: "Understand",
             },
             {
-              statement: "Implement secure JWT authorization middleware in backend services",
+              statement: "Implement secure token verification middleware",
               bloomLevel: "Apply",
             },
           ],
         },
         {
-          title: "Database Optimization & Indexing",
+          title: "Database Indexing & Query Optimization",
           ilos: [
             {
-              statement: "Evaluate query execution plans for indexing optimization",
+              statement: "Explain B-Tree vs Hash index access patterns",
+              bloomLevel: "Understand",
+            },
+            {
+              statement: "Evaluate SQL query execution plans for bottleneck detection",
               bloomLevel: "Evaluate",
+            },
+          ],
+        },
+        {
+          title: "Modern Frontend State & UI Architecture",
+          ilos: [
+            {
+              statement: "Deconstruct component render trees and state lifting patterns",
+              bloomLevel: "Analyze",
+            },
+            {
+              statement: "Architect a resilient client-side state machine with caching",
+              bloomLevel: "Create",
+            },
+          ],
+        },
+      ],
+    },
+    // Second Santos course. Section 1 carries the "major" archetypes, section 2 the
+    // "minor" ones under Dela Cruz; per-class faculty_id plus RLS keeps each
+    // instructor scoped to their own section.
+    {
+      code: "CS101",
+      title: "Data Structures and Algorithms",
+      ownerEmail: "maria.santos@feeana.me",
+      topics: [
+        {
+          title: "Linear Structures & Algorithmic Complexity",
+          ilos: [
+            {
+              statement: "Recall asymptotic Big-O time and space notations",
+              bloomLevel: "Remember",
+            },
+            {
+              statement: "Calculate worst-case runtime for nested iterative algorithms",
+              bloomLevel: "Apply",
+            },
+          ],
+        },
+        {
+          title: "Tree Structures & Binary Search Trees",
+          ilos: [
+            {
+              statement: "Differentiate balanced AVL trees and standard BST properties",
+              bloomLevel: "Understand",
+            },
+            {
+              statement: "Implement self-balancing rotation algorithms on binary trees",
+              bloomLevel: "Apply",
+            },
+          ],
+        },
+        {
+          title: "Graph Algorithms & Shortest Path",
+          ilos: [
+            {
+              statement: "Analyze performance trade-offs between Dijkstra and Bellman-Ford",
+              bloomLevel: "Analyze",
+            },
+            {
+              statement: "Synthesize dynamic programming tables for all-pairs shortest path",
+              bloomLevel: "Create",
             },
           ],
         },
@@ -298,6 +388,9 @@ class DashboardSeeder {
   ];
 
   // Class & session definitions
+  // Sessions are assigned one of six archetypes so the dashboard demonstrates
+  // every recommendation path: exemplary, cognitive gap, instructional friction,
+  // sub-threshold fallback, partially analyzed, and empty.
   private static readonly CLASSES: ClassDef[] = [
     {
       courseCode: "CSEG2",
@@ -307,21 +400,30 @@ class DashboardSeeder {
       ownerEmail: "maria.santos@feeana.me",
       sessions: [
         {
-          topicTitle: "Introduction to 2D Physics and Collision Detection",
+          // High Cognitive Gap: target RBT 4 (Analyze) against intrinsic issues below it.
+          topicTitle: "Introduction to 2D Physics & Collision",
           feedbackCount: 46,
           analyzedCount: 46,
-          biasIssue: "conceptual misalignment",
-          biasCount: 18,
+          profile: {
+            targetIssues: ["conceptual misalignment", "procedural bottleneck"],
+          },
         },
         {
+          // Mostly Positive: 90% pos / 10% neu, no labelled issues to act on.
           topicTitle: "Game State Management & Design Patterns",
           feedbackCount: 49,
           analyzedCount: 49,
+          profile: { polarityRatio: { pos: 0.9, neu: 0.1, neg: 0 } },
         },
         {
-          topicTitle: "Sprite Animation and Particle Effects",
-          feedbackCount: 22,
-          analyzedCount: 10,
+          // Partially Analyzed: 15 analyzed + 10 newer rows drive the "(N)" badge.
+          topicTitle: "Sprite Animation & Particle Systems",
+          feedbackCount: 25,
+          analyzedCount: 15,
+          profile: {
+            polarityRatio: { pos: 0.3, neu: 0.1, neg: 0.6 },
+            targetIssues: ["abstract logic gap", "conceptual misalignment"],
+          },
         },
       ],
     },
@@ -333,9 +435,13 @@ class DashboardSeeder {
       ownerEmail: "maria.santos@feeana.me",
       sessions: [
         {
-          topicTitle: "Introduction to 2D Physics and Collision Detection",
+          // Instructional Friction: extraneous-load delivery issues, no gap weighting.
+          topicTitle: "Introduction to 2D Physics & Collision",
           feedbackCount: 34,
           analyzedCount: 34,
+          profile: {
+            targetIssues: ["instructional cadence", "clarity deficit", "classroom tension"],
+          },
         },
       ],
     },
@@ -347,12 +453,107 @@ class DashboardSeeder {
       ownerEmail: "juan.delacruz@feeana.me",
       sessions: [
         {
-          topicTitle: "RESTful API Design & Authentication",
+          // Mostly Positive: exemplary climate.
+          topicTitle: "RESTful API Architecture & Authentication",
           feedbackCount: 42,
           analyzedCount: 42,
+          profile: { polarityRatio: { pos: 0.9, neu: 0.1, neg: 0 } },
         },
         {
-          topicTitle: "Database Optimization & Indexing",
+          // Distributed / Sub-Threshold: five near-equal extraneous issues, none reaching 30%.
+          topicTitle: "Database Indexing & Query Optimization",
+          feedbackCount: 42,
+          analyzedCount: 42,
+          profile: {
+            targetIssues: [
+              "instructional cadence",
+              "clarity deficit",
+              "peer distraction",
+              "feedback latency",
+              "evaluation unfairness",
+            ],
+          },
+        },
+        {
+          // Active / Fresh: zero feedback exercises the empty state and token flow.
+          topicTitle: "Modern Frontend State & UI Architecture",
+          feedbackCount: 0,
+          analyzedCount: 0,
+        },
+      ],
+    },
+    {
+      // CS101 majors under Santos: one "major" archetype per section session.
+      // classIdKey stays absent so the deterministic id remains
+      // seedId("class","CS101","1"), matching any previously seeded row.
+      courseCode: "CS101",
+      section: "1",
+      enrollCode: "DSA4K2M9",
+      studentCount: 50,
+      ownerEmail: "maria.santos@feeana.me",
+      sessions: [
+        {
+          // High Cognitive Gap: target RBT 3 (Apply) against intrinsic issues below it.
+          topicTitle: "Linear Structures & Algorithmic Complexity",
+          feedbackCount: 50,
+          analyzedCount: 50,
+          profile: {
+            targetIssues: ["conceptual misalignment", "procedural bottleneck"],
+          },
+        },
+        {
+          // Mostly Positive: 90% pos / 10% neu, no labelled issues to act on.
+          topicTitle: "Tree Structures & Binary Search Trees",
+          feedbackCount: 40,
+          analyzedCount: 40,
+          profile: { polarityRatio: { pos: 0.9, neu: 0.1, neg: 0 } },
+        },
+        {
+          // Partially Analyzed: 30 analyzed + 10 newer rows drive the "(N)" badge.
+          topicTitle: "Graph Algorithms & Shortest Path",
+          feedbackCount: 40,
+          analyzedCount: 30,
+          profile: { targetIssues: ["design synthesis failure", "abstract logic gap"] },
+        },
+      ],
+    },
+    {
+      // CS101 minors under Dela Cruz. courses.faculty_id is course-level, but
+      // classes.faculty_id is per class, so RLS scopes each instructor to their own
+      // section even though both share the CS101 course.
+      courseCode: "CS101",
+      section: "2",
+      enrollCode: "PQ7RX3TB",
+      studentCount: 50,
+      ownerEmail: "juan.delacruz@feeana.me",
+      sessions: [
+        {
+          // Instructional Friction: extraneous-load delivery issues, no gap weighting.
+          topicTitle: "Linear Structures & Algorithmic Complexity",
+          feedbackCount: 35,
+          analyzedCount: 35,
+          profile: {
+            targetIssues: ["instructional cadence", "clarity deficit", "classroom tension"],
+          },
+        },
+        {
+          // Distributed / Sub-Threshold: five near-equal extraneous issues, none reaching 30%.
+          topicTitle: "Tree Structures & Binary Search Trees",
+          feedbackCount: 42,
+          analyzedCount: 42,
+          profile: {
+            targetIssues: [
+              "instructional cadence",
+              "clarity deficit",
+              "peer distraction",
+              "feedback latency",
+              "evaluation unfairness",
+            ],
+          },
+        },
+        {
+          // Empty: zero feedback exercises the empty state and token flow.
+          topicTitle: "Graph Algorithms & Shortest Path",
           feedbackCount: 0,
           analyzedCount: 0,
         },
@@ -377,8 +578,6 @@ class DashboardSeeder {
           topicTitle: "TEST Topic 1",
           feedbackCount: 50,
           analyzedCount: 50,
-          biasIssue: "conceptual misalignment",
-          biasCount: 18,
         },
         {
           topicTitle: "TEST Topic 2",
@@ -421,9 +620,9 @@ class DashboardSeeder {
     },
     {
       entity: "topic",
-      entityKey: "CSEG2:Introduction to 2D Physics and Collision Detection",
+      entityKey: "CSEG2:Introduction to 2D Physics & Collision",
       action: "created",
-      label: "Introduction to 2D Physics and Collision Detection",
+      label: "Introduction to 2D Physics & Collision",
       userEmail: "maria.santos@feeana.me",
       daysAgo: 12,
     },
@@ -445,9 +644,9 @@ class DashboardSeeder {
     },
     {
       entity: "topic",
-      entityKey: "CS102:RESTful API Design & Authentication",
+      entityKey: "CS102:RESTful API Architecture & Authentication",
       action: "created",
-      label: "RESTful API Design & Authentication",
+      label: "RESTful API Architecture & Authentication",
       userEmail: "juan.delacruz@feeana.me",
       daysAgo: 9,
     },
@@ -461,26 +660,26 @@ class DashboardSeeder {
     },
     {
       entity: "topic",
-      entityKey: "CSEG2:Sprite Animation and Particle Effects",
+      entityKey: "CSEG2:Sprite Animation & Particle Systems",
       action: "created",
-      label: "Sprite Animation and Particle Effects",
+      label: "Sprite Animation & Particle Systems",
       userEmail: "maria.santos@feeana.me",
       daysAgo: 5,
     },
     {
       entity: "topic",
-      entityKey: "CS102:RESTful API Design & Authentication",
+      entityKey: "CS102:RESTful API Architecture & Authentication",
       action: "updated",
-      label: "RESTful API Design & Authentication",
-      newLabel: "RESTful API Design & Secure Authentication",
+      label: "RESTful API Architecture & Authentication",
+      newLabel: "RESTful API Architecture & Secure Authentication",
       userEmail: "juan.delacruz@feeana.me",
       daysAgo: 2,
     },
     {
       entity: "ILO",
-      entityKey: "CSEG2:Explain the mathematical principles behind AABB collision detection",
+      entityKey: "CSEG2:Explain mathematical principles behind AABB collision detection",
       action: "updated",
-      label: "Explain the mathematical principles behind AABB collision detection",
+      label: "Explain mathematical principles behind AABB collision detection",
       userEmail: "maria.santos@feeana.me",
       daysAgo: 0.75, // 18 hours
     },
@@ -488,8 +687,16 @@ class DashboardSeeder {
 
   private static readonly PRIORITY_THRESHOLD = 0.3;
 
+  // Both corpora are merged so archetypes can draw on the full issue x polarity matrix.
+  // Only the eval split carries a cleaned_text column; loadFeedbackPool backfills it.
+  private static readonly FEEDBACK_CSV_PATHS = [
+    "../../public/model-data/test.csv",
+    "../../scripts/training/data/feeana dataset - dataset.csv",
+  ];
+
   private supabase: SeedSupabase;
   private feedbackPool: CsvFeedbackRow[] = [];
+  private feedbackByPolarity = new Map<FeedbackPolarity, CsvFeedbackRow[]>();
   private accountIds = new Map<string, string>(); // email -> profile id
 
   constructor() {
@@ -539,14 +746,14 @@ class DashboardSeeder {
     );
 
     console.log("[4] Students...");
-    const studentIds = await this.createStudents();
+    const students = await this.createStudents();
 
-    console.log("[5] Loading feedback pool from public/model-data/test.csv...");
+    console.log("[5] Loading feedback pool from CSV corpora...");
     await this.loadFeedbackPool();
     console.log(`  ✓ ${this.feedbackPool.length} feedback rows available`);
 
     console.log("[6] Classes, sessions, feedback, analysis...");
-    const results = await this.seedAllClasses(curriculum, studentIds, analyzed);
+    const results = await this.seedAllClasses(curriculum, students, analyzed);
 
     console.log("[7] Activity logs...");
     await this.seedActivityLogs(curriculum);
@@ -599,12 +806,22 @@ class DashboardSeeder {
     console.log(`  activity_log:         9 rows (collaborative)`);
     console.log("");
     console.log("Badge test:");
-    console.log("  Maria 4CS-C Session 3 (Sprite Animation): 10 analyzed + 12 pending");
+    console.log(
+      "  Santos CSEG2 4CS-C Session 3 (Sprite Animation & Particle Systems): 15 analyzed + 10 pending",
+    );
+    console.log(
+      "  Santos CS101 Section 1 Session 3 (Graph Algorithms & Shortest Path): 30 analyzed + 10 pending",
+    );
     if (analyzed) {
-      console.log("  Dev TEST-CLASS1 Session 2 (TEST Topic 2): 30 analyzed + 10 pending");
+      console.log("  Dev TESTCLS1 Session 2 (TEST Topic 2): 30 analyzed + 10 pending");
     }
     console.log("Empty session:");
-    console.log("  Juan 4CS-C Session 2 (Database Optimization): 0 feedback");
+    console.log(
+      "  Dela Cruz CS102 4CS-C Session 3 (Modern Frontend State & UI Architecture): 0 feedback",
+    );
+    console.log(
+      "  Dela Cruz CS101 Section 2 Session 3 (Graph Algorithms & Shortest Path): 0 feedback",
+    );
     console.log("");
 
     console.log("Seeded accounts:");
@@ -613,6 +830,9 @@ class DashboardSeeder {
       console.log(`  Faculty:  ${acc.email}`);
     }
     console.log(`  Test:     ${DashboardSeeder.TEST_ACCOUNT.email}`);
+    console.log(
+      `  Students: ${DashboardSeeder.TEST_STUDENT_ACCOUNT.email} + student.1@test.com..student.${DashboardSeeder.LOGIN_STUDENT_COUNT}@test.com (password: student123)`,
+    );
     console.log("");
 
     await closeAdminSqlClient();
@@ -630,6 +850,7 @@ class DashboardSeeder {
       ...DashboardSeeder.FACULTY_ACCOUNTS,
       DashboardSeeder.TEST_ACCOUNT,
       DashboardSeeder.TEST_STUDENT_ACCOUNT,
+      ...DashboardSeeder.STUDENT_ACCOUNTS,
     ];
 
     for (const acc of accounts) {
@@ -638,17 +859,32 @@ class DashboardSeeder {
     }
   }
 
+  /**
+   * Paginates the Admin API because a single page defaults to 50 users, which the
+   * seeded roster now exceeds.
+   */
+  private async findAuthUserId(email: string): Promise<string | null> {
+    const perPage = 200;
+    for (let page = 1; page <= 25; page++) {
+      const { data, error } = await this.supabase.auth.admin.listUsers({ page, perPage });
+      if (error) throw new Error(`Failed to list auth users: ${error.message}`);
+      const match = data.users.find((u) => u.email === email);
+      if (match) return match.id;
+      if (data.users.length < perPage) return null;
+    }
+    return null;
+  }
+
   private async ensureAuthUser(acc: AccountDef): Promise<string> {
-    const { data: byEmail } = await this.supabase.auth.admin.listUsers();
-    const match = byEmail?.users.find((u) => u.email === acc.email);
-    if (match) {
-      await this.supabase.auth.admin.updateUserById(match.id, {
+    const matchId = await this.findAuthUserId(acc.email);
+    if (matchId) {
+      await this.supabase.auth.admin.updateUserById(matchId, {
         password: acc.password,
         email_confirm: true,
         user_metadata: { full_name: acc.fullName, role: acc.role },
       });
-      await this.upsertProfile(match.id, acc);
-      return match.id;
+      await this.upsertProfile(matchId, acc);
+      return matchId;
     }
 
     const { data: existing } = await this.supabase
@@ -843,9 +1079,23 @@ class DashboardSeeder {
 
   // Phase 3: Students
 
-  private async createStudents(): Promise<string[]> {
-    const ids: string[] = [];
-    for (let i = 1; i <= 50; i++) {
+  /**
+   * Returns loginable students first so every class (all seat counts exceed 20)
+   * enrolls them, then pads the roster with profile-only students.
+   */
+  private async createStudents(): Promise<{ enrolled: string[]; responders: string[] }> {
+    const loginIds: string[] = [];
+    for (const acc of DashboardSeeder.STUDENT_ACCOUNTS) {
+      const id = this.accountIds.get(acc.email);
+      if (!id) throw new Error(`No provisioned account for ${acc.email}`);
+      loginIds.push(id);
+    }
+
+    const testStudentId = this.accountIds.get(DashboardSeeder.TEST_STUDENT_ACCOUNT.email);
+    if (testStudentId) loginIds.push(testStudentId);
+
+    const responderIds: string[] = [];
+    for (let i = 1; i <= DashboardSeeder.ROSTER_STUDENT_COUNT; i++) {
       const email = `test.student${i}@test.com`;
       const { data: existing } = await this.supabase
         .from("profiles")
@@ -853,7 +1103,7 @@ class DashboardSeeder {
         .eq("email", email)
         .maybeSingle();
       if (existing) {
-        ids.push(existing.id);
+        responderIds.push(existing.id);
       } else {
         const id = DashboardSeeder.seedId("student", email);
         const { error } = await this.supabase.from("profiles").insert({
@@ -863,11 +1113,16 @@ class DashboardSeeder {
           role: "student",
         });
         if (error) throw new Error(`Failed to create student profile: ${error.message}`);
-        ids.push(id);
+        responderIds.push(id);
       }
     }
-    console.log(`  ✓ ${ids.length} student profiles ready`);
-    return ids;
+    console.log(
+      `  ✓ ${responderIds.length + loginIds.length} student profiles ready ` +
+        `(${loginIds.length} loginable, ${responderIds.length} responders)`,
+    );
+    // Loginable personas are enrolled so they can submit their own feedback, but only
+    // responders author the seeded feedback that drives the analysis.
+    return { enrolled: [...loginIds, ...responderIds], responders: responderIds };
   }
 
   // Phase 4: Classes, sessions, feedback, analysis
@@ -878,14 +1133,14 @@ class DashboardSeeder {
       topics: Map<string, string>;
       ilosByTopic: Map<string, { id: string; statement: string; bloomLevel: string }[]>;
     },
-    studentIds: string[],
+    students: { enrolled: string[]; responders: string[] },
     analyzed: boolean,
   ): Promise<ClassSeedResult[]> {
     const results: ClassSeedResult[] = [];
 
     // Faculty classes are always analyzed as defined.
     for (const classDef of DashboardSeeder.CLASSES) {
-      results.push(await this.seedClass(classDef, curriculum, studentIds, "faculty"));
+      results.push(await this.seedClass(classDef, curriculum, students, "faculty"));
     }
 
     // Dev sandbox: analyzedCount is honored only with --analyzed; otherwise zeroed so
@@ -898,7 +1153,7 @@ class DashboardSeeder {
           analyzedCount: analyzed ? s.analyzedCount : 0,
         })),
       };
-      results.push(await this.seedClass(effective, curriculum, studentIds, "dev"));
+      results.push(await this.seedClass(effective, curriculum, students, "dev"));
     }
 
     return results;
@@ -911,7 +1166,7 @@ class DashboardSeeder {
       topics: Map<string, string>;
       ilosByTopic: Map<string, { id: string; statement: string; bloomLevel: string }[]>;
     },
-    studentIds: string[],
+    students: { enrolled: string[]; responders: string[] },
     group: "faculty" | "dev",
   ): Promise<ClassSeedResult> {
     const ownerId = this.accountIds.get(classDef.ownerEmail);
@@ -925,7 +1180,9 @@ class DashboardSeeder {
 
     console.log(`${prefix} Class and enrollments...`);
     const classId = await this.getOrCreateClass(classDef, courseId, ownerId);
-    await this.enrollStudents(classId, studentIds.slice(0, classDef.studentCount));
+    const enrolled = students.enrolled.slice(0, classDef.studentCount);
+    await this.enrollStudents(classId, enrolled);
+    const authorIds = enrolled.filter((id) => students.responders.includes(id));
 
     console.log(`${prefix} Sessions...`);
     const sessions = await this.createSessions(classDef, classId, courseId, curriculum);
@@ -934,7 +1191,7 @@ class DashboardSeeder {
     const { feedbackBySession, usedStudents } = await this.createFeedback(
       classDef,
       sessions,
-      studentIds,
+      authorIds,
     );
 
     let analyzedCount = 0;
@@ -964,7 +1221,7 @@ class DashboardSeeder {
           session,
           pendingCountForSession,
           usedStudents.get(session.id) ?? new Set(),
-          studentIds,
+          authorIds,
         );
         pendingCount += pending;
       }
@@ -1100,11 +1357,32 @@ class DashboardSeeder {
 
   // Phase 5: Feedback
 
+  /**
+   * Loads both corpus pools and buckets them by polarity so session archetypes can be
+   * drawn by exact mix instead of a single biased random slice.
+   */
   private async loadFeedbackPool(): Promise<void> {
-    const csvPath = new URL("../../public/model-data/test.csv", import.meta.url);
-    const raw = readFileSync(csvPath, "utf8");
-    const parsed = Papa.parse<CsvFeedbackRow>(raw, { header: true, skipEmptyLines: true });
-    this.feedbackPool = parsed.data.filter((r) => r.text && r.issue && r.polarity);
+    const rows: CsvFeedbackRow[] = [];
+    for (const relativePath of DashboardSeeder.FEEDBACK_CSV_PATHS) {
+      const raw = readFileSync(new URL(relativePath, import.meta.url), "utf8");
+      const parsed = Papa.parse<CsvFeedbackRow>(raw, { header: true, skipEmptyLines: true });
+      for (const row of parsed.data) {
+        if (!row.text || !row.issue || !row.polarity) continue;
+        // The training corpus has no cleaned_text column; mirror the raw text so
+        // downstream consumers always see a populated value.
+        row.cleaned_text = row.cleaned_text || row.text;
+        rows.push(row);
+      }
+    }
+
+    this.feedbackPool = rows;
+    this.feedbackByPolarity = new Map();
+    for (const row of rows) {
+      const polarity = row.polarity as FeedbackPolarity;
+      const bucket = this.feedbackByPolarity.get(polarity) ?? [];
+      bucket.push(row);
+      this.feedbackByPolarity.set(polarity, bucket);
+    }
   }
 
   private shuffle<T>(arr: T[]): T[] {
@@ -1120,31 +1398,91 @@ class DashboardSeeder {
     return this.shuffle(this.feedbackPool).slice(0, count);
   }
 
-  private sampleFeedbackWithBias(
-    count: number,
-    biasIssue: string,
-    biasCount: number,
-  ): CsvFeedbackRow[] {
-    const biased = this.shuffle(this.feedbackPool.filter((r) => r.issue === biasIssue)).slice(
-      0,
-      biasCount,
+  /**
+   * Orders the target issues round-robin rather than draining them in sequence, so a
+   * multi-issue target yields an even mix instead of 100% of the first issue.
+   */
+  private interleaveTargetIssues(targetIssues: string[]): CsvFeedbackRow[] {
+    const buckets = targetIssues.map((issue) =>
+      this.shuffle(
+        this.feedbackPool.filter((row) => row.issue.toLowerCase() === issue.toLowerCase()),
+      ),
     );
-    const general = this.shuffle(this.feedbackPool.filter((r) => r.issue !== biasIssue)).slice(
-      0,
-      count - biasCount,
-    );
-    return this.shuffle([...biased, ...general]);
+    const longest = Math.max(0, ...buckets.map((b) => b.length));
+    const ordered: CsvFeedbackRow[] = [];
+    for (let i = 0; i < longest; i++) {
+      for (const bucket of buckets) {
+        if (i < bucket.length) ordered.push(bucket[i]);
+      }
+    }
+    return ordered;
+  }
+
+  /**
+   * Draws `count` rows honouring a per-polarity quota, preferring targetIssues inside
+   * each polarity. Falls back to the full pool so a session never comes up short when a
+   * polarity bucket is smaller than its quota.
+   */
+  private sampleFeedbackByArchetype(count: number, config: SessionProfileConfig): CsvFeedbackRow[] {
+    if (count <= 0) return [];
+
+    const ratio = config.polarityRatio;
+    const preferred =
+      config.targetIssues && config.targetIssues.length > 0
+        ? this.interleaveTargetIssues(config.targetIssues)
+        : this.shuffle(this.feedbackPool);
+
+    if (!ratio) return this.shuffle(preferred.slice(0, count));
+
+    const polarities: FeedbackPolarity[] = ["pos", "neg", "neu"];
+    const quotas = polarities.map((p) => Math.floor(count * ratio[p]));
+    let allocated = quotas.reduce((s, q) => s + q, 0);
+    // Rounding leaves a remainder; hand it out in order so quotas sum to count.
+    for (let i = 0; allocated < count; i = (i + 1) % polarities.length) {
+      quotas[i] += 1;
+      allocated += 1;
+    }
+
+    const picked: CsvFeedbackRow[] = [];
+    const used = new Set<CsvFeedbackRow>();
+    polarities.forEach((polarity, i) => {
+      const quota = quotas[i];
+      if (quota <= 0) return;
+      let taken = 0;
+      const take = (rows: CsvFeedbackRow[]) => {
+        for (const row of rows) {
+          if (taken >= quota || used.has(row)) continue;
+          used.add(row);
+          picked.push(row);
+          taken += 1;
+        }
+      };
+      take(preferred.filter((row) => row.polarity === polarity));
+      take(this.feedbackByPolarity.get(polarity) ?? []);
+    });
+
+    if (picked.length < count) {
+      for (const row of this.shuffle(this.feedbackPool)) {
+        if (picked.length >= count) break;
+        if (used.has(row)) continue;
+        used.add(row);
+        picked.push(row);
+      }
+    }
+
+    return this.shuffle(picked);
   }
 
   /**
    * Creates ONLY the analyzed feedback rows per session. Pending rows (feedbackCount -
    * analyzedCount) are created separately after analysis so their timestamps land after
-   * last_analyzed_at (badge test).
+   * last_analyzed_at (badge test). authorIds are responders only, so no loginable
+   * persona is recorded as the author of seeded feedback.
    */
   private async createFeedback(
     classDef: ClassDef,
     sessions: SessionSeed[],
-    studentIds: string[],
+    authorIds: string[],
   ): Promise<{
     feedbackBySession: Map<string, FeedbackSeed[]>;
     usedStudents: Map<string, Set<string>>;
@@ -1163,17 +1501,16 @@ class DashboardSeeder {
         continue;
       }
 
-      const sampled =
-        sessionDef.biasIssue && sessionDef.biasCount
-          ? this.sampleFeedbackWithBias(count, sessionDef.biasIssue, sessionDef.biasCount)
-          : this.sampleFeedback(count);
+      const sampled = this.sampleFeedbackByArchetype(count, sessionDef.profile ?? {});
       const feedbacks: FeedbackSeed[] = [];
       const sessionStudents = new Set<string>();
 
       for (let fi = 0; fi < count; fi++) {
         const row = sampled[fi];
-        const studentId = studentIds[nextStudentIdx % studentIds.length];
+        const studentId = authorIds[nextStudentIdx % authorIds.length];
         nextStudentIdx++;
+        // Participation is unique per (session, student); seat limits force repeat authors.
+        const isFirstSubmission = !sessionStudents.has(studentId);
         sessionStudents.add(studentId);
         const issue = row.issue === "uncategorized" ? "Uncategorized" : row.issue;
         const polarity = row.polarity as "pos" | "neu" | "neg";
@@ -1194,12 +1531,14 @@ class DashboardSeeder {
         });
         if (error) throw new Error(`Failed to insert feedback: ${error.message}`);
 
-        const { error: partErr } = await this.supabase.from("session_participations").insert({
-          session_id: session.id,
-          student_id: studentId,
-          created_at: createdAt,
-        });
-        if (partErr) throw new Error(`Failed to insert participation: ${partErr.message}`);
+        if (isFirstSubmission) {
+          const { error: partErr } = await this.supabase.from("session_participations").insert({
+            session_id: session.id,
+            student_id: studentId,
+            created_at: createdAt,
+          });
+          if (partErr) throw new Error(`Failed to insert participation: ${partErr.message}`);
+        }
 
         feedbacks.push({
           id: feedbackId,
@@ -1229,9 +1568,11 @@ class DashboardSeeder {
     session: SessionSeed,
     count: number,
     takenStudents: Set<string>,
-    studentIds: string[],
+    authorIds: string[],
   ): Promise<number> {
-    const available = studentIds.filter((id) => !takenStudents.has(id));
+    const unused = authorIds.filter((id) => !takenStudents.has(id));
+    // Seat-limited classes can exhaust responders; reuse them rather than insert a null author.
+    const available = unused.length > 0 ? unused : authorIds;
     const sampled = this.sampleFeedback(count);
 
     for (let ri = 0; ri < count; ri++) {
@@ -1259,12 +1600,15 @@ class DashboardSeeder {
       });
       if (error) throw new Error(`Failed to insert pending feedback: ${error.message}`);
 
-      const { error: partErr } = await this.supabase.from("session_participations").insert({
-        session_id: session.id,
-        student_id: studentId,
-        created_at: createdAt,
-      });
-      if (partErr) throw new Error(`Failed to insert pending participation: ${partErr.message}`);
+      if (!takenStudents.has(studentId)) {
+        takenStudents.add(studentId);
+        const { error: partErr } = await this.supabase.from("session_participations").insert({
+          session_id: session.id,
+          student_id: studentId,
+          created_at: createdAt,
+        });
+        if (partErr) throw new Error(`Failed to insert pending participation: ${partErr.message}`);
+      }
     }
 
     console.log(`  ✓ ${count} pending feedback entries created (badge test)`);
@@ -1485,6 +1829,8 @@ class DashboardSeeder {
     const classIds = [...DashboardSeeder.CLASSES, ...DashboardSeeder.DEV_CLASSES].map((c) =>
       DashboardSeeder.seedId("class", c.classIdKey ?? c.courseCode, c.section),
     );
+    // Every managed course is purged by its own deterministic id, so re-running
+    // fully replaces previous seed curriculum.
     const courseIds = DashboardSeeder.COURSES.map((c) => DashboardSeeder.seedId("course", c.code));
 
     const sessionFilter = "session_id = ANY($1::uuid[])";

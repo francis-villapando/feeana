@@ -4,6 +4,10 @@
 -- Section : 3CS-C
 -- Student : student@test.com (all 40 entries)
 -- Faculty : faculty@test.com
+-- Also    : idempotent profiles + enrollments for student.1@test.com .. student.20@test.com
+--
+-- Note: this SQL seed is independent of scripts/seed/seed.ts, which provisions the
+-- full dashboard fixture set (courses, sessions, analysis_results, feedback_diagnostics).
 
 -- Design:
 --   All prerequisite IDs (faculty, course, class, etc.) are resolved
@@ -31,6 +35,36 @@ INSERT INTO profiles (id, email, full_name, role)
 SELECT COALESCE(au.id, gen_random_uuid()), 'student@test.com', 'Test Student', 'student'
 FROM (SELECT 1) d LEFT JOIN auth.users au ON au.email = 'student@test.com'
 WHERE NOT EXISTS (SELECT 1 FROM profiles WHERE email = 'student@test.com');
+
+-- Loginable student personas (student.1@test.com .. student.20@test.com).
+-- Generated from a VALUES list so the block stays static SQL while covering all 20.
+-- student.test.com-style naming is intentionally avoided: these must be able to sign in.
+INSERT INTO profiles (id, email, full_name, role)
+SELECT COALESCE(au.id, gen_random_uuid()), v.email, v.full_name, 'student'
+FROM (VALUES
+  ('student.1@test.com',  'Student 1'),
+  ('student.2@test.com',  'Student 2'),
+  ('student.3@test.com',  'Student 3'),
+  ('student.4@test.com',  'Student 4'),
+  ('student.5@test.com',  'Student 5'),
+  ('student.6@test.com',  'Student 6'),
+  ('student.7@test.com',  'Student 7'),
+  ('student.8@test.com',  'Student 8'),
+  ('student.9@test.com',  'Student 9'),
+  ('student.10@test.com', 'Student 10'),
+  ('student.11@test.com', 'Student 11'),
+  ('student.12@test.com', 'Student 12'),
+  ('student.13@test.com', 'Student 13'),
+  ('student.14@test.com', 'Student 14'),
+  ('student.15@test.com', 'Student 15'),
+  ('student.16@test.com', 'Student 16'),
+  ('student.17@test.com', 'Student 17'),
+  ('student.18@test.com', 'Student 18'),
+  ('student.19@test.com', 'Student 19'),
+  ('student.20@test.com', 'Student 20')
+) AS v(email, full_name)
+LEFT JOIN auth.users au ON au.email = v.email
+WHERE NOT EXISTS (SELECT 1 FROM profiles p WHERE p.email = v.email);
 
 -- 2. COURSE (CSEG2 — Game Programming 1)
 -- Uses WHERE NOT EXISTS because courses.code has no UNIQUE constraint
@@ -90,11 +124,15 @@ WHERE NOT EXISTS (
 
 -- 6. ENROLLMENT (student enrolled in the class)
 -- Uses ON CONFLICT on the (class_id, student_id) unique constraint.
+-- Covers student@test.com plus all loginable personas (student.1..20@test.com).
 INSERT INTO enrollments (class_id, student_id)
 SELECT c.id, p.id
 FROM classes c, profiles p
 WHERE c.section = '3CS-C' AND c.course = 'CSEG2'
-  AND p.email = 'student@test.com'
+  AND (
+    p.email = 'student@test.com'
+    OR p.email ~ '^student\.[0-9]+@test\.com$'
+  )
 ON CONFLICT (class_id, student_id) DO NOTHING;
 
 -- 7. SESSION
@@ -323,4 +361,5 @@ SELECT
   (SELECT EXISTS (SELECT 1 FROM classes WHERE section = '3CS-C' AND course = 'CSEG2')) AS class_exists,
   (SELECT EXISTS (SELECT 1 FROM courses WHERE code = 'CSEG2')) AS course_exists,
   (SELECT EXISTS (SELECT 1 FROM profiles WHERE email = 'faculty@test.com')) AS faculty_exists,
-  (SELECT EXISTS (SELECT 1 FROM profiles WHERE email = 'student@test.com')) AS student_exists;
+  (SELECT EXISTS (SELECT 1 FROM profiles WHERE email = 'student@test.com')) AS student_exists,
+  (SELECT COUNT(*) FROM profiles WHERE email ~ '^student\.[0-9]+@test\.com$') AS login_student_profiles;
