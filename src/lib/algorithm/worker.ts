@@ -129,7 +129,7 @@ const api = {
     const totalTokens = attentionMask.filter((v) => v === 1).length;
 
     return {
-      subwords: classifier.tokenize(preprocessing.cleanedText),
+      subwords: classifier.tokensForEncoding(encoding),
       inputIdsPreview: inputIds,
       attentionMaskPreview: attentionMask,
       totalTokens,
@@ -197,14 +197,13 @@ const api = {
 
     // Convert BigInt64Array to plain number[] — BigInt64Array is not
     // structured-clone-safe across the Comlink worker boundary. Return the
-    // full 256-length tensors (including padding zeros) so the complete
-    // encoding is visible in the lab UI.
+    // full fixed-length tensors (including padding zeros) for the lab UI.
     const inputIds = Array.from(encoding.inputIds).map(Number);
     const attentionMask = Array.from(encoding.attentionMask).map(Number);
     const totalTokens = attentionMask.filter((v) => v === 1).length;
 
     const tokenization = {
-      subwords: classifier.tokenize(preprocessing.cleanedText),
+      subwords: classifier.tokensForEncoding(encoding),
       inputIdsPreview: inputIds,
       attentionMaskPreview: attentionMask,
       totalTokens,

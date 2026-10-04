@@ -112,7 +112,7 @@ async function getNodeApi(): Promise<WorkerApi> {
       const totalTokens = attentionMask.filter((v) => v === 1).length;
 
       const tokenization = {
-        subwords: classifier.tokenize(preprocessing.cleanedText),
+        subwords: classifier.tokensForEncoding(encoding),
         inputIdsPreview: inputIds,
         attentionMaskPreview: attentionMask,
         totalTokens,

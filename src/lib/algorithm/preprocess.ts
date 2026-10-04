@@ -118,8 +118,8 @@ function expandAbbreviations(text: string): string {
     .join("");
 }
 
-// Fixed sequence length the fine-tuned ONNX models were trained with.
-export const MAX_SEQ_LEN = 256;
+// Fixed sequence length the fine-tuned ONNX models operate with.
+export const MAX_SEQ_LEN = 128;
 
 // Structural tokenizer interface decoupling preprocessing from HF runtime imports.
 export interface MachineTokenizer {

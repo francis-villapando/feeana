@@ -350,15 +350,19 @@ export class OnnxPidAbsaAdapter implements ModelAdapter {
     return { ...result, latencyMs: performance.now() - t0 };
   }
 
-  // Exposes the subword token strings for a cleaned text. The stored tokenizer
-  // is the full HF AutoTokenizer instance (MachineTokenizer is only a structural
-  // subset), so tokenize() is available at runtime.
-  tokenize(text: string): string[] {
+  tokensForEncoding(encoding: FeedbackEncoding): string[] {
     if (!this.tokenizer) {
       throw new Error(`[${this.name}] Tokenizer not loaded — call load() first.`);
     }
-    const hf = this.tokenizer as unknown as { tokenize(input: string): string[] };
-    return hf.tokenize(text);
+    const backend = (
+      this.tokenizer as unknown as {
+        _tokenizer?: { id_to_token?: (id: number) => string | null | undefined };
+      }
+    )._tokenizer;
+    if (typeof backend?.id_to_token !== "function") {
+      throw new Error(`[${this.name}] Tokenizer ID-to-token mapping unavailable.`);
+    }
+    return Array.from(encoding.inputIds, (id) => backend.id_to_token!(Number(id)) ?? `[id:${id}]`);
   }
 
   // Lazily fetches the head matrices once per session. Non-fatal: the
