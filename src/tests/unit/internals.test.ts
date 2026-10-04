@@ -10,8 +10,9 @@ import {
   getHiddenStateLayer,
   getMeanAttentionMatrix,
   headAttentionEntropy,
-  layerCosineDrift,
-  layerL2Norms,
+  layerCosineSimilarity,
+  layerElementRms,
+  layerMeanVector,
   sliceAttentions,
   sliceHiddenStates,
   topAttentionPairs,
@@ -92,22 +93,22 @@ describe("sliceHiddenStates", () => {
   });
 });
 
-describe("layerL2Norms", () => {
+describe("layerElementRms", () => {
   it("averages the squared hidden state across tokens and dimensions", () => {
     const layers = 2;
     const active = 2;
     const hidden = 3;
-    const hidden_states = new Float32Array(layers * active * hidden).fill(2);
-    const norms = layerL2Norms(hidden_states, active, layers, hidden);
-    expect(norms).toEqual([2, 2]);
+    const hiddenStates = new Float32Array(layers * active * hidden).fill(2);
+    const rms = layerElementRms(hiddenStates, active, layers, hidden);
+    expect(rms).toEqual([2, 2]);
   });
 });
 
-describe("layerCosineDrift", () => {
+describe("layerCosineSimilarity", () => {
   it("returns 1 when a layer is unchanged and -1 when it is negated", () => {
     const active = 1;
     const hidden = 3;
-    const hidden_states = new Float32Array([
+    const hiddenStates = new Float32Array([
       1,
       2,
       3, // layer 0
@@ -118,9 +119,9 @@ describe("layerCosineDrift", () => {
       -2,
       -3, // layer 2 (negated)
     ]);
-    const drift = layerCosineDrift(hidden_states, active, 3, hidden);
-    expect(drift[0]).toBeCloseTo(1, 6);
-    expect(drift[1]).toBeCloseTo(-1, 6);
+    const similarity = layerCosineSimilarity(hiddenStates, active, 3, hidden);
+    expect(similarity[0]).toBeCloseTo(1, 6);
+    expect(similarity[1]).toBeCloseTo(-1, 6);
   });
 });
 
@@ -170,7 +171,7 @@ describe("attention accessors", () => {
     attention,
     hiddenStates: new Float32Array((NUM_LAYERS + 1) * activeTokens * HIDDEN_SIZE),
     pooled: new Float32Array(HIDDEN_SIZE),
-    layerL2: new Array(NUM_LAYERS + 1).fill(0),
+    layerRms: new Array(NUM_LAYERS + 1).fill(0),
     layerCosine: new Array(NUM_LAYERS).fill(1),
     headEntropy: new Array(NUM_LAYERS * NUM_HEADS).fill(0),
   };
@@ -221,7 +222,7 @@ describe("buildModelInternals", () => {
     expect(internals.attention.length).toBe(layers * heads * active * active);
     expect(internals.hiddenStates.length).toBe((layers + 1) * active * 384);
     expect(internals.pooled.length).toBe(384);
-    expect(internals.layerL2).toHaveLength(13);
+    expect(internals.layerRms).toHaveLength(13);
     expect(internals.layerCosine).toHaveLength(12);
     expect(internals.headEntropy).toHaveLength(144);
     // Uniform attention rows over 2 tokens ⇒ ln(2) entropy for every head.
@@ -240,11 +241,61 @@ describe("getHiddenStateLayer", () => {
       attention: new Float32Array(0),
       hiddenStates,
       pooled: new Float32Array(384),
-      layerL2: [0, 0],
+      layerRms: [0, 0],
       layerCosine: [1],
       headEntropy: [],
     };
     const layer1 = getHiddenStateLayer(internals, 1);
     expect(layer1.every((v) => v === 7)).toBe(true);
+  });
+});
+
+describe("layerMeanVector", () => {
+  // hidden[l][t][d] = l*100 + t*10 + d, so the mean over t = l*100 + 5 + d.
+  function makeInternals(activeTokens: number, layers = 2): ModelInternals {
+    const hiddenStates = new Float32Array(layers * activeTokens * HIDDEN_SIZE);
+    for (let l = 0; l < layers; l++) {
+      for (let t = 0; t < activeTokens; t++) {
+        for (let d = 0; d < HIDDEN_SIZE; d++) {
+          hiddenStates[(l * activeTokens + t) * HIDDEN_SIZE + d] = l * 100 + t * 10 + d;
+        }
+      }
+    }
+    return {
+      activeTokens,
+      attention: new Float32Array(0),
+      hiddenStates,
+      pooled: new Float32Array(HIDDEN_SIZE),
+      layerRms: [],
+      layerCosine: [],
+      headEntropy: [],
+    };
+  }
+
+  it("averages each dimension across active tokens", () => {
+    const mean = layerMeanVector(makeInternals(2), 1);
+    expect(mean).toHaveLength(HIDDEN_SIZE);
+    expect(mean[0]).toBeCloseTo(105, 5);
+    expect(mean[HIDDEN_SIZE - 1]).toBeCloseTo(105 + HIDDEN_SIZE - 1, 5);
+  });
+
+  it("reads only the requested layer", () => {
+    const internals = makeInternals(2);
+    expect(layerMeanVector(internals, 0)[7]).toBeCloseTo(5 + 7, 5);
+    expect(layerMeanVector(internals, 1)[7]).toBeCloseTo(105 + 7, 5);
+  });
+
+  it("returns a zero vector when there are no active tokens", () => {
+    const mean = layerMeanVector(makeInternals(0), 0);
+    expect(mean).toHaveLength(HIDDEN_SIZE);
+    expect(mean.every((v) => v === 0)).toBe(true);
+  });
+
+  // Mirrors DualHeadModel.forward in scripts/training/export_model_onnx.py, where
+  // pooled_output is the attention-masked mean of the final encoder layer.
+  it("reproduces pooled_output for the final layer", () => {
+    const internals = makeInternals(3, NUM_LAYERS + 1);
+    internals.pooled = layerMeanVector(internals, NUM_LAYERS);
+    expect(layerMeanVector(internals, NUM_LAYERS)).toEqual(internals.pooled);
   });
 });

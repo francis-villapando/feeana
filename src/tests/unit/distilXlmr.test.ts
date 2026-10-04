@@ -2,10 +2,38 @@ import { describe, it, expect } from "vitest";
 import { DistilXlmrAdapter } from "../../lib/algorithm/models/distilXlmr";
 import {
   CONFIDENCE_FALLBACK_THRESHOLD,
+  OnnxPidAbsaAdapter,
   applyConfidenceFallback,
 } from "../../lib/algorithm/models/finetuned";
 import { EncodeFeedback } from "../../lib/algorithm/preprocess";
 import { HIDDEN_SIZE, NUM_HEADS, NUM_LAYERS } from "../../lib/algorithm/internals";
+
+describe("encoded token labels", () => {
+  it("maps every encoded position, including special and padding tokens", () => {
+    const adapter = new OnnxPidAbsaAdapter({
+      name: "test",
+      modelDir: "test",
+      hfRepo: "test/model",
+    });
+    const tokenById: Record<number, string> = {
+      0: "<s>",
+      1: "<pad>",
+      2: "</s>",
+      17: "▁di",
+      29: "▁muna",
+    };
+    adapter.tokenizer = Object.assign(() => ({}), {
+      _tokenizer: { id_to_token: (id: number) => tokenById[id] ?? null },
+    }) as unknown as NonNullable<typeof adapter.tokenizer>;
+
+    const tokens = adapter.tokensForEncoding({
+      inputIds: BigInt64Array.from([0n, 17n, 29n, 2n, 1n]),
+      attentionMask: BigInt64Array.from([1n, 1n, 1n, 1n, 0n]),
+    });
+
+    expect(tokens).toEqual(["<s>", "▁di", "▁muna", "</s>", "<pad>"]);
+  });
+});
 
 describe("DistilXlmrAdapter", { timeout: 30000 }, () => {
   it("loads the session, tokenizer, and label mappings", async () => {
@@ -14,6 +42,15 @@ describe("DistilXlmrAdapter", { timeout: 30000 }, () => {
     expect(adapter.session).toBeTruthy();
     expect(adapter.tokenizer).toBeTruthy();
     expect(adapter.labelMap).toBeTruthy();
+
+    const encoding = EncodeFeedback("di muna nagbibigay ng feedback", adapter.tokenizer!);
+    const tokens = adapter.tokensForEncoding(encoding);
+    const activeTokens = Array.from(encoding.attentionMask).filter((value) => value === 1n).length;
+    expect(tokens).toHaveLength(encoding.inputIds.length);
+    expect(tokens[0]).toBe("<s>");
+    expect(tokens[activeTokens - 1]).toBe("</s>");
+    expect(tokens.slice(activeTokens).every((token) => token === "<pad>")).toBe(true);
+
     await adapter.dispose();
   });
 
@@ -98,7 +135,7 @@ describe("DistilXlmrAdapter encoder internals", { timeout: 60000 }, () => {
     expect(attention.length).toBe(NUM_LAYERS * NUM_HEADS * activeTokens * activeTokens);
     expect(hiddenStates.length).toBe((NUM_LAYERS + 1) * activeTokens * HIDDEN_SIZE);
     expect(pooled.length).toBe(HIDDEN_SIZE);
-    expect(internals.layerL2).toHaveLength(NUM_LAYERS + 1);
+    expect(internals.layerRms).toHaveLength(NUM_LAYERS + 1);
     expect(internals.layerCosine).toHaveLength(NUM_LAYERS);
     expect(internals.headEntropy).toHaveLength(NUM_LAYERS * NUM_HEADS);
 

@@ -21,8 +21,8 @@ import {
 import { cn } from "@/lib/hooks/utils";
 import {
   HIDDEN_SIZE,
-  NUM_LAYERS,
   getHiddenStateLayer,
+  layerMeanVector,
   type ModelInternals,
 } from "@/lib/algorithm/internals";
 import type { LogitDistribution } from "@/components/dev/simulationEngine";
@@ -33,22 +33,12 @@ import {
   clampStep,
   computeTopMeanPairs,
   hiddenStateLayerIndex,
+  shortToken,
   stepIntervalMs,
   stepStage,
+  vectorColor,
   type WalkthroughStage,
 } from "./walkthrough";
-
-function shortToken(token: string): string {
-  return token.replace(/^▁/, "").replace(/^Ġ/, "") || token;
-}
-
-// Diverging scale shared by the vector strips: red = positive, blue = negative.
-function vectorColor(value: number, maxAbs: number): string {
-  if (maxAbs <= 0) return "rgba(120, 120, 120, 0.15)";
-  const norm = Math.min(Math.abs(value) / maxAbs, 1);
-  const alpha = (0.08 + norm * 0.92).toFixed(3);
-  return value >= 0 ? `rgba(239, 68, 68, ${alpha})` : `rgba(59, 130, 246, ${alpha})`;
-}
 
 export function EncoderWalkthroughPlayer({
   step,
@@ -107,6 +97,25 @@ export function EncoderWalkthroughPlayer({
     }
     return norms;
   }, [internals, hiddenIdx]);
+
+  // Steps 0-12 each resolve to one hidden-state layer, summarised as its mean
+  // over active tokens. Step 13 renders internals.pooled instead.
+  const layerMean = useMemo(
+    () => (hiddenIdx >= 0 ? layerMeanVector(internals, hiddenIdx) : null),
+    [internals, hiddenIdx],
+  );
+
+  const pooledNorm = useMemo(
+    () => Math.sqrt(Array.from(internals.pooled).reduce((sum, v) => sum + v * v, 0)),
+    [internals.pooled],
+  );
+
+  const normLabel =
+    hiddenIdx < 0
+      ? "Per-token magnitude"
+      : hiddenIdx === 0
+        ? "Per-token embedding magnitude"
+        : `Per-token layer ${hiddenIdx} magnitude`;
 
   const togglePlay = () => {
     if (isPlaying) {
@@ -224,11 +233,13 @@ export function EncoderWalkthroughPlayer({
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        {stage === "layers" ? (
-          <AttentionSpotlight tokens={tokens} pair={topPair} />
-        ) : (
-          <TokenContextPanel tokens={tokens} perTokenNorms={perTokenNorms} />
+      <div className="space-y-3">
+        {stage === "classification" && (
+          <TokenContextPanel
+            tokens={tokens}
+            perTokenNorms={perTokenNorms}
+            magnitudeLabel={normLabel}
+          />
         )}
         <RepresentationPanel
           stage={stage}
@@ -236,80 +247,13 @@ export function EncoderWalkthroughPlayer({
           internals={internals}
           tokens={tokens}
           perTokenNorms={perTokenNorms}
+          layerMean={layerMean}
+          pooledNorm={pooledNorm}
+          attentionPair={topPair}
           topKIssues={topKIssues}
           issueLogitsRaw={issueLogitsRaw}
         />
       </div>
-    </div>
-  );
-}
-
-function AttentionSpotlight({
-  tokens,
-  pair,
-}: {
-  tokens: string[];
-  pair?: { query: number; key: number; weight: number };
-}) {
-  const n = tokens.length;
-  const x1 = n > 1 ? ((pair?.query ?? 0) + 0.5) * (100 / n) : 50;
-  const x2 = n > 1 ? ((pair?.key ?? 0) + 0.5) * (100 / n) : 50;
-  const weight = pair?.weight ?? 0;
-
-  return (
-    <div className="space-y-1.5">
-      <Label>Active layer attention spotlight</Label>
-      <div className="rounded-md border border-border bg-muted/30 p-3">
-        <div className="flex flex-wrap items-center gap-1">
-          {tokens.map((tok, i) => {
-            const isSpecial = tok === "<s>" || tok === "</s>";
-            return (
-              <span
-                key={i}
-                title={`#${i} ${tok}`}
-                className={cn(
-                  "rounded px-1.5 py-0.5 font-mono text-[11px]",
-                  isSpecial && "text-muted-foreground",
-                  pair && i === pair.query && "ring-1 ring-primary",
-                  pair && i === pair.key && "bg-primary/15 font-semibold",
-                )}
-              >
-                {shortToken(tok)}
-              </span>
-            );
-          })}
-        </div>
-        {pair && (
-          <svg
-            className="mt-1 h-10 w-full"
-            viewBox="0 0 100 40"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              d={`M ${x1} 34 Q 50 4 ${x2} 34`}
-              fill="none"
-              stroke="rgb(99, 102, 241)"
-              strokeWidth={1 + weight * 3}
-              strokeOpacity={0.25 + weight * 0.6}
-              vectorEffect="non-scaling-stroke"
-            >
-              <animate
-                attributeName="stroke-opacity"
-                values="0.2;0.8;0.2"
-                dur="1.6s"
-                repeatCount="indefinite"
-              />
-            </path>
-          </svg>
-        )}
-      </div>
-      {pair && (
-        <p className="font-mono text-[11px] text-muted-foreground">
-          {shortToken(tokens[pair.query] ?? `#${pair.query}`)} →{" "}
-          {shortToken(tokens[pair.key] ?? `#${pair.key}`)} · weight {pair.weight.toFixed(3)}
-        </p>
-      )}
     </div>
   );
 }
@@ -320,6 +264,9 @@ function RepresentationPanel({
   internals,
   tokens,
   perTokenNorms,
+  layerMean,
+  pooledNorm,
+  attentionPair,
   topKIssues,
   issueLogitsRaw,
 }: {
@@ -328,6 +275,9 @@ function RepresentationPanel({
   internals: ModelInternals;
   tokens: string[];
   perTokenNorms: number[];
+  layerMean: Float32Array | null;
+  pooledNorm: number;
+  attentionPair?: { query: number; key: number; weight: number };
   topKIssues: LogitDistribution[];
   issueLogitsRaw: number[];
 }) {
@@ -372,41 +322,69 @@ function RepresentationPanel({
       <VectorStrip
         values={internals.pooled}
         label={`Mean-pooled sentence vector (${HIDDEN_SIZE} dims)`}
-        note={`‖v‖₂ ${internals.layerL2[NUM_LAYERS]?.toFixed(3) ?? "—"}`}
-      />
-    );
-  }
-
-  if (stage === "embeddings") {
-    return (
-      <VectorStrip
-        values={getHiddenStateLayer(internals, 0)}
-        label={`Layer 0 embeddings (${HIDDEN_SIZE} dims)`}
-        note={`mean ‖h‖₂ ${internals.layerL2[0]?.toFixed(3) ?? "—"}`}
+        note={`‖v‖₂ ${pooledNorm.toFixed(3)} · = token mean of layer 12`}
       />
     );
   }
 
   const hiddenIdx = hiddenStateLayerIndex(step);
-  const norm = hiddenIdx >= 0 ? internals.layerL2[hiddenIdx] : undefined;
+  const rms = hiddenIdx >= 0 ? internals.layerRms[hiddenIdx] : undefined;
   const drift = hiddenIdx >= 1 ? internals.layerCosine[hiddenIdx - 1] : undefined;
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline" className="font-mono">
-          Layer {step} ‖h‖₂ {norm?.toFixed(3) ?? "—"}
-        </Badge>
-        {drift !== undefined && (
-          <Badge variant="outline" className="font-mono">
-            drift vs L{hiddenIdx - 1} {drift.toFixed(3)}
-          </Badge>
-        )}
-      </div>
-      <div className="space-y-1">
-        <Label className="text-[11px]">Per-token representation magnitude</Label>
-        <TokenMagnitudeBars tokens={tokens} perTokenNorms={perTokenNorms} />
-      </div>
+    <div className="space-y-1.5">
+      {attentionPair && (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label className="text-[11px]">Per-token representation magnitude</Label>
+            <Badge variant="outline" className="font-mono">
+              Layer {step} element RMS {rms?.toFixed(3) ?? "—"}
+            </Badge>
+            {drift !== undefined && (
+              <Badge variant="outline" className="font-mono">
+                drift vs Layer {hiddenIdx - 1} {drift.toFixed(3)}
+              </Badge>
+            )}
+          </div>
+          <TokenMagnitudeBars
+            tokens={tokens}
+            perTokenNorms={perTokenNorms}
+            attentionPair={attentionPair}
+          />
+          <p className="font-mono text-[11px] text-muted-foreground">
+            Mean attention: Q (
+            {shortToken(tokens[attentionPair.query] ?? `#${attentionPair.query}`)}){" → "}K (
+            {shortToken(tokens[attentionPair.key] ?? `#${attentionPair.key}`)}) · weight{" "}
+            {attentionPair.weight.toFixed(3)}
+          </p>
+        </>
+      )}
+      {hiddenIdx === 0 && !attentionPair && (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label className="text-[11px]">Per-token representation magnitude</Label>
+            <Badge variant="outline" className="font-mono">
+              Layer 0 element RMS {rms?.toFixed(3) ?? "—"}
+            </Badge>
+          </div>
+          <TokenMagnitudeBars tokens={tokens} perTokenNorms={perTokenNorms} />
+        </>
+      )}
+      {layerMean && (
+        <VectorStrip
+          values={layerMean}
+          label={
+            hiddenIdx === 0
+              ? `Layer 0 embeddings · token mean (${HIDDEN_SIZE} dims)`
+              : `Layer ${hiddenIdx} token mean (${HIDDEN_SIZE} dims)`
+          }
+          note={`mean over ${tokens.length} active tokens`}
+        />
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        Token mean over the active tokens — a summary for interpretation. Layer 12's mean is exactly
+        the pooled vector shown at step 13.
+      </p>
     </div>
   );
 }
@@ -414,13 +392,15 @@ function RepresentationPanel({
 function TokenContextPanel({
   tokens,
   perTokenNorms,
+  magnitudeLabel,
 }: {
   tokens: string[];
   perTokenNorms: number[];
+  magnitudeLabel: string;
 }) {
   return (
     <div className="space-y-1.5">
-      <Label>Input token context</Label>
+      <Label className="text-[11px]">Input token context</Label>
       <div className="rounded-md border border-border bg-muted/30 p-3">
         <div className="flex flex-wrap items-center gap-1">
           {tokens.map((tok, i) => {
@@ -441,7 +421,7 @@ function TokenContextPanel({
         </div>
         {perTokenNorms.length > 0 && (
           <div className="mt-3 space-y-1">
-            <Label className="text-[11px]">Per-token embedding magnitude</Label>
+            <Label className="text-[11px]">{magnitudeLabel}</Label>
             <TokenMagnitudeBars tokens={tokens} perTokenNorms={perTokenNorms} />
           </div>
         )}
@@ -453,29 +433,47 @@ function TokenContextPanel({
 function TokenMagnitudeBars({
   tokens,
   perTokenNorms,
+  attentionPair,
 }: {
   tokens: string[];
   perTokenNorms: number[];
+  attentionPair?: { query: number; key: number; weight: number };
 }) {
   const maxNorm = perTokenNorms.reduce((m, v) => Math.max(m, v), 0) || 1e-6;
   return (
     <div className="flex items-end gap-1">
-      {perTokenNorms.map((normValue, t) => (
-        <div key={t} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
-          <div className="flex h-16 w-full items-end rounded-sm bg-muted/40">
-            <div
-              className="w-full rounded-sm bg-[rgb(99,102,241)]"
-              style={{ height: `${(normValue / maxNorm) * 100}%` }}
-            />
-          </div>
-          <span
-            className="max-w-full truncate font-mono text-[9px] text-muted-foreground"
-            title={tokens[t]}
+      {perTokenNorms.map((normValue, t) => {
+        const role =
+          t === attentionPair?.query ? "query" : t === attentionPair?.key ? "key" : undefined;
+        return (
+          <div
+            key={t}
+            className="flex min-w-0 flex-1 flex-col items-center gap-0.5"
+            role={role ? "group" : undefined}
+            aria-label={
+              role
+                ? `${role === "query" ? "Query" : "Key"} token ${shortToken(tokens[t] ?? `#${t}`)}`
+                : undefined
+            }
           >
-            {shortToken(tokens[t] ?? `#${t}`)}
-          </span>
-        </div>
-      ))}
+            <span className="h-3 font-mono text-[9px] font-semibold leading-3 text-red-600 dark:text-red-400">
+              {role === "query" ? "Q" : role === "key" ? "K" : ""}
+            </span>
+            <div className="flex h-16 w-full items-end rounded-sm bg-muted/40">
+              <div
+                className={cn("w-full rounded-sm", role ? "bg-red-500" : "bg-[rgb(99,102,241)]")}
+                style={{ height: `${(normValue / maxNorm) * 100}%` }}
+              />
+            </div>
+            <span
+              className="max-w-full truncate font-mono text-[9px] text-muted-foreground"
+              title={tokens[t]}
+            >
+              {shortToken(tokens[t] ?? `#${t}`)}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

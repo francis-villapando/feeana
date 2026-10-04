@@ -102,6 +102,7 @@ export function EncoderInternalsWorkbench({ extraction }: { extraction: Extracti
       <InternalsSection
         title="DistilXLM-R Live Encoding Walkthrough"
         detail="Media-player walkthrough of the encoder's 4-stage cognition"
+        defaultOpen
       >
         <EncoderWalkthroughPlayer
           step={walkthroughStep}
@@ -118,7 +119,7 @@ export function EncoderInternalsWorkbench({ extraction }: { extraction: Extracti
       </InternalsSection>
 
       <InternalsSection
-        title="1 · Attention distribution across all 144 heads"
+        title="1 · Attention distribution by layer and head"
         detail="Which tokens each attention head reads when encoding this feedback"
       >
         <AttentionHeatmapExplorer

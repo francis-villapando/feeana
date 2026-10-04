@@ -15,10 +15,10 @@ import {
   NUM_LAYERS,
   getAttentionMatrix,
   getMeanAttentionMatrix,
-  headAttentionEntropy,
   topAttentionPairs,
   type ModelInternals,
 } from "@/lib/algorithm/internals";
+import { shortToken } from "./walkthrough";
 
 const MEAN_HEAD = "mean";
 
@@ -28,17 +28,6 @@ function attentionColor(value: number, max: number): string {
   if (max <= 0) return "transparent";
   const norm = Math.sqrt(Math.min(Math.max(value, 0) / max, 1));
   return `rgba(99, 102, 241, ${norm.toFixed(3)})`;
-}
-
-// Entropy scale: sharply focused heads (low entropy) get the saturated tone.
-function entropyColor(entropy: number, min: number, max: number): string {
-  if (max - min < 1e-6) return "rgba(99, 102, 241, 0.35)";
-  const norm = 1 - (entropy - min) / (max - min);
-  return `rgba(99, 102, 241, ${(0.15 + norm * 0.85).toFixed(3)})`;
-}
-
-function shortToken(token: string): string {
-  return token.replace(/^▁/, "").replace(/^Ġ/, "") || token;
 }
 
 export function AttentionHeatmapExplorer({
@@ -79,7 +68,7 @@ export function AttentionHeatmapExplorer({
 
   const max = useMemo(() => matrix.reduce((m, v) => (v > m ? v : m), 0), [matrix]);
 
-  const entropy = useMemo(() => headAttentionEntropy(internals.attention, n), [internals, n]);
+  const entropy = internals.headEntropy;
   const entropyRange = useMemo(() => {
     let min = Infinity;
     let maxE = -Infinity;
@@ -89,6 +78,22 @@ export function AttentionHeatmapExplorer({
     }
     return { min, max: maxE };
   }, [entropy]);
+
+  // Mean of the 12 head entropies per layer: the layer-level focus summary shown
+  // next to the matrix. Entropy is bounded by ln(activeTokens), so it only ranks
+  // layers within this run.
+  const layerEntropy = useMemo(() => {
+    return Array.from({ length: NUM_LAYERS }, (_, l) => {
+      let sum = 0;
+      for (let h = 0; h < NUM_HEADS; h++) sum += entropy[l * NUM_HEADS + h];
+      return sum / NUM_HEADS;
+    });
+  }, [entropy]);
+
+  const entropyBarWidth = (value: number) => {
+    const span = entropyRange.max - entropyRange.min;
+    return span < 1e-6 ? 100 : ((value - entropyRange.min) / span) * 100;
+  };
 
   const pairs = useMemo(
     () => (isMean ? [] : topAttentionPairs(internals, activeLayer, headIndex, 5)),
@@ -106,6 +111,9 @@ export function AttentionHeatmapExplorer({
 
   // Grid tracks stay square and readable across 10-64 active tokens.
   const cellSize = n > 48 ? 12 : n > 32 ? 16 : n > 20 ? 20 : 26;
+  // Spread the layer bars over the exact height of the matrix so each one sits
+  // inside its own twelfth of the table.
+  const layerRowHeight = (n * cellSize) / NUM_LAYERS;
 
   return (
     <div className="space-y-3">
@@ -154,7 +162,7 @@ export function AttentionHeatmapExplorer({
         </Badge>
         {!isMean && (
           <Badge variant="outline" className="font-mono">
-            entropy {entropy[activeLayer * NUM_HEADS + headIndex].toFixed(3)}
+            entropy {entropy[activeLayer * NUM_HEADS + headIndex].toFixed(3)} nats
           </Badge>
         )}
       </div>
@@ -198,7 +206,7 @@ export function AttentionHeatmapExplorer({
           ))}
         </div>
 
-        <div className="min-w-0 flex-1 overflow-x-auto">
+        <div className="w-fit shrink-0">
           {/* Column token labels */}
           <div
             className="grid font-mono text-[10px] text-muted-foreground"
@@ -241,6 +249,52 @@ export function AttentionHeatmapExplorer({
             })}
           </div>
         </div>
+
+        {/* Per-layer mean attention entropy, one bar per encoder layer. */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex h-5 items-end whitespace-nowrap font-mono text-[9px] text-muted-foreground">
+            layer · mean entropy (nats) ↓
+          </div>
+          {layerEntropy.map((e, l) => {
+            const isActive = activeLayer === l;
+            return (
+              <div
+                key={l}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-sm px-1",
+                  isActive && "bg-primary/10",
+                )}
+                style={{ height: layerRowHeight }}
+              >
+                <span
+                  className={cn(
+                    "w-4 shrink-0 text-right font-mono text-[9px]",
+                    isActive ? "font-semibold text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  L{l + 1}
+                </span>
+                <span className="h-1.5 flex-1 min-w-0 overflow-hidden rounded-sm bg-muted">
+                  <span
+                    className={cn(
+                      "block h-full rounded-sm",
+                      isActive ? "bg-primary" : "bg-primary/40",
+                    )}
+                    style={{ width: `${entropyBarWidth(e)}%` }}
+                  />
+                </span>
+                <span
+                  className={cn(
+                    "w-9 shrink-0 text-right font-mono text-[9px] tabular-nums",
+                    isActive ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {e.toFixed(2)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
@@ -276,68 +330,6 @@ export function AttentionHeatmapExplorer({
           </div>
         </div>
       )}
-
-      {/* Entropy map across all 144 heads */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <Label>Head focus map (attention entropy, all 144 heads)</Label>
-          <span className="text-[10px] text-muted-foreground">
-            darker = sharper focus · click to inspect
-          </span>
-        </div>
-        <div className="inline-block rounded-md border border-border bg-muted/30 p-2">
-          <div className="flex gap-2">
-            <div className="flex flex-col font-mono text-[9px] text-muted-foreground">
-              <div className="mb-1 h-3.5" />
-              <div className="flex flex-col gap-0.5">
-                {Array.from({ length: NUM_LAYERS }, (_, l) => (
-                  <div key={l} className="h-4 leading-4 text-right pr-0.5">
-                    L{l + 1}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="mb-1 grid h-3.5 grid-cols-12 gap-0.5 font-mono text-[9px] text-muted-foreground">
-                {Array.from({ length: NUM_HEADS }, (_, h) => (
-                  <div key={h} className="w-4 text-center leading-3.5">
-                    {h + 1}
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-col gap-0.5">
-                {Array.from({ length: NUM_LAYERS }, (_, l) => (
-                  <div key={l} className="grid grid-cols-12 gap-0.5">
-                    {Array.from({ length: NUM_HEADS }, (_, h) => {
-                      const e = entropy[l * NUM_HEADS + h];
-                      const active = activeLayer === l && headIndex === h && !isMean;
-                      return (
-                        <button
-                          key={h}
-                          type="button"
-                          title={`Layer ${l + 1} · Head ${h + 1} · entropy ${e.toFixed(3)}`}
-                          onClick={() => {
-                            setLayer(l);
-                            setHead(String(h));
-                            onLayerSelect?.(l);
-                          }}
-                          className={cn(
-                            "h-4 w-4 rounded-[2px] border border-border/40 transition-transform hover:scale-110",
-                            active && "ring-1 ring-foreground",
-                          )}
-                          style={{
-                            backgroundColor: entropyColor(e, entropyRange.min, entropyRange.max),
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

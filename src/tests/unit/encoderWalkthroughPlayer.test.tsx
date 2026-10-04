@@ -49,7 +49,7 @@ function makeInternals(): ModelInternals {
     attention,
     hiddenStates,
     pooled: new Float32Array(HIDDEN_SIZE).fill(0.25),
-    layerL2: Array.from({ length: NUM_LAYERS + 1 }, (_, l) => l + 1),
+    layerRms: Array.from({ length: NUM_LAYERS + 1 }, (_, l) => l + 1),
     layerCosine: new Array(NUM_LAYERS).fill(0.9),
     headEntropy: new Array(NUM_LAYERS * NUM_HEADS).fill(0),
   };
@@ -142,7 +142,7 @@ describe("buildNarrative", () => {
       topKIssues: TOP_ISSUES,
     });
     expect(headline).toContain("Middle Layers (Layer 7)");
-    expect(caption).toContain("Layer 7");
+    expect(caption).toContain("weight =");
     expect(caption).toContain("bait");
     expect(caption).toContain("maba");
   });
@@ -193,6 +193,30 @@ describe("EncoderWalkthroughPlayer rendering", () => {
     expect(markup).toContain("bait");
   });
 
+  it("explains the active attention pair on its corresponding magnitude bars", () => {
+    const markup = renderToStaticMarkup(
+      <EncoderWalkthroughPlayer
+        step={1}
+        onStepChange={noop}
+        isPlaying={false}
+        onPlayChange={noop}
+        speed={1}
+        onSpeedChange={noop}
+        internals={makeInternals()}
+        subwords={SUBWORDS}
+        topKIssues={TOP_ISSUES}
+        issueLogitsRaw={[2.1, 1.2]}
+      />,
+    );
+
+    expect(markup).toContain('aria-label="Query token bait"');
+    expect(markup).toContain('aria-label="Key token maba"');
+    expect(markup.match(/bg-red-500/g)).toHaveLength(2);
+    expect(markup).toContain("Mean attention: Q (bait) → K (maba) · weight 57.100");
+    expect(markup).not.toContain("Active layer attention spotlight");
+    expect(markup).not.toContain("stroke-opacity");
+  });
+
   it("marks the final step as complete and offers replay", () => {
     const markup = renderToStaticMarkup(
       <EncoderWalkthroughPlayer
@@ -211,5 +235,87 @@ describe("EncoderWalkthroughPlayer rendering", () => {
     expect(markup).toContain("Complete");
     expect(markup).toContain("Replay");
     expect(markup).toContain("clarity deficit");
+  });
+
+  it("renders one 384-dim token-mean strip at every hidden-state step", () => {
+    // Regression guard: an [activeTokens, 384] matrix flattened into a single strip
+    // yields activeTokens*384 cells and a bogus "dim 1151", which mislabels the step.
+    for (const step of [0, 6, 12]) {
+      const markup = renderToStaticMarkup(
+        <EncoderWalkthroughPlayer
+          step={step}
+          onStepChange={noop}
+          isPlaying={false}
+          onPlayChange={noop}
+          speed={1}
+          onSpeedChange={noop}
+          internals={makeInternals()}
+          subwords={SUBWORDS}
+          topKIssues={TOP_ISSUES}
+          issueLogitsRaw={[2.1, 1.2]}
+        />,
+      );
+      expect(markup.match(/title="dim /g)).toHaveLength(HIDDEN_SIZE);
+      expect(markup).not.toContain("dim 1151");
+    }
+  });
+
+  it("labels the layer 0 embedding mean and later layer means", () => {
+    const stepZero = renderToStaticMarkup(
+      <EncoderWalkthroughPlayer
+        step={0}
+        onStepChange={noop}
+        isPlaying={false}
+        onPlayChange={noop}
+        speed={1}
+        onSpeedChange={noop}
+        internals={makeInternals()}
+        subwords={SUBWORDS}
+        topKIssues={TOP_ISSUES}
+        issueLogitsRaw={[2.1, 1.2]}
+      />,
+    );
+    expect(stepZero).toContain("Layer 0 embeddings · token mean (384 dims)");
+    expect(stepZero).toContain("mean over 3 active tokens");
+    // No per-token toggle: the layer summary is the only 384-dim figure.
+    expect(stepZero).not.toContain("tokens × 384 dims");
+
+    const stepTwelve = renderToStaticMarkup(
+      <EncoderWalkthroughPlayer
+        step={12}
+        onStepChange={noop}
+        isPlaying={false}
+        onPlayChange={noop}
+        speed={1}
+        onSpeedChange={noop}
+        internals={makeInternals()}
+        subwords={SUBWORDS}
+        topKIssues={TOP_ISSUES}
+        issueLogitsRaw={[2.1, 1.2]}
+      />,
+    );
+    expect(stepTwelve).toContain("Layer 12 token mean (384 dims)");
+    // The apostrophe in "Layer 12's" is escaped as &#x27; in static markup.
+    expect(stepTwelve).toContain("mean is exactly the pooled vector shown at step 13");
+  });
+
+  it("states that the pooled vector is the token mean of the final layer", () => {
+    const markup = renderToStaticMarkup(
+      <EncoderWalkthroughPlayer
+        step={13}
+        onStepChange={noop}
+        isPlaying={false}
+        onPlayChange={noop}
+        speed={1}
+        onSpeedChange={noop}
+        internals={makeInternals()}
+        subwords={SUBWORDS}
+        topKIssues={TOP_ISSUES}
+        issueLogitsRaw={[2.1, 1.2]}
+      />,
+    );
+    expect(markup).toContain("Mean-pooled sentence vector (384 dims)");
+    expect(markup).toContain("= token mean of layer 12");
+    expect(markup.match(/title="dim /g)).toHaveLength(HIDDEN_SIZE);
   });
 });

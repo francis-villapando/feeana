@@ -89,7 +89,7 @@ export function buildNarrative({
   const stage = stepStage(step);
   if (stage === "embeddings") {
     return {
-      headline: "Input & Embeddings (L0)",
+      headline: "Input & Embeddings (Layer 0)",
       caption: "Reading subword tokens and initializing 384-dimensional lexical embeddings.",
     };
   }
@@ -103,7 +103,7 @@ export function buildNarrative({
     const phase = phaseName(layerIdx);
     return {
       headline: `${phase} Layers (Layer ${step})`,
-      caption: `${phase} Layers (Layer ${step}): attention resolves onto '${key}' from '${query}' (weight = ${weight.toFixed(3)}).`,
+      caption: `Attention resolves onto '${key}' from '${query}' (weight = ${weight.toFixed(3)}).`,
     };
   }
   if (stage === "pooling") {
@@ -120,6 +120,16 @@ export function buildNarrative({
   };
 }
 
-function shortToken(token: string): string {
+// Shared with the drill-down panels: the tokenizer prefix strip and the diverging
+// activation scale are rendered identically in both, so they get one implementation.
+export function shortToken(token: string): string {
   return token.replace(/^▁/, "").replace(/^Ġ/, "") || token;
+}
+
+// Diverging scale: red = positive activation, blue = negative.
+export function vectorColor(value: number, maxAbs: number): string {
+  if (maxAbs <= 0) return "rgba(120, 120, 120, 0.15)";
+  const norm = Math.min(Math.abs(value) / maxAbs, 1);
+  const alpha = (0.08 + norm * 0.92).toFixed(3);
+  return value >= 0 ? `rgba(239, 68, 68, ${alpha})` : `rgba(59, 130, 246, ${alpha})`;
 }

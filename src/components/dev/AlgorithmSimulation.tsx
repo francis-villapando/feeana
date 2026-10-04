@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Braces,
+  Calculator,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -12,6 +13,7 @@ import {
   Download,
   FileText,
   Hash,
+  HelpCircle,
   Info,
   ListOrdered,
   Loader2,
@@ -734,19 +736,11 @@ function StepPreprocess({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
-        {/* Raw vs Cleaned diff */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col space-y-2">
-            <Label>Raw feedback</Label>
-            <div className="flex-1 whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-              {input.feedbackText || "—"}
-            </div>
-          </div>
-          <div className="flex flex-col space-y-2">
-            <Label>Cleaned text</Label>
-            <div className="flex-1 rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm">
-              {cleanedText || "—"}
-            </div>
+        {/* Raw feedback input */}
+        <div className="flex flex-col space-y-2">
+          <Label>Raw feedback</Label>
+          <div className="whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+            {input.feedbackText || "—"}
           </div>
         </div>
 
@@ -779,6 +773,14 @@ function StepPreprocess({
             </div>
           </div>
         )}
+
+        {/* Cleaned text output directly after abbreviation mapping */}
+        <div className="flex flex-col space-y-2">
+          <Label>Cleaned text</Label>
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm font-medium text-foreground">
+            {cleanedText || "—"}
+          </div>
+        </div>
 
         {/* Unified Tensor & Token Representation Table */}
         {tokenization ? (
@@ -905,7 +907,7 @@ function StepPreprocess({
               {tokenizing ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                  <span>Computing subwords & 1×256 tensor encodings…</span>
+                  <span>Computing subwords & 1×128 tensor encodings…</span>
                 </>
               ) : !modelReady ? (
                 <span>
@@ -961,6 +963,211 @@ function StageRow({
   );
 }
 
+function SoftmaxMathInspector({
+  topKIssues,
+  issueLogitsRaw,
+  polarityDistribution,
+  polarityLogitsRaw,
+}: {
+  topKIssues: ExtractionResult["topKIssues"];
+  issueLogitsRaw: number[];
+  polarityDistribution: ExtractionResult["polarityDistribution"];
+  polarityLogitsRaw: number[];
+}) {
+  const [activeHead, setActiveHead] = useState<"issue" | "polarity">("issue");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const isIssue = activeHead === "issue";
+  const logits = isIssue ? issueLogitsRaw : polarityLogitsRaw;
+  const numClasses = logits.length;
+
+  const { rows, sumExp } = useMemo(() => {
+    const expValues = logits.map((z) => Math.exp(z));
+    const totalExp = expValues.reduce((a, b) => a + b, 0);
+
+    if (isIssue) {
+      const topRows = topKIssues.map((entry) => {
+        const exp = Math.exp(entry.logit);
+        const prob = totalExp > 0 ? exp / totalExp : 0;
+        return {
+          label: entry.label,
+          logit: entry.logit,
+          exp,
+          fraction: `${exp.toFixed(3)} / ${totalExp.toFixed(3)}`,
+          probability: prob,
+        };
+      });
+
+      // Aggregate remaining classes
+      const topIds = new Set(topKIssues.map((t) => t.id));
+      let restExp = 0;
+      let restLogitSum = 0;
+      let restCount = 0;
+      logits.forEach((z, i) => {
+        if (!topIds.has(i)) {
+          restExp += Math.exp(z);
+          restLogitSum += z;
+          restCount++;
+        }
+      });
+
+      if (restCount > 0) {
+        topRows.push({
+          label: `Other ${restCount} classes (combined)`,
+          logit: restLogitSum / restCount,
+          exp: restExp,
+          fraction: `${restExp.toFixed(3)} / ${totalExp.toFixed(3)}`,
+          probability: totalExp > 0 ? restExp / totalExp : 0,
+        });
+      }
+
+      return { rows: topRows, sumExp: totalExp };
+    }
+
+    const polRows = polarityDistribution.map((entry) => {
+      const exp = Math.exp(entry.logit);
+      const prob = totalExp > 0 ? exp / totalExp : 0;
+      return {
+        label: entry.label,
+        logit: entry.logit,
+        exp,
+        fraction: `${exp.toFixed(3)} / ${totalExp.toFixed(3)}`,
+        probability: prob,
+      };
+    });
+
+    return { rows: polRows, sumExp: totalExp };
+  }, [logits, isIssue, topKIssues, polarityDistribution]);
+
+  return (
+    <div className="rounded-md border border-border bg-muted/20">
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 p-3 text-left transition-colors hover:bg-muted/40"
+      >
+        <div className="flex items-center gap-2">
+          <Calculator className="h-4 w-4 text-primary" />
+          <div>
+            <span className="text-xs font-semibold">Softmax Arithmetic Inspector</span>
+            <span className="ml-2 font-mono text-[11px] text-muted-foreground">
+              z_i → exp(z_i) → P(y_i)
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="font-mono text-[10px]">
+            {isOpen ? "Hide Math" : "Inspect Step-by-Step Math"}
+          </Badge>
+          {isOpen ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="space-y-3 border-t border-border/60 p-3 text-xs">
+          {/* Formula banner */}
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-2.5">
+            <div className="font-mono">
+              <span className="font-semibold text-primary">P(y_i) = exp(z_i) / Σ exp(z_j)</span>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Softmax exponentiates unbounded raw logits (from W·v + b) into positive values and
+              divides by their sum so all probabilities sum to exactly 100%.
+            </p>
+          </div>
+
+          {/* Head selector pill */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Classification Head:
+            </span>
+            <div className="flex rounded-md border border-border bg-muted/40 p-0.5">
+              <button
+                type="button"
+                onClick={() => setActiveHead("issue")}
+                className={cn(
+                  "rounded px-2 py-1 text-[11px] font-medium transition-colors",
+                  isIssue
+                    ? "bg-background text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Issue Head (15 Classes)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveHead("polarity")}
+                className={cn(
+                  "rounded px-2 py-1 text-[11px] font-medium transition-colors",
+                  !isIssue
+                    ? "bg-background text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                Polarity Head (3 Classes)
+              </button>
+            </div>
+          </div>
+
+          {/* Step-by-step arithmetic table */}
+          <div className="overflow-x-auto rounded-md border border-border">
+            <table className="min-w-full border-collapse font-mono text-[11px]">
+              <thead>
+                <tr className="border-b border-border/60 bg-muted/60 text-muted-foreground">
+                  <th className="p-2 text-left font-medium">Category</th>
+                  <th className="p-2 text-right font-medium">Raw Logit (z_i)</th>
+                  <th className="p-2 text-right font-medium">exp(z_i)</th>
+                  <th className="p-2 text-center font-medium">Fraction (exp / Σ exp)</th>
+                  <th className="p-2 text-right font-medium">Probability P(y_i)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {rows.map((row, i) => (
+                  <tr
+                    key={row.label}
+                    className={cn(
+                      "transition-colors",
+                      i === 0 && "bg-primary/5 font-semibold text-foreground",
+                    )}
+                  >
+                    <td className="p-2 font-sans font-medium capitalize">
+                      {row.label}
+                      {i === 0 && (
+                        <Badge variant="secondary" className="ml-2 font-mono text-[9px]">
+                          Top 1
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="p-2 text-right">{row.logit.toFixed(3)}</td>
+                    <td className="p-2 text-right">{row.exp.toFixed(4)}</td>
+                    <td className="p-2 text-center text-muted-foreground">{row.fraction}</td>
+                    <td className="p-2 text-right font-semibold">
+                      {(row.probability * 100).toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border/80 bg-muted/40 font-semibold">
+                  <td className="p-2 font-sans">Total ({numClasses} classes)</td>
+                  <td className="p-2 text-right text-muted-foreground">—</td>
+                  <td className="p-2 text-right text-primary">{sumExp.toFixed(4)}</td>
+                  <td className="p-2 text-center text-muted-foreground">Σ exp / Σ exp = 1.0</td>
+                  <td className="p-2 text-right text-primary">100.0%</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
   const meta = extraction.executionMeta;
   const polarityConf =
@@ -971,12 +1178,19 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Phase 3 · Information Extraction (Module 3)</CardTitle>
-        <CardDescription>
-          Real DistilXLM-R (PID-ABSA) inference on the cleaned text.
-        </CardDescription>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle>Phase 3 · Information Extraction (Module 3)</CardTitle>
+            <CardDescription>
+              Real DistilXLM-R (PID-ABSA) inference on the cleaned text.
+            </CardDescription>
+          </div>
+          <Badge variant="outline" className="w-fit font-mono text-xs">
+            Multi-Task Dual-Head Architecture
+          </Badge>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-6">
         {/* Execution telemetry */}
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="font-mono">
@@ -988,9 +1202,6 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
           <Badge variant="outline" className="font-mono">
             seq_len {meta.sequenceLength}
           </Badge>
-          <Badge variant="outline" className="font-mono">
-            {meta.latencyMs.toFixed(1)} ms
-          </Badge>
         </div>
 
         {/* Encoder internals — Phase 3 internal computation workbench */}
@@ -999,15 +1210,35 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
           <EncoderInternalsWorkbench extraction={extraction} />
         </div>
 
-        {/* Top-5 issue probability distribution */}
-        <div className="space-y-2">
-          <Label>Top-5 predicted issues (softmax probability)</Label>
+        <Separator />
+
+        {/* Head A: Issue Classification */}
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="font-mono text-xs">
+                  Head A
+                </Badge>
+                <span className="font-semibold text-sm">Pedagogical Issue Classifier</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                15-class linear projection from pooled sentence vector → Softmax → Top-1 threshold
+                gating.
+              </p>
+            </div>
+            <Badge variant="outline" className="font-mono text-xs">
+              15 Issue Categories
+            </Badge>
+          </div>
+
+          {/* Top-5 issue probability distribution */}
           <div className="rounded-md border border-border bg-muted/40 p-4">
             <div className="mb-2 flex items-center gap-2 text-[11px] text-muted-foreground">
               <span className="inline-block h-3 w-px bg-foreground/60" />
               <span>
-                Fallback threshold {(extraction.confidenceThreshold * 100).toFixed(1)}% — a top-1
-                probability below this routes to Uncategorized
+                Confidence fallback cutoff: {(extraction.confidenceThreshold * 100).toFixed(1)}% —
+                predictions below this gate to Uncategorized to reject low-certainty noise.
               </span>
             </div>
             <div className="space-y-2">
@@ -1025,77 +1256,130 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Confidence threshold decision */}
-        <div className="space-y-2">
-          {extraction.routedDueToLowConfidence ? (
-            <Alert variant="destructive" className="[&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Low Confidence Fallback</AlertTitle>
-              <AlertDescription>
-                Top confidence{" "}
-                <span className="font-mono font-semibold">
-                  {(extraction.rawConfidence * 100).toFixed(1)}%
-                </span>{" "}
-                &lt;{" "}
-                <span className="font-mono font-semibold">
-                  {(extraction.confidenceThreshold * 100).toFixed(1)}%
-                </span>{" "}
-                Threshold → Routed to <span className="font-semibold">Uncategorized</span> (Raw
-                model candidate: <span className="font-mono">{extraction.rawIssue}</span> at{" "}
-                <span className="font-mono">{(extraction.rawConfidence * 100).toFixed(1)}%</span>)
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <Alert className="border-emerald-500/40 bg-emerald-500/5 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <AlertTitle>Confidence Threshold Passed</AlertTitle>
-              <AlertDescription>
-                Confidence{" "}
-                <span className="font-mono font-semibold">
-                  {(extraction.confidence * 100).toFixed(1)}%
-                </span>{" "}
-                ≥{" "}
-                <span className="font-mono font-semibold">
-                  {(extraction.confidenceThreshold * 100).toFixed(1)}%
-                </span>{" "}
-                Threshold → Retained predicted category:{" "}
-                <span className="font-semibold">{extraction.issue}</span>
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
+          {/* Softmax arithmetic breakdown inspector */}
+          <SoftmaxMathInspector
+            topKIssues={extraction.topKIssues}
+            issueLogitsRaw={extraction.issueLogitsRaw}
+            polarityDistribution={extraction.polarityDistribution}
+            polarityLogitsRaw={extraction.polarityLogitsRaw}
+          />
 
-        {/* Polarity distribution */}
-        <div className="space-y-2">
-          <Label>Polarity distribution</Label>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {extraction.polarityDistribution.map((entry) => (
-              <div key={entry.label} className="rounded-md border border-border bg-muted/20 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium capitalize">{entry.label}</span>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {(entry.probability * 100).toFixed(1)}%
-                  </span>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded bg-muted">
-                  <div
-                    className="h-full rounded bg-primary/70 transition-all"
-                    style={{ width: `${entry.probability * 100}%` }}
-                  />
-                </div>
-                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-                  logit {entry.logit.toFixed(3)}
-                </p>
-              </div>
-            ))}
+          {/* Confidence threshold decision */}
+          <div className="space-y-2">
+            {extraction.routedDueToLowConfidence ? (
+              <Alert variant="destructive" className="[&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Low Confidence Fallback Triggered</AlertTitle>
+                <AlertDescription className="space-y-1">
+                  <div>
+                    Top model candidate{" "}
+                    <span className="font-mono font-semibold">{extraction.rawIssue}</span> (
+                    <span className="font-mono font-semibold">
+                      {(extraction.rawConfidence * 100).toFixed(1)}%
+                    </span>
+                    ) &lt;{" "}
+                    <span className="font-mono font-semibold">
+                      {(extraction.confidenceThreshold * 100).toFixed(1)}%
+                    </span>{" "}
+                    cutoff.
+                  </div>
+                  <div className="text-xs opacity-90">
+                    → Gated to <span className="font-semibold">Uncategorized</span>. Downstream
+                    Module 4 (Pedagogical Mapping) and Module 5 (Priority Scoring) are safely
+                    bypassed.
+                  </div>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert className="border-emerald-500/40 bg-emerald-500/5 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <AlertTitle>Confidence Threshold Passed</AlertTitle>
+                <AlertDescription className="space-y-1">
+                  <div>
+                    Predicted category:{" "}
+                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                      {extraction.issue}
+                    </span>{" "}
+                    with confidence{" "}
+                    <span className="font-mono font-semibold">
+                      {(extraction.confidence * 100).toFixed(1)}%
+                    </span>{" "}
+                    ≥ {(extraction.confidenceThreshold * 100).toFixed(1)}% cutoff.
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    → Qualified candidate forwarded to Phase 4 (Pedagogical Mapping: TTI, RBT, CLT).
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         </div>
 
-        {/* Extracted classification results */}
+        <Separator />
+
+        {/* Head B: Polarity Classification */}
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="font-mono text-xs">
+                  Head B
+                </Badge>
+                <span className="font-semibold text-sm">Sentiment Polarity Classifier</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                3-class linear projection from pooled sentence vector → Softmax (Positive, Negative,
+                Neutral).
+              </p>
+            </div>
+            <Badge variant="outline" className="font-mono text-xs">
+              3 Polarity Classes
+            </Badge>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {extraction.polarityDistribution.map((entry) => {
+              const isSelected = entry.label.toLowerCase() === extraction.polarity.toLowerCase();
+              return (
+                <div
+                  key={entry.label}
+                  className={cn(
+                    "rounded-md border p-3 transition-all",
+                    isSelected
+                      ? "border-primary/50 bg-primary/5 ring-1 ring-primary/30"
+                      : "border-border bg-muted/20",
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold capitalize">{entry.label}</span>
+                    <span className="font-mono text-xs font-medium">
+                      {(entry.probability * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded bg-muted">
+                    <div
+                      className={cn(
+                        "h-full rounded transition-all",
+                        isSelected ? "bg-primary" : "bg-primary/40",
+                      )}
+                      style={{ width: `${entry.probability * 100}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                    logit {entry.logit.toFixed(3)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Extracted classification results summary */}
         <div className="space-y-2">
-          <Label>Extracted classification results</Label>
+          <Label>Final Module 3 Extraction Tuple</Label>
           <div className="grid gap-4 sm:grid-cols-3">
             <Stat
               label="Extracted Issue"
@@ -1103,7 +1387,7 @@ function StepExtraction({ extraction }: { extraction: ExtractionResult }) {
               subvalue={`${(extraction.confidence * 100).toFixed(1)}%`}
             />
             <Stat
-              label="Polarity"
+              label="Extracted Polarity"
               value={extraction.polarity}
               subvalue={`${(polarityConf * 100).toFixed(1)}%`}
             />
@@ -1138,7 +1422,7 @@ function ProbabilityBar({
       <span className="w-5 shrink-0 text-right font-mono text-xs text-muted-foreground">
         {rank}
       </span>
-      <span className="w-40 shrink-0 truncate text-xs font-medium">{label}</span>
+      <span className="w-44 shrink-0 truncate text-xs font-medium">{label}</span>
       <div className="relative h-5 flex-1 overflow-hidden rounded bg-muted">
         <div
           className={cn(

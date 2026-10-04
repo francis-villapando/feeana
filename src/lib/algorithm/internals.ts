@@ -27,8 +27,8 @@ export interface ModelInternals {
   hiddenStates: Float32Array;
   /** Mean-pooled sentence vector: [HIDDEN_SIZE]. */
   pooled: Float32Array;
-  /** Mean L2 norm of each hidden state (layer 0 embeddings … layer 12). */
-  layerL2: number[];
+  /** Element RMS of each hidden state (layer 0 embeddings … layer 12). */
+  layerRms: number[];
   /** Cosine similarity between consecutive layer outputs (layer l-1 vs l). */
   layerCosine: number[];
   /** Mean attention entropy per layer/head: flat [NUM_LAYERS, NUM_HEADS]. */
@@ -113,8 +113,11 @@ export function sliceHiddenStates(
   return out;
 }
 
-/** Mean L2 norm of each layer's active-token hidden state. */
-export function layerL2Norms(
+/**
+ * Root-mean-square of every hidden-state element per layer — an activation scale,
+ * not a mean token L2 norm. `tokenLayerL2Norms` computes true per-token L2 norms.
+ */
+export function layerElementRms(
   hidden: Float32Array,
   active: number,
   layers: number = NUM_LAYERS + 1,
@@ -139,7 +142,7 @@ export function layerL2Norms(
  * active tokens. Length is `layers - 1`; values near 1 mean the representation
  * barely moved between layers.
  */
-export function layerCosineDrift(
+export function layerCosineSimilarity(
   hidden: Float32Array,
   active: number,
   layers: number = NUM_LAYERS + 1,
@@ -216,8 +219,8 @@ export function buildModelInternals(
     attention,
     hiddenStates,
     pooled: raw.pooled,
-    layerL2: layerL2Norms(hiddenStates, active),
-    layerCosine: layerCosineDrift(hiddenStates, active),
+    layerRms: layerElementRms(hiddenStates, active),
+    layerCosine: layerCosineSimilarity(hiddenStates, active),
     headEntropy: headAttentionEntropy(attention, active),
     headWeights,
   };
@@ -275,6 +278,24 @@ export function getHiddenStateLayer(internals: ModelInternals, layer: number): F
   const layerSize = internals.activeTokens * HIDDEN_SIZE;
   const base = layer * layerSize;
   return internals.hiddenStates.slice(base, base + layerSize);
+}
+
+/**
+ * Token-mean of one hidden-state layer: the single [HIDDEN_SIZE] vector that
+ * summarises that layer across active tokens. Only NUM_LAYERS matches the
+ * model's `pooled_output`; earlier layers have no counterpart in the forward pass.
+ */
+export function layerMeanVector(internals: ModelInternals, layer: number): Float32Array {
+  const { hiddenStates, activeTokens } = internals;
+  const mean = new Float32Array(HIDDEN_SIZE);
+  if (activeTokens === 0) return mean;
+  const base = layer * activeTokens * HIDDEN_SIZE;
+  for (let t = 0; t < activeTokens; t++) {
+    const offset = base + t * HIDDEN_SIZE;
+    for (let d = 0; d < HIDDEN_SIZE; d++) mean[d] += hiddenStates[offset + d];
+  }
+  for (let d = 0; d < HIDDEN_SIZE; d++) mean[d] /= activeTokens;
+  return mean;
 }
 
 /** L2 norm of a single token's representation at every layer (length L+1). */
