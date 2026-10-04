@@ -124,8 +124,11 @@ export async function createTutorialTrendSessions({
 
   const nowIso = new Date().toISOString();
 
-  // Clean up any previously generated trend sessions for this class (idempotent)
-  await supabase.from("sessions").delete().eq("class_id", classId).neq("id", baseSession.id);
+  const { error: cleanupError } = await supabase.rpc("delete_tutorial_trend_sessions", {
+    p_class_id: classId,
+    p_base_session_id: baseSession.id,
+  });
+  if (cleanupError) throw new Error(cleanupError.message);
 
   const { data: sessions, error: sessionError } = await supabase
     .from("sessions")
