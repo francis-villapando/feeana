@@ -10,7 +10,9 @@ import {
   AnalysisTriggerModal,
   SessionFeedbackModal,
   BulkFeedbackImportModal,
+  UncategorizedReviewModal,
 } from "@/components/analysis";
+import type { UncategorizedReviewItem } from "@/components/analysis";
 import { KpiCardSkeleton, ChartCardSkeleton } from "@/components/skeletons";
 import { cn, friendlyError } from "@/lib/hooks/utils";
 import {
@@ -25,7 +27,11 @@ import {
   WarningsCard,
 } from "@/components/faculty/charts";
 import type { ChartId, FeedbackOpenState } from "@/components/faculty/charts";
-import { runAnalysisPipeline, fetchComputedResult } from "@/lib/algorithm/pipeline";
+import {
+  runAnalysisPipeline,
+  fetchComputedResult,
+  recomputeAnalysisResult,
+} from "@/lib/algorithm/pipeline";
 import type { DiagnosticRecord } from "@/lib/algorithm/types";
 import { useFeedbackStore } from "@/lib/stores/feedbackStore";
 import { useClassStore } from "@/lib/stores/classStore";
@@ -101,6 +107,8 @@ function AnalysisPage() {
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [feedbackModalState, setFeedbackModalState] = useState<{
     isOpen: boolean;
     categoryFilter: { title: string; feedbackTexts?: string[] } | null;
@@ -275,6 +283,9 @@ function AnalysisPage() {
           await refreshSessions(classId);
         }
         toast.success("Analysis complete");
+        if (!tutorialActive && (data.diagnostics ?? []).some((d) => d.issue === "Uncategorized")) {
+          setReviewOpen(true);
+        }
       }
     } catch (err) {
       if (!isCancelledRef.current) {
@@ -286,6 +297,23 @@ function AnalysisPage() {
       }
     }
   };
+
+  const handleApplyReview = async (overrides: Record<string, string>) => {
+    setReviewSubmitting(true);
+    try {
+      const updated = await recomputeAnalysisResult(sessionId, overrides);
+      setResult(updated);
+      setAnalysisResult(sessionId, updated);
+      setReviewOpen(false);
+      toast.success("Classifications applied to the analysis.");
+    } catch (err) {
+      toast.error(friendlyError(err, "Couldn't apply classifications."));
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const handleSkipReview = () => setReviewOpen(false);
 
   // Tour bridges.
   // step-analysis-import-btn: user clicks the import button → bulkImportOpen becomes true → advance.
@@ -353,6 +381,17 @@ function AnalysisPage() {
     }
     return map;
   }, [result]);
+
+  // Uncategorized responses awaiting manual review, paired with their raw text.
+  const uncategorizedItems: UncategorizedReviewItem[] = useMemo(() => {
+    const feedbackById = new Map(feedback.map((f) => [f.id, f]));
+    return (result?.diagnostics ?? [])
+      .filter((d) => d.issue === "Uncategorized" && d.feedbackId)
+      .map((d) => ({
+        feedbackId: d.feedbackId as string,
+        rawText: feedbackById.get(d.feedbackId as string)?.rawText ?? "",
+      }));
+  }, [result, feedback]);
 
   if (!session) return null;
 
@@ -513,6 +552,14 @@ function AnalysisPage() {
         sessionFeedback={sessionFeedback}
         categoryFilter={feedbackModalState.categoryFilter}
         diagnosticsByFeedbackId={diagnosticsByFeedbackId}
+      />
+
+      <UncategorizedReviewModal
+        isOpen={reviewOpen}
+        items={uncategorizedItems}
+        onSubmit={handleApplyReview}
+        onSkip={handleSkipReview}
+        submitting={reviewSubmitting}
       />
 
       <BulkFeedbackImportModal

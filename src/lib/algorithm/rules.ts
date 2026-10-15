@@ -40,6 +40,11 @@ export function resolveIssueLabel(issue: string): string {
   return ISSUE_RULES[issue.toLowerCase()] ?? issue;
 }
 
+/** The 14 named issue tags in canonical display form, excluding the Uncategorized fallback. */
+export const NAMED_ISSUES: string[] = Array.from(new Set(Object.values(ISSUE_RULES))).filter(
+  (label) => label !== "Uncategorized",
+);
+
 export const TTI_RULES: Record<string, string> = {
   "relational coldness": "Positive Climate",
   "distant teacher": "Positive Climate",
