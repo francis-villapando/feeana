@@ -9,7 +9,7 @@ import type {
   RecommendationTerm,
   Theory,
 } from "../types/types";
-import { ISSUE_RULES, RBT_LEVELS } from "./rules";
+import { ISSUE_RULES, RBT_LEVELS, resolveIssueLabel } from "./rules";
 
 const BLOOM_LEVEL_MAP: Record<string, number> = {
   Remember: 1,
@@ -48,7 +48,7 @@ export function buildIloGapItems(diagnostics: DiagnosticRecord[], ilos: IloLike[
         .map((ilo) => ({
           iloId: ilo.id,
           expected: ilo.statement,
-          actual: `Issue: "${diagnostic.issue}" (CLT: ${diagnostic.clt}, RBT: Level ${diagnostic.rbt})`,
+          actual: `Issue: "${resolveIssueLabel(diagnostic.issue)}" (CLT: ${diagnostic.clt}, RBT: Level ${diagnostic.rbt})`,
           severity: "medium" as const,
           feedbackId: diagnostic.feedbackId,
         }));
@@ -88,8 +88,14 @@ export function buildAnalysisResult(input: AnalysisResultInput): AnalysisResult 
     .map(([label, value]) => ({ label, value }) as DistEntry)
     .sort((a, b) => b.value - a.value);
 
-  const issueDist: DistEntry[] = Object.entries(stats.issueCounts)
-    .map(([key, value]) => ({ label: ISSUE_RULES[key.toLowerCase()] ?? key, value }) as DistEntry)
+  const issueCountsAggregated: Record<string, number> = {};
+  for (const [key, value] of Object.entries(stats.issueCounts)) {
+    const label = resolveIssueLabel(key);
+    issueCountsAggregated[label] = (issueCountsAggregated[label] ?? 0) + value;
+  }
+
+  const issueDist: DistEntry[] = Object.entries(issueCountsAggregated)
+    .map(([label, value]) => ({ label, value }) as DistEntry)
     .sort((a, b) => b.value - a.value);
 
   const polarityDist: DistEntry[] = [
@@ -128,7 +134,7 @@ export function buildAnalysisResult(input: AnalysisResultInput): AnalysisResult 
     aspectList.push(text);
     aspectToTexts.set(diag.tti, aspectList);
 
-    const issueLabel = ISSUE_RULES[diag.issue.toLowerCase()] ?? diag.issue;
+    const issueLabel = resolveIssueLabel(diag.issue);
     const issueList = issueToTexts.get(issueLabel) ?? [];
     issueList.push(text);
     issueToTexts.set(issueLabel, issueList);

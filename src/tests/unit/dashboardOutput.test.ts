@@ -204,4 +204,22 @@ describe("buildAnalysisResult", () => {
     expect(result.diagnostics).toEqual([]);
     expect(result.aspectDist.every((entry) => entry.feedbackTexts === undefined)).toBe(true);
   });
+
+  it("maps internal issue keys to new taxonomy tags in issueDist", () => {
+    const customStats: StrategyStats = {
+      ...stats,
+      issueCounts: {
+        "relational coldness": 3,
+        "abstract logic gap": 2,
+        "notation struggle": 1,
+      },
+    };
+    const result = buildAnalysisResult({
+      ...base,
+      stats: customStats,
+    });
+
+    const labels = result.issueDist.map((entry) => entry.label);
+    expect(labels).toEqual(["Distant Teacher", "Breaking Down Ideas", "Symbols and Syntax"]);
+  });
 });

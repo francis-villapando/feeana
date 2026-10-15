@@ -69,4 +69,46 @@ describe("buildDiagnosticRecord", () => {
       isGap: false,
     });
   });
+
+  it("maps new taxonomy tags to their respective TTI, RBT, and CLT dimensions", () => {
+    const teacher = buildDiagnosticRecord("Distant Teacher", "neg", 3, "fb-new-1");
+    expect(teacher).toMatchObject({
+      tti: "Positive Climate",
+      rbt: 1,
+      clt: "Extraneous",
+      isGap: false,
+    });
+
+    const unfair = buildDiagnosticRecord("Unfair Treatment", "neg", 5, "fb-new-2");
+    expect(unfair).toMatchObject({
+      tti: "Teacher Sensitivity",
+      rbt: 5,
+      clt: "Extraneous",
+      isGap: false,
+    });
+
+    const ideas = buildDiagnosticRecord("Breaking Down Ideas", "neg", 4, "fb-new-3");
+    expect(ideas).toMatchObject({
+      tti: "Concept Development",
+      rbt: 4,
+      clt: "Intrinsic",
+      isGap: true,
+    });
+
+    const steps = buildDiagnosticRecord("Using Learned Steps", "neg", 3, "fb-new-4");
+    expect(steps).toMatchObject({
+      tti: "Concept Development",
+      rbt: 3,
+      clt: "Intrinsic",
+      isGap: true,
+    });
+
+    const syntax = buildDiagnosticRecord("Symbols and Syntax", "neg", 2, "fb-new-5");
+    expect(syntax).toMatchObject({
+      tti: "Language Modeling",
+      rbt: 1,
+      clt: "Intrinsic",
+      isGap: true,
+    });
+  });
 });

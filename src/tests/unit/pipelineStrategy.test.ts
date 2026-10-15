@@ -304,4 +304,35 @@ describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommo
     expect(recommendationList.length).toBe(0);
     expect(warningList.length).toBe(0);
   });
+
+  it("formats cue with updated issue tag, definition, and recommendation", () => {
+    const cue = GeneratePedagogicalCue(
+      mockContext,
+      {
+        issue: "relational coldness",
+        tti: "Positive Climate",
+        rbt: 1,
+        clt: "Extraneous",
+        polarity: "neg",
+        isGap: false,
+        count: 4,
+      },
+      10,
+      1.0,
+      "primary",
+    );
+
+    expect(cue.paragraph).toContain(
+      "experiencing Distant Teacher under the positive climate aspect",
+    );
+    expect(cue.paragraph).toContain(
+      "It is recommended to set up places where students can talk and connect, such as open forums, and to use friendly, positive words so the class feels welcome.",
+    );
+
+    const issueTerm = cue.terms.find((t) => t.kind === "issue");
+    expect(issueTerm?.text).toBe("Distant Teacher");
+    expect(issueTerm?.detail).toBe(
+      "Students feel the teacher does not connect with them. They see little warmth or respect between the teacher and the class.",
+    );
+  });
 });

@@ -1,10 +1,10 @@
-// Module 5: Strategy Generation
-// Computes distributions, prioritizes issues, and generates pedagogical cues or warnings.
+// Module 5: Strategy Generation — computes distributions, prioritizes issues, and generates pedagogical cues.
 
 import {
   CLT_DESCRIPTIONS,
   ISSUE_DESCRIPTIONS,
   ISSUE_RECOMMENDATIONS,
+  ISSUE_RULES,
   RBT_DESCRIPTIONS,
   RBT_LEVELS,
   TTI_DESCRIPTIONS,
@@ -133,17 +133,19 @@ export function GeneratePedagogicalCue(
   const rbtLower = rbtName.toLowerCase();
   const cltLower = uniqueIssue.clt.toLowerCase();
   const ttiLower = uniqueIssue.tti.toLowerCase();
+  const displayIssue = ISSUE_RULES[uniqueIssue.issue.toLowerCase()] ?? uniqueIssue.issue;
   const recommendationSentence =
     ISSUE_RECOMMENDATIONS[uniqueIssue.issue] ??
-    `Thus, "recommendation cue for ${uniqueIssue.issue}."`;
+    ISSUE_RECOMMENDATIONS[displayIssue] ??
+    `Thus, "recommendation cue for ${displayIssue}."`;
 
   const scopedIlos = scopeIloItems(sessionContext, uniqueIssue.rbt);
   const goalStatement = scopedIlos.map((i) => i.text).join(" — ");
   const goalNoun = scopedIlos.length > 1 ? "goals" : "goal";
 
   const paragraph = uniqueIssue.isGap
-    ? `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the ${goalNoun}: ${goalStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
-    : `A total of ${percentageStr} of the class is experiencing ${uniqueIssue.issue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
+    ? `A total of ${percentageStr} of the class is experiencing ${displayIssue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the ${goalNoun}: ${goalStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
+    : `A total of ${percentageStr} of the class is experiencing ${displayIssue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
 
   const prevalenceDetail = uniqueIssue.isGap
     ? `${uniqueIssue.count} out of ${totalFeedback} responses — boosted from ${rawPctStr} due to ILO gap`
@@ -156,9 +158,10 @@ export function GeneratePedagogicalCue(
       detail: prevalenceDetail,
     },
     {
-      text: uniqueIssue.issue,
+      text: displayIssue,
       kind: "issue",
-      detail: ISSUE_DESCRIPTIONS[uniqueIssue.issue] ?? uniqueIssue.issue,
+      detail:
+        ISSUE_DESCRIPTIONS[displayIssue] ?? ISSUE_DESCRIPTIONS[uniqueIssue.issue] ?? displayIssue,
     },
     {
       text: sessionContext.topic,

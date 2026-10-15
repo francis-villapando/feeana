@@ -39,22 +39,36 @@ export const ASPECT_COLOR_ORDER: [label: string, color: string][] = [
 
 export const ISSUE_COLOR_ORDER: [label: string, color: string][] = [
   // Intrinsic — Instructional Support
+  ["Symbols and Syntax", "var(--color-chart-1)"],
+  ["Concept Confusion", "var(--color-chart-2)"],
+  ["Using Learned Steps", "var(--color-chart-3)"],
+  ["Breaking Down Ideas", "var(--color-chart-4)"],
+  ["Creating Own Work", "var(--color-chart-5)"],
+  // Extraneous — Emotional Support
+  ["Distant Teacher", "var(--color-chart-6)"],
+  ["Unfair Treatment", "var(--color-chart-7)"],
+  ["Feeling Ignored", "var(--color-chart-8)"],
+  ["Irrelevant Topic", "var(--color-chart-9)"],
+  ["Classroom Tension", "var(--color-chart-10)"],
+  // Extraneous — Classroom Organization
+  ["Unclear Lessons", "var(--color-chart-11)"],
+  ["Classmate Distraction", "var(--color-chart-12)"],
+  ["Lesson Pace", "var(--color-chart-13)"],
+  // Extraneous — Instructional Support
+  ["Slow or Poor Feedback", "var(--color-chart-14)"],
+  // Legacy aliases for backward compatibility
   ["Notation Struggle", "var(--color-chart-1)"],
   ["Conceptual Misalignment", "var(--color-chart-2)"],
   ["Procedural Bottleneck", "var(--color-chart-3)"],
   ["Abstract Logic Gap", "var(--color-chart-4)"],
   ["Design Synthesis Failure", "var(--color-chart-5)"],
-  // Extraneous — Emotional Support
   ["Relational Coldness", "var(--color-chart-6)"],
   ["Evaluation Unfairness", "var(--color-chart-7)"],
   ["Perceived Marginalization", "var(--color-chart-8)"],
   ["Subject Alienation", "var(--color-chart-9)"],
-  ["Classroom Tension", "var(--color-chart-10)"],
-  // Extraneous — Classroom Organization
   ["Clarity Deficit", "var(--color-chart-11)"],
   ["Peer Distraction", "var(--color-chart-12)"],
   ["Instructional Cadence", "var(--color-chart-13)"],
-  // Extraneous — Instructional Support
   ["Feedback Latency", "var(--color-chart-14)"],
   ["Uncategorized", "var(--color-muted-foreground)"],
 ];

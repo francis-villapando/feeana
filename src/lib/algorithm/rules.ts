@@ -1,97 +1,199 @@
-// Pedagogical rule tables shared by Modules 4-6 (rules_version = "1.3")
+// Pedagogical rule tables shared by Modules 4-6 (rules_version = "1.4")
 
 import type { CltCategory } from "./types";
 
-export const RULES_VERSION = "1.3";
+export const RULES_VERSION = "1.4";
+
+export const ISSUE_RULES: Record<string, string> = {
+  "relational coldness": "Distant Teacher",
+  "classroom tension": "Classroom Tension",
+  "evaluation unfairness": "Unfair Treatment",
+  "perceived marginalization": "Feeling Ignored",
+  "subject alienation": "Irrelevant Topic",
+  "peer distraction": "Classmate Distraction",
+  "instructional cadence": "Lesson Pace",
+  "clarity deficit": "Unclear Lessons",
+  "abstract logic gap": "Breaking Down Ideas",
+  "procedural bottleneck": "Using Learned Steps",
+  "conceptual misalignment": "Concept Confusion",
+  "design synthesis failure": "Creating Own Work",
+  "feedback latency": "Slow or Poor Feedback",
+  "notation struggle": "Symbols and Syntax",
+  "distant teacher": "Distant Teacher",
+  "unfair treatment": "Unfair Treatment",
+  "feeling ignored": "Feeling Ignored",
+  "irrelevant topic": "Irrelevant Topic",
+  "classmate distraction": "Classmate Distraction",
+  "lesson pace": "Lesson Pace",
+  "unclear lessons": "Unclear Lessons",
+  "breaking down ideas": "Breaking Down Ideas",
+  "using learned steps": "Using Learned Steps",
+  "concept confusion": "Concept Confusion",
+  "creating own work": "Creating Own Work",
+  "slow or poor feedback": "Slow or Poor Feedback",
+  "symbols and syntax": "Symbols and Syntax",
+  uncategorized: "Uncategorized",
+};
+
+/** Resolves any raw model key or legacy display name to the current issue tag. */
+export function resolveIssueLabel(issue: string): string {
+  return ISSUE_RULES[issue.toLowerCase()] ?? issue;
+}
 
 export const TTI_RULES: Record<string, string> = {
   "relational coldness": "Positive Climate",
+  "distant teacher": "Positive Climate",
   "classroom tension": "Negative Climate",
   "evaluation unfairness": "Teacher Sensitivity",
+  "unfair treatment": "Teacher Sensitivity",
   "perceived marginalization": "Regard for Student Perspectives",
+  "feeling ignored": "Regard for Student Perspectives",
   "subject alienation": "Regard for Student Perspectives",
+  "irrelevant topic": "Regard for Student Perspectives",
   "peer distraction": "Behavior Management",
+  "classmate distraction": "Behavior Management",
   "instructional cadence": "Productivity",
+  "lesson pace": "Productivity",
   "clarity deficit": "Instructional Learning Formats",
+  "unclear lessons": "Instructional Learning Formats",
   "abstract logic gap": "Concept Development",
+  "breaking down ideas": "Concept Development",
   "procedural bottleneck": "Concept Development",
+  "using learned steps": "Concept Development",
   "conceptual misalignment": "Concept Development",
+  "concept confusion": "Concept Development",
   "design synthesis failure": "Concept Development",
+  "creating own work": "Concept Development",
   "feedback latency": "Quality of Feedback",
+  "slow or poor feedback": "Quality of Feedback",
   "notation struggle": "Language Modeling",
+  "symbols and syntax": "Language Modeling",
   uncategorized: "Uncategorized",
 };
 
 export const RBT_RULES: Record<string, number> = {
   "relational coldness": 1,
+  "distant teacher": 1,
   "classroom tension": 1,
   "evaluation unfairness": 5,
+  "unfair treatment": 5,
   "perceived marginalization": 1,
+  "feeling ignored": 1,
   "subject alienation": 1,
+  "irrelevant topic": 1,
   "peer distraction": 1,
+  "classmate distraction": 1,
   "instructional cadence": 2,
+  "lesson pace": 2,
   "clarity deficit": 2,
+  "unclear lessons": 2,
   "abstract logic gap": 4,
+  "breaking down ideas": 4,
   "procedural bottleneck": 3,
+  "using learned steps": 3,
   "conceptual misalignment": 2,
+  "concept confusion": 2,
   "design synthesis failure": 6,
+  "creating own work": 6,
   "feedback latency": 2,
+  "slow or poor feedback": 2,
   "notation struggle": 1,
+  "symbols and syntax": 1,
   uncategorized: 1,
-};
-
-export const ISSUE_RULES: Record<string, string> = {
-  "relational coldness": "Relational Coldness",
-  "classroom tension": "Classroom Tension",
-  "evaluation unfairness": "Evaluation Unfairness",
-  "perceived marginalization": "Perceived Marginalization",
-  "subject alienation": "Subject Alienation",
-  "peer distraction": "Peer Distraction",
-  "instructional cadence": "Instructional Cadence",
-  "clarity deficit": "Clarity Deficit",
-  "abstract logic gap": "Abstract Logic Gap",
-  "procedural bottleneck": "Procedural Bottleneck",
-  "conceptual misalignment": "Conceptual Misalignment",
-  "design synthesis failure": "Design Synthesis Failure",
-  "feedback latency": "Feedback Latency",
-  "notation struggle": "Notation Struggle",
-  uncategorized: "Uncategorized",
 };
 
 export const CLT_RULES: Record<string, CltCategory> = {
   "relational coldness": "Extraneous",
+  "distant teacher": "Extraneous",
   "classroom tension": "Extraneous",
   "evaluation unfairness": "Extraneous",
+  "unfair treatment": "Extraneous",
   "perceived marginalization": "Extraneous",
+  "feeling ignored": "Extraneous",
   "subject alienation": "Extraneous",
+  "irrelevant topic": "Extraneous",
   "peer distraction": "Extraneous",
+  "classmate distraction": "Extraneous",
   "instructional cadence": "Extraneous",
+  "lesson pace": "Extraneous",
   "clarity deficit": "Extraneous",
+  "unclear lessons": "Extraneous",
   "abstract logic gap": "Intrinsic",
+  "breaking down ideas": "Intrinsic",
   "procedural bottleneck": "Intrinsic",
+  "using learned steps": "Intrinsic",
   "conceptual misalignment": "Intrinsic",
+  "concept confusion": "Intrinsic",
   "design synthesis failure": "Intrinsic",
+  "creating own work": "Intrinsic",
   "feedback latency": "Extraneous",
+  "slow or poor feedback": "Extraneous",
   "notation struggle": "Intrinsic",
+  "symbols and syntax": "Intrinsic",
   uncategorized: "Extraneous",
 };
 
+const BASE_RECOMMENDATIONS: Record<string, string> = {
+  "relational coldness":
+    "It is recommended to set up places where students can talk and connect, such as open forums, and to use friendly, positive words so the class feels welcome.",
+  "classroom tension":
+    "It is recommended to calm the class by giving reminders about behavior or stopping aggressive exchanges, and to use polite, calm words to ease students’ frustration.",
+  "evaluation unfairness":
+    "It is recommended to share all grading criteria and rubrics before a task starts, so expectations are clear and grading is seen as fair.",
+  "perceived marginalization":
+    "It is recommended to let students help lead the class, such as with student-led discussion questions and forums, so they have more say and their different views are valued.",
+  "subject alienation":
+    "It is recommended to start with a short overview of the lesson and use real-life examples to link new topics to what students already know.",
+  "peer distraction":
+    "It is recommended to set clear class rules and apply them consistently, and to use interesting activities to bring students’ attention back to their studies.",
+  "instructional cadence":
+    "It is recommended to keep a steady lesson routine and have a second plan for switching between topics, to avoid wasted time and match the pace to how fast students can follow.",
+  "clarity deficit":
+    "It is recommended to put related materials in one place and use visual cues, such as colored highlights or arrows, to point students to the main learning goals.",
+  "abstract logic gap":
+    "It is recommended to teach hard ideas a little at a time, using step-by-step support that helps students move from basic understanding to deeper analysis.",
+  "procedural bottleneck":
+    "It is recommended to give a complete worked example with every step shown, so students can study and copy it before solving the problem on their own.",
+  "conceptual misalignment":
+    "It is recommended to give half-finished problems that students must complete, so they can check their understanding and match it with the key concepts.",
+  "design synthesis failure":
+    "It is recommended to slowly reduce the help you give, step by step, so students build the understanding they need to create original designs on their own.",
+  "feedback latency":
+    "It is recommended to give quick, specific feedback that responds to what the student did, to keep students working and to make sure the guidance still fits what they are learning.",
+  "notation struggle":
+    "It is recommended to use different fonts, colors or shading to highlight the important syntax and symbols.",
+  uncategorized: "There is no intervention needed for uncategorized issues in feedback.",
+};
+
 export const ISSUE_RECOMMENDATIONS: Record<string, string> = {
-  "relational coldness": `It is recommended to establish social contact venues, such as dedicated open forums, to project social presence and warmth through positive communication markers. `,
-  "classroom tension": `It is recommended to manage digital/personal discourse by issuing behavioral reminders or stopping aggressive interactions, while utilizing non-confrontational language to de-escalate student frustration.`,
-  "evaluation unfairness": `It is recommended to explicitly specify all assessment criteria and rubrics before tasks begin to establish transparent expectations and ensure perceived equity in grading.`,
-  "perceived marginalization": `It is recommended to adopt participatory pedagogies by incorporating student-led discussion prompts and forums that prioritize learner autonomy and value diverse student perspectives.`,
-  "subject alienation": `It is recommended to utilize advanced organizers and real-world examples to explicitly tie new session topics to the students' background knowledge and existing mental schemas.`,
-  "peer distraction": `It is recommended to establish clear, consistent behavioral rules and use engaging learning formats to redirect student attention away from distractions and toward academic goals.`,
-  "instructional cadence": `It is recommended to regulate the instructional tempo by establishing consistent routines and a secondary transition plan to minimize downtime and align delivery with student processing speeds.`,
-  "clarity deficit": `It is recommended to integrate disparate information sources into a single location and use visual cues, such as color-coordinated highlights or arrows, to point toward essential learning objectives.`,
-  "abstract logic gap": `It is recommended to introduce complex logical concepts piece-by-piece using a sequential scaffold that bridges the gap between basic understanding and higher-order analysis.`,
-  "procedural bottleneck": `It is recommended to provide a complete worked-out example with every step clearly shown for students to study and replicate before they attempt to solve the procedure independently.`,
-  "conceptual misalignment": `It is recommended to provide completion problems that require students to finish a partially completed activity to verify their interpretation and align their understanding with key disciplinary concepts.`,
-  "design synthesis failure": `It is recommended to apply the guidance fading effect by systematically tapering instructor support to allow students to develop the mental schemas necessary for original design synthesis.`,
-  "feedback latency": `It is recommended to provide immediate, specific, and contingent formative feedback to sustain student effort and ensure that instructional cues remain relevant to the current learning context.`,
-  "notation struggle": `It is recommended to apply the signaling principle by using distinct fonts, colors, or shading to pick out and highlight the critical syntax and formal symbols of the discipline.`,
-  uncategorized: `There is no intervention needed for uncategorized issues in feedback.`,
+  ...BASE_RECOMMENDATIONS,
+  "distant teacher": BASE_RECOMMENDATIONS["relational coldness"],
+  "Distant Teacher": BASE_RECOMMENDATIONS["relational coldness"],
+  "Classroom Tension": BASE_RECOMMENDATIONS["classroom tension"],
+  "unfair treatment": BASE_RECOMMENDATIONS["evaluation unfairness"],
+  "Unfair Treatment": BASE_RECOMMENDATIONS["evaluation unfairness"],
+  "feeling ignored": BASE_RECOMMENDATIONS["perceived marginalization"],
+  "Feeling Ignored": BASE_RECOMMENDATIONS["perceived marginalization"],
+  "irrelevant topic": BASE_RECOMMENDATIONS["subject alienation"],
+  "Irrelevant Topic": BASE_RECOMMENDATIONS["subject alienation"],
+  "classmate distraction": BASE_RECOMMENDATIONS["peer distraction"],
+  "Classmate Distraction": BASE_RECOMMENDATIONS["peer distraction"],
+  "lesson pace": BASE_RECOMMENDATIONS["instructional cadence"],
+  "Lesson Pace": BASE_RECOMMENDATIONS["instructional cadence"],
+  "unclear lessons": BASE_RECOMMENDATIONS["clarity deficit"],
+  "Unclear Lessons": BASE_RECOMMENDATIONS["clarity deficit"],
+  "breaking down ideas": BASE_RECOMMENDATIONS["abstract logic gap"],
+  "Breaking Down Ideas": BASE_RECOMMENDATIONS["abstract logic gap"],
+  "using learned steps": BASE_RECOMMENDATIONS["procedural bottleneck"],
+  "Using Learned Steps": BASE_RECOMMENDATIONS["procedural bottleneck"],
+  "concept confusion": BASE_RECOMMENDATIONS["conceptual misalignment"],
+  "Concept Confusion": BASE_RECOMMENDATIONS["conceptual misalignment"],
+  "creating own work": BASE_RECOMMENDATIONS["design synthesis failure"],
+  "Creating Own Work": BASE_RECOMMENDATIONS["design synthesis failure"],
+  "slow or poor feedback": BASE_RECOMMENDATIONS["feedback latency"],
+  "Slow or Poor Feedback": BASE_RECOMMENDATIONS["feedback latency"],
+  "symbols and syntax": BASE_RECOMMENDATIONS["notation struggle"],
+  "Symbols and Syntax": BASE_RECOMMENDATIONS["notation struggle"],
 };
 
 export const RBT_LEVELS = [
@@ -108,36 +210,67 @@ export const RBT_LEVEL_NUMBERS = Object.fromEntries(
   (RBT_LEVELS as readonly string[]).slice(1).map((name, index) => [name, index + 1]),
 ) as Record<string, number>;
 
-export const ISSUE_DESCRIPTIONS: Record<string, string> = {
+const BASE_DESCRIPTIONS: Record<string, string> = {
   "relational coldness":
-    "Feedback indicating a lack of emotional connection, rapport, or mutual respect between the instructor and students.",
+    "Students feel the teacher does not connect with them. They see little warmth or respect between the teacher and the class.",
   "classroom tension":
-    "The presence of frustration, irritability, or anger expressed in student-teacher or peer-to-peer interactions.",
+    "Students show frustration, irritation or anger in how they deal with the teacher or with each other.",
   "evaluation unfairness":
-    "Perceptions that the instructor is unresponsive to individual needs or that grading and responsivity are biased.",
+    "Students feel the teacher does not respond to individual needs, or that grading and responses are biased.",
   "perceived marginalization":
-    "Feedback suggesting that student ideas, leadership, or autonomy are being ignored or undervalued.",
+    "Students feel their ideas, leadership or choices are ignored or not valued.",
   "subject alienation":
-    "A lack of perceived relevance in the lesson content, leading to student disengagement from the topic.",
+    "Students do not see why the lesson matters to them, so they lose interest in the topic.",
   "peer distraction":
-    "Breakdowns in behavior management where the actions of other students disrupt the focus of the session.",
+    "Classmates’ behavior disrupts the class and breaks the focus of the session because behavior is not well managed.",
   "instructional cadence":
-    "Issues related to the flow of the lesson, such as a pace that is too fast or inefficient transitions between topics.",
+    "The flow of the lesson has problems, such as a pace that is too fast or poor switching between topics.",
   "clarity deficit":
-    "Feedback indicating that the learning objectives are not clearly defined or that the presentation format is not engaging or fundamentally unclear.",
+    "Students say the lesson goals are not clear, or the way the lesson is presented is not interesting or is very confusing.",
   "abstract logic gap":
-    "Difficulty in breaking down complex concepts into parts or examining the relationships between different logical components.",
+    "Students struggle to split a hard concept into smaller parts or to see how the parts relate to each other.",
   "procedural bottleneck":
-    "Struggles with executing algorithms or applying learned procedures to solve specific programming problems.",
+    "Students struggle to carry out an algorithm or to use learned steps to solve a specific programming problem.",
   "conceptual misalignment":
-    "A failure to explain ideas in the students' own words or a fundamental misunderstanding of key disciplinary concepts.",
+    "Students cannot explain ideas in their own words, or they badly misunderstand the key concepts of the subject.",
   "design synthesis failure":
-    "Challenges in assembling learned elements to produce new or original work, such as formulated code structures.",
+    "Students struggle to put what they learned together to make something new or original, such as their own code structure.",
   "feedback latency":
-    "Concerns regarding the speed or quality of instructional scaffolding provided during the learning process.",
+    "Students feel the help or guidance they get while learning is too slow or not good enough.",
   "notation struggle":
-    "Difficulties related to the specialized symbols, syntax, and formal language unique to the computer science discipline.",
+    "Students struggle with the special symbols, syntax and formal language used in computer science.",
   uncategorized: "Feedback that does not match any known pedagogical issue pattern.",
+};
+
+export const ISSUE_DESCRIPTIONS: Record<string, string> = {
+  ...BASE_DESCRIPTIONS,
+  "distant teacher": BASE_DESCRIPTIONS["relational coldness"],
+  "Distant Teacher": BASE_DESCRIPTIONS["relational coldness"],
+  "Classroom Tension": BASE_DESCRIPTIONS["classroom tension"],
+  "unfair treatment": BASE_DESCRIPTIONS["evaluation unfairness"],
+  "Unfair Treatment": BASE_DESCRIPTIONS["evaluation unfairness"],
+  "feeling ignored": BASE_DESCRIPTIONS["perceived marginalization"],
+  "Feeling Ignored": BASE_DESCRIPTIONS["perceived marginalization"],
+  "irrelevant topic": BASE_DESCRIPTIONS["subject alienation"],
+  "Irrelevant Topic": BASE_DESCRIPTIONS["subject alienation"],
+  "classmate distraction": BASE_DESCRIPTIONS["peer distraction"],
+  "Classmate Distraction": BASE_DESCRIPTIONS["peer distraction"],
+  "lesson pace": BASE_DESCRIPTIONS["instructional cadence"],
+  "Lesson Pace": BASE_DESCRIPTIONS["instructional cadence"],
+  "unclear lessons": BASE_DESCRIPTIONS["clarity deficit"],
+  "Unclear Lessons": BASE_DESCRIPTIONS["clarity deficit"],
+  "breaking down ideas": BASE_DESCRIPTIONS["abstract logic gap"],
+  "Breaking Down Ideas": BASE_DESCRIPTIONS["abstract logic gap"],
+  "using learned steps": BASE_DESCRIPTIONS["procedural bottleneck"],
+  "Using Learned Steps": BASE_DESCRIPTIONS["procedural bottleneck"],
+  "concept confusion": BASE_DESCRIPTIONS["conceptual misalignment"],
+  "Concept Confusion": BASE_DESCRIPTIONS["conceptual misalignment"],
+  "creating own work": BASE_DESCRIPTIONS["design synthesis failure"],
+  "Creating Own Work": BASE_DESCRIPTIONS["design synthesis failure"],
+  "slow or poor feedback": BASE_DESCRIPTIONS["feedback latency"],
+  "Slow or Poor Feedback": BASE_DESCRIPTIONS["feedback latency"],
+  "symbols and syntax": BASE_DESCRIPTIONS["notation struggle"],
+  "Symbols and Syntax": BASE_DESCRIPTIONS["notation struggle"],
 };
 
 export const RBT_DESCRIPTIONS: Record<string, string> = {
