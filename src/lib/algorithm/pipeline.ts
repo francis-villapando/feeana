@@ -21,7 +21,7 @@ import { getMLWorkerAsync } from "../ml/mlWorkerStore";
 import { collectPipelineData } from "./dataCollection";
 import { CalculateDistributions, GeneratePedagogicalCue } from "./strategyGeneration";
 import { getIloLevel, buildIloGapItems, buildAnalysisResult } from "./dashboardOutput";
-import { RULES_VERSION } from "./rules";
+import { NAMED_ISSUES, RULES_VERSION, resolveIssueLabel } from "./rules";
 import { buildDiagnosticRecord } from "./pedagogicalDiagnosticMapping";
 import type {
   DiagnosticRecord,
@@ -405,6 +405,26 @@ export async function runAnalysisPipeline(
 }
 
 /**
+ * Rebuilds diagnostics from persisted raw output, applying manual issue overrides.
+ *
+ * Only Uncategorized feedback may carry pos/neu polarity; a named pedagogical
+ * issue is problem feedback, so its polarity is forced to negative.
+ */
+export function applyManualOverrides(
+  rows: { feedback_id: string; issue: string; polarity: string }[],
+  overrides: Record<string, string>,
+  targetIloRbt: number,
+): DiagnosticRecord[] {
+  return rows.map((row) => {
+    const issue = overrides[row.feedback_id] ?? row.issue;
+    const polarity: Polarity = NAMED_ISSUES.includes(resolveIssueLabel(issue))
+      ? "neg"
+      : (row.polarity as Polarity);
+    return buildDiagnosticRecord(issue, polarity, targetIloRbt, row.feedback_id);
+  });
+}
+
+/**
  * Recomputes a session's result from the persisted raw model output plus manual
  * issue assignments. Runs on the main thread (no ML inference) and replaces the
  * feedback_diagnostics cache entry.
@@ -427,13 +447,10 @@ export async function recomputeAnalysisResult(
     throw new Error("No raw analysis output found for this session.");
   }
 
-  const buffer: DiagnosticRecord[] = data.map((row) =>
-    buildDiagnosticRecord(
-      overrides[row.feedback_id] ?? row.issue,
-      row.polarity as Polarity,
-      sessionContext.targetIloRbt,
-      row.feedback_id,
-    ),
+  const buffer: DiagnosticRecord[] = applyManualOverrides(
+    data,
+    overrides,
+    sessionContext.targetIloRbt,
   );
 
   const finalResult = computeAnalysisResult({
