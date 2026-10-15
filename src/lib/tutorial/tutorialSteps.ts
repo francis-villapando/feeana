@@ -363,6 +363,8 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
     },
   },
   // Step 12 — ML Progress
+  // The uncategorized review modal is intentionally suppressed while the tour is
+  // active; a future step should introduce it rather than jump straight to the KPIs.
   {
     id: "step-ml-progress",
     title: "Analysis Running",
