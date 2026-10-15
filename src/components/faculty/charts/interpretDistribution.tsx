@@ -1,8 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import type { DistEntry } from "@/lib/types/types";
-import { RBT_LEVEL_NUMBERS, CLT_DESCRIPTIONS } from "@/lib/algorithm/rules";
+import { RBT_LEVEL_NUMBERS, CLT_DESCRIPTIONS, resolveIssueLabel } from "@/lib/algorithm/rules";
 import { AccentLabel } from "./AccentLabel";
-import { toTitleCase } from "@/lib/hooks/utils";
 
 type ChartKind = "aspect" | "polarity" | "issue" | "rbt" | "clt";
 
@@ -62,7 +61,7 @@ function interpretAspectOrIssue(
   if (data.length === 0) return "No data available for interpretation.";
 
   const topicNoun = kind === "aspect" ? "discussed" : "raised concerns about";
-  const displayLabel = (label: string) => (kind === "issue" ? toTitleCase(label) : label);
+  const displayLabel = (label: string) => (kind === "issue" ? resolveIssueLabel(label) : label);
 
   // Most prominent category
   const categorizedEntries = data.filter((entry) => !isUncategorized(entry.label));

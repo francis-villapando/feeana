@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { cn, toTitleCase } from "@/lib/hooks/utils";
+import { cn } from "@/lib/hooks/utils";
 import type { Feedback, Polarity } from "@/lib/types/types";
 import type { DiagnosticRecord } from "@/lib/algorithm/types";
-import { RBT_LEVELS } from "@/lib/algorithm/rules";
+import { RBT_LEVELS, resolveIssueLabel } from "@/lib/algorithm/rules";
 import {
   ASPECT_COLOR_ORDER,
   ISSUE_COLOR_ORDER,
@@ -183,7 +183,7 @@ export function SessionFeedbackList({
       {isCategoryView && categoryFilter && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Showing feedback for</span>
-          <Badge variant="secondary">{categoryFilter.title}</Badge>
+          <Badge variant="secondary">{resolveIssueLabel(categoryFilter.title)}</Badge>
         </div>
       )}
 
@@ -205,7 +205,7 @@ export function SessionFeedbackList({
           <ul className="space-y-3">
             {visible.map((f) => {
               const diag = diagnosticsByFeedbackId?.get(f.id);
-              const isUncategorized = diag?.issue === "Uncategorized";
+              const isUncategorized = diag?.issue?.toLowerCase() === "uncategorized";
               return (
                 <li key={f.id} className="rounded-lg border border-border/60 bg-background/40 p-4">
                   <p className="text-sm leading-relaxed text-foreground">
@@ -218,8 +218,8 @@ export function SessionFeedbackList({
                       )}
                       {!polarityOnly && (
                         <MappingPill
-                          label={toTitleCase(diag.issue)}
-                          color={issueColorMap[toTitleCase(diag.issue)]}
+                          label={resolveIssueLabel(diag.issue)}
+                          color={issueColorMap[resolveIssueLabel(diag.issue)]}
                         />
                       )}
                       <MappingPill

@@ -19,7 +19,7 @@ import { DistributionEmptyState } from "./DistributionEmptyState";
 import { computeDynamicYAxisWidth } from "./labelWidth";
 import type { DistEntry } from "@/lib/types/types";
 import { CHART_COLORS, ISSUE_COLOR_ORDER } from "@/lib/constants/chartColors";
-import { toTitleCase } from "@/lib/hooks/utils";
+import { resolveIssueLabel } from "@/lib/algorithm/rules";
 
 interface IssueDistChartProps {
   data: DistEntry[];
@@ -54,9 +54,9 @@ export function IssueDistChart({
     uncategorizedCount,
   });
   const isEmpty = categorizedData.length === 0;
-  // Fit the axis to the longest title-cased label.
+  // Fit the axis to the longest label.
   const yAxisWidth = useMemo(
-    () => computeDynamicYAxisWidth(categorizedData.map((d) => toTitleCase(d.label))),
+    () => computeDynamicYAxisWidth(categorizedData.map((d) => resolveIssueLabel(d.label))),
     [categorizedData],
   );
   // Ref avoids re-rendering the chart on every tooltip coordinate change.
@@ -110,7 +110,7 @@ export function IssueDistChart({
                 <YAxis
                   type="category"
                   dataKey="label"
-                  tickFormatter={(label: string) => toTitleCase(label)}
+                  tickFormatter={(label: string) => resolveIssueLabel(label)}
                   stroke="var(--color-muted-foreground)"
                   fontSize={11}
                   width={yAxisWidth}
@@ -137,7 +137,7 @@ export function IssueDistChart({
                   {categorizedData.map((entry) => (
                     <Cell
                       key={entry.label}
-                      fill={issueColorMap[entry.label] || CHART_COLORS[0]}
+                      fill={issueColorMap[resolveIssueLabel(entry.label)] || CHART_COLORS[0]}
                       onClick={() => onSelectCategory?.(entry)}
                     />
                   ))}

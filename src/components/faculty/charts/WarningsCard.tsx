@@ -3,8 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { AnalysisCard } from "./AnalysisCard";
-import { cn, toTitleCase } from "@/lib/hooks/utils";
-import { CLT_DESCRIPTIONS } from "@/lib/algorithm/rules";
+import { cn } from "@/lib/hooks/utils";
+import { CLT_DESCRIPTIONS, resolveIssueLabel } from "@/lib/algorithm/rules";
 import type { Warning, RecommendationTerm } from "@/lib/types/types";
 
 const TERM_KIND_LABEL: Record<string, string> = {
@@ -94,7 +94,7 @@ export function WarningsCard({ data }: WarningsCardProps) {
                           : "border-border/60 bg-background/40 text-foreground hover:bg-accent/50",
                       )}
                     >
-                      {toTitleCase(warning.issue)}
+                      {resolveIssueLabel(warning.issue)}
                       <Badge
                         variant={intrinsic ? "destructive" : "secondary"}
                         className="shrink-0 text-[9px] px-1 h-3.5 font-normal"

@@ -146,6 +146,22 @@ describe("aggregateTopCategories", () => {
     expect(labels).toEqual(["Alpha", "Beta", "Gamma"]);
   });
 
+  it("merges legacy and new issue names into canonical taxonomy series for issueDist", () => {
+    const points = [
+      makePoint("s1", { "Relational Coldness": 3, "clarity deficit": 2 }, "issueDist"),
+      makePoint("s2", { "Distant Teacher": 4, "Unclear Lessons": 1 }, "issueDist"),
+    ];
+
+    const { labels, chartData } = aggregateTopCategories(points, "issueDist", [
+      ["Distant Teacher", "var(--color-chart-6)"],
+      ["Unclear Lessons", "var(--color-chart-11)"],
+    ]);
+
+    expect(labels).toEqual(["Distant Teacher", "Unclear Lessons"]);
+    expect(chartData[0]).toEqual({ topic: "s1", "Distant Teacher": 3, "Unclear Lessons": 2 });
+    expect(chartData[1]).toEqual({ topic: "s2", "Distant Teacher": 4, "Unclear Lessons": 1 });
+  });
+
   it("returns empty results for empty input", () => {
     const result = aggregateTopCategories([], "aspectDist", COLOR_ORDER);
 

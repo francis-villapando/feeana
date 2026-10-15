@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { type TooltipProps } from "recharts";
 import type { DistEntry } from "@/lib/types/types";
 import { toTitleCase } from "@/lib/hooks/utils";
+import { resolveIssueLabel } from "@/lib/algorithm/rules";
 
 export const chartTooltipProps = {
   cursor: { fill: "var(--color-border)" } as const,
@@ -125,7 +126,9 @@ export function ChartTooltipContent({
             ...(dist && index < sortedItems.length - 1 ? { marginBottom: 8 } : undefined),
           }}
         >
-          <p style={{ fontWeight: 500, color: item.color, margin: 0 }}>{toTitleCase(item.label)}</p>
+          <p style={{ fontWeight: 500, color: item.color, margin: 0 }}>
+            {toTitleCase(resolveIssueLabel(item.label))}
+          </p>
           <p style={{ color: "var(--color-muted-foreground)", margin: 0, marginTop: 2 }}>
             Count: {item.value}
           </p>

@@ -1,4 +1,5 @@
 import { CHART_COLORS, SPECIAL_COLORS } from "@/lib/constants/chartColors";
+import { resolveIssueLabel } from "@/lib/algorithm/rules";
 import type { TrendPoint } from "@/lib/hooks/metrics";
 
 export type DistributionDataKey = "aspectDist" | "issueDist" | "rbtDist" | "cltDist";
@@ -39,8 +40,9 @@ export function aggregateTopCategories(
   const perPoint = points.map((point) => {
     const counts = new Map<string, number>();
     for (const entry of point[dataKey]) {
-      counts.set(entry.label, (counts.get(entry.label) ?? 0) + entry.value);
-      globalSums.set(entry.label, (globalSums.get(entry.label) ?? 0) + entry.value);
+      const label = dataKey === "issueDist" ? resolveIssueLabel(entry.label) : entry.label;
+      counts.set(label, (counts.get(label) ?? 0) + entry.value);
+      globalSums.set(label, (globalSums.get(label) ?? 0) + entry.value);
     }
     return counts;
   });

@@ -79,7 +79,7 @@ describe("SessionFeedbackList", () => {
     expect(markup).not.toContain("Great examples in class.");
     expect(markup).toContain("Selected Category (1)");
     expect(markup).toContain("All Feedback (3)");
-    expect(markup).toContain("Instructional Cadence");
+    expect(markup).toContain("Lesson Pace");
   });
 
   it("renders all feedback when no filter is set", () => {
@@ -119,7 +119,7 @@ describe("SessionFeedbackList", () => {
       <SessionFeedbackList sessionFeedback={feedback} diagnosticsByFeedbackId={diagnostics} />,
     );
     expect(markup).toContain("Instructional Learning Formats");
-    expect(markup).toContain("Clarity Deficit");
+    expect(markup).toContain("Unclear Lessons");
     expect(markup).toContain("Negative");
     expect(markup).toContain("Apply");
     expect(markup).toContain("Extraneous");
