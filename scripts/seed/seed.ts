@@ -10,6 +10,7 @@ import {
 import { buildAnalysisResult, getIloLevel } from "../../src/lib/algorithm/dashboardOutput";
 import { buildDiagnosticRecord } from "../../src/lib/algorithm/pedagogicalDiagnosticMapping";
 import { TTI_RULES, RULES_VERSION } from "../../src/lib/algorithm/rules";
+import { PRIORITY_THRESHOLD } from "../../src/lib/algorithm/constants";
 import type {
   SessionContext,
   DiagnosticRecord,
@@ -684,8 +685,6 @@ class DashboardSeeder {
       daysAgo: 0.75, // 18 hours
     },
   ];
-
-  private static readonly PRIORITY_THRESHOLD = 0.3;
 
   // Both corpora are merged so archetypes can draw on the full issue x polarity matrix.
   // Only the eval split carries a cleaned_text column; loadFeedbackPool backfills it.
@@ -1686,7 +1685,7 @@ class DashboardSeeder {
       const weightedCoefficient = uniqueIssue.isGap ? 1.5 : 1.0;
       const priorityScore = (uniqueIssue.count / total) * weightedCoefficient;
 
-      if (priorityScore >= DashboardSeeder.PRIORITY_THRESHOLD) {
+      if (priorityScore >= PRIORITY_THRESHOLD) {
         primaryCandidates.push({
           item: uniqueIssue,
           score: priorityScore,
@@ -1709,7 +1708,7 @@ class DashboardSeeder {
       }
       for (const cand of subThresholdCandidates) {
         warningList.push(
-          GeneratePedagogicalCue(sessionContext, cand.item, total, cand.weight, "primary"),
+          GeneratePedagogicalCue(sessionContext, cand.item, total, cand.weight, "warning"),
         );
       }
     } else if (subThresholdCandidates.length > 0) {
@@ -1721,7 +1720,7 @@ class DashboardSeeder {
           );
         } else {
           warningList.push(
-            GeneratePedagogicalCue(sessionContext, cand.item, total, cand.weight, "primary"),
+            GeneratePedagogicalCue(sessionContext, cand.item, total, cand.weight, "warning"),
           );
         }
       }

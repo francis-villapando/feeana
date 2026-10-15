@@ -28,17 +28,17 @@ export function RecommendationCuesCard({ recommendations, ilos }: Recommendation
             <p className="flex items-center gap-1.5">
               <span>
                 <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-primary/30 bg-primary/10 mr-1.5" />
-                <span className="font-medium text-primary">Green</span> indicators denote{" "}
-                <span className="font-medium text-foreground">Primary</span> recommendation cues —
-                threshold-clearing pedagogical priorities (≥30% prevalence).
+                <span className="font-medium text-primary">Green</span> marks{" "}
+                <span className="font-medium text-foreground">Primary</span> recommendation cues
+                reaching the 30% prevalence.
               </span>
             </p>
             <p className="flex items-center gap-1.5">
               <span>
                 <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full border border-warning/30 bg-warning/10 mr-1.5" />
-                <span className="font-medium text-warning">Amber</span> indicators denote{" "}
-                <span className="font-medium text-foreground">Secondary</span> recommendation cues —
-                highest scoring sub-threshold friction points ({"<"} 30% prevalence).
+                <span className="font-medium text-warning">Amber</span> marks{" "}
+                <span className="font-medium text-foreground">Secondary</span> recommendation cues
+                with highest prevalence below the 30% mark.
               </span>
             </p>
           </div>

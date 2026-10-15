@@ -6,13 +6,13 @@ import {
   SAMPLE_TUTORIAL_ROW_COUNT,
 } from "../../lib/tutorial/sampleTutorialData";
 import Papa from "papaparse";
+import { PRIORITY_THRESHOLD } from "../../lib/algorithm/constants";
 
 // The guided tour only teaches from a rich analysis result: one dominant issue
 // above the 30% priority threshold (so a primary recommendation is generated)
 // and at least two Uncategorized rows (so the uncategorized notice renders).
 // These tests enforce that property against the real model so sample edits
 // cannot silently blank the tutorial's chart steps.
-const PRIORITY_THRESHOLD = 0.3;
 
 const EXPECTED_ISSUES: string[] = [
   "notation struggle",

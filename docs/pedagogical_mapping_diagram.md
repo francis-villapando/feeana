@@ -44,16 +44,16 @@ Grounded in the CSEG2 seed session: topic "Introduction to Game Programming", ta
 1. **Engine (tier decision)** — RBT 4 (Analyze) ≤ target RBT 4 AND CLT = Intrinsic → isGap = true → w_c = 1.5 → P = (6/25) × 1.5 = 0.36 ≥ 0.30 → routed **Primary**.
 2. **Template generation (8 injected fields)**:
 
-   | Field                              | Value                                                                                                                                                      |
-   | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | Prevalence percentage              | 36% (boosted from 24% by the isGap weight)                                                                                                                 |
-   | Issue tag                          | Breaking Down Ideas                                                                                                                                        |
-   | TTI dimension                      | Concept Development                                                                                                                                        |
-   | Session topic                      | Introduction to Game Programming                                                                                                                           |
-   | RBT level name                     | Analyze                                                                                                                                                    |
-   | ILO goal statement (only if isGap) | Analyze game mechanics and implement gameplay systems using object-oriented design                                                                         |
-   | CLT category                       | Intrinsic                                                                                                                                                  |
-   | Recommended action text            | It is recommended to teach hard ideas a little at a time, using step-by-step support that helps students move from basic understanding to deeper analysis. |
+   | Field                              | Value                                                                                                                                                         |
+   | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | Prevalence percentage              | 24% in the paragraph (raw student share); the hover tooltip explains that it counts for more — 36% — because the issue links to an unreached learning outcome |
+   | Issue tag                          | Breaking Down Ideas                                                                                                                                           |
+   | TTI dimension                      | Concept Development                                                                                                                                           |
+   | Session topic                      | Introduction to Game Programming                                                                                                                              |
+   | RBT level name                     | Analyze                                                                                                                                                       |
+   | ILO goal statement (only if isGap) | Analyze game mechanics and implement gameplay systems using object-oriented design                                                                            |
+   | CLT category                       | Intrinsic                                                                                                                                                     |
+   | Recommended action text            | It is recommended to teach hard ideas a little at a time, using step-by-step support that helps students move from basic understanding to deeper analysis.    |
 
 3. **Presentation split** — tier = "primary" stamped onto the output object; the UI renders the green-indicator recommendation cue with hover-detail paragraphs. Field dropping and tooltip filtering apply only to the Passive branch.
 

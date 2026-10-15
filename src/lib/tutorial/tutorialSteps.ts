@@ -476,7 +476,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "step-results-recommendations",
     title: "Recommendations & Warnings",
-    body: "Feeana generates primary teaching interventions and secondary pedagogical cues from rule-based pedagogical mappings, paired with anomaly warnings.",
+    body: "Feeana turns rule-based pedagogical mappings into primary teaching interventions, secondary pedagogical cues, and anomaly warnings. Hover any highlighted term — including the percentage — to see why that concern was recommended.",
     anchor: "analysis-recommendations",
     placement: "top",
     routePattern: "/:classId/analysis/:sessionId",
