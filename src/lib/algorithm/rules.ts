@@ -1,8 +1,8 @@
-// Pedagogical rule tables shared by Modules 4-6 (rules_version = "1.4")
+// Pedagogical rule tables shared by Modules 4-6 (rules_version = "1.5")
 
 import type { CltCategory } from "./types";
 
-export const RULES_VERSION = "1.4";
+export const RULES_VERSION = "1.5";
 
 export const ISSUE_RULES: Record<string, string> = {
   "relational coldness": "Distant Teacher",

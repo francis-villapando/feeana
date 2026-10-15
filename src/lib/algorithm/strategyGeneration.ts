@@ -9,15 +9,15 @@ import {
   RBT_LEVELS,
   TTI_DESCRIPTIONS,
 } from "./rules";
+import { PRIORITY_THRESHOLD } from "./constants";
 import type {
   BufferedDiagnostic,
   DiagnosticRecord,
   StrategyStats,
   RecommendationItem,
   SessionContext,
-  CltCategory,
+  CueTier,
 } from "./types";
-
 export function CalculateDistributions(
   buffer: DiagnosticRecord[],
   totalFeedback: number,
@@ -117,7 +117,7 @@ export function GeneratePedagogicalCue(
   uniqueIssue: BufferedDiagnostic,
   totalFeedback: number,
   weightedCoefficient: number,
-  tier: "primary" | "secondary" = "primary",
+  tier: CueTier = "primary",
 ): RecommendationItem {
   console.debug("[strategyGeneration] Generating pedagogical cue", {
     topic: sessionContext.topic,
@@ -126,14 +126,19 @@ export function GeneratePedagogicalCue(
     tier,
   });
 
-  const percentageStr = `${((uniqueIssue.count / totalFeedback) * weightedCoefficient * 100).toFixed(0)}%`;
-  const rawPctStr = `${((uniqueIssue.count / totalFeedback) * 100).toFixed(0)}%`;
+  const prevalencePct = (uniqueIssue.count / totalFeedback) * 100;
+  const prevalenceStr = `${prevalencePct.toFixed(0)}%`;
+  const priorityScore = (uniqueIssue.count / totalFeedback) * weightedCoefficient;
+  const boostedPctStr = `${(priorityScore * 100).toFixed(0)}%`;
+  const thresholdPct = Math.round(PRIORITY_THRESHOLD * 100);
   const rbtName = RBT_LEVELS[uniqueIssue.rbt] ?? String(uniqueIssue.rbt);
 
   const rbtLower = rbtName.toLowerCase();
   const cltLower = uniqueIssue.clt.toLowerCase();
   const ttiLower = uniqueIssue.tti.toLowerCase();
   const displayIssue = ISSUE_RULES[uniqueIssue.issue.toLowerCase()] ?? uniqueIssue.issue;
+  // The paragraph reads the issue name in lowercase; the term/tooltip keep the display casing.
+  const displayIssueLower = displayIssue.toLowerCase();
   const recommendationSentence =
     ISSUE_RECOMMENDATIONS[uniqueIssue.issue] ??
     ISSUE_RECOMMENDATIONS[displayIssue] ??
@@ -144,16 +149,27 @@ export function GeneratePedagogicalCue(
   const goalNoun = scopedIlos.length > 1 ? "goals" : "goal";
 
   const paragraph = uniqueIssue.isGap
-    ? `A total of ${percentageStr} of the class is experiencing ${displayIssue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the ${goalNoun}: ${goalStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
-    : `A total of ${percentageStr} of the class is experiencing ${displayIssue} under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
+    ? `A total of ${prevalenceStr} of the class is experiencing ${displayIssueLower} issue under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the ${goalNoun}: ${goalStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
+    : `A total of ${prevalenceStr} of the class is experiencing ${displayIssueLower} issue under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
 
-  const prevalenceDetail = uniqueIssue.isGap
-    ? `${uniqueIssue.count} out of ${totalFeedback} responses — boosted from ${rawPctStr} due to ILO gap`
-    : `${uniqueIssue.count} out of ${totalFeedback} responses`;
+  // Skip the boost note when rounding hides it, so the tooltip never claims a boost it cannot show.
+  const gapClause =
+    uniqueIssue.isGap && boostedPctStr !== prevalenceStr
+      ? ` Because it relates to a learning outcome students haven't reached, it counts for more — ${boostedPctStr}.`
+      : "";
+
+  let reason = ` That meets the ${thresholdPct}% mark, so it triggers a recommendation.`;
+  if (tier === "secondary") {
+    reason = ` It is among the most prominent of the remaining concerns but stays under the ${thresholdPct}% mark, so it is offered as a secondary cue.`;
+  } else if (tier === "warning") {
+    reason = ` It stays under the ${thresholdPct}% mark, so it is shared as a heads-up to monitor.`;
+  }
+
+  const prevalenceDetail = `${uniqueIssue.count} out of ${totalFeedback} responses mentioned this (${prevalenceStr} of the class).${gapClause}${reason}`;
 
   const terms = [
     {
-      text: percentageStr,
+      text: prevalenceStr,
       kind: "prevalence",
       detail: prevalenceDetail,
     },
@@ -180,10 +196,10 @@ export function GeneratePedagogicalCue(
     },
     ...(uniqueIssue.isGap
       ? scopedIlos.map((ilo) => ({
-          text: ilo.text,
-          kind: "ILO" as const,
-          detail: ilo.detail,
-        }))
+        text: ilo.text,
+        kind: "ILO" as const,
+        detail: ilo.detail,
+      }))
       : []),
     {
       text: uniqueIssue.clt,
@@ -205,6 +221,6 @@ export function GeneratePedagogicalCue(
     priority: uniqueIssue.count,
     theories: ["RBT", "CLT"],
     isGap: uniqueIssue.isGap,
-    tier,
+    tier: tier === "warning" ? undefined : tier,
   };
 }

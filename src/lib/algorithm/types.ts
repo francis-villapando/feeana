@@ -62,6 +62,9 @@ export interface StrategyStats {
 
 export type RecommendationTier = "primary" | "secondary";
 
+/** Routing tier for a generated cue, distinct from the stored recommendation tier. */
+export type CueTier = "primary" | "secondary" | "warning";
+
 export interface RecommendationItem {
   id: string;
   issue: string;

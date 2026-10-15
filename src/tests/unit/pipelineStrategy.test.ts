@@ -4,14 +4,13 @@ import {
   CalculateDistributions,
 } from "../../lib/algorithm/strategyGeneration";
 import { ISSUE_RULES, RBT_LEVELS } from "../../lib/algorithm/rules";
+import { PRIORITY_THRESHOLD } from "../../lib/algorithm/constants";
 import type {
   BufferedDiagnostic,
   DiagnosticRecord,
   RecommendationItem,
   SessionContext,
 } from "../../lib/algorithm/types";
-
-const PRIORITY_THRESHOLD = 0.3;
 
 function runStrategyGenerationMock(
   buffer: DiagnosticRecord[],
@@ -75,7 +74,7 @@ function runStrategyGenerationMock(
         cand.item,
         totalFeedback,
         cand.weight,
-        "primary",
+        "warning",
       );
       warningList.push(cue);
     }
@@ -98,7 +97,7 @@ function runStrategyGenerationMock(
           cand.item,
           totalFeedback,
           cand.weight,
-          "primary",
+          "warning",
         );
         warningList.push(cue);
       }
@@ -116,7 +115,7 @@ const mockContext: SessionContext = {
 };
 
 describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommodating Fallback", () => {
-  it("generates primary recommendation when issue crosses PRIMARY_PRIORITY_THRESHOLD (>=30%)", () => {
+  it("generates primary recommendation when issue crosses the priority threshold (>=30%)", () => {
     // 10 feedbacks: 4 clarity deficit (40%), 2 peer distraction (20%)
     const buffer: DiagnosticRecord[] = [
       ...Array(4).fill({
@@ -143,8 +142,85 @@ describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommo
     expect(recommendationList[0].issue).toBe("clarity deficit");
     expect(recommendationList[0].tier).toBe("primary");
 
+    // The paragraph and term text show raw prevalence; the tooltip explains why it was picked.
+    expect(recommendationList[0].paragraph).toContain("A total of 40% of the class");
+    const primaryPrevalence = recommendationList[0].terms.find((t) => t.kind === "prevalence");
+    expect(primaryPrevalence?.text).toBe("40%");
+    expect(primaryPrevalence?.detail).toContain(
+      "4 out of 10 responses mentioned this (40% of the class).",
+    );
+    expect(primaryPrevalence?.detail).toContain("meets the 30% mark");
+    expect(primaryPrevalence?.detail).not.toContain("counts for more");
+
     expect(warningList.length).toBe(1);
     expect(warningList[0].issue).toBe("peer distraction");
+    expect(warningList[0].tier).toBeUndefined();
+    expect(warningList[0].terms.find((t) => t.kind === "prevalence")?.detail).toContain(
+      "heads-up to monitor",
+    );
+  });
+
+  it("treats an exactly-threshold issue as primary and says it meets the mark", () => {
+    // 10 feedbacks: 3 clarity deficit (exactly 30%, non-gap), 1 peer distraction (10%)
+    const buffer: DiagnosticRecord[] = [
+      ...Array(3).fill({
+        issue: "clarity deficit",
+        tti: "Instructional Learning Formats",
+        rbt: 2,
+        clt: "Extraneous" as const,
+        polarity: "neg" as const,
+        isGap: false,
+      }),
+      {
+        issue: "peer distraction",
+        tti: "Behavior Management",
+        rbt: 1,
+        clt: "Extraneous" as const,
+        polarity: "neg" as const,
+        isGap: false,
+      },
+    ];
+
+    const { recommendationList } = runStrategyGenerationMock(buffer, 10, mockContext);
+
+    expect(recommendationList.length).toBe(1);
+    expect(recommendationList[0].issue).toBe("clarity deficit");
+    expect(recommendationList[0].tier).toBe("primary");
+    const detail = recommendationList[0].terms.find((t) => t.kind === "prevalence")?.detail;
+    expect(detail).toContain("meets the 30% mark");
+    expect(detail).not.toContain("above");
+  });
+
+  it("reports a gap issue that only meets the threshold via its boost as primary", () => {
+    // 25 feedbacks: 5 notation struggle gap (raw 20%, boosted 30%), 1 peer distraction (4%)
+    const buffer: DiagnosticRecord[] = [
+      ...Array(5).fill({
+        issue: "notation struggle",
+        tti: "Language Modeling",
+        rbt: 1,
+        clt: "Intrinsic" as const,
+        polarity: "neg" as const,
+        isGap: true,
+      }),
+      {
+        issue: "peer distraction",
+        tti: "Behavior Management",
+        rbt: 1,
+        clt: "Extraneous" as const,
+        polarity: "neg" as const,
+        isGap: false,
+      },
+    ];
+
+    const { recommendationList } = runStrategyGenerationMock(buffer, 25, mockContext);
+
+    expect(recommendationList.length).toBe(1);
+    expect(recommendationList[0].issue).toBe("notation struggle");
+    expect(recommendationList[0].tier).toBe("primary");
+    expect(recommendationList[0].paragraph).toContain("A total of 20% of the class");
+    const detail = recommendationList[0].terms.find((t) => t.kind === "prevalence")?.detail;
+    expect(detail).toContain("counts for more — 30%.");
+    expect(detail).toContain("meets the 30% mark");
   });
 
   it("generates secondary recommendation when all issues are below threshold, picking the most prevalent", () => {
@@ -173,13 +249,18 @@ describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommo
     expect(recommendationList.length).toBe(1);
     expect(recommendationList[0].issue).toBe("clarity deficit");
     expect(recommendationList[0].tier).toBe("secondary");
-    expect(recommendationList[0].terms.find((t) => t.kind === "prevalence")?.detail).toContain(
-      "out of 10 responses",
+    expect(recommendationList[0].paragraph).toContain("A total of 20% of the class");
+    const secondaryPrevalence = recommendationList[0].terms.find((t) => t.kind === "prevalence");
+    expect(secondaryPrevalence?.text).toBe("20%");
+    expect(secondaryPrevalence?.detail).toContain(
+      "2 out of 10 responses mentioned this (20% of the class).",
     );
+    expect(secondaryPrevalence?.detail).toContain("offered as a secondary cue");
 
     // Remaining lower-frequency sub-threshold issue stays in warnings
     expect(warningList.length).toBe(1);
     expect(warningList[0].issue).toBe("peer distraction");
+    expect(warningList[0].tier).toBeUndefined();
   });
 
   it("accommodates multi-way ties for secondary recommendations", () => {
@@ -222,6 +303,7 @@ describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommo
     // Neither tied issue should be in warningList
     expect(warningList.length).toBe(1);
     expect(warningList[0].issue).toBe("instructional cadence");
+    expect(warningList[0].tier).toBeUndefined();
   });
 
   it("promotes a gap-boosted issue over a higher raw count when its boosted score is higher", () => {
@@ -250,6 +332,15 @@ describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommo
     expect(recommendationList.length).toBe(1);
     expect(recommendationList[0].issue).toBe("notation struggle");
     expect(recommendationList[0].tier).toBe("secondary");
+
+    // Paragraph keeps the raw 10% prevalence; the tooltip is where the 15% boost is explained.
+    expect(recommendationList[0].paragraph).toContain("A total of 10% of the class");
+    const gapPrevalence = recommendationList[0].terms.find((t) => t.kind === "prevalence");
+    expect(gapPrevalence?.text).toBe("10%");
+    expect(gapPrevalence?.detail).toContain(
+      "5 out of 50 responses mentioned this (10% of the class).",
+    );
+    expect(gapPrevalence?.detail).toContain("counts for more — 15%.");
 
     expect(warningList.length).toBe(1);
     expect(warningList[0].issue).toBe("peer distraction");
@@ -283,6 +374,13 @@ describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommo
     expect(recIssues).toContain("notation struggle");
     expect(recIssues).toContain("peer distraction");
     expect(recommendationList.every((r) => r.tier === "secondary")).toBe(true);
+
+    // The gap-boosted issue reports its raw 8% in the paragraph and the 12% boost only in the tooltip.
+    const notation = recommendationList.find((r) => r.issue === "notation struggle");
+    expect(notation?.paragraph).toContain("A total of 8% of the class");
+    const notationPrevalence = notation?.terms.find((t) => t.kind === "prevalence");
+    expect(notationPrevalence?.text).toBe("8%");
+    expect(notationPrevalence?.detail).toContain("counts for more — 12%.");
 
     expect(warningList.length).toBe(0);
   });
@@ -323,7 +421,7 @@ describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommo
     );
 
     expect(cue.paragraph).toContain(
-      "experiencing Distant Teacher under the positive climate aspect",
+      "experiencing distant teacher issue under the positive climate aspect",
     );
     expect(cue.paragraph).toContain(
       "It is recommended to set up places where students can talk and connect, such as open forums, and to use friendly, positive words so the class feels welcome.",

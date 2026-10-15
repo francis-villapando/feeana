@@ -24,7 +24,7 @@ import { getIloLevel, buildIloGapItems, buildAnalysisResult } from "./dashboardO
 import { RULES_VERSION } from "./rules";
 import type { DiagnosticRecord, BufferedDiagnostic, RecommendationItem } from "./types";
 
-const PRIORITY_THRESHOLD = 0.3;
+import { PRIORITY_THRESHOLD } from "./constants";
 
 // Throws an AbortError if the pipeline has been cancelled. Call at every
 // safe interruption point so cancellation never corrupts a write transaction.
@@ -267,7 +267,7 @@ export async function runAnalysisPipeline(
         cand.item,
         totalFeedback,
         cand.weight,
-        "primary",
+        "warning",
       );
       warningList.push(cue);
     }
@@ -290,7 +290,7 @@ export async function runAnalysisPipeline(
           cand.item,
           totalFeedback,
           cand.weight,
-          "primary",
+          "warning",
         );
         warningList.push(cue);
       }
