@@ -1672,7 +1672,7 @@ class DashboardSeeder {
     const recommendationList: RecommendationItem[] = [];
     const warningList: RecommendationItem[] = [];
 
-    // Module 5: same primary/secondary fallback as pipeline.ts L274-298 (boost-adjusted score, ties all promoted).
+    // Module 5: same primary/secondary fallback as pipeline.ts L236-260 (boost-adjusted score, ties all promoted).
     const candidateIssues = Array.from(uniqueIssueMap.values()).filter(
       (item) => item.issue !== "Uncategorized" && item.count > 0,
     );

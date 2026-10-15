@@ -64,11 +64,11 @@ const EXPECTED: Record<string, Expectation> = {
   },
 
   // ── pipeline.ts: the production orchestrator.
-  "src/lib/algorithm/pipeline.ts:226": {
+  "src/lib/algorithm/pipeline.ts:188": {
     start: [/const candidateIssues = Array\.from\(uniqueIssueMap\.values\(\)\)\.filter\(/],
     end: [/^\s{2}\);$/],
   },
-  "src/lib/algorithm/pipeline.ts:274": {
+  "src/lib/algorithm/pipeline.ts:236": {
     start: [/} else if \(subThresholdCandidates\.length > 0\) \{/],
     end: [/^\s{2}\}$/],
   },

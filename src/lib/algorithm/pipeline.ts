@@ -22,7 +22,15 @@ import { collectPipelineData } from "./dataCollection";
 import { CalculateDistributions, GeneratePedagogicalCue } from "./strategyGeneration";
 import { getIloLevel, buildIloGapItems, buildAnalysisResult } from "./dashboardOutput";
 import { RULES_VERSION } from "./rules";
-import type { DiagnosticRecord, BufferedDiagnostic, RecommendationItem } from "./types";
+import { buildDiagnosticRecord } from "./pedagogicalDiagnosticMapping";
+import type {
+  DiagnosticRecord,
+  BufferedDiagnostic,
+  RecommendationItem,
+  FeedbackInput,
+  Polarity,
+  SessionContext,
+} from "./types";
 
 import { PRIORITY_THRESHOLD } from "./constants";
 
@@ -101,40 +109,28 @@ async function fetchSessionData(sessionId: string, db: SupabaseClient) {
   };
 }
 
-/**
- * Runs the complete 6-module pipeline for a session and persists to Supabase.
- *
- * Flow:
- *   1. Fetch session metadata from Supabase (Module 1)
- *   2. Run preprocess + ML inference in Web Worker (Modules 2-3)
- *   3. SAVE raw ML output to analysis_results
- *   4. Map each diagnostic record in-memory (Module 4)
- *   5. Compute distributions, score, generate recs/warnings (Module 5)
- *   6. Format final output (Module 6)
- *   7. SAVE computed result to feedback_diagnostics
- *   8. UPDATE sessions.last_analyzed_at
- */
-export async function runAnalysisPipeline(
-  sessionId: string,
-  client?: SupabaseClient,
-  signal?: AbortSignal,
-): Promise<AnalysisResult> {
-  const db = client ?? defaultSupabase;
-  console.debug("[pipeline] Starting analysis pipeline for session", { sessionId });
+type SessionData = Awaited<ReturnType<typeof fetchSessionData>>;
 
-  // Module 1: Fetch + assemble data
-  performance.mark("pipeline:fetch-start");
-  const { session, courseName, ilosData, feedbackData } = await fetchSessionData(sessionId, db);
-  performance.mark("pipeline:fetch-end");
-  performance.measure("Supabase read", {
-    start: "pipeline:fetch-start",
-    end: "pipeline:fetch-end",
-    detail: { targetMs: 2500 },
-  });
-  assertNotAborted(signal);
+// Minimal ILO shape consumed by scope building and Module 6 gap items.
+interface IloScope {
+  id: string;
+  statement: string;
+  bloomLevel?: string;
+  bloom_level?: string;
+}
 
+interface SessionScope {
+  sessionContext: SessionContext;
+  feedbackStream: FeedbackInput[];
+  activeIlos: IloScope[];
+}
+
+// Reproduces the Module 1 context assembly so a fresh run and a manual recompute
+// build an identical SessionContext from the same source rows.
+function buildSessionScope(data: SessionData, sessionId: string): SessionScope {
+  const { session, courseName, ilosData, feedbackData } = data;
   const sessionIloIds = Array.isArray(session.ilo_ids) ? session.ilo_ids : [];
-  const activeIlos = ilosData.filter((ilo) => sessionIloIds.includes(ilo.id));
+  const activeIlos: IloScope[] = ilosData.filter((ilo) => sessionIloIds.includes(ilo.id));
 
   const maxSessionRbt = activeIlos.length > 0 ? Math.max(...activeIlos.map(getIloLevel)) : 1;
   const iloStatement =
@@ -157,53 +153,19 @@ export async function runAnalysisPipeline(
     ilosScope,
   );
 
-  // Guard against empty feedback stream
-  if (feedbackStream.length === 0) {
-    throw new Error("No student feedback to analyze in this session.");
-  }
+  return { sessionContext, feedbackStream, activeIlos };
+}
 
-  // Modules 2-3-4: per-feedback loop in Web Worker (preprocess → extract → map)
-  const { api } = await getMLWorkerAsync();
-  performance.mark("pipeline:model-load-start");
-  assertNotAborted(signal);
-  await api.preloadModel();
-  performance.mark("pipeline:model-load-end");
-  assertNotAborted(signal);
-  performance.measure("Model init (warm)", {
-    start: "pipeline:model-load-start",
-    end: "pipeline:model-load-end",
-    detail: { targetMs: 6000 },
-  });
-
-  performance.mark("pipeline:inference-start");
-  const buffer: DiagnosticRecord[] = await api.runInference(
-    feedbackStream,
-    sessionContext.targetIloRbt,
-  );
-  performance.mark("pipeline:inference-end");
-  assertNotAborted(signal);
-  performance.measure("Pipeline total", {
-    start: "pipeline:inference-start",
-    end: "pipeline:inference-end",
-    detail: { targetMs: 240000 },
-  });
-
-  // Save raw ML output to analysis_results
-  performance.mark("pipeline:write-start");
-  // Atomic cancel-aware write checkpoint
-  assertNotAborted(signal);
-  await db.from("analysis_results").delete().eq("session_id", sessionId);
-  if (buffer.length > 0) {
-    const { error: insertErr } = await db.from("analysis_results").insert(
-      buffer.map((d) => ({
-        session_id: sessionId,
-        feedback_id: d.feedbackId,
-        issue: d.issue,
-        polarity: d.polarity,
-      })),
-    );
-    if (insertErr) console.error("Error saving raw ML output:", insertErr);
-  }
+// Modules 5-6: distributions, pedagogical cue generation, and result assembly.
+// Exported so unit tests can exercise reclassification without Supabase.
+export function computeAnalysisResult(input: {
+  sessionId: string;
+  feedbackStream: FeedbackInput[];
+  buffer: DiagnosticRecord[];
+  sessionContext: SessionContext;
+  activeIlos: IloScope[];
+}): AnalysisResult {
+  const { sessionId, feedbackStream, buffer, sessionContext, activeIlos } = input;
 
   // Module 5: Strategy Generation
   const totalFeedback = feedbackStream.length;
@@ -309,15 +271,117 @@ export async function runAnalysisPipeline(
     feedback: feedbackStream.map((fb) => ({ id: fb.id, text: fb.rawText })),
   });
 
-  // Save computed result to feedback_diagnostics
-  assertNotAborted(signal);
+  return finalResult;
+}
+
+// Delete + insert of the feedback_diagnostics cache row (one rules_version per session).
+async function persistDiagnostics(
+  db: SupabaseClient,
+  sessionId: string,
+  result: AnalysisResult,
+): Promise<void> {
   await db.from("feedback_diagnostics").delete().eq("session_id", sessionId);
   const { error: cacheErr } = await db.from("feedback_diagnostics").insert({
     session_id: sessionId,
-    result: finalResult,
+    result,
     rules_version: RULES_VERSION,
   });
   if (cacheErr) console.error("Error saving computed result:", cacheErr);
+}
+
+/**
+ * Runs the complete 6-module pipeline for a session and persists to Supabase.
+ *
+ * Flow:
+ *   1. Fetch session metadata from Supabase (Module 1)
+ *   2. Run preprocess + ML inference in Web Worker (Modules 2-3)
+ *   3. SAVE raw ML output to analysis_results
+ *   4. Map each diagnostic record in-memory (Module 4)
+ *   5. Compute distributions, score, generate recs/warnings (Module 5)
+ *   6. Format final output (Module 6)
+ *   7. SAVE computed result to feedback_diagnostics
+ *   8. UPDATE sessions.last_analyzed_at
+ */
+export async function runAnalysisPipeline(
+  sessionId: string,
+  client?: SupabaseClient,
+  signal?: AbortSignal,
+): Promise<AnalysisResult> {
+  const db = client ?? defaultSupabase;
+  console.debug("[pipeline] Starting analysis pipeline for session", { sessionId });
+
+  // Module 1: Fetch + assemble data
+  performance.mark("pipeline:fetch-start");
+  const sessionData = await fetchSessionData(sessionId, db);
+  performance.mark("pipeline:fetch-end");
+  performance.measure("Supabase read", {
+    start: "pipeline:fetch-start",
+    end: "pipeline:fetch-end",
+    detail: { targetMs: 2500 },
+  });
+  assertNotAborted(signal);
+
+  const { sessionContext, feedbackStream, activeIlos } = buildSessionScope(sessionData, sessionId);
+
+  // Guard against empty feedback stream
+  if (feedbackStream.length === 0) {
+    throw new Error("No student feedback to analyze in this session.");
+  }
+
+  // Modules 2-3-4: per-feedback loop in Web Worker (preprocess → extract → map)
+  const { api } = await getMLWorkerAsync();
+  performance.mark("pipeline:model-load-start");
+  assertNotAborted(signal);
+  await api.preloadModel();
+  performance.mark("pipeline:model-load-end");
+  assertNotAborted(signal);
+  performance.measure("Model init (warm)", {
+    start: "pipeline:model-load-start",
+    end: "pipeline:model-load-end",
+    detail: { targetMs: 6000 },
+  });
+
+  performance.mark("pipeline:inference-start");
+  const buffer: DiagnosticRecord[] = await api.runInference(
+    feedbackStream,
+    sessionContext.targetIloRbt,
+  );
+  performance.mark("pipeline:inference-end");
+  assertNotAborted(signal);
+  performance.measure("Pipeline total", {
+    start: "pipeline:inference-start",
+    end: "pipeline:inference-end",
+    detail: { targetMs: 240000 },
+  });
+
+  // Save raw ML output to analysis_results
+  performance.mark("pipeline:write-start");
+  // Atomic cancel-aware write checkpoint
+  assertNotAborted(signal);
+  await db.from("analysis_results").delete().eq("session_id", sessionId);
+  if (buffer.length > 0) {
+    const { error: insertErr } = await db.from("analysis_results").insert(
+      buffer.map((d) => ({
+        session_id: sessionId,
+        feedback_id: d.feedbackId,
+        issue: d.issue,
+        polarity: d.polarity,
+      })),
+    );
+    if (insertErr) console.error("Error saving raw ML output:", insertErr);
+  }
+
+  const finalResult = computeAnalysisResult({
+    sessionId,
+    feedbackStream,
+    buffer,
+    sessionContext,
+    activeIlos,
+  });
+
+  // Save computed result to feedback_diagnostics
+  assertNotAborted(signal);
+  await persistDiagnostics(db, sessionId, finalResult);
   performance.mark("pipeline:write-end");
   performance.measure("Supabase write (diagnostics)", {
     start: "pipeline:write-start",
@@ -337,5 +401,48 @@ export async function runAnalysisPipeline(
   }
 
   console.debug("[pipeline] Pipeline complete for session", { sessionId });
+  return finalResult;
+}
+
+/**
+ * Recomputes a session's result from the persisted raw model output plus manual
+ * issue assignments. Runs on the main thread (no ML inference) and replaces the
+ * feedback_diagnostics cache entry.
+ */
+export async function recomputeAnalysisResult(
+  sessionId: string,
+  overrides: Record<string, string> = {},
+  client?: SupabaseClient,
+): Promise<AnalysisResult> {
+  const db = client ?? defaultSupabase;
+  const sessionData = await fetchSessionData(sessionId, db);
+  const { sessionContext, feedbackStream, activeIlos } = buildSessionScope(sessionData, sessionId);
+
+  const { data, error } = await db
+    .from("analysis_results")
+    .select("feedback_id, issue, polarity")
+    .eq("session_id", sessionId);
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) {
+    throw new Error("No raw analysis output found for this session.");
+  }
+
+  const buffer: DiagnosticRecord[] = data.map((row) =>
+    buildDiagnosticRecord(
+      overrides[row.feedback_id] ?? row.issue,
+      row.polarity as Polarity,
+      sessionContext.targetIloRbt,
+      row.feedback_id,
+    ),
+  );
+
+  const finalResult = computeAnalysisResult({
+    sessionId,
+    feedbackStream,
+    buffer,
+    sessionContext,
+    activeIlos,
+  });
+  await persistDiagnostics(db, sessionId, finalResult);
   return finalResult;
 }

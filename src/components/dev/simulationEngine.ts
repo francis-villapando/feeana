@@ -164,7 +164,7 @@ export function computePriority(
 
 // Module 5-6: Build the pedagogical cue (recommendation or warning) from the
 // simulated diagnostic, matching GeneratePedagogicalCue's output shape.
-// Uncategorized feedback is skipped entirely, mirroring pipeline.ts L226-228.
+// Uncategorized feedback is skipped entirely, mirroring pipeline.ts L188-190.
 export function buildCue(
   input: SimulationInput,
   issue: string,
