@@ -133,7 +133,6 @@ export function SessionFeedbackList({
 
   const isCategoryView = view === "category" && !!categoryFilter;
   const isEmptyCategory = isCategoryView && categoryFeedback.length === 0;
-  const polarityOnly = categoryFilter?.title === "Positive" || categoryFilter?.title === "Neutral";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 px-6 py-4">
@@ -213,10 +212,10 @@ export function SessionFeedbackList({
                   </p>
                   {diag && (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {!polarityOnly && (
+                      {diag.tti.toLowerCase() !== "uncategorized" && (
                         <MappingPill label={diag.tti} color={aspectColorMap[diag.tti]} />
                       )}
-                      {!polarityOnly && (
+                      {!isUncategorized && (
                         <MappingPill
                           label={resolveIssueLabel(diag.issue)}
                           color={issueColorMap[resolveIssueLabel(diag.issue)]}
@@ -226,7 +225,7 @@ export function SessionFeedbackList({
                         label={POLARITY_LABEL[diag.polarity]}
                         color={polarityColorMap[POLARITY_LABEL[diag.polarity]]}
                       />
-                      {!polarityOnly && !isUncategorized && (
+                      {!isUncategorized && (
                         <>
                           <MappingPill
                             label={RBT_LEVELS[diag.rbt] ?? String(diag.rbt)}

@@ -126,7 +126,7 @@ describe("SessionFeedbackList", () => {
     expect(markup).not.toContain("2026-01-01");
   });
 
-  it("skips rbt/clt pills for uncategorized feedback", () => {
+  it("hides every uncategorized pill, leaving only polarity", () => {
     const diagnostics = new Map<string, DiagnosticRecord>([
       [
         "f1",
@@ -144,11 +144,41 @@ describe("SessionFeedbackList", () => {
     const markup = renderToStaticMarkup(
       <SessionFeedbackList sessionFeedback={feedback} diagnosticsByFeedbackId={diagnostics} />,
     );
-    expect(markup).toContain("Uncategorized");
+    expect(markup).toContain("Neutral");
+    expect(markup).not.toContain("Uncategorized");
     expect(markup).not.toContain("Intrinsic");
   });
 
-  it("renders only the polarity pill for Positive/Neutral category filters", () => {
+  it("renders every badge regardless of the category filter title", () => {
+    const diagnostics = new Map<string, DiagnosticRecord>([
+      [
+        "f1",
+        {
+          tti: "Instructional Learning Formats",
+          rbt: 3,
+          clt: "Extraneous",
+          issue: "Clarity Deficit",
+          polarity: "neg",
+          isGap: false,
+          feedbackId: "f1",
+        },
+      ],
+    ]);
+    const markup = renderToStaticMarkup(
+      <SessionFeedbackList
+        sessionFeedback={feedback}
+        categoryFilter={{ title: "Positive", feedbackTexts: ["The pacing was too fast."] }}
+        diagnosticsByFeedbackId={diagnostics}
+      />,
+    );
+    expect(markup).toContain("Instructional Learning Formats");
+    expect(markup).toContain("Unclear Lessons");
+    expect(markup).toContain("Negative");
+    expect(markup).toContain("Apply");
+    expect(markup).toContain("Extraneous");
+  });
+
+  it("shows only polarity for an uncategorized response under a Positive filter", () => {
     const diagnostics = new Map<string, DiagnosticRecord>([
       [
         "f1",
