@@ -112,4 +112,18 @@ describe("UncategorizedReviewList", () => {
     expect(markup).toContain("Skip");
     expect(markup).toContain("Apply to analysis");
   });
+
+  it("blocks Apply until at least one issue is assigned", () => {
+    const markup = renderToStaticMarkup(
+      <UncategorizedReviewList
+        items={[{ feedbackId: "f4", rawText: "Completely unrelated remark." }]}
+        onSubmit={() => {}}
+        onSkip={() => {}}
+      />,
+    );
+
+    const applyButton = markup.match(/<button[^>]*>Apply to analysis<\/button>/)?.[0];
+    expect(applyButton).toContain('disabled=""');
+    expect(markup.match(/<button[^>]*>Skip<\/button>/)?.[0]).not.toContain('disabled=""');
+  });
 });

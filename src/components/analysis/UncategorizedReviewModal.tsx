@@ -76,6 +76,7 @@ export function UncategorizedReviewList({
   submitting?: boolean;
 }) {
   const [selections, setSelections] = useState<Record<string, string>>({});
+  const hasManualClassification = Object.keys(selections).length > 0;
 
   return (
     <>
@@ -114,7 +115,11 @@ export function UncategorizedReviewList({
         <Button variant="ghost" onClick={onSkip} disabled={submitting}>
           Skip
         </Button>
-        <Button onClick={() => onSubmit(selections)} disabled={submitting}>
+        <Button
+          onClick={() => onSubmit(selections)}
+          disabled={submitting || !hasManualClassification}
+          title={hasManualClassification ? undefined : "Assign at least one issue to apply"}
+        >
           Apply to analysis
         </Button>
       </DialogFooter>
