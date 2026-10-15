@@ -196,10 +196,10 @@ export function GeneratePedagogicalCue(
     },
     ...(uniqueIssue.isGap
       ? scopedIlos.map((ilo) => ({
-        text: ilo.text,
-        kind: "ILO" as const,
-        detail: ilo.detail,
-      }))
+          text: ilo.text,
+          kind: "ILO" as const,
+          detail: ilo.detail,
+        }))
       : []),
     {
       text: uniqueIssue.clt,
