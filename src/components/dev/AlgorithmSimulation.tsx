@@ -51,6 +51,7 @@ import {
   ISSUE_RECOMMENDATIONS,
   RBT_LEVELS,
 } from "@/lib/algorithm/rules";
+import { PRIORITY_THRESHOLD } from "@/lib/algorithm/constants";
 import { getMLWorkerAsync, setLoadProgressListener } from "@/lib/ml/mlWorkerStore";
 import type { LoadProgress } from "@/lib/algorithm/models/distilXlmr";
 import {
@@ -59,7 +60,6 @@ import {
   computePriority,
   buildCue,
   rbtLabel,
-  PRIORITY_THRESHOLD,
   type SimulationInput,
   type ExtractionResult,
   type DiagnosticMapping,
@@ -262,7 +262,13 @@ export function AlgorithmSimulation() {
         input.totalFeedback,
         diag.isGap,
       );
-      const cueResult = buildCue(input, result.issue, diag, input.issueOccurrences);
+      const cueResult = buildCue(
+        input,
+        result.issue,
+        diag,
+        input.issueOccurrences,
+        strat.triggersRecommendation ? "primary" : "warning",
+      );
       setExtraction(result);
       setMapping(diag);
       setStrategy(strat);
@@ -1946,6 +1952,8 @@ function StepOutput({
           </div>
         ) : (
           <div className="rounded-lg border border-warning/40 bg-warning/10 p-4">
+            {/* Simplified single-issue warning view: reports the boosted priority score, not raw
+                prevalence, and never emits a secondary cue (see simulationEngine.buildCue). */}
             <div className="mb-2 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-warning" />
               <span className="text-sm font-semibold">Diagnostic Warning Monitor</span>
@@ -1957,8 +1965,8 @@ function StepOutput({
               <span className="font-medium text-foreground underline decoration-warning/50 underline-offset-4">
                 {cue.issue}
               </span>
-              . Below the 30% recommendation threshold; no instructional intervention is triggered.
-              Monitor in the next session.
+              . Below the {Math.round(PRIORITY_THRESHOLD * 100)}% recommendation threshold; no
+              instructional intervention is triggered. Monitor in the next session.
             </p>
           </div>
         )}

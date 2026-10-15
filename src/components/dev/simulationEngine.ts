@@ -10,17 +10,18 @@ import { CleanFeedback } from "../../lib/algorithm/preprocess";
 import { map_tti, map_rbt, map_clt } from "../../lib/algorithm/pedagogicalDiagnosticMapping";
 import { GeneratePedagogicalCue } from "../../lib/algorithm/strategyGeneration";
 import { RBT_LEVELS } from "../../lib/algorithm/rules";
+import { PRIORITY_THRESHOLD } from "../../lib/algorithm/constants";
 import type { ModelInternals } from "../../lib/algorithm/internals";
 import type {
   SessionContext,
   BufferedDiagnostic,
   RecommendationItem,
+  CueTier,
 } from "../../lib/algorithm/types";
 
 export type { RecommendationItem } from "../../lib/algorithm/types";
 export type { ModelInternals } from "../../lib/algorithm/internals";
 
-export const PRIORITY_THRESHOLD = 0.3;
 export const GAP_WEIGHT = 1.5;
 export const NON_GAP_WEIGHT = 1.0;
 
@@ -169,6 +170,7 @@ export function buildCue(
   issue: string,
   mapping: DiagnosticMapping,
   issueCount: number,
+  tier: CueTier,
 ): RecommendationItem | null {
   if (mapping.clt === "Uncategorized") return null;
   const buffered: BufferedDiagnostic = {
@@ -187,7 +189,15 @@ export function buildCue(
     targetIloRbt: input.targetRbt,
     iloStatement: input.iloStatement,
   };
-  return GeneratePedagogicalCue(sessionContext, buffered, input.totalFeedback, weightedCoefficient);
+  // Simulator models a single issue, so sub-threshold cues render as warnings; the
+  // pipeline would promote a lone top sub-threshold issue to a secondary cue.
+  return GeneratePedagogicalCue(
+    sessionContext,
+    buffered,
+    input.totalFeedback,
+    weightedCoefficient,
+    tier,
+  );
 }
 
 export function rbtLabel(level: number, issue?: string): string {
