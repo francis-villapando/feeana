@@ -148,7 +148,7 @@ describe("scoped ILO goal statement in pedagogical cues", () => {
   it("lists all ILOs for an RBT 1 gap", () => {
     const cue = GeneratePedagogicalCue(makeSessionContext(), makeBufferedIssue(1), 10, 1.5);
     expect(cue.paragraph).toContain(
-      "the goals: ILO 1: Recall basic definitions — ILO 2: Explain core concepts — ILO 3: Apply techniques to solve problems.",
+      "the goals: ILO 1: Recall basic definitions; ILO 2: Explain core concepts; ILO 3: Apply techniques to solve problems.",
     );
     const iloTerms = cue.terms.filter((t) => t.kind === "ILO");
     expect(iloTerms.map((t) => t.text)).toEqual([
@@ -166,7 +166,7 @@ describe("scoped ILO goal statement in pedagogical cues", () => {
   it("lists only ILOs at or above the issue RBT for an RBT 2 gap", () => {
     const cue = GeneratePedagogicalCue(makeSessionContext(), makeBufferedIssue(2), 10, 1.5);
     expect(cue.paragraph).toContain(
-      "the goals: ILO 2: Explain core concepts — ILO 3: Apply techniques to solve problems.",
+      "the goals: ILO 2: Explain core concepts; ILO 3: Apply techniques to solve problems.",
     );
     const iloTerms = cue.terms.filter((t) => t.kind === "ILO");
     expect(iloTerms.map((t) => t.text)).toEqual([
@@ -195,7 +195,7 @@ describe("scoped ILO goal statement in pedagogical cues", () => {
       1.5,
     );
     expect(cue.paragraph).toContain(
-      "the goals: ILO 1: Recall basic definitions — ILO 2: Explain core concepts — ILO 3: Apply techniques to solve problems.",
+      "the goals: ILO 1: Recall basic definitions; ILO 2: Explain core concepts; ILO 3: Apply techniques to solve problems.",
     );
     const iloTerms = cue.terms.filter((t) => t.kind === "ILO");
     expect(iloTerms.map((t) => t.text)).toEqual([
@@ -230,8 +230,10 @@ describe("scoped ILO goal statement in pedagogical cues", () => {
       10,
       1.5,
     );
-    expect(cue.paragraph).toContain("the goal: Implement a sorting algorithm. CLT identifies");
-    expect(cue.paragraph).not.toContain("algorithm.. CLT");
+    expect(cue.paragraph).toContain(
+      "the goal: Implement a sorting algorithm. This is driven by high intrinsic load.",
+    );
+    expect(cue.paragraph).not.toContain("algorithm.. This");
     const iloTerm = cue.terms.find((t) => t.kind === "ILO");
     expect(iloTerm?.text).toBe("Implement a sorting algorithm");
     expect(iloTerm?.detail).toBe("RBT Level 3 · Apply");
@@ -250,7 +252,7 @@ describe("scoped ILO goal statement in pedagogical cues", () => {
       1.5,
     );
     expect(cue.paragraph).toContain(
-      "the goals: ILO 1: Recall definitions — ILO 2: Apply techniques. CLT identifies",
+      "the goals: ILO 1: Recall definitions; ILO 2: Apply techniques. This is driven by high intrinsic load.",
     );
     const iloTerms = cue.terms.filter((t) => t.kind === "ILO");
     expect(iloTerms.map((t) => t.text)).toEqual([

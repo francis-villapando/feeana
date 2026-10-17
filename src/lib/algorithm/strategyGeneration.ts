@@ -145,12 +145,12 @@ export function GeneratePedagogicalCue(
     `Thus, "recommendation cue for ${displayIssue}."`;
 
   const scopedIlos = scopeIloItems(sessionContext, uniqueIssue.rbt);
-  const goalStatement = scopedIlos.map((i) => i.text).join(" — ");
+  const goalStatement = scopedIlos.map((i) => i.text).join("; ");
   const goalNoun = scopedIlos.length > 1 ? "goals" : "goal";
 
   const paragraph = uniqueIssue.isGap
-    ? `A total of ${prevalenceStr} of the class is experiencing ${displayIssueLower} issue under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level and hence they are not able to achieve the ${goalNoun}: ${goalStatement}. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`
-    : `A total of ${prevalenceStr} of the class is experiencing ${displayIssueLower} issue under the ${ttiLower} aspect in ${sessionContext.topic}. According to RBT, students are not achieving the ${rbtLower} level. CLT identifies high ${cltLower} load as the cause. ${recommendationSentence}`;
+    ? `A total of ${prevalenceStr} of the class is experiencing ${displayIssueLower} issue under the ${ttiLower} aspect in ${sessionContext.topic}. Students are not achieving the ${rbtLower} level, falling short of the ${goalNoun}: ${goalStatement}. This is driven by high ${cltLower} load. ${recommendationSentence}`
+    : `A total of ${prevalenceStr} of the class is experiencing ${displayIssueLower} issue under the ${ttiLower} aspect in ${sessionContext.topic}. Students are not achieving the ${rbtLower} level, driven by high ${cltLower} load. ${recommendationSentence}`;
 
   // Skip the boost note when rounding hides it, so the tooltip never claims a boost it cannot show.
   const gapClause =
