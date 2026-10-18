@@ -25,7 +25,7 @@ flowchart TB
         P2_TOKENIZE --> P2_TENSORS
     end
 
-    TENSOR_OUT["Encoded Input Tensors:<br/>input_ids, attention_mask"]
+    TENSOR_OUT["Encoded Input Tensors:<br/>input_ids, attention_mask<br/>(Length: 128, int64)"]
     MODEL["DistilXLM-R (INT8 ONNX)"]
 
     RAW --> P1_NOISE

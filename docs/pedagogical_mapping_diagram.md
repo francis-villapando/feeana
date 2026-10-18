@@ -12,30 +12,30 @@ flowchart TB
         direction TB
         GAP["Gap Check:<br/>isGap = (Issue RBT ≤ Target ILO RBT)<br/>AND (CLT = Intrinsic)"]
         SCORE["Priority Score:<br/>w_c = 1.5 (gap) / 1.0 (no gap)<br/>P = (Issue Count ÷ Total Feedback) × w_c"]
-        ROUTE["Tier Routing:<br/>• If ANY issue has P ≥ 0.30 → Primary;<br/>all sub-threshold issues → Passive<br/>• Else (no issues reaches 0.30) → max(P) issue → Secondary;<br/>remaining sub-threshold issues → Passive"]
+        ROUTE["Tier Routing:<br/>• If ANY issue has P ≥ 0.30 → Primary;<br/>all sub-threshold issues → Warning<br/>• Else (no issues reaches 0.30) → max(P) issue → Secondary;<br/>remaining sub-threshold issues → Warning"]
         GAP --> SCORE --> ROUTE
     end
 
-    subgraph TEMPLATE["2. Template Generation — GeneratePedagogicalCue (one function, one template)"]
+    subgraph TEMPLATE["2. Template Generation"]
         direction TB
-        CUE["Injected fields:<br/>• Prevalence percentage<br/>• Issue tag<br/>• TTI dimension<br/>• Session topic<br/>• RBT level name<br/>• ILO goal statement (if isGap)<br/>• CLT category<br/>• Recommended action text<br/>• Tier"]
+        CUE["8 Injected Data:<br/>• Prevalence percentage<br/>• Issue tag<br/>• TTI dimension<br/>• Session topic<br/>• RBT level name<br/>• ILO goal statement (if isGap)<br/>• CLT category<br/>• Recommended action text<br/><i>(Tier controls reason suffix & routing metadata)</i>"]
     end
 
     subgraph SPLIT["3. Presentation Split"]
         direction TB
         REC_P["Primary Recommendation<br/>(green indicator)"]
         REC_S["Secondary Recommendation<br/>(amber indicator)"]
-        WARN["Warning:<br/>• paragraph field dropped at output assembly<br/>• tooltip filtered to issue / prevalence / TTI / RBT / CLT"]
+        WARN["Warning (Passive Diagnostic):<br/>• paragraph omitted at output assembly<br/>• tooltip filtered to issue / prevalence / TTI / RBT / CLT"]
         REC_P ~~~ REC_S ~~~ WARN
     end
 
     ROUTE -->|"routed issues + tier labels"| CUE
     CUE -->|"primary"| REC_P
     CUE -->|"secondary"| REC_S
-    CUE -->|"sub-threshold"| WARN
+    CUE -->|"warning"| WARN
 ```
 
-_Note — SOP4 scope: "recommendation" covers both actionable cues (Primary & Secondary) and diagnostic warnings (Passive); all three are produced by the same generation call._
+_Note — SOP4 scope: "recommendation" covers both actionable cues (Primary & Secondary) and diagnostic warnings (Passive); all three are produced by GeneratePedagogicalCue via its respective CueTier._
 
 ## Worked Example — Breaking Down Ideas
 

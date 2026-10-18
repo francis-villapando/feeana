@@ -22,6 +22,17 @@ flowchart TB
         INFERENCE_BLOCK -->|"Classification +<br/>confidence gate (≥ 0.31)"| TUPLE_OUT
     end
 
+    subgraph PERSIST_RAW["Raw ML Persistence"]
+        RAW_STORE[("analysis_results Table:<br/>feedback_id, issue, polarity")]
+    end
+
+    subgraph HUMAN_LOOP["Faculty Review & Override Loop"]
+        direction TB
+        UNCAT_REVIEW["Uncategorized Review Modal:<br/>• Faculty manually assigns named issue<br/>• Polarity forced to negative"]
+        RECOMPUTE["recomputeAnalysisResult:<br/>Recomputes Stage 3 & 4<br/>(bypasses ML inference)"]
+        UNCAT_REVIEW --> RECOMPUTE
+    end
+
     subgraph STAGE3["Stage 3: Multi-Framework Pedagogical Mapping"]
         direction LR
         CONTEXT_IN["Faculty Session Context:<br/>• Session Topic<br/>• Course ILO<br/>• Target RBT Level"]
@@ -36,15 +47,25 @@ flowchart TB
         FALLBACK_PROMOTE["Fallback Promotion:<br/>all P < 0.30 → max(P)"]
         SECONDARY_REC["Secondary Recommendation:<br/>Prevalence-Based Fallback Cue"]
         TERMINAL_WARN["Passive Diagnostic Warning:<br/>Dashboard Tracking"]
+
         PRIORITY_SCORER -->|"P ≥ 0.30"| PRIMARY_REC
+        PRIMARY_REC -->|"sub-threshold"| TERMINAL_WARN
         PRIORITY_SCORER -->|"all P < 0.30"| FALLBACK_PROMOTE
         FALLBACK_PROMOTE -->|"promote max(P)"| SECONDARY_REC
         FALLBACK_PROMOTE -->|"sub-threshold remainder"| TERMINAL_WARN
     end
 
-    STAGE1 --> STAGE2
-    STAGE2 --> STAGE3
-    STAGE3 --> STAGE4
+    subgraph PERSIST_DIAG["Computed Diagnostics Persistence"]
+        DIAG_STORE[("feedback_diagnostics Table:<br/>Session diagnostics, cues, warnings")]
+    end
 
-    %% 'Uncategorized' issues are excluded from scoring
+    STAGE1 --> STAGE2
+    TUPLE_OUT --> RAW_STORE
+    STAGE2 --> STAGE3
+    RAW_STORE -.->|"uncategorized records"| UNCAT_REVIEW
+    RECOMPUTE -.->|"overridden diagnostics"| STAGE3
+    STAGE3 --> STAGE4
+    STAGE4 --> DIAG_STORE
+
+    %% 'Uncategorized' issues are excluded from scoring unless reclassified via faculty manual overrides
 ```

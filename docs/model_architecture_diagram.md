@@ -27,7 +27,7 @@ flowchart TB
     TAGS["14 Named Issue Tags"]
     FALLBACK["Fallback: 'Uncategorized' (Index 14)"]
 
-    LEG_COL["<table><tr><td>0 Abstract Logic Gap</td><td>5 Evaluation Unfairness</td><td>10 Perceived Marginalization</td></tr><tr><td>1 Clarity Deficit</td><td>6 Feedback Latency</td><td>11 Procedural Bottleneck</td></tr><tr><td>2 Classroom Tension</td><td>7 Instructional Cadence</td><td>12 Relational Coldness</td></tr><tr><td>3 Conceptual Misalignment</td><td>8 Notation Struggle</td><td>13 Subject Alienation</td></tr><tr><td>4 Design Synthesis Failure</td><td>9 Peer Distraction</td><td>14 Uncategorized</td></tr></table>"]
+    LEG_COL["<table><tr><td>0 Breaking Down Ideas</td><td>5 Unfair Treatment</td><td>10 Feeling Ignored</td></tr><tr><td>1 Unclear Lessons</td><td>6 Slow or Poor Feedback</td><td>11 Using Learned Steps</td></tr><tr><td>2 Classroom Tension</td><td>7 Lesson Pace</td><td>12 Distant Teacher</td></tr><tr><td>3 Concept Confusion</td><td>8 Symbols and Syntax</td><td>13 Irrelevant Topic</td></tr><tr><td>4 Creating Own Work</td><td>9 Classmate Distraction</td><td>14 Uncategorized</td></tr></table>"]
 
     INPUT_IDS --> ENCODER
     ATT_MASK --> ENCODER
