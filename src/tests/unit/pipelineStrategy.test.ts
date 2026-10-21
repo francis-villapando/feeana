@@ -424,13 +424,40 @@ describe("Pipeline Strategy: Primary vs. Secondary Tier Resolution & Tie Accommo
       "experiencing distant teacher issue under the positive climate aspect",
     );
     expect(cue.paragraph).toContain(
-      "It is recommended to set up places where students can talk and connect, such as open forums, and to use friendly, positive words so the class feels welcome.",
+      "It is recommended to set up places where students can talk and connect, such as open forums, to start the lesson with a short icebreaker, and to use friendly, positive words so the class feels welcome.",
     );
 
     const issueTerm = cue.terms.find((t) => t.kind === "issue");
     expect(issueTerm?.text).toBe("Distant Teacher");
     expect(issueTerm?.detail).toBe(
       "Students feel the teacher does not connect with them. They see little warmth or respect between the teacher and the class.",
+    );
+  });
+
+  it("formats peer distraction cue with updated recommendation phrasing", () => {
+    const cue = GeneratePedagogicalCue(
+      mockContext,
+      {
+        issue: "peer distraction",
+        tti: "Behavior Management",
+        rbt: 1,
+        clt: "Extraneous",
+        polarity: "neg",
+        isGap: false,
+        count: 4,
+      },
+      10,
+      1.0,
+      "primary",
+    );
+
+    expect(cue.paragraph).toContain(
+      "It is recommended to set clear class rules and apply them consistently, and to use interesting activities, light humor, and relatable questions to bring students’ attention back to their studies.",
+    );
+
+    const recTerm = cue.terms.find((t) => t.kind === "recommendation");
+    expect(recTerm?.text).toBe(
+      "It is recommended to set clear class rules and apply them consistently, and to use interesting activities, light humor, and relatable questions to bring students’ attention back to their studies.",
     );
   });
 });

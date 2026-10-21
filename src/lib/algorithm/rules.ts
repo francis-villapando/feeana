@@ -1,8 +1,8 @@
-// Pedagogical rule tables shared by Modules 4-6 (rules_version = "1.5")
+// Pedagogical rule tables shared by Modules 4-6
 
 import type { CltCategory } from "./types";
 
-export const RULES_VERSION = "1.5";
+export const RULES_VERSION = "1.6";
 
 export const ISSUE_RULES: Record<string, string> = {
   "relational coldness": "Distant Teacher",
@@ -140,7 +140,7 @@ export const CLT_RULES: Record<string, CltCategory> = {
 
 const BASE_RECOMMENDATIONS: Record<string, string> = {
   "relational coldness":
-    "It is recommended to set up places where students can talk and connect, such as open forums, and to use friendly, positive words so the class feels welcome.",
+    "It is recommended to set up places where students can talk and connect, such as open forums, to start the lesson with a short icebreaker, and to use friendly, positive words so the class feels welcome.",
   "classroom tension":
     "It is recommended to calm the class by giving reminders about behavior or stopping aggressive exchanges, and to use polite, calm words to ease students’ frustration.",
   "evaluation unfairness":
@@ -150,7 +150,7 @@ const BASE_RECOMMENDATIONS: Record<string, string> = {
   "subject alienation":
     "It is recommended to start with a short overview of the lesson and use real-life examples to link new topics to what students already know.",
   "peer distraction":
-    "It is recommended to set clear class rules and apply them consistently, and to use interesting activities to bring students’ attention back to their studies.",
+    "It is recommended to set clear class rules and apply them consistently, and to use interesting activities, light humor, and relatable questions to bring students’ attention back to their studies.",
   "instructional cadence":
     "It is recommended to keep a steady lesson routine and have a second plan for switching between topics, to avoid wasted time and match the pace to how fast students can follow.",
   "clarity deficit":
